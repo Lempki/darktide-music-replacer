@@ -1,0 +1,1 @@
+return { name = "Music Replacer", description = "Context-aware music replacement.", is_togglable = true }
