@@ -1,0 +1,5 @@
+{
+  "version": "0.1.0",
+  "author": "Kempli",
+  "description": "Context-aware music replacement: swaps Darktide's music for your own files per hub/explore/combat/boss context, falling back to the game's own music wherever you provide none."
+}
