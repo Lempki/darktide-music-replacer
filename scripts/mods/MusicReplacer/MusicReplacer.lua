@@ -176,7 +176,7 @@ Context.init(mod, log)
 
 mod.on_all_mods_loaded = function()
 	Library.init()
-	AudioClient.init()
+	AudioClient.init(log)
 
 	if not AudioClient.available() then
 		mod:error(
