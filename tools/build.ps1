@@ -21,6 +21,7 @@ $ErrorActionPreference = 'Stop'
 
 $ModName = 'MusicReplacer'
 $SourceItems = @("$ModName.mod", 'info.json', 'scripts')
+$AudioContexts = @('hub', 'mission_explore', 'mission_combat', 'mission_boss') # Keep in sync with CONTEXTS in library.lua.
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 if (-not $OutDir) {
@@ -48,6 +49,12 @@ New-Item -ItemType Directory -Path $StageMod -Force | Out-Null
 
 foreach ($item in $SourceItems) {
     Copy-Item -LiteralPath (Join-Path $RepoRoot $item) -Destination $StageMod -Recurse -Force
+}
+
+# Empty folders so a fresh install is ready to receive files immediately, without waiting for the mod's own runtime mkdir (library.lua) to run once first.
+# Not tracked in git -- synthesized here instead, since git can't track an empty directory anyway.
+foreach ($context in $AudioContexts) {
+    New-Item -ItemType Directory -Path (Join-Path $StageMod "audio\$context") -Force | Out-Null
 }
 
 # Wrapper dir matters: MusicReplacer.mod's declared paths and io_dofile calls are resolved as mods\<path>, so the archive needs MusicReplacer\ as the first segment, not the files loose at the root.
@@ -105,18 +112,19 @@ catch [System.UnauthorizedAccessException] {
 Write-Host ""
 Write-Host "Deployed $copied file(s) to $target"
 
-$audioRoot = Join-Path $target 'audio'
-if (Test-Path -LiteralPath $audioRoot -PathType Container) {
-    Write-Host ""
-    Write-Host "audio\ (untouched):"
-    foreach ($context in Get-ChildItem -LiteralPath $audioRoot -Directory) {
-        $count = @(Get-ChildItem -LiteralPath $context.FullName -File).Count # @() -- a single file isn't an array
-        Write-Host ("  {0,-18} {1} file(s)" -f $context.Name, $count)
+# Same as the zip: create any of the four that are missing, never touch existing ones.
+foreach ($context in $AudioContexts) {
+    $contextDir = Join-Path $target "audio\$context"
+    if (-not (Test-Path -LiteralPath $contextDir)) {
+        New-Item -ItemType Directory -Path $contextDir -Force | Out-Null
     }
 }
-else {
-    Write-Host ""
-    Write-Host "No audio\ folder in the install yet. The game's own music will play for every context."
+
+Write-Host ""
+Write-Host "audio\ (files never touched by this script):"
+foreach ($context in Get-ChildItem -LiteralPath (Join-Path $target 'audio') -Directory) {
+    $count = @(Get-ChildItem -LiteralPath $context.FullName -File).Count # @() -- a single file isn't an array.
+    Write-Host ("  {0,-18} {1} file(s)" -f $context.Name, $count)
 }
 
 exit 0
