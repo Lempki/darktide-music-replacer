@@ -17,7 +17,7 @@ local _io = Mods and Mods.lua and Mods.lua.io
 local _os = Mods and Mods.lua and Mods.lua.os
 
 local LOG_DIR_NAME = "Fatshark/Darktide/MusicReplacer"
-local LOG_FILE_NAME = "music_replacer.log"
+local LOG_FILE_NAME = "diagnostic.log"
 
 local log_file = nil
 local log_file_attempted = false
