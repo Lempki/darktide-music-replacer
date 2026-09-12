@@ -48,7 +48,8 @@ Your audio survives reinstalling or updating the mod via Vortex: Vortex only rem
 - [x] Native looping for a single-file folder.
 - [x] Boss music suppression, only once a replacement is confirmed available.
 - [x] All four audio folders provisioned automatically, ready to use right after install.
-- [ ] In-game settings UI (diagnostic-mode toggle, Meat Grinder opt-in, and the rest below).
+- [x] Opt-in diagnostic-mode setting, off by default.
+- [ ] In-game settings UI for the rest below.
 - [ ] Custom music responding to the in-game volume sliders.
 - [ ] Meat Grinder silent by default, opt-in to override.
 - [ ] "Let the current track finish" toggle, with a per-category override.
