@@ -9,7 +9,7 @@ local AudioClient = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/audi
 -- File Logging
 -- ###########################################################################
 -- mod:echo() pops an on-screen notification per call, unusable at this volume, so this writes to a plain file instead -- mostly playback decisions, for troubleshooting "why is it playing this" after the fact.
--- Opt-in via the "diagnostic_mode" mod option (MusicReplacer_data.lua), default off -- checked on every call rather than cached, so toggling it in the options menu takes effect immediately, and the file is never even created for a user who leaves it off.
+-- Opt-in via the "diagnostic_mode" mod option, default off -- checked live on every call, so toggling it applies immediately and a user who leaves it off never gets a file created.
 
 local _io = Mods and Mods.lua and Mods.lua.io
 local _os = Mods and Mods.lua and Mods.lua.os
@@ -92,7 +92,7 @@ local current_context = nil
 -- context_name -> true once a single-file context has completed one normal (filtered) play-through and switched to pure native looping.
 local native_loop_active = {}
 
--- is_new_context distinguishes an actual context change (fade the new track in) from advancing within the SAME still-active context (playlist continuation, or a native loop's own repeats), which should not re-fade in every time.
+-- is_new_context distinguishes an actual context change from advancing within the same one (playlist continuation, a native loop's own repeats) -- only the former should re-fade in.
 local function play_context(context_name, is_new_context)
 	if not context_name then
 		AudioClient.stop()
@@ -117,7 +117,7 @@ local function play_context(context_name, is_new_context)
 
 	Context.set_suppress_music_combat(context_name == "mission_boss")
 
-	-- Single-file contexts get one normal (loop=1, filtered) play-through first, and only switch to pure native looping (loop=0, no filters) from the second iteration on -- ffplay's -loop re-triggers baked-in filters every iteration, so native-looping with a fade from the start made the fade-in repeat on every loop.
+	-- Single-file contexts play once normally (loop=1, filtered) first, then switch to pure native looping (loop=0, no filters) -- ffplay's -loop re-triggers filters every iteration, so a fade-in from the start would otherwise repeat forever.
 	local use_native_loop = is_only_file and native_loop_active[context_name] == true
 
 	log(string.format("[playback] %s: playing %s (duration=%s%s)",
@@ -186,7 +186,7 @@ mod.on_all_mods_loaded = function()
 		)
 	end
 
-	-- Context may have already resolved before Library/AudioClient were ready (their init depends on other mods loading first) -- re-evaluate now, bypassing the debounce since this is a one-off catch-up.
+	-- Context may have resolved before Library/AudioClient were ready -- re-evaluate now, bypassing the debounce since this is a one-off catch-up.
 	has_pending_change = false
 	current_context = Context.current()
 	play_context(current_context, true)

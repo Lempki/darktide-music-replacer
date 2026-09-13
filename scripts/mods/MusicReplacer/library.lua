@@ -17,7 +17,7 @@ local handlers = {}
 local last_picked = {} -- context_name -> file_path most recently returned.
 
 -- Best-effort, so a fresh install has all four folders ready without the user creating them by hand first.
--- Windows mkdir creates missing parent folders too, and no-ops (suppressed here) if the folder already exists -- pick_file()'s own fallback-to-native-music path is what actually matters if this doesn't take effect for any reason.
+-- Windows mkdir creates missing parents too and no-ops if the folder exists -- pick_file()'s own fallback matters more than this succeeding.
 local function ensure_audio_folder(context_name)
 	if not _os or not _os.execute then
 		return

@@ -10,7 +10,7 @@
 -- AudioClient.update() reacts to a slider change on the next tick, then ignores further changes for VOLUME_RELAUNCH_COOLDOWN_SECONDS so a continued drag doesn't retrigger every tick.
 -- Each relaunch reuses the crossfade-echo's kill-and-reseek, accepted here since a slider change is rare and deliberate, unlike every track switch.
 -- -ss after -i does reset the relaunched process's own clock to 0, but that also means -loop restarts every iteration from the SEEKED position, not the file's true start (confirmed in-game).
--- A native_loop relaunch therefore plays a finite tail to the file's true end first, then resumes true native looping from position 0 once that tail finishes -- the same seam the loop already uses every cycle, so it sounds like an ordinary loop, not a restart.
+-- A native_loop relaunch plays a finite tail to the file's true end first, then resumes native looping from position 0 -- the same seam the loop already uses, so it sounds like an ordinary loop, not a restart.
 
 local AudioClient = {}
 
@@ -89,7 +89,7 @@ end
 --
 -- Audio Plugin's play_file() prepends one "afade=" to whatever this returns, so only a chained SECOND instance may restate the filter name itself.
 -- A fade-out clause that always self-prefixes only looks correct when fade-in also fires.
--- Fade-out alone -- true of every relaunch and every ordinary playlist continuation -- doubles up into "afade=afade=...", which ffplay rejects, killing the process almost immediately regardless of real remaining length.
+-- Fade-out alone -- every relaunch, every ordinary playlist continuation -- doubles up into "afade=afade=...", which ffplay rejects and kills the process almost immediately.
 local function build_afade(opts)
 	if opts.native_loop then
 		return nil
@@ -126,7 +126,7 @@ local function relaunch_at_current_volume()
 
 	if current_native_loop then
 		-- A plain reseek would permanently shorten the loop (see header note).
-		-- So: finish this cycle as a finite play to the file's true end, then resume true native looping from position 0 once that tail finishes -- the same seam the loop already uses every cycle.
+		-- So: finish this cycle as a finite play to the file's true end, then resume native looping from position 0 -- the same seam the loop already uses.
 		local seek_position = current_elapsed
 
 		local tail_play_file_id

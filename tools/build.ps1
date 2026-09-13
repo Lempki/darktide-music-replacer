@@ -112,7 +112,7 @@ catch [System.UnauthorizedAccessException] {
 Write-Host ""
 Write-Host "Deployed $copied file(s) to $target"
 
-# Same as the zip: create any of the four that are missing, never touch existing ones.
+# Same as the ZIP: create any of the four that are missing, never touch existing ones.
 foreach ($context in $AudioContexts) {
     $contextDir = Join-Path $target "audio\$context"
     if (-not (Test-Path -LiteralPath $contextDir)) {
