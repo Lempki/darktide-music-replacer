@@ -28,7 +28,7 @@ local function appdata_root()
 end
 
 local function ensure_directory(path)
-	-- Best-effort mkdir, io.open below is the real success check.
+	-- Best-effort mkdir. io.open below is the real success check.
 	if _os and _os.execute then
 		pcall(_os.execute, 'mkdir "' .. path:gsub("/", "\\") .. '" >nul 2>nul')
 	end
@@ -155,7 +155,7 @@ local function commit_pending_context()
 	end
 
 	current_context = pending_context
-	play_context(pending_context, true) -- true: a genuine context change.
+	play_context(pending_context, true) -- true marks a genuine context change.
 end
 
 Context.on_change(function(new_context, old_context, boss_breed)

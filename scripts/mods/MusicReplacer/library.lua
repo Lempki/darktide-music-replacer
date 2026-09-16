@@ -1,6 +1,6 @@
 -- Wraps the Audio Plugin's AudioFilesHandler (Audio.new_files_handler), one handler per music context, each a single-level subfolder of this mod's "audio/" directory (e.g. ".../mods/MusicReplacer/audio/hub/").
 --
--- pcall-guarded throughout: AudioFilesHandler's async scan leaves a field nil until it resolves, and :count()/:random() index that field directly (hard error, not a graceful nil) -- same for a missing subfolder.
+-- Everything below is pcall-guarded. AudioFilesHandler's async scan leaves a field nil until it resolves, and :count()/:random() index that field directly, a hard error rather than a graceful nil. The same applies to a missing subfolder.
 -- A missing/empty/not-yet-scanned folder resolving to nil here is also exactly the fallback-to-native-music signal the caller needs.
 
 local Library = {}
@@ -37,7 +37,7 @@ function Library.init()
 	for _, context_name in ipairs(CONTEXTS) do
 		ensure_audio_folder(context_name)
 
-		-- NOT pcall-wrapped: new_files_handler resolves its path by walking the call stack for the calling mod's name, and a pcall frame in that walk silently breaks the resolved path.
+		-- This call is not pcall-wrapped. new_files_handler resolves its path by walking the call stack for the calling mod's name, and a pcall frame in that walk silently breaks the resolved path.
 		-- This call itself has no crash risk, unlike below.
 		handlers[context_name] = audio_mod.new_files_handler(nil, context_name)
 	end

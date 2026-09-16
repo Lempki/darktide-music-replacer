@@ -3,7 +3,7 @@
 -- Plugin API: https://github.com/ronvoluted/darktide-mods/tree/main/Audio
 --
 -- Two load-bearing constraints:
--- 	* play_file() learns its OS pid asynchronously; stopping before it arrives can't kill anything, and Audio Plugin never retries -- an orphaned process. retry_pending_stops() below mitigates this.
+-- 	* play_file() learns its OS pid asynchronously. Stopping before it arrives can't kill anything, and Audio Plugin never retries, orphaning the process. retry_pending_stops() below mitigates this.
 -- 	* ffplay is headless with no live control channel -- an already-playing track's volume/filters can't change, so crossfade is a one-sided fade-in overlap, not a true symmetric fade (a relaunch-based true fade glitched audibly worse than not fading at all).
 --
 -- That second constraint also means the volume sliders do nothing to an already-playing track, since Audio Plugin bakes -volume in once at launch (confirmed from play_file.lua).
@@ -20,7 +20,7 @@ local FADE_OUT_SECONDS = 2 -- also used for a track's own natural-end fade-out
 -- How long an outgoing track keeps playing unmodified alongside an incoming one before being stopped -- longer than FADE_IN_SECONDS so the incoming track masks the cutoff.
 local CROSSFADE_OVERLAP_SECONDS = 3
 
-local VOLUME_RELAUNCH_COOLDOWN_SECONDS = 1 -- After reacting to a change, ignore further changes for this long -- caps a continued drag without delaying the first reaction.
+local VOLUME_RELAUNCH_COOLDOWN_SECONDS = 1 -- After reacting to a change, ignore further changes for this long. Caps a continued drag without delaying the first reaction.
 
 local _os = Mods and Mods.lua and Mods.lua.os -- Only for AudioClient.shutdown()'s direct kill.
 
@@ -89,7 +89,7 @@ end
 --
 -- Audio Plugin's play_file() prepends one "afade=" to whatever this returns, so only a chained SECOND instance may restate the filter name itself.
 -- A fade-out clause that always self-prefixes only looks correct when fade-in also fires.
--- Fade-out alone -- every relaunch, every ordinary playlist continuation -- doubles up into "afade=afade=...", which ffplay rejects and kills the process almost immediately.
+-- Fade-out alone, which is what every relaunch and every ordinary playlist continuation produces, doubles up into "afade=afade=...", which ffplay rejects and kills the process almost immediately.
 local function build_afade(opts)
 	if opts.native_loop then
 		return nil
@@ -126,7 +126,7 @@ local function relaunch_at_current_volume()
 
 	if current_native_loop then
 		-- A plain reseek would permanently shorten the loop (see header note).
-		-- So: finish this cycle as a finite play to the file's true end, then resume native looping from position 0 -- the same seam the loop already uses.
+		-- This finishes the cycle as a finite play to the file's true end, then resumes native looping from position 0, the same seam the loop already uses.
 		local seek_position = current_elapsed
 
 		local tail_play_file_id
@@ -289,7 +289,7 @@ function AudioClient.play(file_path, opts)
 
 	local on_finished = opts.on_finished
 
-	-- Declared before assignment: the closure needs the upvalue filled in after this call, not the stale value `local x = f(x)` would capture.
+	-- play_file_id is declared before assignment because the closure needs the upvalue filled in after this call, not the stale value `local x = f(x)` would capture.
 	local play_file_id
 	play_file_id = audio_mod.play_file(file_path, {
 		audio_type = "music",
