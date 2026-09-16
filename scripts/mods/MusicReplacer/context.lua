@@ -65,7 +65,8 @@ local function resolve(mod)
 	end
 
 	if combat_hold_remaining > 0 then
-		return "mission_combat" -- Still within the hold window since combat last went inactive.
+		diagnostic_log(string.format("[hold] combat quiet, holding mission_combat for %.1fs more", combat_hold_remaining))
+		return "mission_combat"
 	end
 
 	return "mission_explore"
@@ -110,7 +111,8 @@ function Context.set_suppress_music_combat(should_suppress)
 end
 
 -- Wire up the Wwise state hook.
--- Call once from the main mod file's top level. `log`, if given, receives a line for every raw music_zone/music_combat transition and boss event -- much higher volume than Context.on_change, meant for diagnosing state issues, not everyday use.
+-- Call once from the main mod file's top level.
+-- `log`, if given, receives a line for every raw music_zone/music_combat transition and boss event -- much higher volume than Context.on_change, meant for diagnosing state issues, not everyday use.
 function Context.init(mod, log)
 	diagnostic_log = log or diagnostic_log
 
@@ -118,7 +120,7 @@ function Context.init(mod, log)
 		local current = self._wwise_state_group_states and self._wwise_state_group_states[group_name]
 		local is_transition = current ~= new_state
 
-		func(self, group_name, new_state) -- call original; keeps the manager's own cache coherent
+		func(self, group_name, new_state)
 
 		if not is_transition then
 			return
@@ -172,9 +174,7 @@ function Context.update(mod, dt)
 		active_boss_breed_age = active_boss_breed_age + dt
 
 		if active_boss_breed_age > BOSS_BREED_TIMEOUT_SECONDS then
-			diagnostic_log(string.format(
-				"[raw] active_boss_breed watchdog: forcing clear after %ss stuck (breed was %s)",
-				BOSS_BREED_TIMEOUT_SECONDS, tostring(active_boss_breed)))
+			diagnostic_log(string.format("[raw] active_boss_breed watchdog: forcing clear after %ss stuck (breed was %s)", BOSS_BREED_TIMEOUT_SECONDS, tostring(active_boss_breed)))
 			active_boss_breed = nil
 			active_boss_breed_age = 0
 			recompute(mod)
