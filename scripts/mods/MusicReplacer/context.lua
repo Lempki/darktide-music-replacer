@@ -1,9 +1,10 @@
 -- Tracks the pieces of game state relevant to music selection and resolves them into a single `resolved_context` string. Knows nothing about audio files or playback -- see library.lua for file lookup and MusicReplacer.lua for wiring it all together.
 --
--- Non-obvious resolution rules (see darktide_music_replacer_briefing.md for the full investigation behind these):
+-- Non-obvious resolution rules:
 --	* `music_zone`, not `music_game_state`, distinguishes the hub from a mission -- `music_game_state` settles to "mission" for both.
 --	* "boss active" is the OR of two independent, loosely-correlated signals: Wwise's `music_combat == "boss"`, and an open boss_encounter_start...end window. Neither alone is reliable for every boss type, and either can get stuck independently -- a real zone change force-clears both as a recovery mechanism. BOSS_BREED_TIMEOUT_SECONDS is a time-based backstop for whatever that doesn't catch.
 --	* `music_combat` flips on/off every few seconds during real combat, not just Psykhanium-style flicker. `mission_combat` holds for `combat_hold_seconds` (a mod setting) after combat quiets, so a lull doesn't drop to `mission_explore` -- entering combat stays instant.
+--	* Wwise reports "no zone" as the string "None", not real nil -- confirmed via testing (Meat Grinder, and the loading screen between missions, both report this). Treated the same as nil so neither plays mission music.
 
 local Context = {}
 
@@ -54,8 +55,8 @@ local function resolve(mod)
 		return "hub"
 	end
 
-	if music_zone == nil then
-		-- Not in the hub or a mission yet (main menu, loading, etc.).
+	if music_zone == nil or music_zone == "None" then
+		-- Not in the hub or a mission (main menu, loading, Meat Grinder, etc.) -- Wwise reports "None" as a string, not real nil.
 		return nil
 	end
 
