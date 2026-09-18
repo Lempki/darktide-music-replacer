@@ -56,7 +56,10 @@ local function get_log_file()
 	local dir = base .. "/" .. LOG_DIR_NAME
 	ensure_directory(dir)
 
-	local file, err = _io.open(dir .. "/" .. LOG_FILE_NAME, "a")
+	-- "w" truncates, "a" appends.
+	-- This only runs once per session (log_file_attempted above), so the setting only ever resets the file once, at the first write, not on every log() call.
+	local mode = mod:get("reset_log_on_launch") and "w" or "a"
+	local file, err = _io.open(dir .. "/" .. LOG_FILE_NAME, mode)
 	if not file then
 		mod:error("[MusicReplacer] could not open log file: " .. tostring(err))
 		return nil
