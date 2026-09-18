@@ -104,9 +104,9 @@ function Context.current()
 	return resolved_context, active_boss_breed
 end
 
--- Whether to force native music_combat back to "None" for as long as a boss encounter is open.
--- External toggle, not automatic -- the caller should only enable this once a replacement boss track is confirmed available.
--- Applied continuously, not just on the first "-> boss" transition, since music_combat can flap normal<->None all fight without ever settling on "boss".
+-- Whether to force native music_combat back to "None" for as long as a custom track is playing.
+-- External toggle, not automatic -- the caller should only enable this once a replacement track is confirmed playing.
+-- Applied continuously, not just on the first transition, since music_combat can flap between states repeatedly without ever settling.
 function Context.set_suppress_music_combat(should_suppress)
 	suppress_music_combat = should_suppress
 end
@@ -144,6 +144,10 @@ function Context.init(mod, log)
 			wwise_combat_state = nil
 			active_boss_breed = nil
 			combat_hold_remaining = 0 -- A new zone starts fresh, not mid-hold from the last one.
+		elseif group_name == "music_game_state" then
+			-- Log-only for now.
+			diagnostic_log(string.format("[raw] music_game_state: %s -> %s", tostring(current), tostring(new_state)))
+			return
 		else
 			return
 		end
