@@ -156,7 +156,10 @@ local function play_context(context_name, is_new_context)
 		return
 	end
 
-	Context.set_suppress_music_combat(context_name == "mission_boss")
+	-- A file is confirmed playing for context_name by this point (the no-file branch above already returned), so suppress native combat-intensity music unconditionally.
+	-- Confirmed safe against corrupting wwise_combat_state: no boss fight across every session logged so far ever showed the phantom instant follow-up transition a recursive Wwise.set_state call would cause.
+	-- Does not help hub, which almost certainly does not run on music_combat at all -- see context.lua's own note.
+	Context.set_suppress_music_combat(true)
 
 	-- Single-file contexts play once normally (loop=1, filtered) first, then switch to pure native looping (loop=0, no filters) -- ffplay's -loop re-triggers filters every iteration, so a fade-in from the start would otherwise repeat forever.
 	local use_native_loop = is_only_file and native_loop_active[context_name] == true
@@ -169,7 +172,8 @@ local function play_context(context_name, is_new_context)
 		fade_in = is_new_context,
 		native_loop = use_native_loop,
 		on_finished = function()
-			-- Never fires once use_native_loop is true. Only continue if still in this context -- if it changed, whatever triggered that already called play_context for the new one.
+			-- Never fires once use_native_loop is true.
+			-- Only continue if still in this context -- if it changed, whatever triggered that already called play_context for the new one.
 			if current_context == context_name then
 				if is_only_file then
 					native_loop_active[context_name] = true
