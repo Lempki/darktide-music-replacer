@@ -25,7 +25,7 @@ return {
 					{
 						setting_id = "reset_log_on_launch",
 						type = "checkbox",
-						default_value = false,
+						default_value = true,
 					},
 				},
 			},
