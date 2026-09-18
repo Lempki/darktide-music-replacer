@@ -16,6 +16,7 @@ local _os = Mods and Mods.lua and Mods.lua.os
 
 local LOG_DIR_NAME = "Fatshark/Darktide/MusicReplacer"
 local LOG_FILE_NAME = "diagnostic.log"
+local LOG_MAX_LINES = 2000 -- Oldest lines are dropped beyond this, checked once per session.
 
 local log_file = nil
 local log_file_attempted = false
@@ -32,6 +33,35 @@ local function ensure_directory(path)
 	if _os and _os.execute then
 		pcall(_os.execute, 'mkdir "' .. path:gsub("/", "\\") .. '" >nul 2>nul')
 	end
+end
+
+-- Drops the oldest lines once the file exceeds LOG_MAX_LINES, keeping only the most recent.
+-- Rewrites the whole file, so this is only safe to call once per session, not per log() call.
+local function trim_log_file(path)
+	local file = _io.open(path, "r")
+	if not file then
+		return
+	end
+
+	local lines = {}
+	for line in file:lines() do
+		lines[#lines + 1] = line
+	end
+	file:close()
+
+	if #lines <= LOG_MAX_LINES then
+		return
+	end
+
+	local trimmed = _io.open(path, "w")
+	if not trimmed then
+		return
+	end
+
+	for i = #lines - LOG_MAX_LINES + 1, #lines do
+		trimmed:write(lines[i], "\n")
+	end
+	trimmed:close()
 end
 
 local function get_log_file()
@@ -56,10 +86,18 @@ local function get_log_file()
 	local dir = base .. "/" .. LOG_DIR_NAME
 	ensure_directory(dir)
 
+	local path = dir .. "/" .. LOG_FILE_NAME
+
 	-- "w" truncates, "a" appends.
 	-- This only runs once per session (log_file_attempted above), so the setting only ever resets the file once, at the first write, not on every log() call.
-	local mode = mod:get("reset_log_on_launch") and "w" or "a"
-	local file, err = _io.open(dir .. "/" .. LOG_FILE_NAME, mode)
+	local mode = "a"
+	if mod:get("reset_log_on_launch") then
+		mode = "w"
+	else
+		trim_log_file(path)
+	end
+
+	local file, err = _io.open(path, mode)
 	if not file then
 		mod:error("[MusicReplacer] could not open log file: " .. tostring(err))
 		return nil
@@ -79,7 +117,7 @@ local function log(line)
 		return
 	end
 
-	local timestamp = _os and _os.date and _os.date("%H:%M:%S") or "??:??:??"
+	local timestamp = _os and _os.date and _os.date("%Y-%m-%d %H:%M:%S") or "????-??-?? ??:??:??"
 	file:write("[", timestamp, "] ", line, "\n")
 	file:flush()
 end
