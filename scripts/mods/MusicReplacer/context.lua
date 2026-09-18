@@ -182,11 +182,12 @@ function Context.update(mod, dt)
 		end
 	end
 
-	if combat_hold_remaining > 0 then
+	-- Only ticks down once combat is genuinely inactive.
+	-- resolve() already refreshes combat_hold_remaining to the full setting on every active tick, so counting down unconditionally here made it drain during active combat too, leaving an effectively random amount whenever combat actually stopped.
+	if combat_hold_remaining > 0 and not is_combat_active() then
 		combat_hold_remaining = math.max(combat_hold_remaining - dt, 0)
 
 		if combat_hold_remaining == 0 then
-			-- Also re-affirms the hold if combat is still active, since nothing else re-checks resolve() while the raw state is unchanged.
 			recompute(mod)
 		end
 	end
