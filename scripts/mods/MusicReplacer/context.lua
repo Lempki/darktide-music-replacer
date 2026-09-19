@@ -23,6 +23,7 @@ local active_boss_breed = nil -- Breed name while a boss encounter is open, else
 local active_boss_breed_age = 0 -- Seconds since active_boss_breed was last set.
 
 local suppress_music_combat = false -- See Context.set_suppress_music_combat.
+local music_zone_forced = false -- True while Wwise's music_zone is forced to "None" by Context.set_suppress_music_zone.
 
 local resolved_context = nil -- Last computed context string, e.g. "hub".
 local change_listeners = {}
@@ -135,6 +136,29 @@ function Context.set_suppress_music_combat(should_suppress)
 	end
 end
 
+-- Whether to force Wwise's music_zone to "None" so the native hub music stops.
+-- The hub does not run on music_combat, so set_suppress_music_combat has no effect there.
+-- The game only re-sends music_zone when it changes, so the forced value stays until the next real zone change.
+-- Turning this off restores the real zone, otherwise native hub music would stay silent after the custom track stops.
+-- The forced set goes straight to Wwise and never reaches the _set_state hook, so `music_zone` here keeps the real value.
+function Context.set_suppress_music_zone(should_suppress)
+	if should_suppress then
+		if not music_zone_forced and music_zone and music_zone ~= "None" then
+			music_zone_forced = true
+			diagnostic_log(string.format("[suppress] forcing music_zone %s -> None", music_zone))
+			Wwise.set_state("music_zone", "None")
+		end
+
+		return
+	end
+
+	if music_zone_forced then
+		music_zone_forced = false
+		diagnostic_log(string.format("[suppress] restoring music_zone to %s", tostring(music_zone)))
+		Wwise.set_state("music_zone", music_zone or "None")
+	end
+end
+
 -- Wire up the Wwise state hook.
 -- Call once from the main mod file's top level.
 -- `log`, if given, receives a line for every raw music_zone/music_combat transition and boss event -- much higher volume than Context.on_change, meant for diagnosing state issues, not everyday use.
@@ -161,6 +185,7 @@ function Context.init(mod, log)
 		elseif group_name == "music_zone" then
 			diagnostic_log(string.format("[raw] music_zone: %s -> %s", tostring(music_zone), tostring(new_state)))
 			music_zone = new_state
+			music_zone_forced = false -- The game just set a real zone, which replaces any forced value.
 
 			-- A real zone change force-clears both is_boss_active() signals (either can get stuck alone -- see top-of-file note).
 			-- Safe for a real cross-zone encounter: this is our own tracked copy of wwise_combat_state, and self-corrects on the next real transition.
