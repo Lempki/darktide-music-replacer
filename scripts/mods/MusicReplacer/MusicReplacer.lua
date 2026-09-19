@@ -171,8 +171,10 @@ local function play_context(context_name, is_new_context)
 	log(string.format("[playback] %s: playing %s (duration=%s%s)",
 		context_name, file_path, tostring(duration), use_native_loop and ", looping natively" or ""))
 
+	-- A single file loops forever, so a natural-end fade-out would only fade to silence before a hard restart of the same track.
+	-- Leaving the duration out is what disables that fade-out, including after a volume relaunch.
 	AudioClient.play(file_path, {
-		duration_seconds = duration,
+		duration_seconds = not is_only_file and duration or nil,
 		fade_in = is_new_context,
 		native_loop = use_native_loop,
 		on_finished = function()

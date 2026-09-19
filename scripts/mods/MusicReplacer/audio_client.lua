@@ -261,7 +261,7 @@ end
 -- Plays file_path as 2D music, crossfading with whatever was playing (see the header note).
 -- Returns false if Audio Plugin isn't available (caller should fall back to native music).
 --
--- opts.duration_seconds	-- Schedules the natural-end fade-out.
+-- opts.duration_seconds	-- Schedules the natural-end fade-out. Leave it out for no fade-out.
 -- opts.fade_in				-- Only for an actual context change, not for advancing within an unchanged one (playlist continuation, or a loop's own repeats).
 -- opts.native_loop			-- ffplay `loop = 0` for a single-file context instead of relaunch-per-repeat.
 -- opts.on_finished			-- Fires once on natural end. Never with native_loop. Not for an interrupted play.
