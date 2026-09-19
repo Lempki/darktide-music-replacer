@@ -107,8 +107,13 @@ end
 -- Whether to force native music_combat back to "None" for as long as a custom track is playing.
 -- External toggle, not automatic -- the caller should only enable this once a replacement track is confirmed playing.
 -- Applied continuously, not just on the first transition, since music_combat can flap between states repeatedly without ever settling.
+-- Also forces the current value immediately when turning on, not just the next transition -- otherwise a value already set before suppression started keeps playing natively until music_combat happens to flap again.
 function Context.set_suppress_music_combat(should_suppress)
 	suppress_music_combat = should_suppress
+
+	if should_suppress and wwise_combat_state and wwise_combat_state ~= "None" then
+		Wwise.set_state("music_combat", "None")
+	end
 end
 
 -- Wire up the Wwise state hook.
