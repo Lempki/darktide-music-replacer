@@ -5,6 +5,7 @@
 --	* "boss active" is the OR of two independent, loosely-correlated signals: Wwise's `music_combat == "boss"`, and an open boss_encounter_start...end window. Neither alone is reliable for every boss type, and either can get stuck independently -- a real zone change force-clears both as a recovery mechanism. BOSS_BREED_TIMEOUT_SECONDS is a time-based backstop for whatever that doesn't catch.
 --	* `music_combat` flips on/off every few seconds during real combat, not just Psykhanium-style flicker. `mission_combat` holds for `combat_hold_seconds` (a mod setting) after combat quiets, so a lull doesn't drop to `mission_explore` -- entering combat stays instant.
 --	* Wwise reports "no zone" as the string "None", not real nil -- confirmed via testing (Meat Grinder, and the loading screen between missions, both report this). Treated the same as nil so neither plays mission music.
+--	* A mission can also run start to finish without ever reporting a zone (an Operation did). So no zone plus `music_game_state == "mission"` counts as a mission, until a victory or defeat state ends it.
 
 local Context = {}
 
@@ -16,6 +17,8 @@ local WwiseGameSyncManager = require("scripts/managers/wwise_game_sync/wwise_gam
 
 local wwise_combat_state = nil -- Current value of the "music_combat" state group.
 local music_zone = nil -- Current value of the "music_zone" state group.
+local music_game_state = nil -- Current value of the "music_game_state" state group.
+local mission_ended = false -- True from the victory or defeat states until the next loading screen.
 local active_boss_breed = nil -- Breed name while a boss encounter is open, else nil.
 local active_boss_breed_age = 0 -- Seconds since active_boss_breed was last set.
 
@@ -46,6 +49,16 @@ local function is_combat_active()
 	return wwise_combat_state == "normal" or wwise_combat_state == "horde_low" or wwise_combat_state == "horde_high"
 end
 
+-- Wwise reports "None" as a string, not real nil.
+local function has_no_zone()
+	return music_zone == nil or music_zone == "None"
+end
+
+-- Some missions never report a zone, so a "mission" game state with no zone still counts as being in one.
+local function is_zoneless_mission()
+	return has_no_zone() and music_game_state == "mission" and not mission_ended
+end
+
 local function resolve(mod)
 	if is_boss_active() then
 		return "mission_boss"
@@ -55,9 +68,15 @@ local function resolve(mod)
 		return "hub"
 	end
 
-	if music_zone == nil or music_zone == "None" then
-		-- Not in the hub or a mission (main menu, loading, Meat Grinder, etc.) -- Wwise reports "None" as a string, not real nil.
-		return nil
+	if has_no_zone() then
+		if not is_zoneless_mission() then
+			-- Not in the hub or a mission (main menu, loading, mission end, etc.).
+			return nil
+		end
+
+		if resolved_context == nil then
+			diagnostic_log(string.format("[zoneless] music_zone=%s with music_game_state=%s, treating as a mission", tostring(music_zone), tostring(music_game_state)))
+		end
 	end
 
 	if is_combat_active() then
@@ -150,9 +169,15 @@ function Context.init(mod, log)
 			active_boss_breed = nil
 			combat_hold_remaining = 0 -- A new zone starts fresh, not mid-hold from the last one.
 		elseif group_name == "music_game_state" then
-			-- Log-only for now.
 			diagnostic_log(string.format("[raw] music_game_state: %s -> %s", tostring(current), tostring(new_state)))
-			return
+			music_game_state = new_state
+
+			-- The state briefly returns to "mission" between "victory" and "game_score_win", so the end needs its own flag.
+			if new_state == "victory" or new_state == "defeat" or new_state == "game_score_win" or new_state == "game_score_lose" then
+				mission_ended = true
+			elseif new_state == "loading" or new_state == "mission_intro" then
+				mission_ended = false
+			end
 		else
 			return
 		end
