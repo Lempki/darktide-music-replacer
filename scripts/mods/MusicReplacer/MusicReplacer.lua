@@ -4,6 +4,7 @@ local mod = get_mod("MusicReplacer")
 local Context = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/context")
 local Library = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/library")
 local AudioClient = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/audio_client")
+local EventProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/event_probe")
 
 -- ###########################################################################
 -- File Logging
@@ -222,6 +223,7 @@ Context.init(mod, log)
 mod.on_all_mods_loaded = function()
 	Library.init()
 	AudioClient.init(log)
+	EventProbe.init(mod, log) -- Investigating native hub music. Remove this call once the events are known.
 
 	if not AudioClient.available() then
 		mod:error(
