@@ -140,6 +140,7 @@ local function play_context(context_name, is_new_context)
 		AudioClient.stop()
 		Context.set_suppress_music_combat(false)
 		Context.set_suppress_music_zone(false)
+		Context.set_suppress_music_game_state(false)
 		return
 	end
 
@@ -155,6 +156,7 @@ local function play_context(context_name, is_new_context)
 		AudioClient.stop()
 		Context.set_suppress_music_combat(false)
 		Context.set_suppress_music_zone(false)
+		Context.set_suppress_music_game_state(false)
 		log(string.format("[playback] %s: no file available, using native music", context_name))
 		return
 	end
@@ -164,6 +166,9 @@ local function play_context(context_name, is_new_context)
 	-- Does not help hub, which does not run on music_combat, so the hub gets its zone forced to "None" instead.
 	Context.set_suppress_music_combat(true)
 	Context.set_suppress_music_zone(context_name == "hub")
+
+	-- The game's own victory and defeat music runs off music_game_state, so that is forced to "None" for those two contexts.
+	Context.set_suppress_music_game_state(context_name == "mission_victory" or context_name == "mission_defeat")
 
 	-- Single-file contexts play once normally (loop=1, filtered) first, then switch to pure native looping (loop=0, no filters) -- ffplay's -loop re-triggers filters every iteration, so a fade-in from the start would otherwise repeat forever.
 	local use_native_loop = is_only_file and native_loop_active[context_name] == true

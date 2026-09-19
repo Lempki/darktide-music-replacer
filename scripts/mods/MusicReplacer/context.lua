@@ -27,6 +27,8 @@ local active_boss_breed_age = 0 -- Seconds since active_boss_breed was last set.
 
 local suppress_music_combat = false -- See Context.set_suppress_music_combat.
 local music_zone_forced = false -- True while Wwise's music_zone is forced to "None" by Context.set_suppress_music_zone.
+local suppress_music_game_state = false -- See Context.set_suppress_music_game_state.
+local music_game_state_forced = false -- True while Wwise's music_game_state is forced to "None" by Context.set_suppress_music_game_state.
 
 local resolved_context = nil -- Last computed context string, e.g. "hub".
 local change_listeners = {}
@@ -172,6 +174,31 @@ function Context.set_suppress_music_zone(should_suppress)
 	end
 end
 
+-- Whether to force Wwise's music_game_state to "None" so the game's own victory and defeat music stops.
+-- Whether this silences it is not yet confirmed, and the lever is a guess based on how the hub's music_zone worked.
+-- Unlike music_zone, the game sets this state repeatedly through a mission's end, so it is forced again after each real transition while enabled.
+-- Turning this off restores the real state.
+-- The forced set goes straight to Wwise and never reaches the _set_state hook, so `music_game_state` here keeps the real value.
+function Context.set_suppress_music_game_state(should_suppress)
+	suppress_music_game_state = should_suppress
+
+	if should_suppress then
+		if not music_game_state_forced and music_game_state and music_game_state ~= "None" then
+			music_game_state_forced = true
+			diagnostic_log(string.format("[suppress] forcing music_game_state %s -> None", music_game_state))
+			Wwise.set_state("music_game_state", "None")
+		end
+
+		return
+	end
+
+	if music_game_state_forced then
+		music_game_state_forced = false
+		diagnostic_log(string.format("[suppress] restoring music_game_state to %s", tostring(music_game_state)))
+		Wwise.set_state("music_game_state", music_game_state or "None")
+	end
+end
+
 -- Wire up the Wwise state hook.
 -- Call once from the main mod file's top level.
 -- `log`, if given, receives a line for every raw music_zone/music_combat transition and boss event -- much higher volume than Context.on_change, meant for diagnosing state issues, not everyday use.
@@ -227,6 +254,13 @@ function Context.init(mod, log)
 				mission_defeated = true
 			elseif new_state == "loading" or new_state == "mission_intro" then
 				mission_defeated = false
+			end
+
+			if suppress_music_game_state and new_state ~= "None" then
+				music_game_state_forced = true
+				Wwise.set_state("music_game_state", "None")
+			else
+				music_game_state_forced = false -- The game just set a real state, which replaces any forced value.
 			end
 		else
 			return
