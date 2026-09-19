@@ -6,6 +6,7 @@
 --	* `music_combat` flips on/off every few seconds during real combat, not just Psykhanium-style flicker. `mission_combat` holds for `combat_hold_seconds` (a mod setting) after combat quiets, so a lull doesn't drop to `mission_explore` -- entering combat stays instant.
 --	* Wwise reports "no zone" as the string "None", not real nil -- confirmed via testing (Meat Grinder, and the loading screen between missions, both report this). Treated the same as nil so neither plays mission music.
 --	* A mission can also run start to finish without ever reporting a zone (an Operation did). So no zone plus `music_game_state == "mission"` counts as a mission, until a victory or defeat state ends it.
+--	* Victory and defeat each resolve to their own context, from their state until the next loading screen. The game state briefly returns to "mission" in between, so the outcome is tracked in its own flag.
 
 local Context = {}
 
@@ -63,10 +64,14 @@ local function is_zoneless_mission()
 end
 
 local function resolve(mod)
-	-- Victory and defeat are both mission end states, so treat them the same for music purposes.
+	-- Victory and defeat are mission end states with their own contexts.
 	-- Checked before the boss signals, since a wipe can leave a boss encounter open.
-	if mission_won or mission_defeated then
-		return nil
+	if mission_won then
+		return "mission_victory"
+	end
+
+	if mission_defeated then
+		return "mission_defeat"
 	end
 
 	if is_boss_active() then

@@ -21,7 +21,7 @@ $ErrorActionPreference = 'Stop'
 
 $ModName = 'MusicReplacer'
 $SourceItems = @("$ModName.mod", 'info.json', 'scripts')
-$AudioContexts = @('hub', 'mission_explore', 'mission_combat', 'mission_boss') # Keep in sync with CONTEXTS in library.lua.
+$AudioContexts = @('hub', 'mission_explore', 'mission_combat', 'mission_boss', 'mission_victory', 'mission_defeat') # Keep in sync with CONTEXTS in library.lua.
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 if (-not $OutDir) {
@@ -112,7 +112,7 @@ catch [System.UnauthorizedAccessException] {
 Write-Host ""
 Write-Host "Deployed $copied file(s) to $target"
 
-# Same as the ZIP: create any of the four that are missing, never touch existing ones.
+# Same as the ZIP: create any that are missing, never touch existing ones.
 foreach ($context in $AudioContexts) {
     $contextDir = Join-Path $target "audio\$context"
     if (-not (Test-Path -LiteralPath $contextDir)) {

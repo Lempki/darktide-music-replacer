@@ -5,7 +5,7 @@
 
 local Library = {}
 
-local CONTEXTS = { "hub", "mission_explore", "mission_combat", "mission_boss" }
+local CONTEXTS = { "hub", "mission_explore", "mission_combat", "mission_boss", "mission_victory", "mission_defeat" }
 local MAX_REPICK_ATTEMPTS = 5 -- Bounded retries to avoid an immediate repeat, see pick_file().
 
 -- Relative to the game's own working directory -- same "./../mods/<name>/..." convention DMF itself uses to find this mod's info.json, confirmed working against this exact mod.
@@ -16,7 +16,7 @@ local _os = Mods and Mods.lua and Mods.lua.os
 local handlers = {}
 local last_picked = {} -- context_name -> file_path most recently returned.
 
--- Best-effort, so a fresh install has all four folders ready without the user creating them by hand first.
+-- Best-effort, so a fresh install has every folder ready without the user creating them by hand first.
 -- Windows mkdir creates missing parents too and no-ops if the folder exists -- pick_file()'s own fallback matters more than this succeeding.
 local function ensure_audio_folder(context_name)
 	if not _os or not _os.execute then

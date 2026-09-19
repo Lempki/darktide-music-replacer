@@ -2,7 +2,7 @@
 
 ## Context-Aware Music Replacement for Warhammer 40,000: Darktide
 
-- Replace hub, mission-explore, combat and boss music with your own audio files, chosen by what's actually happening.
+- Replace hub, mission-explore, combat, boss, and victory/defeat music with your own audio files, chosen by what's actually happening.
 - Provide files for only the situations you care about. Anything you leave empty keeps Darktide's own music.
 - Several files in a folder are picked at random, never repeating the one that just played.
 - Exactly one file in a folder loops natively and indefinitely instead of restarting on every repeat.
@@ -21,9 +21,11 @@ Drop audio files into the **installed** mod's folder, not this repository:
     mission_explore\
     mission_combat\
     mission_boss\
+    mission_victory\
+    mission_defeat\
 ```
 
-All four folders already exist after install. Put audio files (`.mp3`, `.wav`, ...) directly inside whichever ones you want music for. One level deep only. This layout is fixed by the Audio Plugin, not by this mod.
+All six folders already exist after install. Put audio files (`.mp3`, `.wav`, ...) directly inside whichever ones you want music for. One level deep only. This layout is fixed by the Audio Plugin, not by this mod.
 
 | Folder | When It Plays |
 |---|---|
@@ -31,6 +33,8 @@ All four folders already exist after install. Put audio files (`.mp3`, `.wav`, .
 | `mission_explore` | In a mission, no meaningful threat. |
 | `mission_combat` | In a mission, fighting, normal combat through to a heavy horde. |
 | `mission_boss` | A monstrosity or an assassination target is active. |
+| `mission_victory` | From the moment a mission is won until the loading screen. |
+| `mission_defeat` | From the moment a mission is lost until the loading screen. |
 
 Your audio survives reinstalling or updating the mod via Vortex: Vortex only removes files it deployed itself, and `audio\` is never part of the mod archive. It does **not** survive the mod folder being renamed. Move `audio\` across by hand if that ever happens.
 
@@ -47,7 +51,7 @@ Your audio survives reinstalling or updating the mod via Vortex: Vortex only rem
 - [x] Fade-in, natural-end fade-out, crossfade overlap.
 - [x] Native looping for a single-file folder.
 - [x] Boss music suppression, only once a replacement is confirmed available.
-- [x] All four audio folders provisioned automatically, ready to use right after install.
+- [x] All audio folders provisioned automatically, ready to use right after install.
 - [x] Opt-in diagnostic-mode setting, off by default.
 - [ ] In-game settings UI for the rest below.
 - [ ] Custom music responding to the in-game volume sliders.
