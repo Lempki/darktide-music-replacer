@@ -57,7 +57,10 @@ Your audio survives reinstalling or updating the mod via Vortex: Vortex only rem
 - [x] Adjustable combat music hold, so a lull in a fight does not drop back to explore music.
 - [x] Opt-in diagnostic-mode setting, off by default.
 - [ ] A setting for whether Meat Grinder plays music. It currently plays mission music.
-- [ ] "Let the current track finish" toggle, with a per-category override.
+- [ ] "Let the current track finish" toggle, with a per-category override. For example, a boss track could play out even after the boss dies.
+- [ ] A `mission_horde` folder for the heaviest hordes, separate from `mission_combat`. With no files in it, hordes keep playing combat music exactly as they do now.
+- [ ] Settings for horde music, such as how long it holds before falling back to combat music.
+- [ ] Custom music for loading screens.
 
 ## Development
 
