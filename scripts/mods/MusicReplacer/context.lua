@@ -19,6 +19,7 @@ local wwise_combat_state = nil -- Current value of the "music_combat" state grou
 local music_zone = nil -- Current value of the "music_zone" state group.
 local music_game_state = nil -- Current value of the "music_game_state" state group.
 local mission_ended = false -- True from the victory or defeat states until the next loading screen.
+local mission_defeated = false -- True from the defeat state until the next loading screen.
 local active_boss_breed = nil -- Breed name while a boss encounter is open, else nil.
 local active_boss_breed_age = 0 -- Seconds since active_boss_breed was last set.
 
@@ -61,6 +62,12 @@ local function is_zoneless_mission()
 end
 
 local function resolve(mod)
+	-- The defeat state lasts about 10 seconds before the score screen, and the zone stays set for all of it.
+	-- Checked before the boss signals, since a wipe can leave a boss encounter open.
+	if mission_defeated then
+		return nil
+	end
+
 	if is_boss_active() then
 		return "mission_boss"
 	end
@@ -202,6 +209,12 @@ function Context.init(mod, log)
 				mission_ended = true
 			elseif new_state == "loading" or new_state == "mission_intro" then
 				mission_ended = false
+			end
+
+			if new_state == "defeat" or new_state == "game_score_lose" then
+				mission_defeated = true
+			elseif new_state == "loading" or new_state == "mission_intro" then
+				mission_defeated = false
 			end
 		else
 			return
