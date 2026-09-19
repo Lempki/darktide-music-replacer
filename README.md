@@ -6,7 +6,8 @@
 - Provide files for only the situations you care about. Anything you leave empty keeps Darktide's own music.
 - Several files in a folder are picked at random, never repeating the one that just played.
 - Exactly one file in a folder loops natively and indefinitely instead of restarting on every repeat.
-- Fades in on a real context change, fades out at a track's own end, and overlaps briefly on a switch instead of cutting abruptly.
+- Fades in on a real context change, fades out at a track's own end when its folder holds several files, and overlaps briefly on a switch instead of cutting abruptly.
+- Follows the in-game master and music volume sliders.
 
 ## Quick Start
 
@@ -40,22 +41,22 @@ Your audio survives reinstalling or updating the mod via Vortex: Vortex only rem
 
 ## Limitations
 
-- Custom music does not follow the in-game volume sliders while a track is already playing. The volume is fixed when a track starts, and the player offers no way to change it afterwards. A slider change takes effect on the next track.
+- Changing the master or music volume slider restarts the playing track. Music plays through a separate ffplay process, started by the Audio Plugin and DarktideLocalServer. That process takes its volume when it starts and cannot be adjusted from outside once it is running. So on a slider change, Music Replacer stops the process and starts a new one at the same position with the new volume. The request goes through the local server, so expect a slight delay and a brief pause or cut in the music. While you drag a slider this happens at most once per second, and the final volume is applied once you stop.
 - A hard crash can leave a track playing until it ends on its own. Quitting normally stops it. A crash runs no mod code at all, so nothing can intervene. If it happens, end `ffplay_dt.exe` in Task Manager.
 - Music Replacer only affects your own game. Squadmates hear the game's own music regardless.
 
 ## Roadmap
 
-- [x] Context-aware hub/explore/combat/boss switching.
+- [x] Context-aware hub/explore/combat/boss/victory/defeat switching.
 - [x] Fallback to native music for any context without files.
 - [x] Fade-in, natural-end fade-out, crossfade overlap.
 - [x] Native looping for a single-file folder.
-- [x] Boss music suppression, only once a replacement is confirmed available.
+- [x] Native music suppressed while a custom track plays, only once a replacement is confirmed available.
 - [x] All audio folders provisioned automatically, ready to use right after install.
+- [x] Custom music following the in-game volume sliders.
+- [x] Adjustable combat music hold, so a lull in a fight does not drop back to explore music.
 - [x] Opt-in diagnostic-mode setting, off by default.
-- [ ] In-game settings UI for the rest below.
-- [ ] Custom music responding to the in-game volume sliders.
-- [ ] Meat Grinder silent by default, opt-in to override.
+- [ ] A setting for whether Meat Grinder plays music. It currently plays mission music.
 - [ ] "Let the current track finish" toggle, with a per-category override.
 
 ## Development
@@ -75,8 +76,9 @@ Source layout:
 | `scripts/mods/MusicReplacer/library.lua` | Picks a file for a context from its `audio/` folder. |
 | `scripts/mods/MusicReplacer/audio_client.lua` | Playback: fades, crossfade overlap, looping, and process cleanup. |
 | `scripts/mods/MusicReplacer/MusicReplacer.lua` | Wires those together, debounce and logging. |
+| `scripts/mods/MusicReplacer/event_probe.lua` | Logging-only hook that records Wwise event names, for tracing where a sound comes from. |
 
 Logs to check when something misbehaves:
 
-- `%APPDATA%\Fatshark\Darktide\MusicReplacer\diagnostic.log`
+- `%APPDATA%\Fatshark\Darktide\MusicReplacer\diagnostic.log`, written only while Diagnostic Logging is on in the mod options.
 - `%APPDATA%\Fatshark\Darktide\console_logs\`
