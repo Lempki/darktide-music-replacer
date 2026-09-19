@@ -160,14 +160,14 @@ local function relaunch_at_current_volume()
 		return
 	end
 
-	local remaining_duration = current_total_duration and math.max(current_total_duration - current_elapsed, 0) or nil
 	local seek_position = current_elapsed
 
 	local play_file_id
 	play_file_id = audio_mod.play_file(file_path, {
 		audio_type = "music",
 		loop = 1,
-		afade = build_afade({ native_loop = false, duration_seconds = remaining_duration, fade_in = false }),
+		-- After a seek, ffplay's filters still see timestamps from the file's own timeline, so the fade-out point is measured against the full duration, not what is left.
+		afade = build_afade({ native_loop = false, duration_seconds = current_total_duration, fade_in = false }),
 		pos = seek_position > 0 and seek_position or nil,
 		track_status = function()
 			if on_finished and current_play_file_id == play_file_id then
