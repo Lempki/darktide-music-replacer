@@ -4,9 +4,25 @@
 
 local EventProbe = {}
 
--- Event name fragments to log under a separate tag instead of the plain one.
--- Empty until logged evidence shows what is worth filtering.
-local NOISE_PATTERNS = { "events/minions/", "events/weapon/" }
+-- Event name fragments to leave out of the log.
+-- Music events are still logged if they ever appear under any of these.
+-- See docs/wwise-events.md for what each folder held and why it is left out.
+local NOISE_PATTERNS = {
+	"events/minions/",
+	"events/weapon/",
+	"events/player/",
+	"events/world/",
+	"events/ui/play_hud_",
+	"events/ui/play_smart_tag",
+	"events/ui/play_ui_mouseover",
+	"events/ui/play_ui_click",
+	"events/ui/play_ui_enter",
+	"events/ui/play_ui_back",
+	"events/ui/play_ui_popup_",
+	"events/ui/play_ui_mission_",
+	"events/ui/play_ui_npc_interacts",
+	"events/ui/play_ui_character_loadout",
+}
 
 local seen_events = {}
 
