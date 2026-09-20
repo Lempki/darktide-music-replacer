@@ -38,14 +38,14 @@ None of those has been tried as a lever.
 ## How the Mod Silences It
 
 Each mechanism switches on only while a custom track is confirmed playing for the current context, so a context with no files keeps the game's own music.
-`play_context` in `MusicReplacer.lua` toggles them, and the code lives in `context.lua`.
+`play_context` in `MusicReplacer.lua` turns them on with `Suppression.engage` and off with `Suppression.release`, and the code lives in `suppression.lua`.
 
 | Mechanism | What it does | Status |
 |---|---|---|
-| `set_suppress_music_combat` | Forces `music_combat` to `"None"` right away and again after every real transition. | Combat music reported gone in two hectic missions. Not yet checked in a controlled test. |
-| `set_suppress_music_zone` | Forces `music_zone` to `"None"` while a hub track plays, and restores the real zone when it stops. | **Confirmed** by ear in the hub, including a round trip through a mission. |
-| `set_suppress_music_game_state` | Forces `music_game_state` to `"None"` for the victory and defeat contexts, and again after every real transition. | **Not yet confirmed.** It only runs when a file is present in `mission_victory` or `mission_defeat`. |
-| `set_suppress_music_events` | Drops any event containing `events/music/play_exploration`, so it never starts. | **Not yet confirmed.** |
+| `Suppression.set_combat` | Forces `music_combat` to `"None"` right away and again after every real transition. | Combat music reported gone in two hectic missions. Not yet checked in a controlled test. |
+| `Suppression.set_zone` | Forces `music_zone` to `"None"` while a hub track plays, and restores the real zone when it stops. | **Confirmed** by ear in the hub, including a round trip through a mission. |
+| `Suppression.set_game_state` | Forces `music_game_state` to `"None"` for the victory and defeat contexts, and again after every real transition. | **Not yet confirmed.** It only runs when a file is present in `mission_victory` or `mission_defeat`. |
+| `Suppression.set_events` | Drops any event containing `events/music/play_exploration`, so it never starts. | **Not yet confirmed.** |
 
 Forcing a state calls `Wwise.set_state` directly.
 That call does not reach the `_set_state` hook, so the mod's own tracked state keeps the game's real value.
@@ -136,7 +136,7 @@ Redeploy with `tools\build.ps1 -Deploy` and restart the game.
 2. Read `diagnostic.log` around the moment you hear it. The `[raw]`, `[context]`, `[playback]` and `[suppress]` lines show what the mod recorded as happening.
 3. Look for `[probe] music event:` lines first, then for `[probe] new event:` lines that appeared shortly before the sound.
 4. If no probe line fits, check whether a `[raw] music_*` transition lines up with the sound. Native music also comes from state groups, and the probe cannot see events that fire before its hook is installed.
-5. If an event fits, add its pattern to `SUPPRESSED_MUSIC_EVENT_PATTERNS` in `context.lua`. If a state group is responsible, add a forcing toggle beside the existing ones.
+5. If an event fits, add its pattern to `SUPPRESSED_MUSIC_EVENT_PATTERNS` in `suppression.lua`. If a state group is responsible, add a forcing toggle beside the existing ones.
 
 The Audio Plugin has its own Wwise event logging, the `log_wwise` setting, which prints to the game's console log instead of this file.
 

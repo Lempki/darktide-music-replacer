@@ -2,6 +2,7 @@ local mod = get_mod("MusicReplacer")
 
 -- mod:io_dofile paths are relative to "mods/", including this mod's own folder name -- same requirement as MusicReplacer.mod's own paths.
 local Context = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/context")
+local Suppression = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/suppression")
 local Library = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/library")
 local AudioClient = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/audio_client")
 local EventProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/event_probe")
@@ -138,10 +139,7 @@ local native_loop_active = {}
 local function play_context(context_name, is_new_context)
 	if not context_name then
 		AudioClient.stop()
-		Context.set_suppress_music_combat(false)
-		Context.set_suppress_music_zone(false)
-		Context.set_suppress_music_game_state(false)
-		Context.set_suppress_music_events(false)
+		Suppression.release()
 		return
 	end
 
@@ -155,23 +153,13 @@ local function play_context(context_name, is_new_context)
 	if not file_path then
 		-- No replacement available (no folder, empty, Audio Plugin missing, or scan not finished) -- leave native music alone.
 		AudioClient.stop()
-		Context.set_suppress_music_combat(false)
-		Context.set_suppress_music_zone(false)
-		Context.set_suppress_music_game_state(false)
-		Context.set_suppress_music_events(false)
+		Suppression.release()
 		log(string.format("[playback] %s: no file available, using native music", context_name))
 		return
 	end
 
-	-- A file is confirmed playing for context_name by this point (the no-file branch above already returned), so suppress native combat-intensity music unconditionally.
-	-- Confirmed safe against corrupting wwise_combat_state: no boss fight across every session logged so far ever showed the phantom instant follow-up transition a recursive Wwise.set_state call would cause.
-	-- Does not help hub, which does not run on music_combat, so the hub gets its zone forced to "None" instead.
-	Context.set_suppress_music_combat(true)
-	Context.set_suppress_music_events(true)
-	Context.set_suppress_music_zone(context_name == "hub")
-
-	-- The game's own victory and defeat music runs off music_game_state, so that is forced to "None" for those two contexts.
-	Context.set_suppress_music_game_state(context_name == "mission_victory" or context_name == "mission_defeat")
+	-- A file is confirmed playing for context_name by this point (the no-file branch above already returned), so silence the native music for it.
+	Suppression.engage(context_name)
 
 	-- Single-file contexts play once normally (loop=1, filtered) first, then switch to pure native looping (loop=0, no filters) -- ffplay's -loop re-triggers filters every iteration, so a fade-in from the start would otherwise repeat forever.
 	local use_native_loop = is_only_file and native_loop_active[context_name] == true
@@ -231,12 +219,14 @@ end)
 -- Wiring
 -- ###########################################################################
 
+Suppression.init(log)
+Context.on_state_change(Suppression.on_state_change)
 Context.init(mod, log)
 
 mod.on_all_mods_loaded = function()
 	Library.init()
 	AudioClient.init(log)
-	Context.init_event_hook(mod)
+	Suppression.init_event_hook(mod)
 	EventProbe.init(mod, log) -- Investigating native hub music. Remove this call once the events are known.
 
 	if not AudioClient.available() then

@@ -76,6 +76,7 @@ Source layout:
 | Path | Role |
 |---|---|
 | `scripts/mods/MusicReplacer/context.lua` | Tracks Wwise music state and boss encounters, resolves one context string. |
+| `scripts/mods/MusicReplacer/suppression.lua` | Silences the game's own music while a custom track plays, by forcing Wwise states and dropping music events. |
 | `scripts/mods/MusicReplacer/library.lua` | Picks a file for a context from its `audio/` folder. |
 | `scripts/mods/MusicReplacer/audio_client.lua` | Playback: fades, crossfade overlap, looping, and process cleanup. |
 | `scripts/mods/MusicReplacer/MusicReplacer.lua` | Wires those together, debounce and logging. |

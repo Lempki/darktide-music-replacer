@@ -23,13 +23,9 @@ local mission_outcome = nil -- "victory" or "defeat" from that game state until 
 local active_boss_breed = nil -- Breed name while a boss encounter is open, else nil.
 local active_boss_breed_age = 0 -- Seconds since active_boss_breed was last set.
 
-local suppress_music_combat = false -- See Context.set_suppress_music_combat.
-local forced_groups = {} -- State group name -> true while that group is forced to "None" and not yet restored.
-local suppress_music_game_state = false -- See Context.set_suppress_music_game_state.
-local suppress_music_events = false -- See Context.set_suppress_music_events.
-
 local resolved_context = nil -- Last computed context string, e.g. "hub".
 local change_listeners = {}
+local state_listeners = {}
 local listeners_registered = false
 local diagnostic_log = function() end -- No-op unless a real logger is passed to Context.init.
 
@@ -40,10 +36,6 @@ local BOSS_BREED_TIMEOUT_SECONDS = 180
 local COMBAT_HOLD_SECONDS_DEFAULT = 8
 
 local combat_hold_remaining = 0 -- Seconds left before mission_combat may fall back to mission_explore.
-
--- Native music that starts from a Wwise event instead of a state.
--- Plain substrings, matched against the full event name.
-local SUPPRESSED_MUSIC_EVENT_PATTERNS = { "events/music/play_exploration" }
 
 local MISSION_OUTCOME_CONTEXTS = { victory = "mission_victory", defeat = "mission_defeat" }
 
@@ -139,97 +131,15 @@ function Context.current()
 	return resolved_context, active_boss_breed
 end
 
--- Whether to force native music_combat back to "None" for as long as a custom track is playing.
--- External toggle, not automatic -- the caller should only enable this once a replacement track is confirmed playing.
--- Applied continuously, not just on the first transition, since music_combat can flap between states repeatedly without ever settling.
--- Also forces the current value immediately when turning on, not just the next transition -- otherwise a value already set before suppression started keeps playing natively until music_combat happens to flap again.
-function Context.set_suppress_music_combat(should_suppress)
-	suppress_music_combat = should_suppress
-
-	if should_suppress and wwise_combat_state and wwise_combat_state ~= "None" then
-		Wwise.set_state("music_combat", "None")
-	end
-end
-
--- Forces a state group to "None" once, remembering that it did so restore_group can undo it.
--- Does nothing if the group is already forced or has no real value to replace.
-local function force_group_to_none(group_name, real_value)
-	if forced_groups[group_name] or not real_value or real_value == "None" then
-		return
-	end
-
-	forced_groups[group_name] = true
-	diagnostic_log(string.format("[suppress] forcing %s %s -> None", group_name, real_value))
-	Wwise.set_state(group_name, "None")
-end
-
--- Puts a group forced by force_group_to_none back to its real value.
-local function restore_group(group_name, real_value)
-	if not forced_groups[group_name] then
-		return
-	end
-
-	forced_groups[group_name] = false
-	diagnostic_log(string.format("[suppress] restoring %s to %s", group_name, tostring(real_value)))
-	Wwise.set_state(group_name, real_value or "None")
-end
-
--- Whether to force Wwise's music_zone to "None" so the native hub music stops.
--- The hub does not run on music_combat, so set_suppress_music_combat has no effect there.
--- The game only re-sends music_zone when it changes, so the forced value stays until the next real zone change.
--- Turning this off restores the real zone, otherwise native hub music would stay silent after the custom track stops.
--- The forced set goes straight to Wwise and never reaches the _set_state hook, so `music_zone` here keeps the real value.
-function Context.set_suppress_music_zone(should_suppress)
-	if should_suppress then
-		force_group_to_none("music_zone", music_zone)
-	else
-		restore_group("music_zone", music_zone)
-	end
-end
-
--- Whether to force Wwise's music_game_state to "None" so the game's own victory and defeat music stops.
--- Whether this silences it is not yet confirmed, and the lever is a guess based on how the hub's music_zone worked.
--- Unlike music_zone, the game sets this state repeatedly through a mission's end, so it is forced again after each real transition while enabled.
--- Turning this off restores the real state.
--- The forced set goes straight to Wwise and never reaches the _set_state hook, so `music_game_state` here keeps the real value.
-function Context.set_suppress_music_game_state(should_suppress)
-	suppress_music_game_state = should_suppress
-
-	if should_suppress then
-		force_group_to_none("music_game_state", music_game_state)
-	else
-		restore_group("music_game_state", music_game_state)
-	end
-end
-
--- Whether to drop native music events that match SUPPRESSED_MUSIC_EVENT_PATTERNS instead of letting them play.
--- Mission event sequences start their own music through events, which the state forcing above never reaches.
--- Only the start of an event is dropped, so nothing native is left playing to stop later.
--- Events that fire while this is off play normally, and a track they started keeps playing.
-function Context.set_suppress_music_events(should_suppress)
-	suppress_music_events = should_suppress
-end
-
--- Hooks WwiseWorld.trigger_resource_event to drop the events described above.
--- Call from on_all_mods_loaded, since the Audio Plugin also waits until then to hook it.
-function Context.init_event_hook(mod)
-	mod:hook(CLASS.WwiseWorld, "trigger_resource_event", function(func, wwise_world, event_name, ...)
-		if suppress_music_events and type(event_name) == "string" then
-			for _, pattern in ipairs(SUPPRESSED_MUSIC_EVENT_PATTERNS) do
-				if event_name:find(pattern, 1, true) then
-					diagnostic_log(string.format("[suppress] skipped native music event: %s", event_name))
-					return
-				end
-			end
-		end
-
-		return func(wwise_world, event_name, ...)
-	end)
+-- Register a function to be called on every real transition of a music state group, after context.lua has tracked it: listener(group_name, new_state)
+-- Only music_combat, music_zone and music_game_state are reported.
+function Context.on_state_change(listener)
+	state_listeners[#state_listeners + 1] = listener
 end
 
 -- Wire up the Wwise state hook.
 -- Call once from the main mod file's top level.
--- `log`, if given, receives a line for every raw music_zone/music_combat transition and boss event -- much higher volume than Context.on_change, meant for diagnosing state issues, not everyday use.
+-- `log`, if given, receives a line for every raw state transition and boss event -- much higher volume than Context.on_change, meant for diagnosing state issues, not everyday use.
 function Context.init(mod, log)
 	diagnostic_log = log or diagnostic_log
 
@@ -246,14 +156,9 @@ function Context.init(mod, log)
 		if group_name == "music_combat" then
 			wwise_combat_state = new_state
 			diagnostic_log(string.format("[raw] music_combat: %s -> %s", tostring(current), tostring(new_state)))
-
-			if suppress_music_combat and new_state ~= "None" then
-				Wwise.set_state("music_combat", "None")
-			end
 		elseif group_name == "music_zone" then
 			diagnostic_log(string.format("[raw] music_zone: %s -> %s", tostring(music_zone), tostring(new_state)))
 			music_zone = new_state
-			forced_groups.music_zone = false -- The game just set a real zone, which replaces any forced value.
 
 			-- A real zone change force-clears both is_boss_active() signals (either can get stuck alone -- see top-of-file note).
 			-- Safe for a real cross-zone encounter: this is our own tracked copy of wwise_combat_state, and self-corrects on the next real transition.
@@ -273,15 +178,15 @@ function Context.init(mod, log)
 			elseif new_state == "loading" or new_state == "mission_intro" then
 				mission_outcome = nil
 			end
-
-			if suppress_music_game_state and new_state ~= "None" then
-				forced_groups.music_game_state = true
-				Wwise.set_state("music_game_state", "None")
-			else
-				forced_groups.music_game_state = false -- The game just set a real state, which replaces any forced value.
-			end
 		else
 			return
+		end
+
+		for _, listener in ipairs(state_listeners) do
+			local ok, err = pcall(listener, group_name, new_state)
+			if not ok then
+				mod:error("[MusicReplacer] state change listener failed: " .. tostring(err))
+			end
 		end
 
 		recompute(mod)
