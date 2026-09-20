@@ -7,6 +7,7 @@ local Suppression = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/supp
 local Library = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/library")
 local AudioClient = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/audio_client")
 local EventProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/event_probe")
+local MissionProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/mission_probe")
 local DiagnosticLog = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/diagnostic_log")
 
 DiagnosticLog.init(mod)
@@ -115,6 +116,7 @@ end)
 -- ###########################################################################
 
 Suppression.init(log)
+MissionProbe.init(log)
 Context.on_state_change(Suppression.on_state_change)
 Context.init(mod, log)
 
@@ -144,6 +146,7 @@ end
 mod.update = function(dt)
 	Context.update(mod, dt)
 	AudioClient.update(dt)
+	MissionProbe.update()
 
 	if has_pending_change then
 		debounce_elapsed = debounce_elapsed + dt
