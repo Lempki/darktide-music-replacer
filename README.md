@@ -79,7 +79,8 @@ Source layout:
 | `scripts/mods/MusicReplacer/suppression.lua` | Silences the game's own music while a custom track plays, by forcing Wwise states and dropping music events. |
 | `scripts/mods/MusicReplacer/library.lua` | Picks a file for a context from its `audio/` folder. |
 | `scripts/mods/MusicReplacer/audio_client.lua` | Playback: fades, crossfade overlap, looping, and process cleanup. |
-| `scripts/mods/MusicReplacer/MusicReplacer.lua` | Wires those together, debounce and logging. |
+| `scripts/mods/MusicReplacer/MusicReplacer.lua` | Wires those together and debounces context changes. |
+| `scripts/mods/MusicReplacer/diagnostic_log.lua` | Writes `diagnostic.log`, opt-in, with a size cap and an optional reset on launch. |
 | `scripts/mods/MusicReplacer/event_probe.lua` | Logging-only hook that records Wwise event names, for tracing where a sound comes from. |
 
 How native music reaches the player, how the mod silences it, and how to trace a sound to its Wwise event are covered in [docs/wwise-events.md](docs/wwise-events.md).

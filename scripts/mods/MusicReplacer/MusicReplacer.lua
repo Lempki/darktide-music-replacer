@@ -6,123 +6,10 @@ local Suppression = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/supp
 local Library = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/library")
 local AudioClient = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/audio_client")
 local EventProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/event_probe")
+local DiagnosticLog = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/diagnostic_log")
 
--- ###########################################################################
--- File Logging
--- ###########################################################################
--- mod:echo() pops an on-screen notification per call, unusable at this volume, so this writes to a plain file instead -- mostly playback decisions, for troubleshooting "why is it playing this" after the fact.
--- Opt-in via the "diagnostic_mode" mod option, default off -- checked live on every call, so toggling it applies immediately and a user who leaves it off never gets a file created.
-
-local _io = Mods and Mods.lua and Mods.lua.io
-local _os = Mods and Mods.lua and Mods.lua.os
-
-local LOG_DIR_NAME = "Fatshark/Darktide/MusicReplacer"
-local LOG_FILE_NAME = "diagnostic.log"
-local LOG_MAX_LINES = 2000 -- Oldest lines are dropped beyond this, checked once per session.
-
-local log_file = nil
-local log_file_attempted = false
-
-local function appdata_root()
-	if not _os then
-		return nil
-	end
-	return _os.getenv("APPDATA") or _os.getenv("XDG_DATA_HOME")
-end
-
-local function ensure_directory(path)
-	-- Best-effort mkdir. io.open below is the real success check.
-	if _os and _os.execute then
-		pcall(_os.execute, 'mkdir "' .. path:gsub("/", "\\") .. '" >nul 2>nul')
-	end
-end
-
--- Drops the oldest lines once the file exceeds LOG_MAX_LINES, keeping only the most recent.
--- Rewrites the whole file, so this is only safe to call once per session, not per log() call.
-local function trim_log_file(path)
-	local file = _io.open(path, "r")
-	if not file then
-		return
-	end
-
-	local lines = {}
-	for line in file:lines() do
-		lines[#lines + 1] = line
-	end
-	file:close()
-
-	if #lines <= LOG_MAX_LINES then
-		return
-	end
-
-	local trimmed = _io.open(path, "w")
-	if not trimmed then
-		return
-	end
-
-	for i = #lines - LOG_MAX_LINES + 1, #lines do
-		trimmed:write(lines[i], "\n")
-	end
-	trimmed:close()
-end
-
-local function get_log_file()
-	if log_file then
-		return log_file
-	end
-
-	if log_file_attempted then
-		return nil
-	end
-	log_file_attempted = true
-
-	if not _io then
-		return nil
-	end
-
-	local base = appdata_root()
-	if not base then
-		return nil
-	end
-
-	local dir = base .. "/" .. LOG_DIR_NAME
-	ensure_directory(dir)
-
-	local path = dir .. "/" .. LOG_FILE_NAME
-
-	-- "w" truncates, "a" appends.
-	-- This only runs once per session (log_file_attempted above), so the setting only ever resets the file once, at the first write, not on every log() call.
-	local mode = "a"
-	if mod:get("reset_log_on_launch") then
-		mode = "w"
-	else
-		trim_log_file(path)
-	end
-
-	local file, err = _io.open(path, mode)
-	if not file then
-		mod:error("[MusicReplacer] could not open log file: " .. tostring(err))
-		return nil
-	end
-
-	log_file = file
-	return log_file
-end
-
-local function log(line)
-	if not mod:get("diagnostic_mode") then
-		return
-	end
-
-	local file = get_log_file()
-	if not file then
-		return
-	end
-
-	local timestamp = _os and _os.date and _os.date("%Y-%m-%d %H:%M:%S") or "????-??-?? ??:??:??"
-	file:write("[", timestamp, "] ", line, "\n")
-	file:flush()
-end
+DiagnosticLog.init(mod)
+local log = DiagnosticLog.write
 
 -- ###########################################################################
 -- Playback Orchestration
@@ -259,10 +146,5 @@ end
 mod.on_unload = function()
 	Context.shutdown(mod)
 	AudioClient.shutdown() -- Direct OS-level kill, not just the (here unreliable) normal stop.
-
-	if log_file then
-		log_file:close()
-		log_file = nil
-		log_file_attempted = false
-	end
+	DiagnosticLog.close()
 end
