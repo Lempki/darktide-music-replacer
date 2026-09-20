@@ -1,6 +1,7 @@
 -- Logging-only probe for Wwise events.
 -- It never changes or silences anything.
--- Useful for finding the events behind a sound, or for spotting new, missing or renamed events after a game or Audio Plugin update.
+-- Useful for finding the events behind a sound.
+-- Also useful for spotting new, missing or renamed events after a game or Audio Plugin update.
 
 local EventProbe = {}
 
@@ -37,7 +38,8 @@ local function is_noise(event_name)
 end
 
 -- Hooks WwiseWorld.trigger_resource_event, the same call the Audio Plugin hooks for its own event logging.
--- Music events are logged every time they fire. Any other event is logged only the first time its name is seen, unless it matches NOISE_PATTERNS.
+-- Music events are logged every time they fire.
+-- Any other event is logged only the first time its name is seen, unless it matches NOISE_PATTERNS.
 -- Call from on_all_mods_loaded, since the Audio Plugin also waits until then to hook it.
 function EventProbe.init(mod, log)
 	mod:hook(CLASS.WwiseWorld, "trigger_resource_event", function(func, wwise_world, event_name, ...)
