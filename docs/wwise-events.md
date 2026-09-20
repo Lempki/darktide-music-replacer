@@ -140,6 +140,28 @@ Redeploy with `tools\build.ps1 -Deploy` and restart the game.
 
 The Audio Plugin has its own Wwise event logging, the `log_wwise` setting, which prints to the game's console log instead of this file.
 
+## The Mission Probe
+
+`scripts/mods/MusicReplacer/mission_probe.lua` logs which mission is running, so mission types and game modes can be told apart.
+Like the event probe, it only logs, and it needs Diagnostic Logging on.
+
+Each time the current mission name changes, including on entering the hub, it writes one line:
+
+```
+[mission] name=<mission name> type=<mission_type> | <key>=<value>, <key>=<value>, ...
+```
+
+The name comes from `Managers.state.mission:mission_name()`.
+The rest of the line comes from the mission template returned by `Managers.state.mission:mission()`.
+The template's `mission_type` field is looked up in the game's `MissionTypes` table.
+
+The part after the bar lists every template field that holds a string, number or boolean, sorted by key.
+Fields that hold tables or functions are left out.
+
+The game's own zone state group also reads the mission's `wwise_state` field, which is what `music_zone` reports.
+
+What each game mode reports has not been checked yet.
+
 ## Reading the Game's Source
 
 The public repository `Aussiemon/Darktide-Source-Code` holds the game's Lua.
@@ -147,4 +169,6 @@ The relevant files are under `scripts/managers/wwise_game_sync/`.
 
 - `wwise_game_sync_manager.lua` triggers `play_music_manager` on init and sets each state group in `update`.
 - `wwise_state_groups/wwise_state_group_zone.lua` takes the active mission's Wwise state, or a default when there is no mission.
+- `scripts/managers/mission/mission_manager.lua` holds the current mission. `mission_name()` returns its name and `mission()` returns its template, which has a `mission_type` field.
+- `scripts/settings/mission/mission_types.lua` lists the mission type keys.
 - `wwise_state_groups/wwise_state_group_game.lua` maps the game state machine to the `music_game_state` values above.

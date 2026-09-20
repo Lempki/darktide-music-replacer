@@ -81,7 +81,8 @@ Source layout:
 | `scripts/mods/MusicReplacer/audio_client.lua` | Playback: fades, crossfade overlap, looping, and process cleanup. |
 | `scripts/mods/MusicReplacer/MusicReplacer.lua` | Wires those together and debounces context changes. |
 | `scripts/mods/MusicReplacer/diagnostic_log.lua` | Writes `diagnostic.log`, opt-in, with a size cap and an optional reset on launch. |
-| `scripts/mods/MusicReplacer/event_probe.lua` | Logging-only hook that records Wwise event names, for tracing where a sound comes from. |
+| `scripts/mods/MusicReplacer/event_probe.lua` | Logging-only probe that records Wwise event names, for tracing where a sound comes from. |
+| `scripts/mods/MusicReplacer/mission_probe.lua` | Logging-only probe that records the current mission's name, type, and simple template fields. |
 
 How native music reaches the player, how the mod silences it, and how to trace a sound to its Wwise event are covered in [docs/wwise-events.md](docs/wwise-events.md).
 
