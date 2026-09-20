@@ -1,6 +1,7 @@
 local mod = get_mod("MusicReplacer")
 
--- mod:io_dofile paths are relative to "mods/", including this mod's own folder name -- same requirement as MusicReplacer.mod's own paths.
+-- mod:io_dofile paths are relative to "mods/" and include this mod's own folder name.
+-- MusicReplacer.mod's own paths follow the same rule.
 local Context = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/context")
 local Suppression = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/suppression")
 local Library = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/library")
@@ -15,14 +16,16 @@ local log = DiagnosticLog.write
 -- Playback Orchestration
 -- ###########################################################################
 -- Combines "what context" (context.lua) with "is there a file for it" (library.lua) to decide what audio_client.lua does.
--- Suppression of native boss music is only ever turned on once we know we have a replacement ready, so "no file provided" falls back to native music by construction rather than as a bolted-on check.
+-- Native music is only silenced once a replacement is confirmed playing.
+-- So a context with no file falls back to native music by construction.
 
 local current_context = nil
 
--- context_name -> true once a single-file context has completed one normal (filtered) play-through and switched to pure native looping.
+-- context_name -> true once a single-file context has finished its first filtered play-through and switched to native looping.
 local native_loop_active = {}
 
--- is_new_context distinguishes an actual context change from advancing within the same one (playlist continuation, a native loop's own repeats) -- only the former should re-fade in.
+-- is_new_context separates a real context change from advancing within the same context.
+-- Advancing means a playlist continuation or a native loop's own repeat, and only a real change should fade in again.
 local function play_context(context_name, is_new_context)
 	if not context_name then
 		AudioClient.stop()
@@ -31,24 +34,28 @@ local function play_context(context_name, is_new_context)
 	end
 
 	if is_new_context then
-		-- A genuine (re-)entry restarts a single-file context's cycle from a fresh, filtered first play -- see use_native_loop below.
+		-- A real (re-)entry restarts a single-file context from a fresh, filtered first play. See use_native_loop below.
 		native_loop_active[context_name] = nil
 	end
 
 	local file_path, duration, is_only_file = Library.pick_file(context_name)
 
 	if not file_path then
-		-- No replacement available (no folder, empty, Audio Plugin missing, or scan not finished) -- leave native music alone.
+		-- No replacement is available: no folder, an empty folder, no Audio Plugin, or a scan that has not finished.
+		-- Native music is left alone.
 		AudioClient.stop()
 		Suppression.release()
 		log(string.format("[playback] %s: no file available, using native music", context_name))
 		return
 	end
 
-	-- A file is confirmed playing for context_name by this point (the no-file branch above already returned), so silence the native music for it.
+	-- A file is confirmed playing for context_name here, since the no-file branch above already returned.
+	-- So the native music is silenced for it.
 	Suppression.engage(context_name)
 
-	-- Single-file contexts play once normally (loop=1, filtered) first, then switch to pure native looping (loop=0, no filters) -- ffplay's -loop re-triggers filters every iteration, so a fade-in from the start would otherwise repeat forever.
+	-- A single-file context plays once normally first, with loop=1 and the fades.
+	-- After that it switches to native looping, with loop=0 and no filters.
+	-- ffplay's -loop re-triggers filters every iteration, so a fade-in from the start would otherwise repeat forever.
 	local use_native_loop = is_only_file and native_loop_active[context_name] == true
 
 	log(string.format("[playback] %s: playing %s (duration=%s%s)",
@@ -62,7 +69,8 @@ local function play_context(context_name, is_new_context)
 		native_loop = use_native_loop,
 		on_finished = function()
 			-- Never fires once use_native_loop is true.
-			-- Only continue if still in this context -- if it changed, whatever triggered that already called play_context for the new one.
+			-- Only continues if still in this context.
+			-- If it changed, whatever triggered the change already called play_context for the new one.
 			if current_context == context_name then
 				if is_only_file then
 					native_loop_active[context_name] = true
@@ -73,7 +81,7 @@ local function play_context(context_name, is_new_context)
 	})
 end
 
--- Debounce context changes before acting on them.
+-- Context changes are debounced before they are acted on.
 local DEBOUNCE_SECONDS = 0.6
 
 local pending_context = nil
@@ -84,12 +92,12 @@ local function commit_pending_context()
 	has_pending_change = false
 
 	if pending_context == current_context then
-		-- A flicker round-tripped back to what's already playing -- nothing to do.
+		-- A flicker round-tripped back to what is already playing, so there is nothing to do.
 		return
 	end
 
 	current_context = pending_context
-	play_context(pending_context, true) -- true marks a genuine context change.
+	play_context(pending_context, true) -- true marks a real context change.
 end
 
 Context.on_change(function(new_context, old_context, boss_breed)
@@ -114,7 +122,9 @@ mod.on_all_mods_loaded = function()
 	Library.init()
 	AudioClient.init(log)
 	Suppression.init_event_hook(mod)
-	EventProbe.init(mod, log) -- Investigating native hub music. Remove this call once the events are known.
+	-- Logging only, see docs/wwise-events.md.
+	-- Remove this call when no investigation is under way.
+	EventProbe.init(mod, log)
 
 	if not AudioClient.available() then
 		mod:error(
@@ -124,7 +134,8 @@ mod.on_all_mods_loaded = function()
 		)
 	end
 
-	-- Context may have resolved before Library/AudioClient were ready -- re-evaluate now, bypassing the debounce since this is a one-off catch-up.
+	-- The context may have resolved before Library and AudioClient were ready.
+	-- Re-evaluate now, bypassing the debounce, since this is a one-off catch-up.
 	has_pending_change = false
 	current_context = Context.current()
 	play_context(current_context, true)
@@ -145,6 +156,6 @@ end
 
 mod.on_unload = function()
 	Context.shutdown(mod)
-	AudioClient.shutdown() -- Direct OS-level kill, not just the (here unreliable) normal stop.
+	AudioClient.shutdown() -- Direct OS-level kill, since the normal stop cannot be relied on here.
 	DiagnosticLog.close()
 end
