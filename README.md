@@ -28,7 +28,7 @@ Drop audio files into the **installed** mod's folder, not this repository:
 
 All six folders already exist after install. Put audio files (`.mp3`, `.wav`, ...) directly inside whichever ones you want music for. One level deep only. This layout is fixed by the Audio Plugin, not by this mod.
 
-| Folder | When It Plays |
+| Folder | When it plays |
 |---|---|
 | `hub` | In the Mourningstar. |
 | `mission_explore` | In a mission, no meaningful threat. |
@@ -80,6 +80,8 @@ Source layout:
 | `scripts/mods/MusicReplacer/audio_client.lua` | Playback: fades, crossfade overlap, looping, and process cleanup. |
 | `scripts/mods/MusicReplacer/MusicReplacer.lua` | Wires those together, debounce and logging. |
 | `scripts/mods/MusicReplacer/event_probe.lua` | Logging-only hook that records Wwise event names, for tracing where a sound comes from. |
+
+How native music reaches the player, how the mod silences it, and how to trace a sound to its Wwise event are covered in [docs/wwise-events.md](docs/wwise-events.md).
 
 Logs to check when something misbehaves:
 
