@@ -29,6 +29,7 @@ local suppress_music_combat = false -- See Context.set_suppress_music_combat.
 local music_zone_forced = false -- True while Wwise's music_zone is forced to "None" by Context.set_suppress_music_zone.
 local suppress_music_game_state = false -- See Context.set_suppress_music_game_state.
 local music_game_state_forced = false -- True while Wwise's music_game_state is forced to "None" by Context.set_suppress_music_game_state.
+local suppress_music_events = false -- See Context.set_suppress_music_events.
 
 local resolved_context = nil -- Last computed context string, e.g. "hub".
 local change_listeners = {}
@@ -42,6 +43,10 @@ local BOSS_BREED_TIMEOUT_SECONDS = 180
 local COMBAT_HOLD_SECONDS_DEFAULT = 8
 
 local combat_hold_remaining = 0 -- Seconds left before mission_combat may fall back to mission_explore.
+
+-- Native music that starts from a Wwise event instead of a state.
+-- Plain substrings, matched against the full event name.
+local SUPPRESSED_MUSIC_EVENT_PATTERNS = { "events/music/play_exploration" }
 
 -- ###########################################################################
 -- Resolution
@@ -197,6 +202,31 @@ function Context.set_suppress_music_game_state(should_suppress)
 		diagnostic_log(string.format("[suppress] restoring music_game_state to %s", tostring(music_game_state)))
 		Wwise.set_state("music_game_state", music_game_state or "None")
 	end
+end
+
+-- Whether to drop native music events that match SUPPRESSED_MUSIC_EVENT_PATTERNS instead of letting them play.
+-- Mission event sequences start their own music through events, which the state forcing above never reaches.
+-- Only the start of an event is dropped, so nothing native is left playing to stop later.
+-- Events that fire while this is off play normally, and a track they started keeps playing.
+function Context.set_suppress_music_events(should_suppress)
+	suppress_music_events = should_suppress
+end
+
+-- Hooks WwiseWorld.trigger_resource_event to drop the events described above.
+-- Call from on_all_mods_loaded, since the Audio Plugin also waits until then to hook it.
+function Context.init_event_hook(mod)
+	mod:hook(CLASS.WwiseWorld, "trigger_resource_event", function(func, wwise_world, event_name, ...)
+		if suppress_music_events and type(event_name) == "string" then
+			for _, pattern in ipairs(SUPPRESSED_MUSIC_EVENT_PATTERNS) do
+				if event_name:find(pattern, 1, true) then
+					diagnostic_log(string.format("[suppress] skipped native music event: %s", event_name))
+					return
+				end
+			end
+		end
+
+		return func(wwise_world, event_name, ...)
+	end)
 end
 
 -- Wire up the Wwise state hook.

@@ -141,6 +141,7 @@ local function play_context(context_name, is_new_context)
 		Context.set_suppress_music_combat(false)
 		Context.set_suppress_music_zone(false)
 		Context.set_suppress_music_game_state(false)
+		Context.set_suppress_music_events(false)
 		return
 	end
 
@@ -157,6 +158,7 @@ local function play_context(context_name, is_new_context)
 		Context.set_suppress_music_combat(false)
 		Context.set_suppress_music_zone(false)
 		Context.set_suppress_music_game_state(false)
+		Context.set_suppress_music_events(false)
 		log(string.format("[playback] %s: no file available, using native music", context_name))
 		return
 	end
@@ -165,6 +167,7 @@ local function play_context(context_name, is_new_context)
 	-- Confirmed safe against corrupting wwise_combat_state: no boss fight across every session logged so far ever showed the phantom instant follow-up transition a recursive Wwise.set_state call would cause.
 	-- Does not help hub, which does not run on music_combat, so the hub gets its zone forced to "None" instead.
 	Context.set_suppress_music_combat(true)
+	Context.set_suppress_music_events(true)
 	Context.set_suppress_music_zone(context_name == "hub")
 
 	-- The game's own victory and defeat music runs off music_game_state, so that is forced to "None" for those two contexts.
@@ -233,6 +236,7 @@ Context.init(mod, log)
 mod.on_all_mods_loaded = function()
 	Library.init()
 	AudioClient.init(log)
+	Context.init_event_hook(mod)
 	EventProbe.init(mod, log) -- Investigating native hub music. Remove this call once the events are known.
 
 	if not AudioClient.available() then
