@@ -1,12 +1,21 @@
--- Tracks the pieces of game state relevant to music selection and resolves them into a single `resolved_context` string. Knows nothing about audio files or playback -- see library.lua for file lookup and MusicReplacer.lua for wiring it all together.
+-- Tracks the game state that decides which music should play, and resolves it into one `resolved_context` string.
+-- Knows nothing about audio files or playback.
+-- See library.lua for file lookup and MusicReplacer.lua for the wiring.
 --
--- Non-obvious resolution rules:
---	* `music_zone`, not `music_game_state`, distinguishes the hub from a mission -- `music_game_state` settles to "mission" for both.
---	* "boss active" is the OR of two independent, loosely-correlated signals: Wwise's `music_combat == "boss"`, and an open boss_encounter_start...end window. Neither alone is reliable for every boss type, and either can get stuck independently -- a real zone change force-clears both as a recovery mechanism. BOSS_BREED_TIMEOUT_SECONDS is a time-based backstop for whatever that doesn't catch.
---	* `music_combat` flips on/off every few seconds during real combat, not just Psykhanium-style flicker. `mission_combat` holds for `combat_hold_seconds` (a mod setting) after combat quiets, so a lull doesn't drop to `mission_explore` -- entering combat stays instant.
---	* Wwise reports "no zone" as the string "None", not real nil -- confirmed via testing (Meat Grinder, and the loading screen between missions, both report this). Treated the same as nil so neither plays mission music.
---	* A mission can also run start to finish without ever reporting a zone (an Operation did). So no zone plus `music_game_state == "mission"` counts as a mission, until a victory or defeat state ends it.
---	* Victory and defeat each resolve to their own context, from their state until the next loading screen. The game state briefly returns to "mission" in between, so the outcome is tracked in `mission_outcome`.
+-- Resolution rules that are not obvious from the code:
+--	* The hub is told apart from a mission by `music_zone`, since `music_game_state` is "mission" for both.
+--	* A boss is active when Wwise reports `music_combat == "boss"` or a boss encounter window is open.
+--	  Neither signal alone is reliable for every boss type, and either can get stuck.
+--	  A real zone change clears both, and BOSS_BREED_TIMEOUT_SECONDS is a backstop for the encounter window.
+--	* `music_combat` flips on and off every few seconds in real combat.
+--	  So `mission_combat` holds for `combat_hold_seconds` after combat quiets, and a lull does not drop to `mission_explore`.
+--	  Entering combat is never delayed.
+--	* Wwise reports "no zone" as the string "None". Meat Grinder and the loading screens both report it.
+--	  It is treated like nil, so neither plays mission music.
+--	* Some missions never report a zone.
+--	  No zone plus `music_game_state == "mission"` counts as a mission until a victory or defeat state ends it.
+--	* Victory and defeat resolve to their own contexts, from their state until the next loading screen.
+--	  The game state returns to "mission" in between, so the outcome is tracked in `mission_outcome`.
 
 local Context = {}
 
@@ -23,16 +32,18 @@ local mission_outcome = nil -- "victory" or "defeat" from that game state until 
 local active_boss_breed = nil -- Breed name while a boss encounter is open, else nil.
 local active_boss_breed_age = 0 -- Seconds since active_boss_breed was last set.
 
-local resolved_context = nil -- Last computed context string, e.g. "hub".
+local resolved_context = nil -- Last computed context string, for example "hub".
 local change_listeners = {}
 local state_listeners = {}
 local listeners_registered = false
 local diagnostic_log = function() end -- No-op unless a real logger is passed to Context.init.
 
--- Generous upper bound on any real boss encounter -- a safety net against active_boss_breed getting stuck, not a design target.
+-- Upper bound for a real boss encounter.
+-- A safety net against active_boss_breed getting stuck, not a design target.
 local BOSS_BREED_TIMEOUT_SECONDS = 180
 
--- Fallback if mod:get() ever returns nil -- the real value is the combat_hold_seconds mod setting.
+-- Used only if mod:get() returns nil.
+-- The real value is the combat_hold_seconds mod setting.
 local COMBAT_HOLD_SECONDS_DEFAULT = 8
 
 local combat_hold_remaining = 0 -- Seconds left before mission_combat may fall back to mission_explore.
@@ -51,19 +62,19 @@ local function is_combat_active()
 	return wwise_combat_state == "normal" or wwise_combat_state == "horde_low" or wwise_combat_state == "horde_high"
 end
 
--- Wwise reports "None" as a string, not real nil.
+-- Wwise reports "None" as a string, not as nil.
 local function has_no_zone()
 	return music_zone == nil or music_zone == "None"
 end
 
--- Some missions never report a zone, so a "mission" game state with no zone still counts as being in one.
+-- Some missions never report a zone, so a "mission" game state with no zone still counts as a mission.
 local function is_zoneless_mission()
 	return has_no_zone() and music_game_state == "mission" and not mission_outcome
 end
 
 local function resolve(mod)
-	-- Victory and defeat are mission end states with their own contexts.
-	-- Checked before the boss signals, since a wipe can leave a boss encounter open.
+	-- Victory and defeat have their own contexts.
+	-- They are checked before the boss signals, since a wipe can leave a boss encounter open.
 	if mission_outcome then
 		return MISSION_OUTCOME_CONTEXTS[mission_outcome]
 	end
@@ -78,7 +89,7 @@ local function resolve(mod)
 
 	if has_no_zone() then
 		if not is_zoneless_mission() then
-			-- Not in the hub or a mission (main menu, loading, mission end, etc.).
+			-- Not in the hub or a mission, for example the main menu, a loading screen or a mission end.
 			return nil
 		end
 
@@ -122,7 +133,8 @@ end
 -- Public API
 -- ###########################################################################
 
--- Register a function to be called whenever resolved_context changes: listener(new_context, old_context, boss_breed_or_nil)
+-- Register a function to call whenever resolved_context changes.
+-- The listener receives (new_context, old_context, boss_breed_or_nil).
 function Context.on_change(listener)
 	change_listeners[#change_listeners + 1] = listener
 end
@@ -131,15 +143,16 @@ function Context.current()
 	return resolved_context, active_boss_breed
 end
 
--- Register a function to be called on every real transition of a music state group, after context.lua has tracked it: listener(group_name, new_state)
--- Only music_combat, music_zone and music_game_state are reported.
+-- Register a function to call on every real transition of a music state group, after context.lua has tracked it.
+-- The listener receives (group_name, new_state) for music_combat, music_zone and music_game_state only.
 function Context.on_state_change(listener)
 	state_listeners[#state_listeners + 1] = listener
 end
 
--- Wire up the Wwise state hook.
+-- Installs the Wwise state hook and the boss encounter callbacks.
 -- Call once from the main mod file's top level.
--- `log`, if given, receives a line for every raw state transition and boss event -- much higher volume than Context.on_change, meant for diagnosing state issues, not everyday use.
+-- `log`, if given, receives a line for every raw state transition and boss event.
+-- That is much more output than Context.on_change, so it is meant for diagnosing state issues.
 function Context.init(mod, log)
 	diagnostic_log = log or diagnostic_log
 
@@ -160,17 +173,18 @@ function Context.init(mod, log)
 			diagnostic_log(string.format("[raw] music_zone: %s -> %s", tostring(music_zone), tostring(new_state)))
 			music_zone = new_state
 
-			-- A real zone change force-clears both is_boss_active() signals (either can get stuck alone -- see top-of-file note).
-			-- Safe for a real cross-zone encounter: this is our own tracked copy of wwise_combat_state, and self-corrects on the next real transition.
-			-- A still-open active_boss_breed independently keeps is_boss_active() true regardless.
+			-- A real zone change clears both boss signals, since either can get stuck on its own.
+			-- The tracked combat state is only this module's copy, so it corrects itself on the next real transition.
+			-- A boss encounter that is still open keeps is_boss_active() true anyway.
 			wwise_combat_state = nil
 			active_boss_breed = nil
-			combat_hold_remaining = 0 -- A new zone starts fresh, not mid-hold from the last one.
+			combat_hold_remaining = 0 -- A new zone starts fresh, not partway through the last hold.
 		elseif group_name == "music_game_state" then
 			diagnostic_log(string.format("[raw] music_game_state: %s -> %s", tostring(current), tostring(new_state)))
 			music_game_state = new_state
 
-			-- The state briefly returns to "mission" between victory/defeat and the next loading screen, so the outcome is only cleared on a real loading screen or mission intro.
+			-- The state returns to "mission" between victory or defeat and the next loading screen.
+			-- So the outcome is only cleared by a loading screen or a mission intro.
 			if new_state == "victory" or new_state == "game_score_win" then
 				mission_outcome = "victory"
 			elseif new_state == "defeat" or new_state == "game_score_lose" then
@@ -192,7 +206,8 @@ function Context.init(mod, log)
 		recompute(mod)
 	end)
 
-	-- Managers.event:register wants a STRING method name looked up on `context`, not a function reference -- passing a function registers fine but crashes the game the moment the event fires.
+	-- Managers.event:register needs the callback as a string method name, looked up on the registered object.
+	-- Passing a function registers without error, then crashes the game when the event fires.
 	function mod.on_boss_start(self, unit, boss_extension)
 		local breed = boss_extension and boss_extension._breed
 		active_boss_breed = breed and breed.name or "<unknown>"
@@ -209,8 +224,8 @@ function Context.init(mod, log)
 end
 
 -- Call from the main mod file's mod.update.
--- Managers.event doesn't exist at mod-load time, so listeners are registered lazily once it is.
--- Also advances the BOSS_BREED_TIMEOUT_SECONDS watchdog every tick.
+-- Managers.event does not exist at mod-load time, so the boss callbacks are registered on the first tick where it does.
+-- Also advances the BOSS_BREED_TIMEOUT_SECONDS watchdog.
 function Context.update(mod, dt)
 	if active_boss_breed then
 		active_boss_breed_age = active_boss_breed_age + dt
@@ -223,8 +238,8 @@ function Context.update(mod, dt)
 		end
 	end
 
-	-- Only ticks down once combat is genuinely inactive.
-	-- resolve() already refreshes combat_hold_remaining to the full setting on every active tick, so counting down unconditionally here made it drain during active combat too, leaving an effectively random amount whenever combat actually stopped.
+	-- The hold only counts down once combat is inactive.
+	-- resolve() refreshes it to its full value on every active tick, so it must not also drain while combat is active.
 	if combat_hold_remaining > 0 and not is_combat_active() then
 		combat_hold_remaining = math.max(combat_hold_remaining - dt, 0)
 
