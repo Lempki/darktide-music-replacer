@@ -6,7 +6,7 @@
 --	* `music_combat` flips on/off every few seconds during real combat, not just Psykhanium-style flicker. `mission_combat` holds for `combat_hold_seconds` (a mod setting) after combat quiets, so a lull doesn't drop to `mission_explore` -- entering combat stays instant.
 --	* Wwise reports "no zone" as the string "None", not real nil -- confirmed via testing (Meat Grinder, and the loading screen between missions, both report this). Treated the same as nil so neither plays mission music.
 --	* A mission can also run start to finish without ever reporting a zone (an Operation did). So no zone plus `music_game_state == "mission"` counts as a mission, until a victory or defeat state ends it.
---	* Victory and defeat each resolve to their own context, from their state until the next loading screen. The game state briefly returns to "mission" in between, so the outcome is tracked in its own flag.
+--	* Victory and defeat each resolve to their own context, from their state until the next loading screen. The game state briefly returns to "mission" in between, so the outcome is tracked in `mission_outcome`.
 
 local Context = {}
 
@@ -19,16 +19,13 @@ local WwiseGameSyncManager = require("scripts/managers/wwise_game_sync/wwise_gam
 local wwise_combat_state = nil -- Current value of the "music_combat" state group.
 local music_zone = nil -- Current value of the "music_zone" state group.
 local music_game_state = nil -- Current value of the "music_game_state" state group.
-local mission_ended = false -- True from the victory or defeat states until the next loading screen.
-local mission_won = false -- True from the victory state until the next loading screen.
-local mission_defeated = false -- True from the defeat state until the next loading screen.
+local mission_outcome = nil -- "victory" or "defeat" from that game state until the next loading screen, else nil.
 local active_boss_breed = nil -- Breed name while a boss encounter is open, else nil.
 local active_boss_breed_age = 0 -- Seconds since active_boss_breed was last set.
 
 local suppress_music_combat = false -- See Context.set_suppress_music_combat.
-local music_zone_forced = false -- True while Wwise's music_zone is forced to "None" by Context.set_suppress_music_zone.
+local forced_groups = {} -- State group name -> true while that group is forced to "None" and not yet restored.
 local suppress_music_game_state = false -- See Context.set_suppress_music_game_state.
-local music_game_state_forced = false -- True while Wwise's music_game_state is forced to "None" by Context.set_suppress_music_game_state.
 local suppress_music_events = false -- See Context.set_suppress_music_events.
 
 local resolved_context = nil -- Last computed context string, e.g. "hub".
@@ -47,6 +44,8 @@ local combat_hold_remaining = 0 -- Seconds left before mission_combat may fall b
 -- Native music that starts from a Wwise event instead of a state.
 -- Plain substrings, matched against the full event name.
 local SUPPRESSED_MUSIC_EVENT_PATTERNS = { "events/music/play_exploration" }
+
+local MISSION_OUTCOME_CONTEXTS = { victory = "mission_victory", defeat = "mission_defeat" }
 
 -- ###########################################################################
 -- Resolution
@@ -67,18 +66,14 @@ end
 
 -- Some missions never report a zone, so a "mission" game state with no zone still counts as being in one.
 local function is_zoneless_mission()
-	return has_no_zone() and music_game_state == "mission" and not mission_ended
+	return has_no_zone() and music_game_state == "mission" and not mission_outcome
 end
 
 local function resolve(mod)
 	-- Victory and defeat are mission end states with their own contexts.
 	-- Checked before the boss signals, since a wipe can leave a boss encounter open.
-	if mission_won then
-		return "mission_victory"
-	end
-
-	if mission_defeated then
-		return "mission_defeat"
+	if mission_outcome then
+		return MISSION_OUTCOME_CONTEXTS[mission_outcome]
 	end
 
 	if is_boss_active() then
@@ -156,6 +151,29 @@ function Context.set_suppress_music_combat(should_suppress)
 	end
 end
 
+-- Forces a state group to "None" once, remembering that it did so restore_group can undo it.
+-- Does nothing if the group is already forced or has no real value to replace.
+local function force_group_to_none(group_name, real_value)
+	if forced_groups[group_name] or not real_value or real_value == "None" then
+		return
+	end
+
+	forced_groups[group_name] = true
+	diagnostic_log(string.format("[suppress] forcing %s %s -> None", group_name, real_value))
+	Wwise.set_state(group_name, "None")
+end
+
+-- Puts a group forced by force_group_to_none back to its real value.
+local function restore_group(group_name, real_value)
+	if not forced_groups[group_name] then
+		return
+	end
+
+	forced_groups[group_name] = false
+	diagnostic_log(string.format("[suppress] restoring %s to %s", group_name, tostring(real_value)))
+	Wwise.set_state(group_name, real_value or "None")
+end
+
 -- Whether to force Wwise's music_zone to "None" so the native hub music stops.
 -- The hub does not run on music_combat, so set_suppress_music_combat has no effect there.
 -- The game only re-sends music_zone when it changes, so the forced value stays until the next real zone change.
@@ -163,19 +181,9 @@ end
 -- The forced set goes straight to Wwise and never reaches the _set_state hook, so `music_zone` here keeps the real value.
 function Context.set_suppress_music_zone(should_suppress)
 	if should_suppress then
-		if not music_zone_forced and music_zone and music_zone ~= "None" then
-			music_zone_forced = true
-			diagnostic_log(string.format("[suppress] forcing music_zone %s -> None", music_zone))
-			Wwise.set_state("music_zone", "None")
-		end
-
-		return
-	end
-
-	if music_zone_forced then
-		music_zone_forced = false
-		diagnostic_log(string.format("[suppress] restoring music_zone to %s", tostring(music_zone)))
-		Wwise.set_state("music_zone", music_zone or "None")
+		force_group_to_none("music_zone", music_zone)
+	else
+		restore_group("music_zone", music_zone)
 	end
 end
 
@@ -188,19 +196,9 @@ function Context.set_suppress_music_game_state(should_suppress)
 	suppress_music_game_state = should_suppress
 
 	if should_suppress then
-		if not music_game_state_forced and music_game_state and music_game_state ~= "None" then
-			music_game_state_forced = true
-			diagnostic_log(string.format("[suppress] forcing music_game_state %s -> None", music_game_state))
-			Wwise.set_state("music_game_state", "None")
-		end
-
-		return
-	end
-
-	if music_game_state_forced then
-		music_game_state_forced = false
-		diagnostic_log(string.format("[suppress] restoring music_game_state to %s", tostring(music_game_state)))
-		Wwise.set_state("music_game_state", music_game_state or "None")
+		force_group_to_none("music_game_state", music_game_state)
+	else
+		restore_group("music_game_state", music_game_state)
 	end
 end
 
@@ -255,7 +253,7 @@ function Context.init(mod, log)
 		elseif group_name == "music_zone" then
 			diagnostic_log(string.format("[raw] music_zone: %s -> %s", tostring(music_zone), tostring(new_state)))
 			music_zone = new_state
-			music_zone_forced = false -- The game just set a real zone, which replaces any forced value.
+			forced_groups.music_zone = false -- The game just set a real zone, which replaces any forced value.
 
 			-- A real zone change force-clears both is_boss_active() signals (either can get stuck alone -- see top-of-file note).
 			-- Safe for a real cross-zone encounter: this is our own tracked copy of wwise_combat_state, and self-corrects on the next real transition.
@@ -267,30 +265,20 @@ function Context.init(mod, log)
 			diagnostic_log(string.format("[raw] music_game_state: %s -> %s", tostring(current), tostring(new_state)))
 			music_game_state = new_state
 
-			-- The state briefly returns to "mission" between victory/defeat and the next loading screen, so only clear mission_ended/won/defeated on a real loading screen or mission intro.
-			if new_state == "victory" or new_state == "defeat" or new_state == "game_score_win" or new_state == "game_score_lose" then
-				mission_ended = true
-			elseif new_state == "loading" or new_state == "mission_intro" then
-				mission_ended = false
-			end
-
+			-- The state briefly returns to "mission" between victory/defeat and the next loading screen, so the outcome is only cleared on a real loading screen or mission intro.
 			if new_state == "victory" or new_state == "game_score_win" then
-				mission_won = true
+				mission_outcome = "victory"
+			elseif new_state == "defeat" or new_state == "game_score_lose" then
+				mission_outcome = "defeat"
 			elseif new_state == "loading" or new_state == "mission_intro" then
-				mission_won = false
-			end
-
-			if new_state == "defeat" or new_state == "game_score_lose" then
-				mission_defeated = true
-			elseif new_state == "loading" or new_state == "mission_intro" then
-				mission_defeated = false
+				mission_outcome = nil
 			end
 
 			if suppress_music_game_state and new_state ~= "None" then
-				music_game_state_forced = true
+				forced_groups.music_game_state = true
 				Wwise.set_state("music_game_state", "None")
 			else
-				music_game_state_forced = false -- The game just set a real state, which replaces any forced value.
+				forced_groups.music_game_state = false -- The game just set a real state, which replaces any forced value.
 			end
 		else
 			return
