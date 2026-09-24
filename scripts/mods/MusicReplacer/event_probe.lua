@@ -26,6 +26,7 @@ local NOISE_PATTERNS = {
 }
 
 local seen_events = {}
+local log = function() end -- No-op unless a real logger is passed to EventProbe.init.
 
 local function is_noise(event_name)
 	for _, pattern in ipairs(NOISE_PATTERNS) do
@@ -37,23 +38,27 @@ local function is_noise(event_name)
 	return false
 end
 
--- Hooks WwiseWorld.trigger_resource_event, the same call the Audio Plugin hooks for its own event logging.
+-- Call once from the main mod file's top level.
+function EventProbe.init(real_log)
+	log = real_log or log
+end
+
+-- Called for every Wwise event, from the single trigger_resource_event hook in MusicReplacer.lua.
+-- A mod can only install one hook per method on itself, so this does not hook anything on its own.
+-- See MusicReplacer.lua for why this and Suppression share one hook.
 -- Music events are logged every time they fire.
 -- Any other event is logged only the first time its name is seen, unless it matches NOISE_PATTERNS.
--- Call from on_all_mods_loaded, since the Audio Plugin also waits until then to hook it.
-function EventProbe.init(mod, log)
-	mod:hook(CLASS.WwiseWorld, "trigger_resource_event", function(func, wwise_world, event_name, ...)
-		if type(event_name) == "string" then
-			if event_name:find("music", 1, true) then
-				log(string.format("[probe] music event: %s (extra args: %d)", event_name, select("#", ...)))
-			elseif not seen_events[event_name] and not is_noise(event_name) then
-				seen_events[event_name] = true
-				log(string.format("[probe] new event: %s", event_name))
-			end
-		end
+function EventProbe.observe(event_name, extra_arg_count)
+	if type(event_name) ~= "string" then
+		return
+	end
 
-		return func(wwise_world, event_name, ...)
-	end)
+	if event_name:find("music", 1, true) then
+		log(string.format("[probe] music event: %s (extra args: %d)", event_name, extra_arg_count))
+	elseif not seen_events[event_name] and not is_noise(event_name) then
+		seen_events[event_name] = true
+		log(string.format("[probe] new event: %s", event_name))
+	end
 end
 
 return EventProbe

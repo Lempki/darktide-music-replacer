@@ -116,6 +116,7 @@ end)
 -- ###########################################################################
 
 Suppression.init(log)
+EventProbe.init(log)
 MissionProbe.init(log)
 Context.on_state_change(Suppression.on_state_change)
 Context.init(mod, log)
@@ -123,10 +124,19 @@ Context.init(mod, log)
 mod.on_all_mods_loaded = function()
 	Library.init()
 	AudioClient.init(log)
-	Suppression.init_event_hook(mod)
-	-- Logging only, see docs/wwise-events.md.
-	-- Remove this call when no investigation is under way.
-	EventProbe.init(mod, log)
+
+	-- A mod can only install one hook per method on itself, so Suppression and EventProbe cannot each hook WwiseWorld.trigger_resource_event on their own.
+	-- This one hook serves both instead.
+	-- EventProbe always sees the event first, including one Suppression is about to drop.
+	mod:hook(CLASS.WwiseWorld, "trigger_resource_event", function(func, wwise_world, event_name, ...)
+		EventProbe.observe(event_name, select("#", ...))
+
+		if Suppression.should_drop_event(event_name) then
+			return
+		end
+
+		return func(wwise_world, event_name, ...)
+	end)
 
 	if not AudioClient.available() then
 		mod:error(

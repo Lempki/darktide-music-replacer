@@ -108,21 +108,23 @@ function Suppression.init(log)
 	diagnostic_log = log or diagnostic_log
 end
 
--- Hooks WwiseWorld.trigger_resource_event to drop the events described above.
--- Call from on_all_mods_loaded, since the Audio Plugin also waits until then to hook it.
-function Suppression.init_event_hook(mod)
-	mod:hook(CLASS.WwiseWorld, "trigger_resource_event", function(func, wwise_world, event_name, ...)
-		if events_suppressed and type(event_name) == "string" then
-			for _, pattern in ipairs(SUPPRESSED_MUSIC_EVENT_PATTERNS) do
-				if event_name:find(pattern, 1, true) then
-					diagnostic_log(string.format("[suppress] skipped native music event: %s", event_name))
-					return
-				end
-			end
-		end
+-- Called for every Wwise event, from the single trigger_resource_event hook in MusicReplacer.lua.
+-- Returns true if the caller should drop the event instead of letting it play.
+-- A mod can only install one hook per method on itself, so this does not hook anything on its own.
+-- See MusicReplacer.lua for why this and EventProbe share one hook.
+function Suppression.should_drop_event(event_name)
+	if not events_suppressed or type(event_name) ~= "string" then
+		return false
+	end
 
-		return func(wwise_world, event_name, ...)
-	end)
+	for _, pattern in ipairs(SUPPRESSED_MUSIC_EVENT_PATTERNS) do
+		if event_name:find(pattern, 1, true) then
+			diagnostic_log(string.format("[suppress] skipped native music event: %s", event_name))
+			return true
+		end
+	end
+
+	return false
 end
 
 -- Register with Context.on_state_change so the levers see every real transition.

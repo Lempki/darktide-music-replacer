@@ -45,7 +45,7 @@ Each mechanism switches on only while a custom track is confirmed playing for th
 | `Suppression.set_combat` | Forces `music_combat` to `"None"` right away and again after every real transition. | Combat music reported gone in two hectic missions. Not yet checked in a controlled test. |
 | `Suppression.set_zone` | Forces `music_zone` to `"None"` while a hub track plays, and restores the real zone when it stops. | **Confirmed** by ear in the hub, including a round trip through a mission. |
 | `Suppression.set_game_state` | Forces `music_game_state` to `"None"` for the victory and defeat contexts, and again after every real transition. | **Not yet confirmed.** It only runs when a file is present in `mission_victory` or `mission_defeat`. |
-| `Suppression.set_events` | Drops any event containing `events/music/play_exploration`, so it never starts. | **Not yet confirmed.** |
+| `Suppression.set_events` | Drops any event containing `events/music/play_exploration`, so it never starts. | **Not yet confirmed as silencing.** It was not actually running for a while, see "DMF Quirks Found" below. |
 
 Forcing a state calls `Wwise.set_state` directly.
 That call does not reach the `_set_state` hook, so the mod's own tracked state keeps the game's real value.
@@ -61,7 +61,7 @@ An event that fires while suppression is off is not dropped.
 
 ## The Event Probe
 
-`scripts/mods/MusicReplacer/event_probe.lua` hooks `WwiseWorld.trigger_resource_event` and logs to `diagnostic.log`.
+`event_probe.lua` observes every Wwise event through the shared `trigger_resource_event` hook described above, and logs to `diagnostic.log`.
 It never changes or silences anything.
 
 Turn on **Diagnostic Logging** in the mod options first.
@@ -74,7 +74,7 @@ The log is written to `%APPDATA%\Fatshark\Darktide\MusicReplacer\diagnostic.log`
 | `[probe] music event: <name> (extra args: N)` | Any event whose name contains "music". Logged every time it fires. |
 | `[probe] new event: <name>` | Any other event, logged once per distinct name per session. |
 
-The hook is installed from `on_all_mods_loaded`, so it cannot see anything that fires earlier.
+The shared hook is installed from `on_all_mods_loaded`, so it cannot see anything that fires earlier.
 Music events are logged before the noise check, so they always appear.
 
 ### Noise Patterns
@@ -161,6 +161,14 @@ Fields that hold tables or functions are left out.
 The game's own zone state group also reads the mission's `wwise_state` field, which is what `music_zone` reports.
 
 What each game mode reports has not been checked yet.
+
+## DMF Quirks Found
+
+Odd DMF or engine behavior found while working on the above. Kept brief and in table form so this stays a reference list, not a bug tracker.
+
+| What | Briefly |
+|---|---|
+| One hook per method per mod | DMF keeps only one hook per `(mod, method)` pair. A second `mod:hook` call from the same mod on the same method is silently rejected instead of chained. `suppression.lua` and `event_probe.lua` used to each hook `trigger_resource_event` on their own. The second one installed did nothing, and the event probe logged nothing for a while, with no error shown. Fixed by sharing one hook, installed once in `MusicReplacer.lua`. |
 
 ## Reading the Game's Source
 
