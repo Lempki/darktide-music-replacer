@@ -1,15 +1,15 @@
-# Wwise Music Sources and Event Probe
+# Wwise music sources and event probe
 
 How Darktide's native music reaches the player, how Music Replacer silences it, and how to find out where a sound comes from.
 
 Statements marked **Confirmed** were checked by ear or in a real session's log.
 Statements marked **Not yet confirmed** describe code that has not been tested in-game.
 
-## Where Native Music Comes From
+## Where native music comes from
 
 Native music has two sources, and the mod handles each differently.
 
-### State Groups
+### State groups
 
 The game's `WwiseGameSyncManager` sets Wwise state groups every tick through `_set_state(group_name, new_state)`.
 Only real changes are forwarded to Wwise, so the mod hooks that function and compares old and new values itself.
@@ -29,13 +29,13 @@ None of those has been tried as a lever.
 
 `WwiseWorld.trigger_resource_event(wwise_world, event_name, ...)` starts Wwise events, and some of them are music.
 
-- `wwise/events/music/play_music_manager` is triggered once by the manager's own init, according to the game source. The probe has never logged it.
-- `wwise/events/music/play_exploration_music` and `wwise/events/music/play_exploration_the_machine_spiri_1`, `_3` and `_4` were logged during mission event sequences, such as holding a position or minigames. **Confirmed:** native music was audible under a custom track during those sequences, and these were the only music events logged in that mission.
-- `cinematics/play_outro_win_generic_01` and `ui/play_ui_eor_start_stinger` were logged during a mission's victory. Neither has "music" in its name. Which of them carries the native victory music has not been isolated.
-- `cinematics/play_mission_intro_stinger_generic` was logged at the start of a mission's intro.
-- `world/stop_all_mission_sounds` was logged when leaving the hub for a mission, and on shutdown.
+* `wwise/events/music/play_music_manager` is triggered once by the manager's own init, according to the game source. The probe has never logged it.
+* `wwise/events/music/play_exploration_music` and `wwise/events/music/play_exploration_the_machine_spiri_1`, `_3` and `_4` were logged during mission event sequences, such as holding a position or minigames. **Confirmed:** native music was audible under a custom track during those sequences, and these were the only music events logged in that mission.
+* `cinematics/play_outro_win_generic_01` and `ui/play_ui_eor_start_stinger` were logged during a mission's victory. Neither has "music" in its name. Which of them carries the native victory music has not been isolated.
+* `cinematics/play_mission_intro_stinger_generic` was logged at the start of a mission's intro.
+* `world/stop_all_mission_sounds` was logged when leaving the hub for a mission, and on shutdown.
 
-## How the Mod Silences It
+## How the mod silences it
 
 Each mechanism switches on only while a custom track is confirmed playing for the current context, so a context with no files keeps the game's own music.
 `play_context` in `MusicReplacer.lua` turns them on with `Suppression.engage` and off with `Suppression.release`, and the code lives in `suppression.lua`.
@@ -59,7 +59,7 @@ Dropping an event stops only its start.
 No matching stop event for the exploration events has been logged.
 An event that fires while suppression is off is not dropped.
 
-## The Event Probe
+## The event probe
 
 `event_probe.lua` observes every Wwise event through the shared `trigger_resource_event` hook described above, and logs to `diagnostic.log`.
 It never changes or silences anything.
@@ -67,7 +67,7 @@ It never changes or silences anything.
 Turn on **Diagnostic Logging** in the mod options first.
 The log is written to `%APPDATA%\Fatshark\Darktide\MusicReplacer\diagnostic.log`.
 
-### What It Logs
+### What it logs
 
 | Line | Meaning |
 |---|---|
@@ -77,7 +77,7 @@ The log is written to `%APPDATA%\Fatshark\Darktide\MusicReplacer\diagnostic.log`
 The shared hook is installed from `on_all_mods_loaded`, so it cannot see anything that fires earlier.
 Music events are logged before the noise check, so they always appear.
 
-### Noise Patterns
+### Noise patterns
 
 `NOISE_PATTERNS` in `event_probe.lua` is a list of plain substrings.
 An event matching any of them is left out of the log, unless it contains "music".
@@ -124,13 +124,13 @@ The "music" rule alone does not catch them.
 Removing `"events/world/"` from the list shows when each mission sequence starts and ends.
 That is how the exploration music events were matched to the sequences they were logged during.
 
-### Adding or Removing Patterns
+### Adding or removing patterns
 
 Edit `NOISE_PATTERNS`.
 Patterns are matched as plain substrings against the full event name, for example `wwise/events/world/play_door_x`.
 Redeploy with `tools\build.ps1 -Deploy` and restart the game.
 
-## Tracing a New Sound
+## Tracing a new sound
 
 1. Enable Diagnostic Logging and reproduce the sound.
 2. Read `diagnostic.log` around the moment you hear it. The `[raw]`, `[context]`, `[playback]` and `[suppress]` lines show what the mod recorded as happening.
@@ -140,7 +140,7 @@ Redeploy with `tools\build.ps1 -Deploy` and restart the game.
 
 The Audio Plugin has its own Wwise event logging, the `log_wwise` setting, which prints to the game's console log instead of this file.
 
-## The Mission Probe
+## The mission probe
 
 `scripts/mods/MusicReplacer/mission_probe.lua` logs which mission is running, so mission types and game modes can be told apart.
 Like the event probe, it only logs, and it needs Diagnostic Logging on.
@@ -162,7 +162,7 @@ The game's own zone state group also reads the mission's `wwise_state` field, wh
 
 What each game mode reports has not been checked yet.
 
-## DMF Quirks Found
+## DMF quirks found
 
 Odd DMF or engine behavior found while working on the above. Kept brief and in table form so this stays a reference list, not a bug tracker.
 
@@ -170,13 +170,13 @@ Odd DMF or engine behavior found while working on the above. Kept brief and in t
 |---|---|
 | One hook per method per mod | DMF keeps only one hook per `(mod, method)` pair. A second `mod:hook` call from the same mod on the same method is silently rejected instead of chained. `suppression.lua` and `event_probe.lua` used to each hook `trigger_resource_event` on their own. The second one installed did nothing, and the event probe logged nothing for a while, with no error shown. Fixed by sharing one hook, installed once in `MusicReplacer.lua`. |
 
-## Reading the Game's Source
+## Reading the game's source
 
 The public repository `Aussiemon/Darktide-Source-Code` holds the game's Lua.
 The relevant files are under `scripts/managers/wwise_game_sync/`.
 
-- `wwise_game_sync_manager.lua` triggers `play_music_manager` on init and sets each state group in `update`.
-- `wwise_state_groups/wwise_state_group_zone.lua` takes the active mission's Wwise state, or a default when there is no mission.
-- `scripts/managers/mission/mission_manager.lua` holds the current mission. `mission_name()` returns its name and `mission()` returns its template, which has a `mission_type` field.
-- `scripts/settings/mission/mission_types.lua` lists the mission type keys.
-- `wwise_state_groups/wwise_state_group_game.lua` maps the game state machine to the `music_game_state` values above.
+* `wwise_game_sync_manager.lua` triggers `play_music_manager` on init and sets each state group in `update`.
+* `wwise_state_groups/wwise_state_group_zone.lua` takes the active mission's Wwise state, or a default when there is no mission.
+* `scripts/managers/mission/mission_manager.lua` holds the current mission. `mission_name()` returns its name and `mission()` returns its template, which has a `mission_type` field.
+* `scripts/settings/mission/mission_types.lua` lists the mission type keys.
+* `wwise_state_groups/wwise_state_group_game.lua` maps the game state machine to the `music_game_state` values above.
