@@ -15,6 +15,7 @@ local real_states = {} -- State group name -> the last value the game set, fed b
 local forced_groups = {} -- State group name -> true while that group is forced to "None" and not yet restored.
 
 local combat_suppressed = false
+local combat_forced = false -- True while music_combat is forced to "None" and not yet restored.
 local game_state_suppressed = false
 local events_suppressed = false
 
@@ -55,13 +56,35 @@ end
 -- Forces music_combat back to "None" for as long as it is on.
 -- It is forced again after every real transition, since music_combat flaps between states repeatedly without ever settling.
 -- Turning it on also forces the current value, otherwise a value set before suppression started plays until the next flap.
+-- Turning it off restores the real value.
+-- The game only re-sends a state when it changes, so a boss that started while this was on would otherwise stay silent for the whole fight.
 function Suppression.set_combat(should_suppress)
-	combat_suppressed = should_suppress
+	if should_suppress then
+		if not combat_suppressed then
+			diagnostic_log("[suppress] forcing music_combat to None while a custom track plays")
+		end
 
-	local real_value = real_states.music_combat
+		combat_suppressed = true
 
-	if should_suppress and real_value and real_value ~= "None" then
-		Wwise.set_state("music_combat", "None")
+		local real_value = real_states.music_combat
+
+		if real_value and real_value ~= "None" then
+			combat_forced = true
+			Wwise.set_state("music_combat", "None")
+		end
+
+		return
+	end
+
+	combat_suppressed = false
+
+	if combat_forced then
+		combat_forced = false
+
+		local real_value = real_states.music_combat or "None"
+
+		diagnostic_log(string.format("[suppress] restoring music_combat to %s", real_value))
+		Wwise.set_state("music_combat", real_value)
 	end
 end
 
@@ -134,7 +157,10 @@ function Suppression.on_state_change(group_name, new_state)
 
 	if group_name == "music_combat" then
 		if combat_suppressed and new_state ~= "None" then
+			combat_forced = true
 			Wwise.set_state("music_combat", "None")
+		elseif new_state == "None" then
+			combat_forced = false -- Wwise already matches the real value.
 		end
 	elseif group_name == "music_zone" then
 		forced_groups.music_zone = false -- The game just set a real zone, which replaces any forced value.
