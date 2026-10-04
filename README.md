@@ -51,6 +51,7 @@ Your audio survives reinstalling or updating the mod through Vortex. Vortex only
 ## Limitations
 
 * Changing the master or music volume slider restarts the playing track. Music plays through a separate ffplay process, started by the Audio Plugin and DarktideLocalServer. That process takes its volume when it starts and cannot be adjusted from outside once it is running. On a slider change, Music Replacer stops the process and starts a new one at the same position with the new volume. The request goes through the local server, so expect a slight delay and a brief pause or cut in the music. While you drag a slider this happens at most once per second, and the final volume is applied once you stop.
+* Each audio folder is scanned once, when the game launches. Restart the game after adding or removing files. A file you remove while the game runs is skipped, and a file you add is not picked up until the next launch.
 * A hard crash can leave a track playing until it ends on its own. Quitting normally stops it. A crash runs no mod code at all, so nothing can intervene. If it happens, end `ffplay_dt.exe` in Task Manager.
 * Music Replacer only affects your own game. Squadmates hear the game's own music regardless.
 
