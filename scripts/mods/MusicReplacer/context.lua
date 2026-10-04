@@ -14,8 +14,9 @@
 --	  It is treated like nil, so neither plays mission music.
 --	* Some missions never report a zone.
 --	  No zone plus `music_game_state == "mission"` counts as a mission until a victory or defeat state ends it.
---	* Victory and defeat resolve to their own contexts, from their state until the next loading screen.
+--	* Victory and defeat resolve to their own contexts, from their state until the next level starts.
 --	  The game state returns to "mission" in between, so the outcome is tracked in `mission_outcome`.
+--	  A loading screen or a real zone clears it, since a story mission's cutscene can skip the loading screen.
 
 local Context = {}
 
@@ -28,7 +29,7 @@ local WwiseGameSyncManager = require("scripts/managers/wwise_game_sync/wwise_gam
 local wwise_combat_state = nil -- Current value of the "music_combat" state group.
 local music_zone = nil -- Current value of the "music_zone" state group.
 local music_game_state = nil -- Current value of the "music_game_state" state group.
-local mission_outcome = nil -- "victory" or "defeat" from that game state until the next loading screen, else nil.
+local mission_outcome = nil -- "victory" or "defeat" from that game state until the next level starts, else nil.
 local active_boss_breed = nil -- Breed name while a boss encounter is open, else nil.
 local active_boss_breed_age = 0 -- Seconds since active_boss_breed was last set.
 
@@ -172,6 +173,12 @@ function Context.init(mod, log)
 		elseif group_name == "music_zone" then
 			diagnostic_log(string.format("[raw] music_zone: %s -> %s", tostring(music_zone), tostring(new_state)))
 			music_zone = new_state
+
+			-- A real zone means a new level has started, which ends the previous mission's outcome.
+			-- The score screen sets the zone to "None", so that case keeps the outcome.
+			if not has_no_zone() then
+				mission_outcome = nil
+			end
 
 			-- A real zone change clears both boss signals, since either can get stuck on its own.
 			-- The tracked combat state is only this module's copy, so it corrects itself on the next real transition.
