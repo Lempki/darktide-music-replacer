@@ -25,12 +25,27 @@ local current_context = nil
 -- context_name -> true once a single-file context has finished its first filtered play-through and switched to native looping.
 local native_loop_active = {}
 
+-- A track that ends within QUICK_END_SECONDS of starting did not really play, for example because ffplay could not open the file.
+-- After MAX_QUICK_ENDS in a row for one context, that context stops retrying and uses native music for the rest of the session.
+local QUICK_END_SECONDS = 3
+local MAX_QUICK_ENDS = 3
+
+local quick_ends = {} -- context_name -> consecutive tracks that ended right after starting.
+local gave_up = {} -- context_name -> true once that context stopped retrying.
+
 -- is_new_context separates a real context change from advancing within the same context.
 -- Advancing means a playlist continuation or a native loop's own repeat, and only a real change should fade in again.
 local function play_context(context_name, is_new_context)
 	if not context_name then
 		AudioClient.stop()
 		Suppression.release()
+		return
+	end
+
+	if gave_up[context_name] then
+		AudioClient.stop()
+		Suppression.release()
+		log(string.format("[playback] %s: its tracks would not play earlier, using native music", context_name))
 		return
 	end
 
@@ -69,15 +84,33 @@ local function play_context(context_name, is_new_context)
 		fade_in = is_new_context,
 		native_loop = use_native_loop,
 		on_finished = function()
-			-- Never fires once use_native_loop is true.
+			-- A native loop only gets here if its process died.
 			-- Only continues if still in this context.
 			-- If it changed, whatever triggered the change already called play_context for the new one.
-			if current_context == context_name then
-				if is_only_file then
-					native_loop_active[context_name] = true
-				end
-				play_context(context_name, false)
+			if current_context ~= context_name then
+				return
 			end
+
+			-- Without a known duration, or for a very short file, ending quickly is normal, so the check is skipped.
+			if duration and duration > QUICK_END_SECONDS * 2 and AudioClient.elapsed() < QUICK_END_SECONDS then
+				quick_ends[context_name] = (quick_ends[context_name] or 0) + 1
+
+				if quick_ends[context_name] >= MAX_QUICK_ENDS then
+					gave_up[context_name] = true
+					log(string.format("[playback] %s: %d tracks in a row ended within %ds, giving up and using native music until the game restarts",
+						context_name, MAX_QUICK_ENDS, QUICK_END_SECONDS))
+					AudioClient.stop()
+					Suppression.release()
+					return
+				end
+			else
+				quick_ends[context_name] = 0
+			end
+
+			if is_only_file then
+				native_loop_active[context_name] = true
+			end
+			play_context(context_name, false)
 		end,
 	})
 end

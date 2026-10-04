@@ -69,6 +69,12 @@ function AudioClient.available()
 	return audio_mod ~= nil
 end
 
+-- Seconds the current track has been playing since it was started, or 0 if nothing is playing.
+-- It keeps counting across a volume relaunch.
+function AudioClient.elapsed()
+	return current_elapsed
+end
+
 -- Retries stops that had no known pid yet.
 -- Cheap, and normally a no-op.
 local function retry_pending_stops()
