@@ -19,9 +19,12 @@ Three groups matter for music:
 |---|---|
 | `music_combat` | `None`, `normal`, `horde_low`, `horde_high`, `boss` |
 | `music_zone` | `hub`, `None`, `zone_2`, `zone_4`, `zone_8`, `operations` |
-| `music_game_state` | `title`, `main_menu`, `loading`, `mission`, `mission_board`, `mission_ready`, `loadout`, `mission_briefing`, `mission_intro`, `victory`, `defeat`, `game_score_win`, `game_score_lose`, `None` |
+| `music_game_state` | `title`, `main_menu`, `loading`, `mission`, `mission_board`, `mission_ready`, `loadout`, `mission_briefing`, `mission_intro`, `victory`, `defeat`, `game_score_win`, `game_score_lose`, `cinematic`, `None` |
 
 Wwise reports "no value" as the string `"None"`, not as Lua `nil`.
+`cinematic` was seen after a mission, during a cutscene. A story mission goes straight from `game_score_win` to `cinematic` with no `loading` in between.
+The mod resolves no context while the state is `cinematic`, so custom music stays off during cutscenes.
+Only this post-mission cutscene has been seen so far, so other cutscenes may report a different state.
 The source lists more state groups (circumstance, event intensity, event type, objective, objective progression, minion aggro intensity, options, player state, suppression state).
 None of those has been tried as a lever.
 

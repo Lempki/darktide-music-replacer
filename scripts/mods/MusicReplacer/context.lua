@@ -10,6 +10,7 @@
 --	* `music_combat` flips on and off every few seconds in real combat.
 --	  So `mission_combat` holds for `combat_hold_seconds` after combat quiets, and a lull does not drop to `mission_explore`.
 --	  Entering combat is never delayed.
+--	* No context resolves while `music_game_state == "cinematic"`, so custom music stays off during cutscenes.
 --	* Wwise reports "no zone" as the string "None". Meat Grinder and the loading screens both report it.
 --	  It is treated like nil, so neither plays mission music.
 --	* Some missions never report a zone.
@@ -74,6 +75,11 @@ local function is_zoneless_mission()
 end
 
 local function resolve(mod)
+	-- Cutscenes get no custom music, whatever zone or outcome is still set.
+	if music_game_state == "cinematic" then
+		return nil
+	end
+
 	-- Victory and defeat have their own contexts.
 	-- They are checked before the boss signals, since a wipe can leave a boss encounter open.
 	if mission_outcome then

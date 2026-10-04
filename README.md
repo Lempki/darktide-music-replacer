@@ -41,8 +41,10 @@ All six folders already exist after install. Put audio files (`.mp3`, `.wav`, an
 | `mission_explore` | In a mission, no meaningful threat. |
 | `mission_combat` | In a mission, fighting, normal combat through to a heavy horde. |
 | `mission_boss` | A monstrosity or an assassination target is active. |
-| `mission_victory` | From the moment a mission is won until the loading screen. |
-| `mission_defeat` | From the moment a mission is lost until the loading screen. |
+| `mission_victory` | From the moment a mission is won until the loading screen or a cutscene. |
+| `mission_defeat` | From the moment a mission is lost until the loading screen or a cutscene. |
+
+No custom music plays during cutscenes. The game's own music takes over there.
 
 Your audio survives reinstalling or updating the mod through Vortex. Vortex only removes files it deployed itself, and `audio\` is never part of the mod archive. It does not survive the mod folder being renamed, so move `audio\` across by hand if that ever happens.
 
