@@ -122,7 +122,7 @@ Context.on_state_change(Suppression.on_state_change)
 Context.init(mod, log)
 
 mod.on_all_mods_loaded = function()
-	Library.init()
+	Library.init(log)
 	AudioClient.init(log)
 
 	-- A mod can only install one hook per method on itself, so Suppression and EventProbe cannot each hook WwiseWorld.trigger_resource_event on their own.
