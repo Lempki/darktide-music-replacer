@@ -11,6 +11,12 @@ return {
 	combat_hold_seconds_description = {
 		en = "How long combat music keeps playing after a fight quiets down before switching back to exploration music. Set to 0 to switch back immediately.",
 	},
+	meat_grinder_music = {
+		en = "Music in Meat Grinder",
+	},
+	meat_grinder_music_description = {
+		en = "Off keeps custom music out of the Meat Grinder training area and also silences the game's own combat music there. On plays your explore and combat music there, which is a quick way to test your files without starting a mission.",
+	},
 	debug = {
 		en = "Debug",
 	},

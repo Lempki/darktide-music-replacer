@@ -14,6 +14,11 @@ return {
 				unit_text = "s",
 			},
 			{
+				setting_id = "meat_grinder_music",
+				type = "checkbox",
+				default_value = false,
+			},
+			{
 				setting_id = "debug",
 				type = "group",
 				sub_widgets = {

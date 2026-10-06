@@ -11,6 +11,9 @@
 --	  So `mission_combat` holds for `combat_hold_seconds` after combat quiets, and a lull does not drop to `mission_explore`.
 --	  Entering combat is never delayed.
 --	* No context resolves while `music_game_state == "cinematic"`, so custom music stays off during cutscenes.
+--	* Meat Grinder has no `wwise_state`, so it is recognized by its mission name instead.
+--	  It resolves to "silence" unless the `meat_grinder_music` setting is on.
+--	  "silence" plays no custom track and keeps the combat and exploration event suppression on.
 --	* Wwise reports "no zone" as the string "None". Meat Grinder and the loading screens both report it.
 --	  It is treated like nil, so neither plays mission music.
 --	* Some missions never report a zone.
@@ -30,6 +33,7 @@ local WwiseGameSyncManager = require("scripts/managers/wwise_game_sync/wwise_gam
 local wwise_combat_state = nil -- Current value of the "music_combat" state group.
 local music_zone = nil -- Current value of the "music_zone" state group.
 local music_game_state = nil -- Current value of the "music_game_state" state group.
+local mission_name = nil -- Name of the current mission, or nil while none is loaded.
 local mission_outcome = nil -- "victory" or "defeat" from that game state until the next level starts, else nil.
 local active_boss_breed = nil -- Breed name while a boss encounter is open, else nil.
 local active_boss_breed_age = 0 -- Seconds since active_boss_breed was last set.
@@ -52,6 +56,10 @@ local combat_hold_remaining = 0 -- Seconds left before mission_combat may fall b
 
 local MISSION_OUTCOME_CONTEXTS = { victory = "mission_victory", defeat = "mission_defeat" }
 
+-- Mission name of the training area where Meat Grinder runs.
+-- Its template has no wwise_state, so music_zone reads "None" there.
+local MEAT_GRINDER_MISSION = "tg_shooting_range"
+
 -- ###########################################################################
 -- Resolution
 -- ###########################################################################
@@ -62,6 +70,20 @@ end
 
 local function is_combat_active()
 	return wwise_combat_state == "normal" or wwise_combat_state == "horde_low" or wwise_combat_state == "horde_high"
+end
+
+-- Returns the current mission's name, or nil before a level has loaded.
+local function read_mission_name()
+	local game_state = Managers and Managers.state
+	local mission_manager = game_state and game_state.mission
+
+	if not mission_manager then
+		return nil
+	end
+
+	local ok, name = pcall(mission_manager.mission_name, mission_manager)
+
+	return ok and name or nil
 end
 
 -- Wwise reports "None" as a string, not as nil.
@@ -78,6 +100,11 @@ local function resolve(mod)
 	-- Cutscenes get no custom music, whatever zone or outcome is still set.
 	if music_game_state == "cinematic" then
 		return nil
+	end
+
+	-- Meat Grinder is silent unless the player opts in.
+	if mission_name == MEAT_GRINDER_MISSION and not mod:get("meat_grinder_music") then
+		return "silence"
 	end
 
 	-- Victory and defeat have their own contexts.
@@ -148,6 +175,11 @@ end
 
 function Context.current()
 	return resolved_context, active_boss_breed
+end
+
+-- Resolves again after a setting change.
+function Context.refresh(mod)
+	recompute(mod)
 end
 
 -- Register a function to call on every real transition of a music state group, after context.lua has tracked it.
@@ -238,8 +270,15 @@ end
 
 -- Call from the main mod file's mod.update.
 -- Managers.event does not exist at mod-load time, so the boss callbacks are registered on the first tick where it does.
--- Also advances the BOSS_BREED_TIMEOUT_SECONDS watchdog.
+-- Also tracks the current mission name and advances the BOSS_BREED_TIMEOUT_SECONDS watchdog.
 function Context.update(mod, dt)
+	local current_mission_name = read_mission_name()
+
+	if current_mission_name ~= mission_name then
+		mission_name = current_mission_name
+		recompute(mod)
+	end
+
 	if active_boss_breed then
 		active_boss_breed_age = active_boss_breed_age + dt
 

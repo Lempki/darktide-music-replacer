@@ -42,6 +42,14 @@ local function play_context(context_name, is_new_context)
 		return
 	end
 
+	if context_name == "silence" then
+		-- Plays no custom track and keeps the combat and exploration event suppression on.
+		AudioClient.stop()
+		Suppression.engage(context_name)
+		log("[playback] silence: no custom music, combat and exploration event suppression on")
+		return
+	end
+
 	if gave_up[context_name] then
 		AudioClient.stop()
 		Suppression.release()
@@ -184,6 +192,12 @@ mod.on_all_mods_loaded = function()
 	has_pending_change = false
 	current_context = Context.current()
 	play_context(current_context, true)
+end
+
+mod.on_setting_changed = function(setting_id)
+	if setting_id == "meat_grinder_music" then
+		Context.refresh(mod)
+	end
 end
 
 mod.update = function(dt)
