@@ -9,6 +9,7 @@ This is Music Replacer, a mod for Warhammer 40,000: Darktide that replaces the g
 * Exactly one file in a folder loops natively and indefinitely, instead of restarting on every repeat.
 * Fades in on a real context change, fades out at a track's own end when its folder holds several files, and overlaps briefly on a switch instead of cutting abruptly.
 * Follows the in-game master and music volume sliders.
+* Keeps the Meat Grinder training area silent unless you turn music on there, which doubles as a quick way to test your files.
 * Native music is silenced only once a replacement track is confirmed playing, so a context with no files behaves exactly like an unmodified game.
 
 ## Prerequisites
@@ -48,6 +49,17 @@ No custom music plays during cutscenes. The game's own music takes over there.
 
 Your audio survives reinstalling or updating the mod through Vortex. Vortex only removes files it deployed itself, and `audio\` is never part of the mod archive. It does not survive the mod folder being renamed, so move `audio\` across by hand if that ever happens.
 
+## Settings
+
+These are in the in-game mod options under Music Replacer.
+
+| Setting | Default | What it does |
+|---|---|---|
+| Combat music hold | 8 seconds | How long combat music keeps playing after a fight quiets down before it switches back to explore music. Set it to 0 to switch back immediately. |
+| Music in Meat Grinder | Off | Off keeps custom music out of the Meat Grinder training area and also silences the game's own combat music there. On plays your explore and combat music there. |
+| Diagnostic logging | Off | Writes `diagnostic.log` for troubleshooting. |
+| Reset log on launch | On | Clears `diagnostic.log` at the start of each session. Only matters while diagnostic logging is on. |
+
 ## Limitations
 
 * Changing the master or music volume slider restarts the playing track. Music plays through a separate ffplay process, started by the Audio Plugin and DarktideLocalServer. That process takes its volume when it starts and cannot be adjusted from outside once it is running. On a slider change, Music Replacer stops the process and starts a new one at the same position with the new volume. The request goes through the local server, so expect a slight delay and a brief pause or cut in the music. While you drag a slider this happens at most once per second, and the final volume is applied once you stop.
@@ -66,7 +78,7 @@ Your audio survives reinstalling or updating the mod through Vortex. Vortex only
 * [x] Custom music following the in-game volume sliders.
 * [x] Adjustable combat music hold, so a lull in a fight does not drop back to explore music.
 * [x] Opt-in diagnostic-mode setting, off by default.
-* [ ] A setting for whether Meat Grinder plays music. It currently plays mission music.
+* [x] A setting for whether Meat Grinder plays music, off by default.
 * [ ] "Let the current track finish" toggle, with a per-category override. For example, a boss track could play out even after the boss dies.
 * [ ] A `mission_horde` folder for the heaviest hordes, separate from `mission_combat`. With no files in it, hordes keep playing combat music exactly as they do now.
 * [ ] Settings for horde music, such as how long it holds before falling back to combat music.

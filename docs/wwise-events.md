@@ -163,7 +163,18 @@ Fields that hold tables or functions are left out.
 
 The game's own zone state group also reads the mission's `wwise_state` field, which is what `music_zone` reports.
 
-What each game mode reports has not been checked yet.
+Missions seen so far:
+
+| Mission | Notes |
+|---|---|
+| `hub_ship` | The hub. `wwise_state` is `hub`. |
+| `tg_shooting_range` | The training area that Meat Grinder runs in. The game's template has `game_mode_name = "shooting_range"`, `mechanism_name = "onboarding"` and no `wwise_state`, which is why `music_zone` reads `"None"` there. The console log recorded this name for Meat Grinder visits. The mod uses it to tell Meat Grinder apart from a mission. |
+| `fm_cargo`, `fm_resurgence`, `lm_rails`, `km_enforcer` | Ordinary missions. `mission_type` was `raid` for `fm_cargo` and `lm_rails`, `strike` for `fm_resurgence` and `assassination` for `km_enforcer`. |
+| `op_train`, `op_no_mans_land` | Names starting with `op_` appear in the console logs. They have not been checked in the mission probe. |
+
+It is not known whether the free Psykhanium also uses `tg_shooting_range`. If it does, the Meat Grinder setting covers it too.
+
+Havoc, Mortis Trials and Expeditions have not been checked yet.
 
 ## DMF quirks found
 
