@@ -84,6 +84,7 @@ These are in the in-game mod options under Music Replacer.
 * [ ] Settings for horde music, such as how long it holds before falling back to combat music.
 * [ ] Custom music for loading screens.
 * [ ] Runtime volume control through the Windows audio session, replacing the relaunch on a slider change.
+* [ ] Detecting music files added or removed during a session, with a rescan button in the mod settings and an optional periodic rescan.
 
 ## Development
 
