@@ -6,7 +6,10 @@
 --	* The hub is told apart from a mission by `music_zone`, since `music_game_state` is "mission" for both.
 --	* A boss is active when Wwise reports `music_combat == "boss"` or a boss encounter window is open.
 --	  Neither signal alone is reliable for every boss type, and either can get stuck.
---	  A real zone change clears both, and BOSS_BREED_TIMEOUT_SECONDS is a backstop for the encounter window.
+--	  A real zone change clears both.
+--	* Encounter windows are tracked per boss unit, since several bosses can be open at once and a start can repeat.
+--	  A window stays open until its own end event, which the game sends when the boss dies or despawns.
+--	  A boss that the game leaves stuck somewhere keeps its window open, just as it keeps the game's own boss music.
 --	* A boss only counts in the hub or a mission, never on a loading screen.
 --	  Meat Grinder's boss dummies leave `music_combat` at "boss" after leaving, until the next mission's intro ends.
 --	* `music_combat` flips on and off every few seconds in real combat.
@@ -37,18 +40,14 @@ local music_zone = nil -- Current value of the "music_zone" state group.
 local music_game_state = nil -- Current value of the "music_game_state" state group.
 local mission_name = nil -- Name of the current mission, or nil while none is loaded.
 local mission_outcome = nil -- "victory" or "defeat" from that game state until the next level starts, else nil.
-local active_boss_breed = nil -- Breed name while a boss encounter is open, else nil.
-local active_boss_breed_age = 0 -- Seconds since active_boss_breed was last set.
+local open_bosses = {} -- Boss unit -> { breed = name, order = n } for every open encounter window.
+local boss_open_count = 0 -- Increases with every newly opened window, so the latest one can be found.
 
 local resolved_context = nil -- Last computed context string, for example "hub".
 local change_listeners = {}
 local state_listeners = {}
 local listeners_registered = false
 local diagnostic_log = function() end -- No-op unless a real logger is passed to Context.init.
-
--- Upper bound for a real boss encounter.
--- A safety net against active_boss_breed getting stuck, not a design target.
-local BOSS_BREED_TIMEOUT_SECONDS = 180
 
 -- Used only if mod:get() returns nil.
 -- The real value is the combat_hold_seconds mod setting.
@@ -67,7 +66,20 @@ local MEAT_GRINDER_MISSION = "tg_shooting_range"
 -- ###########################################################################
 
 local function is_boss_active()
-	return wwise_combat_state == "boss" or active_boss_breed ~= nil
+	return wwise_combat_state == "boss" or next(open_bosses) ~= nil
+end
+
+-- Breed name of the most recently opened encounter window, or nil when none is open.
+local function current_boss_breed()
+	local latest = nil
+
+	for _, boss in pairs(open_bosses) do
+		if not latest or boss.order > latest.order then
+			latest = boss
+		end
+	end
+
+	return latest and latest.breed
 end
 
 local function is_combat_active()
@@ -157,7 +169,7 @@ local function recompute(mod)
 	resolved_context = new_context
 
 	for _, listener in ipairs(change_listeners) do
-		local ok, err = pcall(listener, resolved_context, old_context, active_boss_breed)
+		local ok, err = pcall(listener, resolved_context, old_context, current_boss_breed())
 		if not ok then
 			mod:error("[MusicReplacer] context change listener failed: " .. tostring(err))
 		end
@@ -175,7 +187,7 @@ function Context.on_change(listener)
 end
 
 function Context.current()
-	return resolved_context, active_boss_breed
+	return resolved_context, current_boss_breed()
 end
 
 -- Resolves again after a setting change.
@@ -223,7 +235,7 @@ function Context.init(mod, log)
 			-- The tracked combat state is only this module's copy, so it corrects itself on the next real transition.
 			-- A boss encounter that is still open keeps is_boss_active() true anyway.
 			wwise_combat_state = nil
-			active_boss_breed = nil
+			open_bosses = {}
 			combat_hold_remaining = 0 -- A new zone starts fresh, not partway through the last hold.
 		elseif group_name == "music_game_state" then
 			diagnostic_log(string.format("[raw] music_game_state: %s -> %s", tostring(current), tostring(new_state)))
@@ -254,41 +266,40 @@ function Context.init(mod, log)
 
 	-- Managers.event:register needs the callback as a string method name, looked up on the registered object.
 	-- Passing a function registers without error, then crashes the game when the event fires.
+	-- A repeated start for an open unit keeps its window as it is.
 	function mod.on_boss_start(self, unit, boss_extension)
 		local breed = boss_extension and boss_extension._breed
-		active_boss_breed = breed and breed.name or "<unknown>"
-		active_boss_breed_age = 0
-		diagnostic_log(string.format("[raw] boss_encounter_start breed=%s", active_boss_breed))
+		local breed_name = breed and breed.name or "<unknown>"
+		diagnostic_log(string.format("[raw] boss_encounter_start breed=%s", breed_name))
+
+		if unit and not open_bosses[unit] then
+			boss_open_count = boss_open_count + 1
+			open_bosses[unit] = { breed = breed_name, order = boss_open_count }
+		end
+
 		recompute(mod)
 	end
 
 	function mod.on_boss_end(self, unit, boss_extension)
 		diagnostic_log("[raw] boss_encounter_end")
-		active_boss_breed = nil
+
+		if unit then
+			open_bosses[unit] = nil
+		end
+
 		recompute(mod)
 	end
 end
 
 -- Call from the main mod file's mod.update.
 -- Managers.event does not exist at mod-load time, so the boss callbacks are registered on the first tick where it does.
--- Also tracks the current mission name and advances the BOSS_BREED_TIMEOUT_SECONDS watchdog.
+-- Also tracks the current mission name.
 function Context.update(mod, dt)
 	local current_mission_name = read_mission_name()
 
 	if current_mission_name ~= mission_name then
 		mission_name = current_mission_name
 		recompute(mod)
-	end
-
-	if active_boss_breed then
-		active_boss_breed_age = active_boss_breed_age + dt
-
-		if active_boss_breed_age > BOSS_BREED_TIMEOUT_SECONDS then
-			diagnostic_log(string.format("[raw] active_boss_breed watchdog: forcing clear after %ss stuck (breed was %s)", BOSS_BREED_TIMEOUT_SECONDS, tostring(active_boss_breed)))
-			active_boss_breed = nil
-			active_boss_breed_age = 0
-			recompute(mod)
-		end
 	end
 
 	-- The hold only counts down once combat is inactive.
