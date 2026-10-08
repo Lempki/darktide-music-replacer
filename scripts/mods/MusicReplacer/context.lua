@@ -7,6 +7,8 @@
 --	* A boss is active when Wwise reports `music_combat == "boss"` or a boss encounter window is open.
 --	  Neither signal alone is reliable for every boss type, and either can get stuck.
 --	  A real zone change clears both, and BOSS_BREED_TIMEOUT_SECONDS is a backstop for the encounter window.
+--	* A boss only counts in the hub or a mission, never on a loading screen.
+--	  Meat Grinder's boss dummies leave `music_combat` at "boss" after leaving, until the next mission's intro ends.
 --	* `music_combat` flips on and off every few seconds in real combat.
 --	  So `mission_combat` holds for `combat_hold_seconds` after combat quiets, and a lull does not drop to `mission_explore`.
 --	  Entering combat is never delayed.
@@ -113,6 +115,12 @@ local function resolve(mod)
 		return MISSION_OUTCOME_CONTEXTS[mission_outcome]
 	end
 
+	-- Not in the hub or a mission, for example the main menu, a loading screen or a mission end.
+	-- This comes before the boss signals, since `music_combat` can stay at "boss" after a level ends.
+	if has_no_zone() and not is_zoneless_mission() then
+		return nil
+	end
+
 	if is_boss_active() then
 		return "mission_boss"
 	end
@@ -121,15 +129,8 @@ local function resolve(mod)
 		return "hub"
 	end
 
-	if has_no_zone() then
-		if not is_zoneless_mission() then
-			-- Not in the hub or a mission, for example the main menu, a loading screen or a mission end.
-			return nil
-		end
-
-		if resolved_context == nil then
-			diagnostic_log(string.format("[zoneless] music_zone=%s with music_game_state=%s, treating as a mission", tostring(music_zone), tostring(music_game_state)))
-		end
+	if has_no_zone() and resolved_context == nil then
+		diagnostic_log(string.format("[zoneless] music_zone=%s with music_game_state=%s, treating as a mission", tostring(music_zone), tostring(music_game_state)))
 	end
 
 	if is_combat_active() then
