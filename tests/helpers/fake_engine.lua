@@ -99,6 +99,7 @@ end
 -- Options:
 -- * `settings`: the values mod:get() returns, by setting id.
 -- * `mods`: other mods get_mod() returns, by name.
+-- * `backend`: a replacement for the fake Managers.backend.
 function FakeEngine.new(options)
 	options = options or {}
 
@@ -127,9 +128,11 @@ function FakeEngine.new(options)
 		end,
 	}
 
+	-- The game's BackendManager starts with _initialized false and sets it once its backend is up.
 	Managers = {
 		state = {},
 		event = new_event_manager(engine),
+		backend = options.backend or { _initialized = false },
 	}
 
 	CLASS = {
@@ -170,6 +173,11 @@ function FakeEngine:set_mission(name)
 	Managers.state.mission = {
 		mission_name = function() return name end,
 	}
+end
+
+-- Marks the game's backend as initialized, after which it accepts requests.
+function FakeEngine:initialize_backend()
+	Managers.backend._initialized = true
 end
 
 -- Fires an event to every listener registered through Managers.event, which looks up the callback by method name.

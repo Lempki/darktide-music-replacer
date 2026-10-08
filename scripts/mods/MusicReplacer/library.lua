@@ -6,7 +6,7 @@
 -- That is a hard error rather than a nil result, and a missing subfolder behaves the same way.
 -- A missing, empty or not yet scanned folder resolves to nil here, which is the fallback-to-native-music signal the caller needs.
 --
--- Each folder is scanned once, when the game launches, and the list is never refreshed.
+-- Each folder is scanned once, after the game's backend is ready, and the list is never refreshed.
 -- So a file deleted during a session is still listed, and pick_file() checks that a file exists before returning it.
 -- A file added during a session is not listed until the next launch.
 
@@ -22,7 +22,16 @@ local AUDIO_ROOT = "./../mods/MusicReplacer/audio"
 local _io = Mods and Mods.lua and Mods.lua.io
 local _os = Mods and Mods.lua and Mods.lua.os
 
+-- The game rejects every backend request until its backend has initialized, and DLS lists folders through one.
+-- With a short mod list, all mods finish loading before that, so the scan waits for it.
+-- BackendManager has no public accessor for this, so the scan reads its private _initialized field.
+-- If a game update removes that field, the scan starts after SCAN_FALLBACK_SECONDS instead of never.
+local SCAN_FALLBACK_SECONDS = 30
+
 local diagnostic_log = function() end -- No-op unless a real logger is passed to Library.init.
+local audio_mod = nil
+local waiting_to_scan = false
+local scan_wait_elapsed = 0
 local handlers = {}
 local last_picked = {} -- context_name -> the file path most recently returned.
 local reported_missing = {} -- file_path -> true once a missing file has been logged.
@@ -57,19 +66,16 @@ local function ensure_audio_folder(context_name)
 	pcall(_os.execute, 'mkdir "' .. path .. '" >nul 2>nul')
 end
 
--- Call once, after all mods have loaded.
--- `log`, if given, receives a line the first time a listed file turns out to be missing.
-function Library.init(log)
-	diagnostic_log = log or diagnostic_log
+local function is_backend_ready()
+	local backend = Managers and Managers.backend
+	return backend ~= nil and backend._initialized == true
+end
 
-	local audio_mod = get_mod("Audio")
-	if not audio_mod then
-		return -- Audio Plugin missing. pick_file() below correctly returns nil.
-	end
+local function scan_folders(reason)
+	waiting_to_scan = false
+	diagnostic_log(string.format("[library] scanning audio folders after %.1fs, %s", scan_wait_elapsed, reason))
 
 	for _, context_name in ipairs(CONTEXTS) do
-		ensure_audio_folder(context_name)
-
 		-- This call is not pcall-wrapped.
 		-- new_files_handler finds its path by walking the call stack for the calling mod's name.
 		-- A pcall frame in that walk silently breaks the resolved path.
@@ -78,9 +84,43 @@ function Library.init(log)
 	end
 end
 
+-- Call once, after all mods have loaded.
+-- The folders are scanned later, by Library.update().
+-- `log`, if given, receives a line when the scan starts and the first time a listed file turns out to be missing.
+function Library.init(log)
+	diagnostic_log = log or diagnostic_log
+
+	audio_mod = get_mod("Audio")
+	if not audio_mod then
+		return -- Audio Plugin missing. pick_file() below correctly returns nil.
+	end
+
+	for _, context_name in ipairs(CONTEXTS) do
+		ensure_audio_folder(context_name)
+	end
+
+	waiting_to_scan = true
+end
+
+-- Call from the main mod file's mod.update, so the scan's call stack stays inside this mod.
+-- Starts the scan on the first tick where the game's backend is ready.
+function Library.update(dt)
+	if not waiting_to_scan then
+		return
+	end
+
+	scan_wait_elapsed = scan_wait_elapsed + dt
+
+	if is_backend_ready() then
+		scan_folders("the game backend is ready")
+	elseif scan_wait_elapsed >= SCAN_FALLBACK_SECONDS then
+		scan_folders("with no ready signal from the game backend")
+	end
+end
+
 -- Returns file_path, duration_seconds and is_only_file, or nil if no file is available.
 -- Nil means the folder is missing, empty or not yet scanned, or no listed file exists any more.
--- It also means Library.init() was not called, or the Audio Plugin is missing.
+-- It also means the scan has not started yet, or the Audio Plugin is missing.
 -- The caller should fall back to native music on nil.
 -- duration may be nil even with a file_path.
 -- is_only_file flags a folder with exactly one usable file for native looping (see audio_client.lua).

@@ -203,6 +203,7 @@ end
 
 mod.update = function(dt)
 	Context.update(mod, dt)
+	Library.update(dt)
 	AudioClient.update(dt)
 	MissionProbe.update()
 
