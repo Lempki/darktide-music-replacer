@@ -92,12 +92,15 @@ These are in the in-game mod options under Music Replacer.
 tools\build.ps1           # Build dist\MusicReplacer.zip, for Vortex "Install from File".
 tools\build.ps1 -Deploy   # Also copy the source straight into the installed mod folder.
 tools\test.ps1            # Run the specs under tests\spec with LuaJIT.
+luacheck .                # Static analysis with the settings in .luacheckrc.
 ```
 
 `-Deploy` is the fast iteration path. It overwrites the `.lua` files in place, leaving `audio\` alone, so a change can be tested by restarting the game rather than reinstalling through Vortex. The zip stays the real artifact, and a Vortex purge discards anything deployed this way.
 
 The specs need [LuaJIT 2.1](https://luajit.org/) on `PATH`, the same Lua runtime the game uses.
 `tools\test.ps1` exits non-zero when any spec fails.
+Static analysis needs [luacheck](https://github.com/lunarmodules/luacheck) on `PATH`.
+The standalone `luacheck.exe` from its releases page is enough.
 
 How native music reaches the player, how the mod silences it, and how to trace a sound to its Wwise event are covered in [docs/wwise-events.md](docs/wwise-events.md).
 
