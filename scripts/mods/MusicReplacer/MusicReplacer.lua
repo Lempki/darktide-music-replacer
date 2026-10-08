@@ -13,6 +13,13 @@ local DiagnosticLog = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/di
 DiagnosticLog.init(mod)
 local log = DiagnosticLog.write
 
+-- tools/build.ps1 stamps the packaged info.json with the commit and build time, which tells two builds of one version apart.
+-- The console log gets the line too, since diagnostic.log is only written while Diagnostic Logging is on.
+local version_line = string.format("version %s, build %s",
+	tostring(mod:get_metadata("version")), tostring(mod:get_metadata("build") or "unknown"))
+mod:info("%s", version_line)
+log("[startup] " .. version_line)
+
 -- ###########################################################################
 -- Playback Orchestration
 -- ###########################################################################
