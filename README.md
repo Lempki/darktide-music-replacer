@@ -130,6 +130,8 @@ darktide-music-replacer/
 │   └── wwise-events.md                  # Native music sources, suppression, and the event and mission probes.
 ├── tests/
 │   ├── run.lua                          # Minimal spec runner, needs only LuaJIT.
+│   ├── helpers/
+│   │   └── fake_engine.lua              # Fakes the game and DMF globals so the mod's modules run outside the game.
 │   └── spec/                            # Specs, one *_spec.lua file per subject.
 └── tools/
     ├── build.ps1                        # Builds the zip and optionally deploys straight into the installed mod folder.

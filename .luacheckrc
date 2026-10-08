@@ -3,14 +3,9 @@
 std = "luajit"
 
 -- Engine and DMF globals the mod reads but never assigns.
-read_globals = {
-	"Application",
-	"CLASS",
-	"Managers",
-	"Mods",
-	"Wwise",
-	"get_mod",
-}
+local engine_globals = { "Application", "CLASS", "Managers", "Mods", "Wwise", "get_mod" }
+
+read_globals = engine_globals
 
 -- Hook handlers and engine callbacks must accept arguments they do not use.
 unused_args = false
@@ -24,5 +19,8 @@ local spec_globals = { "assert_deep_equal", "assert_equal", "describe", "it" }
 
 files["tests/run.lua"] = { globals = spec_globals }
 files["tests/spec"] = { read_globals = spec_globals }
+
+-- The fake engine installs the engine globals.
+files["tests/helpers"] = { globals = engine_globals }
 
 exclude_files = { "dist" }
