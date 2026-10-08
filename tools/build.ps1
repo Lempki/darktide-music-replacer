@@ -51,6 +51,35 @@ foreach ($item in $SourceItems) {
     Copy-Item -LiteralPath (Join-Path $RepoRoot $item) -Destination $StageMod -Recurse -Force
 }
 
+# The commit and build time, with -dirty when the packaged files differ from that commit.
+function Get-BuildStamp {
+    $commit = 'unknown commit'
+    if (Get-Command git -ErrorAction SilentlyContinue) {
+        try {
+            $hash = & git -C $RepoRoot rev-parse --short HEAD 2>$null
+            if ($LASTEXITCODE -eq 0 -and $hash) {
+                $commit = $hash
+                $changes = & git -C $RepoRoot status --porcelain -- $SourceItems 2>$null
+                if ($changes) {
+                    $commit += '-dirty'
+                }
+            }
+        }
+        catch {
+            $commit = 'unknown commit'
+        }
+    }
+    return '{0}, built {1}' -f $commit, (Get-Date -Format 'yyyy-MM-dd HH:mm')
+}
+
+# DMF keeps unknown info.json keys, so the mod can read the stamp with mod:get_metadata("build").
+# Only the staged copy is stamped. The repository's info.json stays unchanged.
+$BuildStamp = Get-BuildStamp
+$StagedInfo = Join-Path $StageMod 'info.json'
+$infoText = [System.IO.File]::ReadAllText($StagedInfo)
+$infoText = ([regex]'\{').Replace($infoText, "{`n  `"build`": `"$BuildStamp`",", 1)
+[System.IO.File]::WriteAllText($StagedInfo, $infoText, (New-Object System.Text.UTF8Encoding $false)) # UTF-8 without a BOM, like the source file.
+
 # Empty folders so a fresh install is ready to receive files immediately, without waiting for the mod's own runtime mkdir (library.lua) to run once first.
 # Not tracked in git -- synthesized here instead, since git can't track an empty directory anyway.
 foreach ($context in $AudioContexts) {
@@ -63,6 +92,7 @@ Compress-Archive -Path $StageMod -DestinationPath $ZipPath -Force
 $zipInfo = Get-Item -LiteralPath $ZipPath
 Write-Host ""
 Write-Host ("Built {0} ({1:N1} KB)" -f $zipInfo.FullName, ($zipInfo.Length / 1KB))
+Write-Host ("Build stamp: {0}" -f $BuildStamp)
 Write-Host ""
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
