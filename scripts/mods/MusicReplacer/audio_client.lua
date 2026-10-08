@@ -268,8 +268,16 @@ end
 -- It cannot help a hard crash.
 -- It blocks the calling thread, so never call it outside shutdown.
 function AudioClient.shutdown()
+	-- The plugin's stop request indexes Managers.backend, which is already gone at game exit and would raise an error there.
+	-- On a mod reload the backend still exists, so the request still goes out.
+	local function stop_if_backend_exists()
+		if Managers and Managers.backend then
+			AudioClient.stop()
+		end
+	end
+
 	if not audio_mod or not _os or not _os.execute then
-		AudioClient.stop()
+		stop_if_backend_exists()
 		return
 	end
 
@@ -288,7 +296,7 @@ function AudioClient.shutdown()
 		force_kill(entry.play_file_id)
 	end
 
-	AudioClient.stop() -- Extra insurance in case the normal path does land.
+	stop_if_backend_exists() -- Extra insurance in case the normal path does land.
 end
 
 -- Plays file_path as 2D music, crossfading with whatever was playing (see the header).

@@ -100,6 +100,7 @@ end
 -- * `settings`: the values mod:get() returns, by setting id.
 -- * `mods`: other mods get_mod() returns, by name.
 -- * `backend`: a replacement for the fake Managers.backend.
+-- * `lua`: the Mods.lua table, for example `{ os = fake_os }`. Empty by default.
 function FakeEngine.new(options)
 	options = options or {}
 
@@ -109,6 +110,7 @@ function FakeEngine.new(options)
 		messages = {},
 		event_listeners = {},
 		wwise_calls = {},
+		url_requests = {},
 	}, FakeEngine)
 
 	engine.mod = new_mod(engine)
@@ -129,10 +131,15 @@ function FakeEngine.new(options)
 	}
 
 	-- The game's BackendManager starts with _initialized false and sets it once its backend is up.
+	local backend = options.backend or { _initialized = false }
+	function backend:url_request(url)
+		engine.url_requests[#engine.url_requests + 1] = url
+	end
+
 	Managers = {
 		state = {},
 		event = new_event_manager(engine),
-		backend = options.backend or { _initialized = false },
+		backend = backend,
 	}
 
 	CLASS = {
@@ -145,8 +152,8 @@ function FakeEngine.new(options)
 		user_setting = function() return nil end,
 	}
 
-	-- Mods.lua.io and Mods.lua.os are left out, so no spec reaches the real file system by accident.
-	Mods = { lua = {} }
+	-- Mods.lua.io and Mods.lua.os are left out by default, so no spec reaches the real file system by accident.
+	Mods = { lua = options.lua or {} }
 
 	package.loaded[WWISE_GAME_SYNC_MANAGER] = new_wwise_game_sync_manager(engine)
 
@@ -178,6 +185,11 @@ end
 -- Marks the game's backend as initialized, after which it accepts requests.
 function FakeEngine:initialize_backend()
 	Managers.backend._initialized = true
+end
+
+-- Removes the game's backend, as at game exit.
+function FakeEngine:tear_down_backend()
+	Managers.backend = nil
 end
 
 -- Fires an event to every listener registered through Managers.event, which looks up the callback by method name.
