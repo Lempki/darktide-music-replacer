@@ -166,7 +166,8 @@ mod.on_all_mods_loaded = function()
 	Library.init(log)
 	AudioClient.init(log)
 
-	-- A mod can only install one hook per method on itself, so Suppression and EventProbe cannot each hook WwiseWorld.trigger_resource_event on their own.
+	-- A mod can only install one hook per method on itself.
+	-- So Suppression and EventProbe cannot each hook WwiseWorld.trigger_resource_event on their own.
 	-- This one hook serves both instead.
 	-- EventProbe always sees the event first, including one Suppression is about to drop.
 	mod:hook(CLASS.WwiseWorld, "trigger_resource_event", function(func, wwise_world, event_name, ...)
