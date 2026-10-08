@@ -79,13 +79,18 @@ These are in the in-game mod options under Music Replacer.
 * [x] Adjustable combat music hold, so a lull in a fight does not drop back to explore music.
 * [x] Opt-in diagnostic-mode setting, off by default.
 * [x] A setting for whether Meat Grinder plays music, off by default.
+* [ ] A setting per context to choose custom music, the game's own music, or silence, without moving files around.
+* [ ] More Meat Grinder options, such as choosing which contexts play there.
+* [ ] Detecting music files added or removed during a session, with a rescan button in the mod settings and an optional periodic rescan.
+* [ ] Runtime volume control through the Windows audio session, replacing the relaunch on a slider change.
+* [ ] True crossfades between tracks, once runtime volume control works.
+* [ ] Resuming the combat track when combat returns right after it faded out, instead of restarting it from the beginning.
+* [ ] Optional loudness normalization, so quiet and loud files play at a similar level without changing the files. It would have a setting to turn it on and a target level.
 * [ ] "Let the current track finish" toggle, with a per-category override. For example, a boss track could play out even after the boss dies.
 * [ ] A `mission_horde` folder for the heaviest hordes, separate from `mission_combat`. With no files in it, hordes keep playing combat music exactly as they do now.
 * [ ] Settings for horde music, such as how long it holds before falling back to combat music.
+* [ ] Different music per mission type or game mode, such as Operations, Havoc, Mortis Trials, and Expeditions.
 * [ ] Custom music for loading screens.
-* [ ] Runtime volume control through the Windows audio session, replacing the relaunch on a slider change.
-* [ ] Detecting music files added or removed during a session, with a rescan button in the mod settings and an optional periodic rescan.
-* [ ] Optional loudness normalization, so quiet and loud files play at a similar level without changing the files. It would have a setting to turn it on and a target level.
 
 ## Development
 
