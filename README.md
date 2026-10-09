@@ -66,6 +66,7 @@ These are in the in-game mod options under Music Replacer.
 * Each audio folder is scanned once, when the game launches. Restart the game after adding or removing files. A file you remove while the game runs is skipped, and a file you add is not picked up until the next launch.
 * A hard crash can leave a track playing until it ends on its own. Quitting normally stops it. A crash runs no mod code at all, so nothing can intervene. If it happens, end `ffplay_dt.exe` in Task Manager.
 * Music Replacer only affects your own game. Squadmates hear the game's own music regardless.
+* Loading screens, the mission briefing, the mission intro, and cutscenes play the game's own music. Custom music starts once you are in the hub or the mission itself.
 
 ## Roadmap
 

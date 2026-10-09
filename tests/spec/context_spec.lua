@@ -23,6 +23,7 @@ describe("context.lua", function()
 
 		engine:set_state("music_game_state", "loading")
 		engine:set_state("music_zone", "hub")
+		engine:set_state("music_game_state", "mission")
 
 		assert_equal((Context.current()), "hub")
 	end)

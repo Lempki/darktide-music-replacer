@@ -24,6 +24,9 @@ Three groups matter for music:
 Wwise reports "no value" as the string `"None"`, not as Lua `nil`.
 `cinematic` was seen after a mission, during a cutscene. A story mission goes straight from `game_score_win` to `cinematic` with no `loading` in between.
 The mod resolves no context while the state is `cinematic`, so custom music stays off during cutscenes.
+The hub and mission contexts also need an in-world state: `mission`, `mission_board`, or `mission_ready`.
+The zone arrives before that, the hub zone about 10 seconds before the loading screen ends and a mission zone partway through the briefing.
+So custom music starts once the loading screen or the mission intro ends, and the game's own music plays until then.
 Only this post-mission cutscene has been seen so far, so other cutscenes may report a different state.
 The source lists more state groups (circumstance, event intensity, event type, objective, objective progression, minion aggro intensity, options, player state, suppression state).
 None of those has been tried as a lever.

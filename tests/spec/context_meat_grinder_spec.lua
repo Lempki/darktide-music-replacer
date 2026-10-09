@@ -15,7 +15,7 @@ local function in_meat_grinder(meat_grinder_music)
 end
 
 describe("context.lua Meat Grinder", function()
-	it("resolves silence with the setting off, as soon as the mission name arrives", function()
+	it("resolves silence with the setting off, once the visit starts", function()
 		local harness = in_meat_grinder(false)
 
 		assert_deep_equal(harness.changes, { "hub", "mission_explore", "nil", "silence" })

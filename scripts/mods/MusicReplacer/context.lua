@@ -16,6 +16,9 @@
 --	  So `mission_combat` holds for `combat_hold_seconds` after combat quiets, and a lull does not drop to `mission_explore`.
 --	  Entering combat is never delayed.
 --	* No context resolves while `music_game_state == "cinematic"`, so custom music stays off during cutscenes.
+--	* The hub and mission contexts only resolve while the game state is in the world: "mission", "mission_board" or "mission_ready".
+--	  Loading screens, the loadout, the briefing, the intro and menus resolve no context, even once the zone has arrived.
+--	  The game sends the hub zone about 10 seconds before the loading screen ends, and a mission zone partway through the briefing.
 --	* Meat Grinder has no `wwise_state`, so it is recognized by its mission name instead.
 --	  It resolves to "silence" unless the `meat_grinder_music` setting is on.
 --	  "silence" plays no custom track and keeps the combat and exploration event suppression on.
@@ -56,6 +59,9 @@ local COMBAT_HOLD_SECONDS_DEFAULT = 8
 local combat_hold_remaining = 0 -- Seconds left before mission_combat may fall back to mission_explore.
 
 local MISSION_OUTCOME_CONTEXTS = { victory = "mission_victory", defeat = "mission_defeat" }
+
+-- Game states in which the player is in the hub or a mission, rather than on a loading screen, a briefing or a menu.
+local IN_WORLD_GAME_STATES = { mission = true, mission_board = true, mission_ready = true }
 
 -- Mission name of the training area where Meat Grinder runs.
 -- Its template has no wwise_state, so music_zone reads "None" there.
@@ -116,15 +122,19 @@ local function resolve(mod)
 		return nil
 	end
 
-	-- Meat Grinder is silent unless the player opts in.
-	if mission_name == MEAT_GRINDER_MISSION and not mod:get("meat_grinder_music") then
-		return "silence"
-	end
-
 	-- Victory and defeat have their own contexts.
 	-- They are checked before the boss signals, since a wipe can leave a boss encounter open.
 	if mission_outcome then
 		return MISSION_OUTCOME_CONTEXTS[mission_outcome]
+	end
+
+	if not IN_WORLD_GAME_STATES[music_game_state] then
+		return nil
+	end
+
+	-- Meat Grinder is silent unless the player opts in.
+	if mission_name == MEAT_GRINDER_MISSION and not mod:get("meat_grinder_music") then
+		return "silence"
 	end
 
 	-- Not in the hub or a mission, for example the main menu, a loading screen or a mission end.
