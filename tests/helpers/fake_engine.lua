@@ -170,6 +170,19 @@ function FakeEngine:set_state(group_name, state)
 	self.wwise_game_sync:_set_state(group_name, state)
 end
 
+-- Returns the value Wwise last received for a state group, from the game or from the mod.
+-- That is the value the player hears, while the game's own manager may still hold the real one.
+function FakeEngine:wwise_state(group_name)
+	for index = #self.wwise_calls, 1, -1 do
+		local call = self.wwise_calls[index]
+		if call[1] == group_name then
+			return call[2]
+		end
+	end
+
+	return DEFAULT_GROUP_STATE
+end
+
 -- Sets the current mission name, or removes the mission manager when the name is nil, as before a level loads.
 function FakeEngine:set_mission(name)
 	if name == nil then

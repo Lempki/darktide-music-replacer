@@ -1,0 +1,196 @@
+-- Pins how suppression.lua silences and restores the game's own music.
+-- context.lua feeds it every real state transition, wired the same way as in MusicReplacer.lua.
+-- The assertions read the value Wwise last received, which is what the player hears.
+
+local FakeEngine = require("tests.helpers.fake_engine")
+
+local EXPLORATION_EVENT = "wwise/events/music/play_exploration_music"
+
+-- Returns a fake engine and a freshly loaded suppression.lua that sees every real state transition.
+local function load_suppression()
+	local engine = FakeEngine.new()
+	local Context = engine:load("context")
+	local Suppression = engine:load("suppression")
+
+	Suppression.init()
+	Context.on_state_change(Suppression.on_state_change)
+	Context.init(engine.mod)
+
+	return engine, Suppression
+end
+
+describe("suppression.lua hub", function()
+	it("forces the hub zone to None while engaged, and restores it on release", function()
+		local engine, Suppression = load_suppression()
+		engine:set_state("music_zone", "hub")
+
+		Suppression.engage("hub")
+
+		assert_equal(engine:wwise_state("music_zone"), "None")
+
+		Suppression.release()
+
+		assert_equal(engine:wwise_state("music_zone"), "hub")
+	end)
+
+	it("restores the hub zone when the context moves on to a mission context", function()
+		local engine, Suppression = load_suppression()
+		engine:set_state("music_zone", "hub")
+		Suppression.engage("hub")
+
+		Suppression.engage("mission_explore")
+
+		assert_equal(engine:wwise_state("music_zone"), "hub")
+	end)
+
+	it("leaves a real zone change alone, and restores nothing over it", function()
+		local engine, Suppression = load_suppression()
+		engine:set_state("music_zone", "hub")
+		Suppression.engage("hub")
+
+		engine:set_state("music_zone", "None")
+		Suppression.release()
+
+		assert_equal(engine:wwise_state("music_zone"), "None")
+	end)
+
+	it("does not force the zone for a mission context", function()
+		local engine, Suppression = load_suppression()
+		engine:set_state("music_zone", "zone_3")
+
+		Suppression.engage("mission_explore")
+
+		assert_equal(engine:wwise_state("music_zone"), "zone_3")
+	end)
+end)
+
+describe("suppression.lua combat", function()
+	it("forces the current combat state to None when engaged", function()
+		local engine, Suppression = load_suppression()
+		engine:set_state("music_combat", "normal")
+
+		Suppression.engage("mission_combat")
+
+		assert_equal(engine:wwise_state("music_combat"), "None")
+	end)
+
+	it("forces combat to None again after every real transition while engaged", function()
+		local engine, Suppression = load_suppression()
+		Suppression.engage("mission_combat")
+
+		for _, state in ipairs({ "normal", "horde_high", "horde_low", "boss" }) do
+			engine:set_state("music_combat", state)
+
+			assert_equal(engine:wwise_state("music_combat"), "None", state)
+		end
+	end)
+
+	-- A boss that started under a custom track must get its native music back when the track stops.
+	-- The game only re-sends a state when it changes, so the release has to restore it.
+	it("restores the real combat state on release", function()
+		local engine, Suppression = load_suppression()
+		Suppression.engage("mission_explore")
+		engine:set_state("music_combat", "boss")
+
+		Suppression.release()
+
+		assert_equal(engine:wwise_state("music_combat"), "boss")
+	end)
+
+	it("sends nothing to Wwise for a real None, on engage or on release", function()
+		local engine, Suppression = load_suppression()
+		engine:set_state("music_combat", "normal")
+		engine:set_state("music_combat", "None")
+		local calls_before = #engine.wwise_calls
+
+		Suppression.engage("mission_explore")
+		Suppression.release()
+
+		assert_equal(#engine.wwise_calls, calls_before)
+	end)
+
+	it("forces combat for the silence context too", function()
+		local engine, Suppression = load_suppression()
+		engine:set_state("music_combat", "boss")
+
+		Suppression.engage("silence")
+
+		assert_equal(engine:wwise_state("music_combat"), "None")
+	end)
+end)
+
+describe("suppression.lua victory and defeat", function()
+	for _, context_name in ipairs({ "mission_victory", "mission_defeat" }) do
+		it("forces the game state to None for " .. context_name .. " and again after every transition", function()
+			local engine, Suppression = load_suppression()
+			engine:set_state("music_game_state", "victory")
+
+			Suppression.engage(context_name)
+
+			assert_equal(engine:wwise_state("music_game_state"), "None")
+
+			for _, state in ipairs({ "mission", "game_score_win" }) do
+				engine:set_state("music_game_state", state)
+
+				assert_equal(engine:wwise_state("music_game_state"), "None", state)
+			end
+		end)
+	end
+
+	it("restores the real game state on release", function()
+		local engine, Suppression = load_suppression()
+		engine:set_state("music_game_state", "defeat")
+		Suppression.engage("mission_defeat")
+		engine:set_state("music_game_state", "game_score_lose")
+
+		Suppression.release()
+
+		assert_equal(engine:wwise_state("music_game_state"), "game_score_lose")
+	end)
+
+	it("needs no restore once the game itself has set None", function()
+		local engine, Suppression = load_suppression()
+		engine:set_state("music_game_state", "victory")
+		Suppression.engage("mission_victory")
+		engine:set_state("music_game_state", "None")
+		local calls_before = #engine.wwise_calls
+
+		Suppression.release()
+
+		assert_equal(#engine.wwise_calls, calls_before)
+	end)
+
+	it("does not force the game state for other contexts", function()
+		local engine, Suppression = load_suppression()
+		engine:set_state("music_game_state", "mission")
+
+		Suppression.engage("mission_boss")
+
+		assert_equal(engine:wwise_state("music_game_state"), "mission")
+	end)
+end)
+
+describe("suppression.lua events", function()
+	it("drops the native exploration music event only while engaged", function()
+		local _, Suppression = load_suppression()
+
+		assert_equal(Suppression.should_drop_event(EXPLORATION_EVENT), false)
+
+		Suppression.engage("mission_explore")
+
+		assert_equal(Suppression.should_drop_event(EXPLORATION_EVENT), true)
+
+		Suppression.release()
+
+		assert_equal(Suppression.should_drop_event(EXPLORATION_EVENT), false)
+	end)
+
+	it("lets every other event through while engaged", function()
+		local _, Suppression = load_suppression()
+		Suppression.engage("mission_explore")
+
+		assert_equal(Suppression.should_drop_event("wwise/events/music/play_music_manager"), false)
+		assert_equal(Suppression.should_drop_event("wwise/events/ui/play_ui_silence"), false)
+		assert_equal(Suppression.should_drop_event(nil), false)
+	end)
+end)

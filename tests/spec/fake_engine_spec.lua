@@ -13,6 +13,18 @@ describe("FakeEngine", function()
 		assert_deep_equal(engine.wwise_calls, { { "music_zone", "hub" } })
 	end)
 
+	it("reports the value Wwise last received for a state group", function()
+		local engine = FakeEngine.new()
+
+		assert_equal(engine:wwise_state("music_zone"), "None")
+
+		engine:set_state("music_zone", "hub")
+		Wwise.set_state("music_zone", "None")
+
+		assert_equal(engine:wwise_state("music_zone"), "None")
+		assert_equal(engine.wwise_game_sync._wwise_state_group_states.music_zone, "hub")
+	end)
+
 	it("runs a hook handler with the original function first", function()
 		local engine = FakeEngine.new()
 		local Manager = require("scripts/managers/wwise_game_sync/wwise_game_sync_manager")
