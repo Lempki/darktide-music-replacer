@@ -140,6 +140,7 @@ darktide-music-replacer/
 ├── tests/
 │   ├── run.lua                          # Minimal spec runner, needs only LuaJIT.
 │   ├── helpers/
+│   │   ├── context_harness.lua          # Replays the game's real state sequences through context.lua.
 │   │   └── fake_engine.lua              # Fakes the game and DMF globals so the mod's modules run outside the game.
 │   └── spec/                            # Specs, one *_spec.lua file per subject.
 └── tools/
