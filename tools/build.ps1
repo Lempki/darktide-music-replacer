@@ -21,7 +21,7 @@ $ErrorActionPreference = 'Stop'
 
 $ModName = 'MusicReplacer'
 $SourceItems = @("$ModName.mod", 'info.json', 'scripts')
-$AudioContexts = @('hub', 'mission_explore', 'mission_combat', 'mission_boss', 'mission_victory', 'mission_defeat') # Keep in sync with CONTEXTS in library.lua.
+$AudioContexts = @('hub', 'mission_explore', 'mission_combat', 'mission_boss', 'mission_last_stand', 'mission_victory', 'mission_defeat') # Keep in sync with CONTEXTS in library.lua.
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 if (-not $OutDir) {

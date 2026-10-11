@@ -4,7 +4,7 @@ This is Music Replacer, a mod for Warhammer 40,000: Darktide that replaces the g
 
 ## Features
 
-* Replaces hub, mission-explore, combat, boss, victory, and defeat music with your own audio files.
+* Replaces hub, mission-explore, combat, boss, last stand, victory, and defeat music with your own audio files.
 * Several files in a folder are picked at random, never repeating the file that just played.
 * Exactly one file in a folder loops natively and indefinitely, instead of restarting on every repeat.
 * Fades in on a real context change, fades out at a track's own end when its folder holds several files, and overlaps briefly on a switch instead of cutting abruptly.
@@ -30,11 +30,12 @@ Install this mod like any other Darktide mod, then drop your own audio files int
     mission_explore\
     mission_combat\
     mission_boss\
+    mission_last_stand\
     mission_victory\
     mission_defeat\
 ```
 
-All six folders already exist after install. Put audio files (`.mp3`, `.wav`, and so on) directly inside whichever ones you want music for. One level deep only, since this layout is fixed by the Audio Plugin, not by this mod.
+All seven folders already exist after install. Put audio files (`.mp3`, `.wav`, and so on) directly inside whichever ones you want music for. One level deep only, since this layout is fixed by the Audio Plugin, not by this mod.
 
 | Folder | When it plays |
 |---|---|
@@ -42,6 +43,7 @@ All six folders already exist after install. Put audio files (`.mp3`, `.wav`, an
 | `mission_explore` | In a mission, no meaningful threat. |
 | `mission_combat` | In a mission, fighting, normal combat through to a heavy horde. |
 | `mission_boss` | A monstrosity or an assassination target is active. |
+| `mission_last_stand` | In a mission, while only one player of the team is still alive. It replaces boss, combat, and explore music, as the game's own last stand music does. |
 | `mission_victory` | From the moment a mission is won until the loading screen or a cutscene. |
 | `mission_defeat` | From the moment a mission is lost until the loading screen or a cutscene. |
 
@@ -90,7 +92,6 @@ These are in the in-game mod options under Music Replacer.
 * [ ] "Let the current track finish" toggle, with a per-category override. For example, a boss track could play out even after the boss dies.
 * [ ] A `mission_horde` folder for the heaviest hordes, separate from `mission_combat`. With no files in it, hordes keep playing combat music exactly as they do now.
 * [ ] Settings for horde music, such as how long it holds before falling back to combat music.
-* [ ] Custom music for the last man standing moment, when only one player of the team is still alive.
 * [ ] Different music per mission type or game mode, such as Operations, Havoc, Mortis Trials, and Expeditions.
 * [ ] Custom music for loading screens.
 

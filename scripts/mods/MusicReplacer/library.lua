@@ -13,7 +13,7 @@
 local Library = {}
 
 -- Keep in sync with $AudioContexts in tools/build.ps1.
-local CONTEXTS = { "hub", "mission_explore", "mission_combat", "mission_boss", "mission_victory", "mission_defeat" }
+local CONTEXTS = { "hub", "mission_explore", "mission_combat", "mission_boss", "mission_last_stand", "mission_victory", "mission_defeat" }
 
 -- Relative to the game's own working directory.
 -- Same "./../mods/<name>/..." convention DMF uses to find this mod's info.json.

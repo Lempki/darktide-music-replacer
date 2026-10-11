@@ -170,6 +170,52 @@ describe("suppression.lua victory and defeat", function()
 	end)
 end)
 
+describe("suppression.lua last stand", function()
+	it("forces the objective music to None for mission_last_stand and again after every transition", function()
+		local engine, Suppression = load_suppression()
+		engine:set_state("music_objective", "last_man_standing")
+
+		Suppression.engage("mission_last_stand")
+
+		assert_equal(engine:wwise_state("music_objective"), "None")
+
+		engine:set_state("music_objective", "end_event")
+		engine:set_state("music_objective", "last_man_standing")
+
+		assert_equal(engine:wwise_state("music_objective"), "None")
+	end)
+
+	it("restores the real objective music on release", function()
+		local engine, Suppression = load_suppression()
+		engine:set_state("music_objective", "last_man_standing")
+		Suppression.engage("mission_last_stand")
+		engine:set_state("music_objective", "end_event")
+
+		Suppression.release()
+
+		assert_equal(engine:wwise_state("music_objective"), "end_event")
+	end)
+
+	it("restores the real objective music when the context moves on to mission_boss", function()
+		local engine, Suppression = load_suppression()
+		engine:set_state("music_objective", "last_man_standing")
+		Suppression.engage("mission_last_stand")
+
+		Suppression.engage("mission_boss")
+
+		assert_equal(engine:wwise_state("music_objective"), "last_man_standing")
+	end)
+
+	it("leaves event music alone for other contexts", function()
+		local engine, Suppression = load_suppression()
+		engine:set_state("music_objective", "end_event")
+
+		Suppression.engage("mission_boss")
+
+		assert_equal(engine:wwise_state("music_objective"), "end_event")
+	end)
+end)
+
 describe("suppression.lua events", function()
 	it("drops the native exploration music event only while engaged", function()
 		local _, Suppression = load_suppression()

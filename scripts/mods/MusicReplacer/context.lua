@@ -26,6 +26,8 @@
 --	  It is treated like nil, so neither plays mission music.
 --	* Some missions never report a zone.
 --	  No zone plus `music_game_state == "mission"` counts as a mission until a victory or defeat state ends it.
+--	* `music_objective == "last_man_standing"` resolves "mission_last_stand", over bosses, combat and explore.
+--	  The game sets it when one player of the team is alive. Once it ends, the context follows the other states again.
 --	* Victory and defeat resolve to their own contexts, from their state until the next level starts.
 --	  The game state returns to "mission" in between, so the outcome is tracked in `mission_outcome`.
 --	  A loading screen or a real zone clears it, since a story mission's cutscene can skip the loading screen.
@@ -41,6 +43,7 @@ local WwiseGameSyncManager = require("scripts/managers/wwise_game_sync/wwise_gam
 local wwise_combat_state = nil -- Current value of the "music_combat" state group.
 local music_zone = nil -- Current value of the "music_zone" state group.
 local music_game_state = nil -- Current value of the "music_game_state" state group.
+local music_objective = nil -- Current value of the "music_objective" state group.
 local mission_name = nil -- Name of the current mission, or nil while none is loaded.
 local mission_outcome = nil -- "victory" or "defeat" from that game state until the next level starts, else nil.
 local open_bosses = {} -- Boss unit -> { breed = name, order = n } for every open encounter window.
@@ -60,10 +63,11 @@ local combat_hold_remaining = 0 -- Seconds left before mission_combat may fall b
 
 local MISSION_OUTCOME_CONTEXTS = { victory = "mission_victory", defeat = "mission_defeat" }
 
+-- The music_objective value the game sets while one player of the team is alive.
+local LAST_MAN_STANDING = "last_man_standing"
+
 -- Music-related state groups that do not decide a context yet, logged only so their transitions show up in diagnostic.log.
--- music_objective carries mission event music and "last_man_standing".
 local LOGGED_ONLY_STATE_GROUPS = {
-	music_objective = true,
 	music_objective_progression = true,
 	event_intensity = true,
 	event_category = true,
@@ -154,6 +158,10 @@ local function resolve(mod)
 		return nil
 	end
 
+	if music_objective == LAST_MAN_STANDING then
+		return "mission_last_stand"
+	end
+
 	if is_boss_active() then
 		return "mission_boss"
 	end
@@ -217,7 +225,7 @@ function Context.refresh(mod)
 end
 
 -- Register a function to call on every real transition of a music state group, after context.lua has tracked it.
--- The listener receives (group_name, new_state) for music_combat, music_zone and music_game_state only.
+-- The listener receives (group_name, new_state) for music_combat, music_zone, music_game_state and music_objective only.
 function Context.on_state_change(listener)
 	state_listeners[#state_listeners + 1] = listener
 end
@@ -271,6 +279,9 @@ function Context.init(mod, log)
 			elseif new_state == "loading" or new_state == "mission_intro" then
 				mission_outcome = nil
 			end
+		elseif group_name == "music_objective" then
+			diagnostic_log(string.format("[raw] music_objective: %s -> %s", tostring(current), tostring(new_state)))
+			music_objective = new_state
 		else
 			if LOGGED_ONLY_STATE_GROUPS[group_name] then
 				diagnostic_log(string.format("[raw] %s: %s -> %s", group_name, tostring(current), tostring(new_state)))

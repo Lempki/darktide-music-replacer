@@ -123,6 +123,14 @@ function Suppression.set_game_state(should_suppress)
 	set_reforced_group("music_game_state", should_suppress)
 end
 
+-- Forces music_objective to "None" so the game's own last man standing music stops.
+-- The same group carries mission event music, so this is engaged only for the last stand context for now.
+-- The game sets this group repeatedly, so it is forced again after every real transition while on.
+-- Turning it off restores the real state.
+function Suppression.set_objective(should_suppress)
+	set_reforced_group("music_objective", should_suppress)
+end
+
 -- Drops native music events that match SUPPRESSED_MUSIC_EVENT_PATTERNS instead of letting them play.
 -- Mission event sequences start their own music through events, which the state forcing never reaches.
 -- Only the start of an event is dropped, so there is nothing native left to stop later.
@@ -182,12 +190,14 @@ function Suppression.on_state_change(group_name, new_state)
 end
 
 -- Turns on the levers for a context that has a custom track confirmed playing.
--- Combat and event suppression apply to every context. The hub and the victory and defeat contexts each need one more.
+-- Combat and event suppression apply to every context.
+-- The hub, the victory and defeat contexts, and the last stand context each need one more.
 function Suppression.engage(context_name)
 	Suppression.set_combat(true)
 	Suppression.set_events(true)
 	Suppression.set_zone(context_name == "hub")
 	Suppression.set_game_state(context_name == "mission_victory" or context_name == "mission_defeat")
+	Suppression.set_objective(context_name == "mission_last_stand")
 end
 
 -- Turns every lever off, for no context or a context with no custom track.
@@ -195,6 +205,7 @@ function Suppression.release()
 	Suppression.set_combat(false)
 	Suppression.set_zone(false)
 	Suppression.set_game_state(false)
+	Suppression.set_objective(false)
 	Suppression.set_events(false)
 end
 
