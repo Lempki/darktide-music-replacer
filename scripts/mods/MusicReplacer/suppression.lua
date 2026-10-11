@@ -16,8 +16,11 @@ local forced_groups = {} -- State group name -> true while that group is forced 
 
 local combat_suppressed = false
 local combat_forced = false -- True while music_combat is forced to "None" and not yet restored.
-local game_state_suppressed = false
 local events_suppressed = false
+
+-- State group name -> true while that group is suppressed and forced again after every real transition.
+-- For groups the game sets repeatedly while a context lasts.
+local reforced_groups = {}
 
 -- ###########################################################################
 -- State Forcing
@@ -47,6 +50,18 @@ local function restore_group(group_name)
 	forced_groups[group_name] = false
 	diagnostic_log(string.format("[suppress] restoring %s to %s", group_name, tostring(real_states[group_name])))
 	Wwise.set_state(group_name, real_states[group_name] or "None")
+end
+
+-- Forces a group to "None" and keeps forcing it after every real transition while on.
+-- Turning it off restores the real value.
+local function set_reforced_group(group_name, should_suppress)
+	reforced_groups[group_name] = should_suppress or nil
+
+	if should_suppress then
+		force_group_to_none(group_name)
+	else
+		restore_group(group_name)
+	end
 end
 
 -- ###########################################################################
@@ -105,13 +120,7 @@ end
 -- The game sets this state repeatedly through a mission's end, so it is forced again after every real transition while on.
 -- Turning it off restores the real state.
 function Suppression.set_game_state(should_suppress)
-	game_state_suppressed = should_suppress
-
-	if should_suppress then
-		force_group_to_none("music_game_state")
-	else
-		restore_group("music_game_state")
-	end
+	set_reforced_group("music_game_state", should_suppress)
 end
 
 -- Drops native music events that match SUPPRESSED_MUSIC_EVENT_PATTERNS instead of letting them play.
@@ -164,13 +173,11 @@ function Suppression.on_state_change(group_name, new_state)
 		end
 	elseif group_name == "music_zone" then
 		forced_groups.music_zone = false -- The game just set a real zone, which replaces any forced value.
-	elseif group_name == "music_game_state" then
-		if game_state_suppressed and new_state ~= "None" then
-			forced_groups.music_game_state = true
-			Wwise.set_state("music_game_state", "None")
-		else
-			forced_groups.music_game_state = false -- The game just set a real state, which replaces any forced value.
-		end
+	elseif reforced_groups[group_name] and new_state ~= "None" then
+		forced_groups[group_name] = true
+		Wwise.set_state(group_name, "None")
+	else
+		forced_groups[group_name] = false -- The game just set a real state, which replaces any forced value.
 	end
 end
 
