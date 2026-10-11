@@ -90,6 +90,7 @@ These are in the in-game mod options under Music Replacer.
 * [ ] "Let the current track finish" toggle, with a per-category override. For example, a boss track could play out even after the boss dies.
 * [ ] A `mission_horde` folder for the heaviest hordes, separate from `mission_combat`. With no files in it, hordes keep playing combat music exactly as they do now.
 * [ ] Settings for horde music, such as how long it holds before falling back to combat music.
+* [ ] Custom music for the last man standing moment, when only one player of the team is still alive.
 * [ ] Different music per mission type or game mode, such as Operations, Havoc, Mortis Trials, and Expeditions.
 * [ ] Custom music for loading screens.
 
