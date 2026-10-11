@@ -186,8 +186,11 @@ function FakeEngine:set_mission(name)
 		return
 	end
 
+	local template = { name = name }
+
 	Managers.state.mission = {
 		mission_name = function() return name end,
+		mission = function() return template end,
 	}
 end
 

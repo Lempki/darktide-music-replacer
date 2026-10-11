@@ -36,33 +36,36 @@ function MissionProbe.init(log)
 	diagnostic_log = log or diagnostic_log
 end
 
+-- Logs the current mission once each time its name changes, including the hub.
+-- Defined once, so the per-frame pcall below creates no new function.
+local function check_mission()
+	local mission_manager = Managers.state and Managers.state.mission
+	local mission_name = mission_manager and mission_manager:mission_name() or nil
+
+	if mission_name == last_mission_name then
+		return
+	end
+
+	last_mission_name = mission_name
+
+	if not mission_name then
+		return
+	end
+
+	local mission = mission_manager:mission()
+
+	diagnostic_log(string.format("[mission] name=%s type=%s | %s",
+		mission_name, tostring(mission and mission.mission_type), mission and describe(mission) or "no template"))
+end
+
 -- Call from the main mod file's mod.update.
--- Logs once each time the current mission name changes, including the hub.
 -- Managers.state.mission does not exist before a level is loaded, so nothing is logged until it does.
 function MissionProbe.update()
 	if failed then
 		return
 	end
 
-	local ok, err = pcall(function()
-		local mission_manager = Managers.state and Managers.state.mission
-		local mission_name = mission_manager and mission_manager:mission_name() or nil
-
-		if mission_name == last_mission_name then
-			return
-		end
-
-		last_mission_name = mission_name
-
-		if not mission_name then
-			return
-		end
-
-		local mission = mission_manager:mission()
-
-		diagnostic_log(string.format("[mission] name=%s type=%s | %s",
-			mission_name, tostring(mission and mission.mission_type), mission and describe(mission) or "no template"))
-	end)
+	local ok, err = pcall(check_mission)
 
 	if not ok then
 		failed = true
