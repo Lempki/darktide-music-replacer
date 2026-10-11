@@ -60,3 +60,22 @@ describe("context.lua", function()
 		assert_equal((Context.current()), nil)
 	end)
 end)
+
+describe("context.lua state logging", function()
+	it("logs transitions of the music state groups it does not act on, and changes no context", function()
+		local engine = FakeEngine.new()
+		local Context = engine:load("context")
+		local lines = {}
+		Context.init(engine.mod, function(line) lines[#lines + 1] = line end)
+
+		engine:set_state("music_objective", "end_event")
+		engine:set_state("music_objective", "last_man_standing")
+		engine:set_state("player_state", "knocked_down")
+
+		assert_deep_equal(lines, {
+			"[raw] music_objective: None -> end_event",
+			"[raw] music_objective: end_event -> last_man_standing",
+		})
+		assert_equal((Context.current()), nil)
+	end)
+end)

@@ -10,7 +10,6 @@ local WWISE_GAME_SYNC_MANAGER = "scripts/managers/wwise_game_sync/wwise_game_syn
 
 -- Every Wwise state group starts at this value in the game.
 local DEFAULT_GROUP_STATE = "None"
-local STATE_GROUPS = { "music_combat", "music_zone", "music_game_state" }
 
 -- Matches the game's WwiseGameSyncManager._set_state, which ignores a repeat of the current state.
 local function new_wwise_game_sync_manager(engine)
@@ -23,10 +22,7 @@ local function new_wwise_game_sync_manager(engine)
 		end
 	end
 
-	local states = {}
-	for _, group_name in ipairs(STATE_GROUPS) do
-		states[group_name] = DEFAULT_GROUP_STATE
-	end
+	local states = setmetatable({}, { __index = function() return DEFAULT_GROUP_STATE end })
 
 	engine.wwise_game_sync = setmetatable({ _wwise_state_group_states = states }, { __index = Manager })
 

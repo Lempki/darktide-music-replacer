@@ -60,6 +60,17 @@ local combat_hold_remaining = 0 -- Seconds left before mission_combat may fall b
 
 local MISSION_OUTCOME_CONTEXTS = { victory = "mission_victory", defeat = "mission_defeat" }
 
+-- Music-related state groups that do not decide a context yet, logged only so their transitions show up in diagnostic.log.
+-- music_objective carries mission event music and "last_man_standing".
+local LOGGED_ONLY_STATE_GROUPS = {
+	music_objective = true,
+	music_objective_progression = true,
+	event_intensity = true,
+	event_category = true,
+	circumstance = true,
+	expeditions_intensity = true,
+}
+
 -- Game states in which the player is in the hub or a mission, rather than on a loading screen, a briefing or a menu.
 local IN_WORLD_GAME_STATES = { mission = true, mission_board = true, mission_ready = true }
 
@@ -261,6 +272,10 @@ function Context.init(mod, log)
 				mission_outcome = nil
 			end
 		else
+			if LOGGED_ONLY_STATE_GROUPS[group_name] then
+				diagnostic_log(string.format("[raw] %s: %s -> %s", group_name, tostring(current), tostring(new_state)))
+			end
+
 			return
 		end
 
