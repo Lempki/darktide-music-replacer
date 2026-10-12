@@ -85,6 +85,9 @@ These are in the in-game mod options under Music Replacer.
 * [x] Adjustable combat music hold, so a lull in a fight does not drop back to explore music.
 * [x] Opt-in diagnostic-mode setting, off by default.
 * [x] A setting for whether Meat Grinder plays music, off by default.
+* [x] Custom music for the last stand, when only one player of the team is still alive.
+* [x] Custom music for mission events, such as holdouts, escapes, and scripted boss fights.
+* [x] A setting for whether angered daemonhosts play boss music, off by default.
 * [ ] A setting per context to choose custom music, the game's own music, or silence, without moving files around.
 * [ ] More Meat Grinder options, such as choosing which contexts play there.
 * [ ] Detecting music files added or removed during a session, with a rescan button in the mod settings and an optional periodic rescan.
@@ -96,6 +99,8 @@ These are in the in-game mod options under Music Replacer.
 * [ ] A `mission_horde` folder for the heaviest hordes, separate from `mission_combat`. With no files in it, hordes keep playing combat music exactly as they do now.
 * [ ] Settings for horde music, such as how long it holds before falling back to combat music.
 * [ ] Different music per mission type or game mode, such as Operations, Havoc, Mortis Trials, and Expeditions.
+* [ ] Separate folders per kind of mission event, so for example a scripted boss fight and a holdout can have different music.
+* [ ] Separate boss folders per kind of monstrosity, so each one can have its own boss music.
 * [ ] Custom music for loading screens.
 
 ## Development
