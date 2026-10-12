@@ -206,6 +206,19 @@ describe("suppression.lua last stand", function()
 		assert_equal(engine:wwise_state("music_objective"), "last_man_standing")
 	end)
 
+	it("forces the event music to None for mission_event, and restores it on release", function()
+		local engine, Suppression = load_suppression()
+		engine:set_state("music_objective", "fortification_event")
+
+		Suppression.engage("mission_event")
+
+		assert_equal(engine:wwise_state("music_objective"), "None")
+
+		Suppression.release()
+
+		assert_equal(engine:wwise_state("music_objective"), "fortification_event")
+	end)
+
 	it("leaves event music alone for other contexts", function()
 		local engine, Suppression = load_suppression()
 		engine:set_state("music_objective", "end_event")

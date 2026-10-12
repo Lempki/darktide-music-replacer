@@ -4,7 +4,7 @@ This is Music Replacer, a mod for Warhammer 40,000: Darktide that replaces the g
 
 ## Features
 
-* Replaces hub, mission-explore, combat, boss, last stand, victory, and defeat music with your own audio files.
+* Replaces hub, mission-explore, combat, boss, event, last stand, victory, and defeat music with your own audio files.
 * Several files in a folder are picked at random, never repeating the file that just played.
 * Exactly one file in a folder loops natively and indefinitely, instead of restarting on every repeat.
 * Fades in on a real context change, fades out at a track's own end when its folder holds several files, and overlaps briefly on a switch instead of cutting abruptly.
@@ -30,12 +30,13 @@ Install this mod like any other Darktide mod, then drop your own audio files int
     mission_explore\
     mission_combat\
     mission_boss\
+    mission_event\
     mission_last_stand\
     mission_victory\
     mission_defeat\
 ```
 
-All seven folders already exist after install. Put audio files (`.mp3`, `.wav`, and so on) directly inside whichever ones you want music for. One level deep only, since this layout is fixed by the Audio Plugin, not by this mod.
+All eight folders already exist after install. Put audio files (`.mp3`, `.wav`, and so on) directly inside whichever ones you want music for. One level deep only, since this layout is fixed by the Audio Plugin, not by this mod.
 
 | Folder | When it plays |
 |---|---|
@@ -43,6 +44,7 @@ All seven folders already exist after install. Put audio files (`.mp3`, `.wav`, 
 | `mission_explore` | In a mission, no meaningful threat. |
 | `mission_combat` | In a mission, fighting, normal combat through to a heavy horde. |
 | `mission_boss` | A monstrosity or an assassination target is active. |
+| `mission_event` | In a mission, during an event with its own music, such as a holdout, a hacking event, an escape, or a scripted boss fight like Spillway's. It replaces boss, combat, and explore music, as the game's own event music does. |
 | `mission_last_stand` | In a mission, while only one player of the team is still alive. It replaces boss, combat, and explore music, as the game's own last stand music does. |
 | `mission_victory` | From the moment a mission is won until the loading screen or a cutscene. |
 | `mission_defeat` | From the moment a mission is lost until the loading screen or a cutscene. |

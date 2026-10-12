@@ -58,7 +58,7 @@ describe("context.lua last stand", function()
 		harness:state("music_combat", "normal")
 
 		harness:state("music_objective", "last_man_standing")
-		harness:state("music_objective", "end_event")
+		harness:state("music_objective", "None")
 		harness:state("music_combat", "None")
 		harness:wait(8.2)
 
@@ -83,12 +83,14 @@ describe("context.lua last stand", function()
 		assert_deep_equal(harness.changes, { "mission_last_stand", "mission_victory" })
 	end)
 
-	it("ignores mission event music values", function()
-		local harness = in_mission("zone_3")
+	-- The game replaces event music with last stand music in the same state group, and returns to the event afterward.
+	it("replaces mission_event, and gives it back once the last stand ends", function()
+		local harness = in_mission("zone_2_depths")
+		harness:state("music_objective", "kill_event_3")
 
-		harness:state("music_objective", "end_event")
-		harness:state("music_objective", "gauntlet_event")
+		harness:state("music_objective", "last_man_standing")
+		harness:state("music_objective", "kill_event_3")
 
-		assert_deep_equal(harness.changes, {})
+		assert_deep_equal(harness.changes, { "mission_event", "mission_last_stand", "mission_event" })
 	end)
 end)

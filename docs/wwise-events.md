@@ -51,7 +51,7 @@ Each mechanism switches on only while a custom track is confirmed playing for th
 | `Suppression.set_combat` | Forces `music_combat` to `"None"` right away and again after every real transition. | Combat music reported gone in two hectic missions. Not yet checked in a controlled test. |
 | `Suppression.set_zone` | Forces `music_zone` to `"None"` while a hub track plays, and restores the real zone when it stops. | **Confirmed** by ear in the hub, including a round trip through a mission. |
 | `Suppression.set_game_state` | Forces `music_game_state` to `"None"` for the victory and defeat contexts, and again after every real transition. | **Not yet confirmed.** It only runs when a file is present in `mission_victory` or `mission_defeat`. |
-| `Suppression.set_objective` | Forces `music_objective` to `"None"` for the last stand context, and again after every real transition. | **Not yet confirmed.** It only runs when a file is present in `mission_last_stand`. |
+| `Suppression.set_objective` | Forces `music_objective` to `"None"` for the last stand and event contexts, and again after every real transition. | **Not yet confirmed.** It only runs when a file is present in `mission_last_stand` or `mission_event`. |
 | `Suppression.set_events` | Drops any event containing `events/music/play_exploration`, so it never starts. | **Not yet confirmed as silencing.** It was not actually running for a while, see "DMF Quirks Found" below. |
 
 Forcing a state calls `Wwise.set_state` directly.

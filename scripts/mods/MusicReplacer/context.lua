@@ -28,6 +28,9 @@
 --	  No zone plus `music_game_state == "mission"` counts as a mission until a victory or defeat state ends it.
 --	* `music_objective == "last_man_standing"` resolves "mission_last_stand", over bosses, combat and explore.
 --	  The game sets it when one player of the team is alive. Once it ends, the context follows the other states again.
+--	* Any other `music_objective` value is mission event music, for example "kill_event" or "fortification_event".
+--	  It resolves "mission_event", over bosses, as the game's own event music does. Spillway's scripted bosses are events.
+--	  Last stand and event music share the group, so the game itself decides between them, and last stand wins there.
 --	* Victory and defeat resolve to their own contexts, from their state until the next level starts.
 --	  The game state returns to "mission" in between, so the outcome is tracked in `mission_outcome`.
 --	  A loading screen or a real zone clears it, since a story mission's cutscene can skip the loading screen.
@@ -159,6 +162,10 @@ local function resolve(mod)
 
 	if music_objective == LAST_MAN_STANDING then
 		return "mission_last_stand"
+	end
+
+	if music_objective and music_objective ~= "None" then
+		return "mission_event"
 	end
 
 	if is_boss_active() then
