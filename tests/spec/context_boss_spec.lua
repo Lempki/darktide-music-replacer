@@ -79,7 +79,7 @@ describe("context.lua boss signals", function()
 	-- The hold starts only from normal or horde combat, so a boss that ends straight into "None" gets none.
 	it("follows a boss with mission_combat and its hold only when combat is still going", function()
 		local harness = in_mission("zone_3")
-		local boss = harness:new_boss("chaos_daemonhost")
+		local boss = harness:new_boss("chaos_spawn")
 
 		harness:boss_start(boss)
 		harness:state("music_combat", "normal")
@@ -96,11 +96,65 @@ describe("context.lua boss signals", function()
 
 	it("reports the breed of the open encounter", function()
 		local harness = in_mission("zone_3")
-		local boss = harness:new_boss("chaos_daemonhost")
+		local boss = harness:new_boss("chaos_spawn")
 
 		harness:boss_start(boss)
 
-		assert_deep_equal({ harness.Context.current() }, { "mission_boss", "chaos_daemonhost" })
+		assert_deep_equal({ harness.Context.current() }, { "mission_boss", "chaos_spawn" })
+	end)
+end)
+
+describe("context.lua daemonhosts", function()
+	it("resolves no boss for an angered daemonhost by default, as the game plays no music for it", function()
+		local harness = in_mission("zone_3")
+		local daemonhost = harness:new_boss("chaos_daemonhost")
+		harness:state("music_combat", "horde_high")
+
+		harness:boss_start(daemonhost)
+
+		assert_equal(harness:current(), "mission_combat")
+	end)
+
+	it("resolves mission_boss for an angered daemonhost with the setting on", function()
+		local harness = Harness.new({ daemonhost_boss_music = true })
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness:enter_mission("lm_cooling", "zone_3")
+		local daemonhost = harness:new_boss("chaos_daemonhost")
+
+		harness:boss_start(daemonhost)
+
+		assert_equal(harness:current(), "mission_boss")
+
+		harness:boss_end(daemonhost)
+
+		assert_equal(harness:current(), "mission_explore")
+	end)
+
+	it("re-resolves at once when the setting changes during the encounter", function()
+		local harness = in_mission("zone_3")
+		local daemonhost = harness:new_boss("chaos_daemonhost")
+		harness:boss_start(daemonhost)
+
+		harness:set_setting("daemonhost_boss_music", true)
+		harness:set_setting("daemonhost_boss_music", false)
+
+		assert_deep_equal(harness.changes, { "mission_boss", "mission_explore" })
+	end)
+
+	it("still resolves mission_boss for another boss open at the same time", function()
+		local harness = in_mission("zone_3")
+		local daemonhost = harness:new_boss("chaos_daemonhost")
+		local spawn = harness:new_boss("chaos_spawn")
+
+		harness:boss_start(daemonhost)
+		harness:boss_start(spawn)
+
+		assert_equal(harness:current(), "mission_boss")
+
+		harness:boss_end(spawn)
+
+		assert_equal(harness:current(), "mission_explore")
 	end)
 end)
 
@@ -136,10 +190,10 @@ describe("context.lua boss encounter windows", function()
 		assert_equal(harness:current(), "mission_explore")
 	end)
 
-	-- The daemonhost in diagnostic-2026-10-09.log fired two starts and one end.
+	-- The daemonhost in diagnostic-2026-10-09.log fired two starts and one end, and so do other bosses.
 	it("needs only one end event for a boss whose start event repeated", function()
 		local harness = in_mission("zone_3")
-		local boss = harness:new_boss("chaos_daemonhost")
+		local boss = harness:new_boss("renegade_captain")
 
 		harness:boss_start(boss)
 		harness:boss_start(boss)

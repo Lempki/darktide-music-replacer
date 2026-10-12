@@ -7,6 +7,8 @@
 --	* A boss is active when Wwise reports `music_combat == "boss"` or a boss encounter window is open.
 --	  Neither signal alone is reliable for every boss type, and either can get stuck.
 --	  A real zone change clears both.
+--	* A daemonhost's encounter window counts as a boss only with the `daemonhost_boss_music` setting on.
+--	  The game plays no music for an angered daemonhost, and it never sets `music_combat` to "boss" for one.
 --	* Encounter windows are tracked per boss unit, since several bosses can be open at once and a start can repeat.
 --	  A window stays open until its own end event, which the game sends when the boss dies or despawns.
 --	  A boss that the game leaves stuck somewhere keeps its window open, just as it keeps the game's own boss music.
@@ -66,6 +68,9 @@ local combat_hold_remaining = 0 -- Seconds left before mission_combat may fall b
 
 local MISSION_OUTCOME_CONTEXTS = { victory = "mission_victory", defeat = "mission_defeat" }
 
+-- Breed name of the daemonhost, which only counts as a boss with the daemonhost_boss_music setting on.
+local DAEMONHOST_BREED = "chaos_daemonhost"
+
 -- The music_objective value the game sets while one player of the team is alive.
 local LAST_MAN_STANDING = "last_man_standing"
 
@@ -88,8 +93,18 @@ local MEAT_GRINDER_MISSION = "tg_shooting_range"
 -- Resolution
 -- ###########################################################################
 
-local function is_boss_active()
-	return wwise_combat_state == "boss" or next(open_bosses) ~= nil
+local function is_boss_active(mod)
+	if wwise_combat_state == "boss" then
+		return true
+	end
+
+	for _, boss in pairs(open_bosses) do
+		if boss.breed ~= DAEMONHOST_BREED or mod:get("daemonhost_boss_music") then
+			return true
+		end
+	end
+
+	return false
 end
 
 -- Breed name of the most recently opened encounter window, or nil when none is open.
@@ -168,7 +183,7 @@ local function resolve(mod)
 		return "mission_event"
 	end
 
-	if is_boss_active() then
+	if is_boss_active(mod) then
 		return "mission_boss"
 	end
 

@@ -61,6 +61,7 @@ These are in the in-game mod options under Music Replacer.
 |---|---|---|
 | Combat music hold | 8 seconds | How long combat music keeps playing after a fight quiets down before it switches back to explore music. Set it to 0 to switch back immediately. |
 | Music in Meat Grinder | Off | Off keeps custom music out of the Meat Grinder training area and also silences the game's own combat music there. On plays your explore and combat music there. |
+| Boss music for daemonhosts | Off | Off follows the game, which plays no music for an angered daemonhost. On plays your boss music from the moment a daemonhost is angered until it dies. |
 | Diagnostic logging | Off | Writes `diagnostic.log` for troubleshooting. |
 | Reset log on launch | On | Clears `diagnostic.log` at the start of each session. Only matters while diagnostic logging is on. |
 

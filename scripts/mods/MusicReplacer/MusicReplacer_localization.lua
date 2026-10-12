@@ -17,6 +17,12 @@ return {
 	meat_grinder_music_description = {
 		en = "Off keeps custom music out of the Meat Grinder training area and also silences the game's own combat music there. On plays your explore and combat music there, which is a quick way to test your files without starting a mission.",
 	},
+	daemonhost_boss_music = {
+		en = "Boss Music for Daemonhosts",
+	},
+	daemonhost_boss_music_description = {
+		en = "Off follows the game, which plays no music for an angered daemonhost. On plays your boss music from the moment a daemonhost is angered until it dies.",
+	},
 	debug = {
 		en = "Debug",
 	},

@@ -19,6 +19,11 @@ return {
 				default_value = false,
 			},
 			{
+				setting_id = "daemonhost_boss_music",
+				type = "checkbox",
+				default_value = false,
+			},
+			{
 				setting_id = "debug",
 				type = "group",
 				sub_widgets = {

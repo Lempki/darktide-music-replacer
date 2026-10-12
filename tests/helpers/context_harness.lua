@@ -8,7 +8,7 @@ local Harness = {}
 Harness.__index = Harness
 
 -- The defaults of the mod's own settings.
-local DEFAULT_SETTINGS = { combat_hold_seconds = 8, meat_grinder_music = false }
+local DEFAULT_SETTINGS = { combat_hold_seconds = 8, meat_grinder_music = false, daemonhost_boss_music = false }
 
 local FRAME_SECONDS = 0.1
 
