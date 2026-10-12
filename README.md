@@ -43,7 +43,7 @@ All eight folders already exist after install. Put audio files (`.mp3`, `.wav`, 
 | `hub` | In the Mourningstar. |
 | `mission_explore` | In a mission, no meaningful threat. |
 | `mission_combat` | In a mission, fighting, normal combat through to a heavy horde. |
-| `mission_boss` | A monstrosity or an assassination target is active. |
+| `mission_boss` | A monstrosity is active, whenever the game plays its own boss music. Scripted event bosses, such as Spillway's, play event music instead, as in the game. |
 | `mission_event` | In a mission, during an event with its own music, such as a holdout, a hacking event, an escape, or a scripted boss fight like Spillway's. It replaces boss, combat, and explore music, as the game's own event music does. |
 | `mission_last_stand` | In a mission, while only one player of the team is still alive. It replaces boss, combat, and explore music, as the game's own last stand music does. |
 | `mission_victory` | From the moment a mission is won until the loading screen or a cutscene. |

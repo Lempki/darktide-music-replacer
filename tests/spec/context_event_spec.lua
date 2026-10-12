@@ -48,6 +48,21 @@ describe("context.lua mission events", function()
 		assert_deep_equal(harness.changes, { "mission_event", "mission_explore" })
 	end)
 
+	-- In diagnostic-2026-10-12-spillway.log the event ended at 17:15:30, nine seconds before the wizard's encounter window closed.
+	it("returns to explore, not mission_boss, when an event ends before its scripted boss's window closes", function()
+		local harness = in_mission("zone_2_depths")
+		local boss = harness:new_boss("renegade_wizard")
+
+		harness:state("music_objective", "kill_event_3")
+		harness:boss_start(boss)
+		harness:wait(480)
+		harness:state("music_objective", "None")
+		harness:wait(9)
+		harness:boss_end(boss)
+
+		assert_deep_equal(harness.changes, { "mission_event", "mission_explore" })
+	end)
+
 	-- A chaos spawn set the boss music state during fm_cargo's fortification_event, at 23:50:39.
 	it("keeps mission_event over a monster that sets the boss music state during the event", function()
 		local harness = in_mission("zone_3")

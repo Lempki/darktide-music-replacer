@@ -4,11 +4,10 @@
 --
 -- Resolution rules that are not obvious from the code:
 --	* The hub is told apart from a mission by `music_zone`, since `music_game_state` is "mission" for both.
---	* A boss is active when Wwise reports `music_combat == "boss"` or a boss encounter window is open.
---	  Neither signal alone is reliable for every boss type, and either can get stuck.
---	  A real zone change clears both.
+--	* A boss is active while Wwise reports `music_combat == "boss"`, which is when the game plays its own boss music.
+--	  Bosses that only open an encounter window get no boss music in the game, so they get none here either.
+--	  Those are Spillway's scripted event bosses and the daemonhost.
 --	* A daemonhost's encounter window counts as a boss only with the `daemonhost_boss_music` setting on.
---	  The game plays no music for an angered daemonhost, and it never sets `music_combat` to "boss" for one.
 --	* Encounter windows are tracked per boss unit, since several bosses can be open at once and a start can repeat.
 --	  A window stays open until its own end event, which the game sends when the boss dies or despawns.
 --	  A boss that the game leaves stuck somewhere keeps its window open, just as it keeps the game's own boss music.
@@ -98,8 +97,12 @@ local function is_boss_active(mod)
 		return true
 	end
 
+	if not mod:get("daemonhost_boss_music") then
+		return false
+	end
+
 	for _, boss in pairs(open_bosses) do
-		if boss.breed ~= DAEMONHOST_BREED or mod:get("daemonhost_boss_music") then
+		if boss.breed == DAEMONHOST_BREED then
 			return true
 		end
 	end
