@@ -72,7 +72,6 @@ local LOGGED_ONLY_STATE_GROUPS = {
 	event_intensity = true,
 	event_category = true,
 	circumstance = true,
-	expeditions_intensity = true,
 }
 
 -- Game states in which the player is in the hub or a mission, rather than on a loading screen, a briefing or a menu.
