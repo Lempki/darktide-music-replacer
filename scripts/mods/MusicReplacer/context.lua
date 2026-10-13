@@ -18,7 +18,8 @@
 --	  So `mission_combat` holds for `combat_hold_seconds` after combat quiets, and a lull does not drop to `mission_explore`.
 --	  Entering combat is never delayed.
 --	* "horde_low" and "horde_high" resolve "mission_horde", below bosses. The game plays its own horde music for both.
---	  A horde also drops out for a second or two and returns, so `mission_horde` holds for `combat_hold_seconds` too.
+--	  The game reports a horde only while at least 5 enemies are aggroed, so it drops out for a second or two mid-horde.
+--	  So `mission_horde` holds for `horde_hold_seconds`, which is shorter than the combat hold, since a horde ends for good.
 --	  Once that hold runs out, the plain combat state decides, with no combat hold added on top.
 --	* No context resolves while `music_game_state == "cinematic"`, so custom music stays off during cutscenes.
 --	* The hub and mission contexts only resolve while the game state is in the world: "mission", "mission_board" or "mission_ready".
@@ -65,8 +66,9 @@ local state_listeners = {}
 local listeners_registered = false
 local diagnostic_log = function() end -- No-op unless a real logger is passed to Context.init.
 
--- Fallback for when the combat_hold_seconds setting reads nil.
+-- Fallbacks for when the hold settings read nil.
 local COMBAT_HOLD_SECONDS_DEFAULT = 8
+local HORDE_HOLD_SECONDS_DEFAULT = 3
 
 local combat_hold_remaining = 0 -- Seconds left before mission_combat may fall back to mission_explore.
 local horde_hold_remaining = 0 -- Seconds left before mission_horde may fall back to the plain combat state.
@@ -140,8 +142,12 @@ local function is_horde_active()
 	return wwise_combat_state == "horde_low" or wwise_combat_state == "horde_high"
 end
 
-local function hold_seconds(mod)
+local function combat_hold_seconds(mod)
 	return mod:get("combat_hold_seconds") or COMBAT_HOLD_SECONDS_DEFAULT
+end
+
+local function horde_hold_seconds(mod)
+	return mod:get("horde_hold_seconds") or HORDE_HOLD_SECONDS_DEFAULT
 end
 
 local function is_combat_active()
@@ -224,7 +230,7 @@ local function resolve(mod)
 	end
 
 	if is_horde_active() then
-		horde_hold_remaining = hold_seconds(mod)
+		horde_hold_remaining = horde_hold_seconds(mod)
 		combat_hold_remaining = 0
 		return "mission_horde"
 	end
@@ -235,7 +241,7 @@ local function resolve(mod)
 	end
 
 	if is_combat_active() then
-		combat_hold_remaining = hold_seconds(mod)
+		combat_hold_remaining = combat_hold_seconds(mod)
 		return "mission_combat"
 	end
 

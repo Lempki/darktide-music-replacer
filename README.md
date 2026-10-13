@@ -61,7 +61,8 @@ These are in the in-game mod options under Music Replacer.
 
 | Setting | Default | What it does |
 |---|---|---|
-| Combat music hold | 8 seconds | How long combat and horde music keep playing after a fight or a horde quiets down, so a short lull does not switch the music. Set it to 0 to switch immediately. |
+| Combat music hold | 8 seconds | How long combat music keeps playing after a fight quiets down, so a short lull does not switch to explore music. Set it to 0 to switch immediately. |
+| Horde music hold | 3 seconds | How long horde music keeps playing after the game stops reporting a horde. The game drops its horde signal for a second or two whenever few enemies are on you, so a short hold keeps the track from restarting. Set it to 0 to follow the game exactly. |
 | Music in Meat Grinder | Off | Off keeps custom music out of the Meat Grinder training area and also silences the game's own combat music there. On plays your explore and combat music there. |
 | Boss music for captains | Off | On plays your boss music for a captain, including the Karnak Twins, from the moment it engages until it dies. Off leaves captains to the game's own music. Event music still plays during an event. |
 | Boss music for daemonhosts | Off | Off follows the game, which plays no music for an angered daemonhost. On plays your boss music from the moment a daemonhost is angered until it dies. |
@@ -94,7 +95,7 @@ These are in the in-game mod options under Music Replacer.
 * [x] A setting for whether angered daemonhosts play boss music, off by default.
 * [x] A setting for whether captains, including the Karnak Twins, play boss music, off by default.
 * [x] A button in the mod settings that rescans the audio folders without a restart.
-* [x] Custom music for hordes, with the game's own horde music when the folder is empty.
+* [x] Custom music for hordes, with the game's own horde music when the folder is empty, and its own hold setting.
 * [ ] A setting per context to choose custom music, the game's own music, or silence, without moving files around.
 * [ ] More Meat Grinder options, such as choosing which contexts play there.
 * [ ] An optional periodic rescan of the audio folders, on top of the rescan button.
@@ -103,7 +104,6 @@ These are in the in-game mod options under Music Replacer.
 * [ ] Continuing each context's song from where it left off when that context returns, for example explore and combat, and picking the next song only once a song ends on its own.
 * [ ] Optional loudness normalization, so quiet and loud files play at a similar level without changing the files. It would have a setting to turn it on and a target level.
 * [ ] "Let the current track finish" toggle, with a per-category override. For example, a boss track could play out even after the boss dies.
-* [ ] Settings for horde music, such as its own hold time.
 * [ ] Different music per mission type or game mode, such as Operations, Havoc, Mortis Trials, and Expeditions.
 * [ ] Separate folders per kind of mission event, so for example a scripted boss fight and a holdout can have different music.
 * [ ] Separate boss folders per kind of monstrosity, so each one can have its own boss music.

@@ -14,6 +14,15 @@ return {
 				unit_text = "s",
 			},
 			{
+				setting_id = "horde_hold_seconds",
+				type = "numeric",
+				default_value = 3,
+				range = { 0, 30 },
+				decimals_number = 0,
+				step_size_value = 1,
+				unit_text = "s",
+			},
+			{
 				setting_id = "meat_grinder_music",
 				type = "checkbox",
 				default_value = false,

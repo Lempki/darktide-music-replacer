@@ -9,7 +9,13 @@ return {
 		en = "Combat Music Hold",
 	},
 	combat_hold_seconds_description = {
-		en = "How long combat and horde music keep playing after a fight or a horde quiets down, so a short lull does not switch the music. Set to 0 to switch immediately.",
+		en = "How long combat music keeps playing after a fight quiets down, so a short lull does not switch to exploration music. Set to 0 to switch immediately.",
+	},
+	horde_hold_seconds = {
+		en = "Horde Music Hold",
+	},
+	horde_hold_seconds_description = {
+		en = "How long horde music keeps playing after the game stops reporting a horde. The game drops its horde signal for a second or two whenever few enemies are on you, so a short hold keeps the track from restarting. Set to 0 to follow the game exactly.",
 	},
 	meat_grinder_music = {
 		en = "Music in Meat Grinder",
