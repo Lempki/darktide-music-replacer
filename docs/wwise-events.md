@@ -2,7 +2,7 @@
 
 How Darktide's native music reaches the player, how Music Replacer silences it, and how to find out where a sound comes from.
 
-Statements marked **Confirmed** were checked by ear or in a real session's log.
+Statements marked **Confirmed** were checked by ear or in `diagnostic.log` while playing.
 Statements marked **Not yet confirmed** describe code that has not been tested in-game.
 
 ## Where native music comes from
@@ -56,7 +56,7 @@ Each mechanism switches on only while a custom track is confirmed playing for th
 
 Forcing a state calls `Wwise.set_state` directly.
 That call does not reach the `_set_state` hook, so the mod's own tracked state keeps the game's real value.
-Across every logged session, no forced call has been followed by a duplicate instant transition line in the log.
+With Diagnostic Logging on, a forced call is never followed by a duplicate transition line in `diagnostic.log`.
 
 The game re-sends a state only when it changes.
 A forced `music_zone` stayed in place until the next real zone change.

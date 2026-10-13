@@ -14,7 +14,6 @@ local function in_mission()
 end
 
 describe("context.lua mission endings", function()
-	-- The order seen in diagnostic-2026-10-09.log from 20:58:12.
 	it("plays mission_victory from victory through the score screen, then nothing while loading, then hub", function()
 		local harness = in_mission()
 
@@ -39,7 +38,6 @@ describe("context.lua mission endings", function()
 		assert_deep_equal(harness.changes, { "mission_victory" })
 	end)
 
-	-- The order seen in diagnostic-2026-10-09.log from 20:33:14.
 	it("plays mission_defeat from defeat through the score screen, then nothing while loading, then hub", function()
 		local harness = in_mission()
 
@@ -63,7 +61,7 @@ describe("context.lua mission endings", function()
 		assert_deep_equal(harness.changes, { "mission_defeat" })
 	end)
 
-	-- The order seen in diagnostic-2026-10-04.log from 20:40:22, after fm_cargo.
+	-- Some missions play a debrief cutscene after the loading screen, with the hub zone arriving partway through.
 	it("resolves no context during a debrief cutscene, and hub once it ends", function()
 		local harness = in_mission()
 
@@ -73,8 +71,7 @@ describe("context.lua mission endings", function()
 		assert_deep_equal(harness.changes, { "mission_victory", "nil", "hub" })
 	end)
 
-	-- The order seen in diagnostic-2026-10-04.log from 21:38:28, after the story mission fm_resurgence.
-	-- The score screen goes straight into the cutscene, with no loading screen to clear the outcome.
+	-- A story mission's score screen goes straight into the cutscene, with no loading screen to clear the outcome.
 	it("does not carry mission_victory into the hub after a story mission's cutscene", function()
 		local harness = in_mission()
 

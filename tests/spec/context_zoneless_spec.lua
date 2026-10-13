@@ -43,7 +43,7 @@ describe("context.lua zoneless missions", function()
 		assert_deep_equal(harness.changes, { "mission_combat", "mission_explore" })
 	end)
 
-	-- The order seen for op_train in diagnostic-2026-10-06.log, with no zone line at the end.
+	-- A zoneless mission's victory has no zone change to end it.
 	it("ends with mission_victory and does not fall back to mission_explore in the transient mission state", function()
 		local harness = in_zoneless_mission()
 		harness:clear_changes()

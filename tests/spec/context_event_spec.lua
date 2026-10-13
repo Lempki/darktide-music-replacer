@@ -14,7 +14,6 @@ local function in_mission(zone)
 end
 
 describe("context.lua mission events", function()
-	-- The hacking event in fm_cargo in diagnostic-2026-10-12.log, from 23:40:00 to 23:43:13.
 	it("resolves mission_event over explore and combat while the event lasts, then follows the other states again", function()
 		local harness = in_mission("zone_3")
 		harness:state("music_combat", "normal")
@@ -35,7 +34,7 @@ describe("context.lua mission events", function()
 		assert_equal(harness:current(), "mission_event")
 	end)
 
-	-- Spillway's renegade_captain starts in the same second as its kill_event, in diagnostic-2026-10-12.log at 02:10:13.
+	-- Spillway's mid-mission captain starts at the same moment as its kill event.
 	it("resolves mission_event for a scripted boss that starts with its event", function()
 		local harness = in_mission("zone_2_depths")
 		local boss = harness:new_boss("renegade_captain")
@@ -48,7 +47,7 @@ describe("context.lua mission events", function()
 		assert_deep_equal(harness.changes, { "mission_event", "mission_explore" })
 	end)
 
-	-- In diagnostic-2026-10-12-spillway.log the event ended at 17:15:30, nine seconds before the wizard's encounter window closed.
+	-- Spillway's end event ends a few seconds before the wizard's encounter window closes.
 	it("returns to explore, not mission_boss, when an event ends before its scripted boss's window closes", function()
 		local harness = in_mission("zone_2_depths")
 		local boss = harness:new_boss("renegade_wizard")
@@ -63,7 +62,7 @@ describe("context.lua mission events", function()
 		assert_deep_equal(harness.changes, { "mission_event", "mission_explore" })
 	end)
 
-	-- A chaos spawn set the boss music state during fm_cargo's fortification_event, at 23:50:39.
+	-- A monstrosity can spawn during a holdout and set the boss music state, and the game keeps playing event music.
 	it("keeps mission_event over a monster that sets the boss music state during the event", function()
 		local harness = in_mission("zone_3")
 		local boss = harness:new_boss("chaos_spawn")

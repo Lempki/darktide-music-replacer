@@ -2,7 +2,7 @@
 
 local Harness = require("tests.helpers.context_harness")
 
--- Returns a harness that has walked from the hub into Meat Grinder, in the order seen in diagnostic-2026-10-09.log.
+-- Returns a harness that has walked from the hub into Meat Grinder.
 local function in_meat_grinder(meat_grinder_music)
 	local harness = Harness.new({ meat_grinder_music = meat_grinder_music })
 	harness:cold_start_to_hub()

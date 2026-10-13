@@ -76,7 +76,7 @@ describe("context.lua areas", function()
 		assert_deep_equal(harness.changes, { "nil" })
 	end)
 
-	-- Leaving for the main menu left about a second between the two in diagnostic-2026-10-13-spillway.log at 15:19:19.
+	-- Going back to character select leaves about a second between the two, longer than the debounce.
 	it("resolves no context while leaving the hub for the main menu", function()
 		local harness = Harness.new()
 		harness:cold_start_to_hub()
@@ -105,7 +105,7 @@ describe("context.lua areas", function()
 		assert_deep_equal(harness.changes, {})
 	end)
 
-	-- The zone arrived partway through the lm_cooling briefing in diagnostic-2026-10-09.log at 20:36:32.
+	-- The game sends a mission's zone partway through the briefing.
 	it("resolves no context during the briefing and the intro, even once the mission zone has arrived", function()
 		local harness = Harness.new()
 		harness:cold_start_to_hub()

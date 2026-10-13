@@ -41,7 +41,7 @@ describe("context.lua boss signals", function()
 		assert_deep_equal(harness.changes, {})
 	end)
 
-	-- dm_forge in diagnostic-2026-10-06.log had 79 seconds between the two signals.
+	-- The boss music state can come more than a minute before the encounter start event.
 	it("resolves mission_boss from the boss music state long before the start event", function()
 		local harness = in_mission("zone_3")
 		local boss = harness:new_boss("chaos_ogryn_houndmaster")
@@ -69,7 +69,7 @@ describe("context.lua boss signals", function()
 		assert_deep_equal(harness.changes, { "mission_boss", "mission_victory" })
 	end)
 
-	-- chaos_beast_of_nurgle in diagnostic-2026-10-09.log left the boss music state 3 seconds before its end event.
+	-- A monstrosity can leave the boss music state a few seconds before its encounter end event.
 	it("ends mission_boss with the boss music state, even while the encounter is still open", function()
 		local harness = in_mission("zone_3")
 		local boss = harness:new_boss("chaos_beast_of_nurgle")
@@ -186,7 +186,7 @@ describe("context.lua boss encounter windows", function()
 		assert_equal(harness:current(), "mission_explore")
 	end)
 
-	-- The daemonhost in diagnostic-2026-10-09.log fired two starts and one end.
+	-- The game can send the start event more than once for one boss.
 	it("needs only one end event for a window whose start event repeated", function()
 		local harness = in_mission("zone_3", { daemonhost_boss_music = true })
 		local daemonhost = harness:new_boss("chaos_daemonhost")
@@ -222,7 +222,7 @@ describe("context.lua boss encounter windows", function()
 end)
 
 describe("context.lua bosses outside missions", function()
-	-- The sequence from leaving Meat Grinder with its boss dummies, as logged on 2026-10-06, 2026-10-08, and 2026-10-09.
+	-- Meat Grinder's boss dummies leave the boss music state set after leaving, until the next mission's intro ends.
 	it("resolves no context on the loading screen after Meat Grinder, with the boss music state stuck", function()
 		local harness = Harness.new({ meat_grinder_music = false })
 		local boss = harness:new_boss("chaos_ogryn_houndmaster")

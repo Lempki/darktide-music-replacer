@@ -1,5 +1,5 @@
 -- Drives context.lua through the fake engine and records every context it resolves.
--- The sequence methods replay the game's state orders as seen in real diagnostic logs.
+-- The sequence methods set the music states in the order the game sets them, so the specs exercise real transitions.
 -- Time only passes through wait() and tick(), in steps no longer than one game frame.
 
 local FakeEngine = require("tests.helpers.fake_engine")
@@ -95,7 +95,7 @@ function Harness:clear_changes()
 end
 
 -- ###########################################################################
--- Sequences from real logs
+-- Sequences in the game's order
 -- ###########################################################################
 
 -- First launch: title, main menu, loading, then the hub zone and the hub_ship mission.

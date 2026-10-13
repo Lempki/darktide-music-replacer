@@ -39,7 +39,7 @@ describe("context.lua last stand", function()
 		assert_equal(harness:current(), "mission_last_stand")
 	end)
 
-	-- A Havoc fight with three bosses went from boss music to last stand music and back once the team was rescued.
+	-- In the game, last stand music replaces boss music, and boss music returns after a rescue while the bosses live.
 	it("resolves mission_last_stand over bosses, and mission_boss again once it ends with the bosses alive", function()
 		local harness = in_mission("zone_3")
 		local boss = harness:new_boss("chaos_beast_of_nurgle")
