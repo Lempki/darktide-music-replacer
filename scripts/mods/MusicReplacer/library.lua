@@ -6,9 +6,8 @@
 -- That is a hard error rather than a nil result, and a missing subfolder behaves the same way.
 -- A missing, empty or not yet scanned folder resolves to nil here, which is the fallback-to-native-music signal the caller needs.
 --
--- Each folder is scanned once, after the game's backend is ready, and the list is never refreshed.
--- So a file deleted during a session is still listed, and pick_file() checks that a file exists before returning it.
--- A file added during a session is not listed until the next launch.
+-- Each folder is scanned after the game's backend is ready, and again only when a rescan is requested.
+-- So a file deleted during a session is still listed until then, and pick_file() checks that a file exists before returning it.
 
 local Library = {}
 
@@ -28,11 +27,19 @@ local _os = Mods and Mods.lua and Mods.lua.os
 -- If a game update removes that field, the scan starts after SCAN_FALLBACK_SECONDS instead of never.
 local SCAN_FALLBACK_SECONDS = 30
 
+-- A rescan builds new handlers next to the current ones and swaps each in once its listing has resolved.
+-- Until then the old list keeps serving picks, so a rescan never interrupts playback.
+-- A listing that never resolves, for example after a failed request, is dropped after this long and the old list stays.
+local RESCAN_TIMEOUT_SECONDS = 10
+
 local diagnostic_log = function() end -- No-op unless a real logger is passed to Library.init.
 local audio_mod = nil
 local waiting_to_scan = false
 local scan_wait_elapsed = 0
 local handlers = {}
+local rescan_requested = false
+local pending_handlers = nil -- context_name -> new handler while a rescan waits for its listing.
+local rescan_elapsed = 0
 local last_picked = {} -- context_name -> the file path most recently returned.
 local reported_missing = {} -- file_path -> true once a missing file has been logged.
 
@@ -71,17 +78,70 @@ local function is_backend_ready()
 	return backend ~= nil and backend._initialized == true
 end
 
-local function scan_folders(reason)
-	waiting_to_scan = false
-	diagnostic_log(string.format("[library] scanning audio folders after %.1fs, %s", scan_wait_elapsed, reason))
+local function new_handlers()
+	local result = {}
 
 	for _, context_name in ipairs(CONTEXTS) do
 		-- This call is not pcall-wrapped.
 		-- new_files_handler finds its path by walking the call stack for the calling mod's name.
 		-- A pcall frame in that walk silently breaks the resolved path.
 		-- The call itself has no crash risk, unlike the calls in pick_file().
-		handlers[context_name] = audio_mod.new_files_handler(nil, context_name)
+		result[context_name] = audio_mod.new_files_handler(nil, context_name)
 	end
+
+	return result
+end
+
+local function scan_folders(reason)
+	waiting_to_scan = false
+	rescan_requested = false
+	diagnostic_log(string.format("[library] scanning audio folders after %.1fs, %s", scan_wait_elapsed, reason))
+	handlers = new_handlers()
+end
+
+-- The handler's file count, or nil while its listing has not resolved.
+local function listing_count(handler)
+	local ok, count = pcall(function()
+		return handler:count()
+	end)
+
+	return ok and count or nil
+end
+
+local function describe_counts()
+	local parts = {}
+
+	for _, context_name in ipairs(CONTEXTS) do
+		parts[#parts + 1] = string.format("%s=%s", context_name, tostring(listing_count(handlers[context_name])))
+	end
+
+	return table.concat(parts, " ")
+end
+
+-- Swaps in each pending handler whose listing has resolved.
+-- Returns true once the rescan is over.
+local function advance_rescan(dt)
+	rescan_elapsed = rescan_elapsed + dt
+	local waiting = false
+
+	for context_name, handler in pairs(pending_handlers) do
+		if listing_count(handler) then
+			handlers[context_name] = handler
+			pending_handlers[context_name] = nil
+		else
+			waiting = true
+		end
+	end
+
+	if waiting and rescan_elapsed < RESCAN_TIMEOUT_SECONDS then
+		return false
+	end
+
+	pending_handlers = nil
+	reported_missing = {}
+	diagnostic_log(string.format("[library] rescan finished%s: %s", waiting and ", keeping the old list for folders that did not answer" or "", describe_counts()))
+
+	return true
 end
 
 -- Call once, after all mods have loaded.
@@ -102,19 +162,41 @@ function Library.init(log)
 	waiting_to_scan = true
 end
 
+-- Asks for a rescan of every folder on the next update.
+-- DMF calls a settings button through a pcall, which would break new_files_handler's call stack walk, so the scan waits for update.
+function Library.request_rescan()
+	if audio_mod then
+		rescan_requested = true
+	end
+end
+
 -- Call from the main mod file's mod.update, so the scan's call stack stays inside this mod.
+-- Returns true on the update where a rescan finishes, so the caller can start a track for a context that had no files.
 function Library.update(dt)
-	if not waiting_to_scan then
-		return
+	if waiting_to_scan then
+		scan_wait_elapsed = scan_wait_elapsed + dt
+
+		if is_backend_ready() then
+			scan_folders("the game backend is ready")
+		elseif scan_wait_elapsed >= SCAN_FALLBACK_SECONDS then
+			scan_folders("with no ready signal from the game backend")
+		end
+
+		return false
 	end
 
-	scan_wait_elapsed = scan_wait_elapsed + dt
-
-	if is_backend_ready() then
-		scan_folders("the game backend is ready")
-	elseif scan_wait_elapsed >= SCAN_FALLBACK_SECONDS then
-		scan_folders("with no ready signal from the game backend")
+	if rescan_requested and not pending_handlers then
+		rescan_requested = false
+		rescan_elapsed = 0
+		diagnostic_log("[library] rescanning audio folders")
+		pending_handlers = new_handlers()
 	end
+
+	if not pending_handlers then
+		return false
+	end
+
+	return advance_rescan(dt)
 end
 
 -- Returns file_path, duration_seconds and is_only_file, or nil if no file is available.

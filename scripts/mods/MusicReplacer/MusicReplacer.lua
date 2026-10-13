@@ -204,9 +204,25 @@ mod.on_setting_changed = function(setting_id)
 	end
 end
 
+-- Called by the Rescan Audio Folders button in the mod settings.
+mod.rescan_audio = function()
+	Library.request_rescan()
+end
+
 mod.update = function(dt)
 	Context.update(mod, dt)
-	Library.update(dt)
+
+	if Library.update(dt) then
+		-- A replaced file deserves another try, so contexts that gave up retry after a rescan.
+		quick_ends = {}
+		gave_up = {}
+
+		-- A context that played native music for lack of files starts its new track now, not at its next change.
+		-- A custom track that is playing keeps playing, and the next pick uses the new list.
+		if not AudioClient.is_playing() then
+			play_context(current_context, true)
+		end
+	end
 	AudioClient.update(dt)
 	MissionProbe.update()
 

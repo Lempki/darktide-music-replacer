@@ -24,6 +24,12 @@ return {
 				default_value = false,
 			},
 			{
+				setting_id = "rescan_audio",
+				type = "button",
+				button_text = "rescan_audio_button",
+				function_name = "rescan_audio",
+			},
+			{
 				setting_id = "debug",
 				type = "group",
 				sub_widgets = {

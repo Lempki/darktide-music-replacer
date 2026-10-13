@@ -74,6 +74,10 @@ function AudioClient.elapsed()
 	return current_elapsed
 end
 
+function AudioClient.is_playing()
+	return current_play_file_id ~= nil
+end
+
 -- Retries stops that had no known pid yet.
 -- Cheap and normally a no-op, so it can run every tick.
 local function retry_pending_stops()

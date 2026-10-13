@@ -23,6 +23,15 @@ return {
 	daemonhost_boss_music_description = {
 		en = "Off follows the game, which plays no music for an angered daemonhost. On plays your boss music from the moment a daemonhost is angered until it dies.",
 	},
+	rescan_audio = {
+		en = "Rescan Audio Folders",
+	},
+	rescan_audio_description = {
+		en = "Picks up audio files added or removed since the game started, without a restart. A track that is playing keeps playing.",
+	},
+	rescan_audio_button = {
+		en = "Rescan",
+	},
 	debug = {
 		en = "Debug",
 	},

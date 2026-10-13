@@ -62,13 +62,14 @@ These are in the in-game mod options under Music Replacer.
 | Combat music hold | 8 seconds | How long combat music keeps playing after a fight quiets down before it switches back to explore music. Set it to 0 to switch back immediately. |
 | Music in Meat Grinder | Off | Off keeps custom music out of the Meat Grinder training area and also silences the game's own combat music there. On plays your explore and combat music there. |
 | Boss music for daemonhosts | Off | Off follows the game, which plays no music for an angered daemonhost. On plays your boss music from the moment a daemonhost is angered until it dies. |
+| Rescan audio folders | (button) | Picks up audio files added or removed since the game started, without a restart. A track that is playing keeps playing, and a context that had no files starts its new track right away. |
 | Diagnostic logging | Off | Writes `diagnostic.log` for troubleshooting. |
 | Reset log on launch | On | Clears `diagnostic.log` at the start of each session. Only matters while diagnostic logging is on. |
 
 ## Limitations
 
 * Changing the master or music volume slider restarts the playing track. Music plays through a separate ffplay process, started by the Audio Plugin and DarktideLocalServer. That process takes its volume when it starts and cannot be adjusted from outside once it is running. On a slider change, Music Replacer stops the process and starts a new one at the same position with the new volume. The request goes through the local server, so expect a slight delay and a brief pause or cut in the music. While you drag a slider this happens at most once per second, and the final volume is applied once you stop.
-* Each audio folder is scanned once, when the game launches. Restart the game after adding or removing files. A file you remove while the game runs is skipped, and a file you add is not picked up until the next launch.
+* Each audio folder is scanned when the game launches. After adding or removing files while the game runs, press Rescan Audio Folders in the mod settings, or restart the game. Until then, a file you removed is skipped and a file you added is not picked up.
 * A hard crash can leave a track playing until it ends on its own. Quitting normally stops it. A crash runs no mod code at all, so nothing can intervene. If it happens, end `ffplay_dt.exe` in Task Manager.
 * Music Replacer only affects your own game. Squadmates hear the game's own music regardless.
 * Loading screens, the mission briefing, the mission intro, and cutscenes play the game's own music. Custom music starts once you are in the hub or the mission itself.
@@ -88,9 +89,10 @@ These are in the in-game mod options under Music Replacer.
 * [x] Custom music for the last stand, when only one player of the team is still alive.
 * [x] Custom music for mission events, such as holdouts, escapes, and scripted boss fights.
 * [x] A setting for whether angered daemonhosts play boss music, off by default.
+* [x] A button in the mod settings that rescans the audio folders without a restart.
 * [ ] A setting per context to choose custom music, the game's own music, or silence, without moving files around.
 * [ ] More Meat Grinder options, such as choosing which contexts play there.
-* [ ] Detecting music files added or removed during a session, with a rescan button in the mod settings and an optional periodic rescan.
+* [ ] An optional periodic rescan of the audio folders, on top of the rescan button.
 * [ ] Runtime volume control through the Windows audio session, replacing the relaunch on a slider change.
 * [ ] True crossfades between tracks, once runtime volume control works.
 * [ ] Resuming the combat track when combat returns right after it faded out, instead of restarting it from the beginning.
