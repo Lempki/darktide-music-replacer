@@ -4,7 +4,7 @@ This is Music Replacer, a mod for Warhammer 40,000: Darktide that replaces the g
 
 ## Features
 
-* Replaces hub, mission-explore, combat, boss, event, last stand, victory, and defeat music with your own audio files.
+* Replaces hub, mission-explore, combat, horde, boss, event, last stand, victory, and defeat music with your own audio files.
 * Several files in a folder are picked at random, never repeating the file that just played.
 * Exactly one file in a folder loops natively and indefinitely, instead of restarting on every repeat.
 * Fades in on a real context change, fades out at a track's own end when its folder holds several files, and overlaps briefly on a switch instead of cutting abruptly.
@@ -29,6 +29,7 @@ Install this mod like any other Darktide mod, then drop your own audio files int
     hub\
     mission_explore\
     mission_combat\
+    mission_horde\
     mission_boss\
     mission_event\
     mission_last_stand\
@@ -36,15 +37,16 @@ Install this mod like any other Darktide mod, then drop your own audio files int
     mission_defeat\
 ```
 
-All eight folders already exist after install. Put audio files (`.mp3`, `.wav`, and so on) directly inside whichever ones you want music for. One level deep only, since this layout is fixed by the Audio Plugin, not by this mod.
+All nine folders already exist after install. Put audio files (`.mp3`, `.wav`, and so on) directly inside whichever ones you want music for. One level deep only, since this layout is fixed by the Audio Plugin, not by this mod.
 
 | Folder | When it plays |
 |---|---|
 | `hub` | In the Mourningstar. |
 | `mission_explore` | In a mission, no meaningful threat. |
-| `mission_combat` | In a mission, fighting, normal combat through to a heavy horde. |
-| `mission_boss` | A monstrosity is active, whenever the game plays its own boss music. Scripted event bosses, such as Spillway's, play event music instead, as in the game. |
-| `mission_event` | In a mission, during an event with its own music, such as a holdout, a hacking event, an escape, or a scripted boss fight like Spillway's. It replaces boss, combat, and explore music, as the game's own event music does. |
+| `mission_combat` | In a mission, while enemies are attacking you outside a horde or a boss fight. The game itself plays no music here. |
+| `mission_horde` | In a mission, during a horde. With no files here, the game's own horde music plays, as it does without the mod. |
+| `mission_boss` | In a mission, while a monstrosity is near you, such as a Chaos Spawn, a Beast of Nurgle, a Plague Ogryn, or an Ogryn Houndmaster. This is exactly when the game plays its own boss music. It does not play during an event, a last stand, or the mission's end, which take priority. It also does not play for an angered Daemonhost unless you turn on its setting. It does not play for captains, or while a scripted boss such as Spillway's psyker is alive, since the game does not report those as bosses. |
+| `mission_event` | In a mission, while an event plays its own music, such as a holdout, a hacking event, an escape, or a scripted boss fight like those in Spillway. It replaces boss, horde, combat, and explore music, as the game's own event music does. It does not play during a last stand or the mission's end, and it stops when the game ends the event's music. |
 | `mission_last_stand` | In a mission, while only one player of the team is still alive. It replaces boss, combat, and explore music, as the game's own last stand music does. |
 | `mission_victory` | From the moment a mission is won until the loading screen or a cutscene. |
 | `mission_defeat` | From the moment a mission is lost until the loading screen or a cutscene. |
@@ -59,7 +61,7 @@ These are in the in-game mod options under Music Replacer.
 
 | Setting | Default | What it does |
 |---|---|---|
-| Combat music hold | 8 seconds | How long combat music keeps playing after a fight quiets down before it switches back to explore music. Set it to 0 to switch back immediately. |
+| Combat music hold | 8 seconds | How long combat and horde music keep playing after a fight or a horde quiets down, so a short lull does not switch the music. Set it to 0 to switch immediately. |
 | Music in Meat Grinder | Off | Off keeps custom music out of the Meat Grinder training area and also silences the game's own combat music there. On plays your explore and combat music there. |
 | Boss music for daemonhosts | Off | Off follows the game, which plays no music for an angered daemonhost. On plays your boss music from the moment a daemonhost is angered until it dies. |
 | Rescan audio folders | (button) | Picks up audio files added or removed since the game started, without a restart. A track that is playing keeps playing, and a context that had no files starts its new track right away. |
@@ -90,6 +92,7 @@ These are in the in-game mod options under Music Replacer.
 * [x] Custom music for mission events, such as holdouts, escapes, and scripted boss fights.
 * [x] A setting for whether angered daemonhosts play boss music, off by default.
 * [x] A button in the mod settings that rescans the audio folders without a restart.
+* [x] Custom music for hordes, with the game's own horde music when the folder is empty.
 * [ ] A setting per context to choose custom music, the game's own music, or silence, without moving files around.
 * [ ] More Meat Grinder options, such as choosing which contexts play there.
 * [ ] An optional periodic rescan of the audio folders, on top of the rescan button.
@@ -98,8 +101,7 @@ These are in the in-game mod options under Music Replacer.
 * [ ] Resuming the combat track when combat returns right after it faded out, instead of restarting it from the beginning.
 * [ ] Optional loudness normalization, so quiet and loud files play at a similar level without changing the files. It would have a setting to turn it on and a target level.
 * [ ] "Let the current track finish" toggle, with a per-category override. For example, a boss track could play out even after the boss dies.
-* [ ] A `mission_horde` folder for the heaviest hordes, separate from `mission_combat`. With no files in it, hordes keep playing combat music exactly as they do now.
-* [ ] Settings for horde music, such as how long it holds before falling back to combat music.
+* [ ] Settings for horde music, such as its own hold time.
 * [ ] Different music per mission type or game mode, such as Operations, Havoc, Mortis Trials, and Expeditions.
 * [ ] Separate folders per kind of mission event, so for example a scripted boss fight and a holdout can have different music.
 * [ ] Separate boss folders per kind of monstrosity, so each one can have its own boss music.

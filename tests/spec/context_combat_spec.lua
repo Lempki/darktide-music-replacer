@@ -22,16 +22,6 @@ describe("context.lua combat", function()
 		assert_deep_equal(harness.changes, { "mission_combat" })
 	end)
 
-	it("resolves mission_combat for both horde states", function()
-		local harness = in_mission(8)
-
-		harness:state("music_combat", "horde_high")
-		harness:state("music_combat", "horde_low")
-		harness:state("music_combat", "horde_high")
-
-		assert_deep_equal(harness.changes, { "mission_combat" })
-	end)
-
 	it("holds mission_combat for the full hold after combat goes quiet, then returns to mission_explore", function()
 		local harness = in_mission(8)
 

@@ -112,7 +112,7 @@ describe("context.lua daemonhosts", function()
 	it("resolves no boss for an angered daemonhost by default, as the game plays no music for it", function()
 		local harness = in_mission("zone_3")
 		local daemonhost = harness:new_boss("chaos_daemonhost")
-		harness:state("music_combat", "horde_high")
+		harness:state("music_combat", "normal")
 
 		harness:boss_start(daemonhost)
 

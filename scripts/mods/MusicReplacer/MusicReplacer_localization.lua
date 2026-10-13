@@ -9,7 +9,7 @@ return {
 		en = "Combat Music Hold",
 	},
 	combat_hold_seconds_description = {
-		en = "How long combat music keeps playing after a fight quiets down before switching back to exploration music. Set to 0 to switch back immediately.",
+		en = "How long combat and horde music keep playing after a fight or a horde quiets down, so a short lull does not switch the music. Set to 0 to switch immediately.",
 	},
 	meat_grinder_music = {
 		en = "Music in Meat Grinder",

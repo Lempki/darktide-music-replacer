@@ -2,7 +2,7 @@
 
 local FakeEngine = require("tests.helpers.fake_engine")
 
-local CONTEXTS = { "hub", "mission_explore", "mission_combat", "mission_boss", "mission_event", "mission_last_stand", "mission_victory", "mission_defeat" }
+local CONTEXTS = { "hub", "mission_explore", "mission_combat", "mission_horde", "mission_boss", "mission_event", "mission_last_stand", "mission_victory", "mission_defeat" }
 
 -- A fake Audio Plugin whose files handlers list `files_by_context` and record which folders were scanned.
 local function new_audio_mod(files_by_context)

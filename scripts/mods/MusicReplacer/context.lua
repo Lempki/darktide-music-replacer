@@ -16,6 +16,9 @@
 --	* `music_combat` flips on and off every few seconds in real combat.
 --	  So `mission_combat` holds for `combat_hold_seconds` after combat quiets, and a lull does not drop to `mission_explore`.
 --	  Entering combat is never delayed.
+--	* "horde_low" and "horde_high" resolve "mission_horde", below bosses. The game plays its own horde music for both.
+--	  A horde also drops out for a second or two and returns, so `mission_horde` holds for `combat_hold_seconds` too.
+--	  Once that hold runs out, the plain combat state decides, with no combat hold added on top.
 --	* No context resolves while `music_game_state == "cinematic"`, so custom music stays off during cutscenes.
 --	* The hub and mission contexts only resolve while the game state is in the world: "mission", "mission_board" or "mission_ready".
 --	  Loading screens, the loadout, the briefing, the intro and menus resolve no context, even once the zone has arrived.
@@ -65,6 +68,7 @@ local diagnostic_log = function() end -- No-op unless a real logger is passed to
 local COMBAT_HOLD_SECONDS_DEFAULT = 8
 
 local combat_hold_remaining = 0 -- Seconds left before mission_combat may fall back to mission_explore.
+local horde_hold_remaining = 0 -- Seconds left before mission_horde may fall back to the plain combat state.
 
 local MISSION_OUTCOME_CONTEXTS = { victory = "mission_victory", defeat = "mission_defeat" }
 
@@ -122,6 +126,14 @@ local function current_boss_breed()
 	end
 
 	return latest and latest.breed
+end
+
+local function is_horde_active()
+	return wwise_combat_state == "horde_low" or wwise_combat_state == "horde_high"
+end
+
+local function hold_seconds(mod)
+	return mod:get("combat_hold_seconds") or COMBAT_HOLD_SECONDS_DEFAULT
 end
 
 local function is_combat_active()
@@ -203,8 +215,19 @@ local function resolve(mod)
 		diagnostic_log(string.format("[zoneless] music_zone=%s with music_game_state=%s, treating as a mission", tostring(music_zone), tostring(music_game_state)))
 	end
 
+	if is_horde_active() then
+		horde_hold_remaining = hold_seconds(mod)
+		combat_hold_remaining = 0
+		return "mission_horde"
+	end
+
+	if horde_hold_remaining > 0 then
+		diagnostic_log(string.format("[hold] horde quiet, holding mission_horde for %.1fs more", horde_hold_remaining))
+		return "mission_horde"
+	end
+
 	if is_combat_active() then
-		combat_hold_remaining = mod:get("combat_hold_seconds") or COMBAT_HOLD_SECONDS_DEFAULT
+		combat_hold_remaining = hold_seconds(mod)
 		return "mission_combat"
 	end
 
@@ -293,6 +316,7 @@ function Context.init(mod, log)
 			wwise_combat_state = nil
 			open_bosses = {}
 			combat_hold_remaining = 0 -- A new zone starts fresh, not partway through the last hold.
+			horde_hold_remaining = 0
 		elseif group_name == "music_game_state" then
 			diagnostic_log(string.format("[raw] music_game_state: %s -> %s", tostring(current), tostring(new_state)))
 			music_game_state = new_state
@@ -367,6 +391,14 @@ function Context.update(mod, dt)
 
 	-- The hold only counts down once combat is inactive.
 	-- resolve() refreshes it to its full value on every active tick, so it must not also drain while combat is active.
+	if horde_hold_remaining > 0 and not is_horde_active() then
+		horde_hold_remaining = math.max(horde_hold_remaining - dt, 0)
+
+		if horde_hold_remaining == 0 then
+			recompute(mod)
+		end
+	end
+
 	if combat_hold_remaining > 0 and not is_combat_active() then
 		combat_hold_remaining = math.max(combat_hold_remaining - dt, 0)
 
