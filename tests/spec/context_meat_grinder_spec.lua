@@ -18,7 +18,7 @@ describe("context.lua Meat Grinder", function()
 	it("resolves silence with the setting off, once the visit starts", function()
 		local harness = in_meat_grinder(false)
 
-		assert_deep_equal(harness.changes, { "hub", "mission_explore", "nil", "silence" })
+		assert_deep_equal(harness.changes, { "hub", "nil", "silence" })
 	end)
 
 	it("stays on silence through combat and boss signals with the setting off", function()

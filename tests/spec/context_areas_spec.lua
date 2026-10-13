@@ -65,16 +65,28 @@ describe("context.lua areas", function()
 		assert_deep_equal(harness.changes, { "hub" })
 	end)
 
-	-- The zone clears one step before the loading state, so explore resolves for an instant.
-	-- The debounce in MusicReplacer.lua keeps that instant from playing anything.
-	it("passes through mission_explore for an instant when leaving the hub", function()
+	-- The zone clears one step before the game state changes, while the hub is still loaded.
+	it("resolves no context from the moment the zone clears when leaving the hub for a mission", function()
 		local harness = Harness.new()
 		harness:cold_start_to_hub()
 		harness:clear_changes()
 
 		harness:leave_hub()
 
-		assert_deep_equal(harness.changes, { "mission_explore", "nil" })
+		assert_deep_equal(harness.changes, { "nil" })
+	end)
+
+	-- Leaving for the main menu left about a second between the two in diagnostic-2026-10-13-spillway.log at 15:19:19.
+	it("resolves no context while leaving the hub for the main menu", function()
+		local harness = Harness.new()
+		harness:cold_start_to_hub()
+		harness:clear_changes()
+
+		harness:state("music_zone", "None")
+		harness:wait(1)
+		harness:state("music_game_state", "main_menu")
+
+		assert_deep_equal(harness.changes, { "nil" })
 	end)
 
 	it("resolves no context through the loadout and the briefing until the zone arrives", function()

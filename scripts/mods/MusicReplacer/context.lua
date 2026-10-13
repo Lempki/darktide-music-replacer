@@ -27,6 +27,7 @@
 --	  It is treated like nil, so neither plays mission music.
 --	* Some missions never report a zone.
 --	  No zone plus `music_game_state == "mission"` counts as a mission until a victory or defeat state ends it.
+--	  It does not count while the hub is still loaded, since leaving the hub clears the zone a moment before the game state changes.
 --	* `music_objective == "last_man_standing"` resolves "mission_last_stand", over bosses, combat and explore.
 --	  The game sets it when one player of the team is alive. Once it ends, the context follows the other states again.
 --	* Any other `music_objective` value is mission event music, for example "kill_event" or "fortification_event".
@@ -49,6 +50,7 @@ local music_zone = nil -- Current value of the "music_zone" state group.
 local music_game_state = nil -- Current value of the "music_game_state" state group.
 local music_objective = nil -- Current value of the "music_objective" state group.
 local mission_name = nil -- Name of the current mission, or nil while none is loaded.
+local mission_is_hub = false -- True while the loaded mission's template is the hub.
 local mission_outcome = nil -- "victory" or "defeat" from that game state until the next level starts, else nil.
 local open_bosses = {} -- Boss unit -> { breed = name, order = n } for every open encounter window.
 local boss_open_count = 0 -- Increases with every newly opened window, so the latest one can be found.
@@ -127,18 +129,24 @@ local function is_combat_active()
 	return wwise_combat_state == "normal" or wwise_combat_state == "horde_low" or wwise_combat_state == "horde_high"
 end
 
--- Returns the current mission's name, or nil before a level has loaded.
-local function read_mission_name()
+-- Returns the current mission's name and whether its template is the hub, or nil and false before a level has loaded.
+local function read_mission()
 	local game_state = Managers and Managers.state
 	local mission_manager = game_state and game_state.mission
 
 	if not mission_manager then
-		return nil
+		return nil, false
 	end
 
 	local ok, name = pcall(mission_manager.mission_name, mission_manager)
 
-	return ok and name or nil
+	if not ok or not name then
+		return nil, false
+	end
+
+	local template_ok, template = pcall(mission_manager.mission, mission_manager)
+
+	return name, template_ok and type(template) == "table" and template.is_hub == true
 end
 
 -- Wwise reports "None" as a string, not as nil.
@@ -148,7 +156,7 @@ end
 
 -- Some missions never report a zone, so a "mission" game state with no zone still counts as a mission.
 local function is_zoneless_mission()
-	return has_no_zone() and music_game_state == "mission" and not mission_outcome
+	return has_no_zone() and music_game_state == "mission" and not mission_outcome and not mission_is_hub
 end
 
 local function resolve(mod)
@@ -355,10 +363,11 @@ end
 -- Managers.event does not exist at mod-load time, so the boss callbacks are registered on the first tick where it does.
 -- Also tracks the current mission name.
 function Context.update(mod, dt)
-	local current_mission_name = read_mission_name()
+	local current_mission_name, current_mission_is_hub = read_mission()
 
-	if current_mission_name ~= mission_name then
+	if current_mission_name ~= mission_name or current_mission_is_hub ~= mission_is_hub then
 		mission_name = current_mission_name
+		mission_is_hub = current_mission_is_hub
 		recompute(mod)
 	end
 

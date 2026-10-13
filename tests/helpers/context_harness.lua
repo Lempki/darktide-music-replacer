@@ -64,8 +64,9 @@ function Harness:wait(seconds)
 end
 
 -- Sets the mission name and lets an update read it, or removes the mission manager when the name is nil.
+-- The hub_ship template is the hub, as in the game.
 function Harness:mission(name)
-	self.engine:set_mission(name)
+	self.engine:set_mission(name, name == "hub_ship" and { is_hub = true } or nil)
 	self:tick(0)
 end
 

@@ -180,13 +180,17 @@ function FakeEngine:wwise_state(group_name)
 end
 
 -- Sets the current mission name, or removes the mission manager when the name is nil, as before a level loads.
-function FakeEngine:set_mission(name)
+-- `fields`, if given, are added to the mission template, for example `{ is_hub = true }`.
+function FakeEngine:set_mission(name, fields)
 	if name == nil then
 		Managers.state.mission = nil
 		return
 	end
 
 	local template = { name = name }
+	for key, value in pairs(fields or {}) do
+		template[key] = value
+	end
 
 	Managers.state.mission = {
 		mission_name = function() return name end,

@@ -39,14 +39,15 @@ describe("context.lua", function()
 		-- The order the game sets these states in on a cold start into the hub and on leaving it.
 		engine:set_state("music_game_state", "loading")
 		engine:set_state("music_zone", "hub")
+		engine:set_mission("hub_ship", { is_hub = true })
+		Context.update(engine.mod, 0)
 		engine:set_state("music_game_state", "mission")
 		engine:set_state("music_zone", "None")
 		engine:set_state("music_game_state", "loading")
 
 		assert_deep_equal(changes, {
 			{ "nil", "hub" },
-			{ "hub", "mission_explore" },
-			{ "mission_explore", "nil" },
+			{ "hub", "nil" },
 		})
 	end)
 
