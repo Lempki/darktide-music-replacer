@@ -81,7 +81,7 @@ $infoText = ([regex]'\{').Replace($infoText, "{`n  `"build`": `"$BuildStamp`",",
 [System.IO.File]::WriteAllText($StagedInfo, $infoText, (New-Object System.Text.UTF8Encoding $false)) # UTF-8 without a BOM, like the source file.
 
 # Empty folders so a fresh install is ready to receive files immediately, without waiting for the mod's own runtime mkdir (library.lua) to run once first.
-# Not tracked in git -- synthesized here instead, since git can't track an empty directory anyway.
+# Synthesized here, since git cannot track an empty directory.
 foreach ($context in $AudioContexts) {
     New-Item -ItemType Directory -Path (Join-Path $StageMod "audio\$context") -Force | Out-Null
 }
@@ -153,7 +153,7 @@ foreach ($context in $AudioContexts) {
 Write-Host ""
 Write-Host "audio\ (files never touched by this script):"
 foreach ($context in Get-ChildItem -LiteralPath (Join-Path $target 'audio') -Directory) {
-    $count = @(Get-ChildItem -LiteralPath $context.FullName -File).Count # @() -- a single file isn't an array.
+    $count = @(Get-ChildItem -LiteralPath $context.FullName -File).Count # @() so that a single file still counts as an array.
     Write-Host ("  {0,-18} {1} file(s)" -f $context.Name, $count)
 }
 

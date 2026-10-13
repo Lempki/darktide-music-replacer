@@ -198,7 +198,6 @@ function FakeEngine:set_mission(name, fields)
 	}
 end
 
--- Marks the game's backend as initialized, after which it accepts requests.
 function FakeEngine:initialize_backend()
 	Managers.backend._initialized = true
 end

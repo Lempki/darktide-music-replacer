@@ -2,7 +2,8 @@
 -- mod:echo() pops an on-screen notification per call, which is unusable at this volume, so this writes to a file instead.
 -- The file holds mostly playback decisions and raw state transitions, for troubleshooting why a track is playing after the fact.
 -- It is opt-in through the "diagnostic_mode" mod option, which defaults to off.
--- The option is checked on every call, so toggling it applies immediately, and a user who leaves it off never gets a file created.
+-- The option is checked on every call, so toggling it applies immediately.
+-- With the option off, the file is never created.
 
 local DiagnosticLog = {}
 
@@ -25,13 +26,12 @@ local function appdata_root()
 end
 
 local function ensure_directory(path)
-	-- Best effort mkdir. io.open below is the real success check.
+	-- Best effort, since io.open below is the real success check.
 	if _os and _os.execute then
 		pcall(_os.execute, 'mkdir "' .. path:gsub("/", "\\") .. '" >nul 2>nul')
 	end
 end
 
--- Drops the oldest lines once the file exceeds LOG_MAX_LINES, keeping only the most recent.
 -- Rewrites the whole file, so this is only safe to call once per session, not per write() call.
 local function trim_log_file(path)
 	local file = _io.open(path, "r")
@@ -84,7 +84,6 @@ local function get_log_file()
 
 	local path = dir .. "/" .. LOG_FILE_NAME
 
-	-- "w" truncates, "a" appends.
 	-- This only runs once per session (see log_file_attempted above).
 	-- So the setting resets the file once, at the first write, and not on every write() call.
 	local file_mode = "a"
@@ -109,7 +108,6 @@ function DiagnosticLog.init(mod_instance)
 	mod = mod_instance
 end
 
--- Appends one timestamped line, if Diagnostic Logging is on.
 function DiagnosticLog.write(line)
 	if not mod:get("diagnostic_mode") then
 		return

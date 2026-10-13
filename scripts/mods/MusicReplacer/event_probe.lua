@@ -45,9 +45,6 @@ end
 
 -- Called for every Wwise event, from the single trigger_resource_event hook in MusicReplacer.lua.
 -- A mod can only install one hook per method on itself, so this does not hook anything on its own.
--- See MusicReplacer.lua for why this and Suppression share one hook.
--- Music events are logged every time they fire.
--- Any other event is logged only the first time its name is seen, unless it matches NOISE_PATTERNS.
 function EventProbe.observe(event_name, extra_arg_count)
 	if type(event_name) ~= "string" then
 		return

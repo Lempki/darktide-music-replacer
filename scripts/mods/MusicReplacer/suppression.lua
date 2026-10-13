@@ -28,7 +28,6 @@ local reforced_groups = {}
 -- The forced sets go straight to Wwise and never reach the _set_state hook, so context.lua keeps the game's real values.
 
 -- Forces a state group to "None" once, remembering that it did so restore_group can undo it.
--- Does nothing if the group is already forced or has no real value to replace.
 local function force_group_to_none(group_name)
 	local real_value = real_states[group_name]
 
@@ -41,7 +40,6 @@ local function force_group_to_none(group_name)
 	Wwise.set_state(group_name, "None")
 end
 
--- Puts a group forced by force_group_to_none back to its real value.
 local function restore_group(group_name)
 	if not forced_groups[group_name] then
 		return
@@ -53,7 +51,6 @@ local function restore_group(group_name)
 end
 
 -- Forces a group to "None" and keeps forcing it after every real transition while on.
--- Turning it off restores the real value.
 local function set_reforced_group(group_name, should_suppress)
 	reforced_groups[group_name] = should_suppress or nil
 
@@ -116,9 +113,7 @@ function Suppression.set_zone(should_suppress)
 end
 
 -- Forces music_game_state to "None" so the game's own victory and defeat music stops.
--- Whether this silences it is not yet confirmed.
 -- The game sets this state repeatedly through a mission's end, so it is forced again after every real transition while on.
--- Turning it off restores the real state.
 function Suppression.set_game_state(should_suppress)
 	set_reforced_group("music_game_state", should_suppress)
 end
@@ -126,7 +121,6 @@ end
 -- Forces music_objective to "None" so the game's own last stand or event music stops.
 -- It is engaged only for the last stand and event contexts, which are the ones this group decides.
 -- The game sets this group repeatedly, so it is forced again after every real transition while on.
--- Turning it off restores the real state.
 function Suppression.set_objective(should_suppress)
 	set_reforced_group("music_objective", should_suppress)
 end
@@ -151,7 +145,6 @@ end
 -- Called for every Wwise event, from the single trigger_resource_event hook in MusicReplacer.lua.
 -- Returns true if the caller should drop the event instead of letting it play.
 -- A mod can only install one hook per method on itself, so this does not hook anything on its own.
--- See MusicReplacer.lua for why this and EventProbe share one hook.
 function Suppression.should_drop_event(event_name)
 	if not events_suppressed or type(event_name) ~= "string" then
 		return false

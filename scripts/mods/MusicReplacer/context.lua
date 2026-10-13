@@ -61,8 +61,7 @@ local state_listeners = {}
 local listeners_registered = false
 local diagnostic_log = function() end -- No-op unless a real logger is passed to Context.init.
 
--- Used only if mod:get() returns nil.
--- The real value is the combat_hold_seconds mod setting.
+-- Fallback for when the combat_hold_seconds setting reads nil.
 local COMBAT_HOLD_SECONDS_DEFAULT = 8
 
 local combat_hold_remaining = 0 -- Seconds left before mission_combat may fall back to mission_explore.
@@ -165,8 +164,7 @@ local function resolve(mod)
 		return nil
 	end
 
-	-- Victory and defeat have their own contexts.
-	-- They are checked before the boss signals, since a wipe can leave a boss encounter open.
+	-- Victory and defeat are checked before the boss signals, since a wipe can leave a boss encounter open.
 	if mission_outcome then
 		return MISSION_OUTCOME_CONTEXTS[mission_outcome]
 	end
@@ -175,7 +173,6 @@ local function resolve(mod)
 		return nil
 	end
 
-	-- Meat Grinder is silent unless the player opts in.
 	if mission_name == MEAT_GRINDER_MISSION and not mod:get("meat_grinder_music") then
 		return "silence"
 	end
@@ -241,8 +238,7 @@ end
 -- Public API
 -- ###########################################################################
 
--- Register a function to call whenever resolved_context changes.
--- The listener receives (new_context, old_context, boss_breed_or_nil).
+-- The listener receives (new_context, old_context, boss_breed_or_nil) whenever the resolved context changes.
 function Context.on_change(listener)
 	change_listeners[#change_listeners + 1] = listener
 end
@@ -262,7 +258,6 @@ function Context.on_state_change(listener)
 	state_listeners[#state_listeners + 1] = listener
 end
 
--- Installs the Wwise state hook and the boss encounter callbacks.
 -- Call once from the main mod file's top level.
 -- `log`, if given, receives a line for every raw state transition and boss event.
 -- That is much more output than Context.on_change, so it is meant for diagnosing state issues.
@@ -361,7 +356,6 @@ end
 
 -- Call from the main mod file's mod.update.
 -- Managers.event does not exist at mod-load time, so the boss callbacks are registered on the first tick where it does.
--- Also tracks the current mission name.
 function Context.update(mod, dt)
 	local current_mission_name, current_mission_is_hub = read_mission()
 

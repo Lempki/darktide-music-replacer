@@ -9,7 +9,7 @@
 --	  retry_pending_stops() below mitigates this.
 --	* ffplay is headless with no live control channel, so an already-playing track's volume and filters cannot change.
 --	  So a crossfade is a one-sided fade-in overlap, not a symmetric fade.
---	  A relaunch-based symmetric fade glitched audibly worse than not fading at all.
+--	  A relaunch-based symmetric fade glitches audibly, which sounds worse than not fading at all.
 --	* The Audio Plugin bakes -volume in once at launch (confirmed from play_file.lua).
 --	  AudioClient.update() reacts to a slider change on the next tick, then ignores further changes for VOLUME_RELAUNCH_COOLDOWN_SECONDS.
 --	  Each relaunch stops the track and starts it again at its current position.
@@ -45,8 +45,7 @@ local scheduled_stops = {} -- List of {remaining, play_file_id} entries for the 
 -- Tracks the current track well enough to relaunch it at a new volume. See AudioClient.update().
 local current_file_path = nil
 
--- The file's full duration.
--- Fixed across a volume relaunch so the fade-out lands at the file's real end.
+-- The file's full duration, fixed across a volume relaunch so the fade-out lands at the file's real end.
 local current_total_duration = nil
 
 -- Seconds into the file's timeline.
@@ -76,7 +75,7 @@ function AudioClient.elapsed()
 end
 
 -- Retries stops that had no known pid yet.
--- Cheap, and normally a no-op.
+-- Cheap and normally a no-op, so it can run every tick.
 local function retry_pending_stops()
 	if not audio_mod or not dls_mod then
 		return

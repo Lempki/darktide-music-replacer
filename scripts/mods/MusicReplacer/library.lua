@@ -37,7 +37,7 @@ local last_picked = {} -- context_name -> the file path most recently returned.
 local reported_missing = {} -- file_path -> true once a missing file has been logged.
 
 -- The handler's file paths start with the context folder name, so they sit directly under AUDIO_ROOT.
--- If io is unavailable the file is assumed to exist, which is the behavior before this check.
+-- If io is unavailable the file is assumed to exist, so this check can never block playback.
 -- The same goes for a name with non-ASCII characters.
 -- The handler's paths are UTF-8, and io.open on Windows reads them in the system code page, so an existing file could look missing.
 local function file_exists(file_path)
@@ -54,7 +54,7 @@ local function file_exists(file_path)
 	return true
 end
 
--- Best effort, so a fresh install has every folder ready without the user creating them.
+-- Best effort, so a fresh install has every folder ready without creating them by hand.
 -- Windows mkdir creates missing parents and does nothing if the folder exists.
 -- pick_file()'s own fallback matters more than this succeeding.
 local function ensure_audio_folder(context_name)
@@ -103,7 +103,6 @@ function Library.init(log)
 end
 
 -- Call from the main mod file's mod.update, so the scan's call stack stays inside this mod.
--- Starts the scan on the first tick where the game's backend is ready.
 function Library.update(dt)
 	if not waiting_to_scan then
 		return

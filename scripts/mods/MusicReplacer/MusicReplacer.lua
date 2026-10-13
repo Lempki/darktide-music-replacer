@@ -50,7 +50,6 @@ local function play_context(context_name, is_new_context)
 	end
 
 	if context_name == "silence" then
-		-- Plays no custom track and keeps the combat and exploration event suppression on.
 		AudioClient.stop()
 		Suppression.engage(context_name)
 		log("[playback] silence: no custom music, combat and exploration event suppression on")
@@ -80,8 +79,6 @@ local function play_context(context_name, is_new_context)
 		return
 	end
 
-	-- A file is confirmed playing for context_name here, since the no-file branch above already returned.
-	-- So the native music is silenced for it.
 	Suppression.engage(context_name)
 
 	-- A single-file context plays once normally first, with loop=1 and the fades.
@@ -100,8 +97,7 @@ local function play_context(context_name, is_new_context)
 		native_loop = use_native_loop,
 		on_finished = function()
 			-- A native loop only gets here if its process died.
-			-- Only continues if still in this context.
-			-- If it changed, whatever triggered the change already called play_context for the new one.
+			-- After a context change, whatever triggered it already called play_context for the new context.
 			if current_context ~= context_name then
 				return
 			end
@@ -130,7 +126,7 @@ local function play_context(context_name, is_new_context)
 	})
 end
 
--- Context changes are debounced before they are acted on.
+-- Context changes are debounced, so a state that flickers and returns does not restart the track.
 local DEBOUNCE_SECONDS = 0.6
 
 local pending_context = nil
