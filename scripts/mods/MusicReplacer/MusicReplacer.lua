@@ -199,7 +199,7 @@ mod.on_all_mods_loaded = function()
 end
 
 mod.on_setting_changed = function(setting_id)
-	if setting_id == "meat_grinder_music" or setting_id == "daemonhost_boss_music" then
+	if setting_id == "meat_grinder_music" or setting_id == "daemonhost_boss_music" or setting_id == "captain_boss_music" then
 		Context.refresh(mod)
 	end
 end

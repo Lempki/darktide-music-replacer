@@ -32,6 +32,12 @@ return {
 	rescan_audio_button = {
 		en = "Rescan",
 	},
+	captain_boss_music = {
+		en = "Boss Music for Captains",
+	},
+	captain_boss_music_description = {
+		en = "On plays your boss music for a captain, including the Karnak Twins, from the moment it engages until it dies. Off leaves captains to the game's own music. Event music still plays during an event.",
+	},
 	debug = {
 		en = "Debug",
 	},

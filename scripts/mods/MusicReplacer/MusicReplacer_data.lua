@@ -24,6 +24,11 @@ return {
 				default_value = false,
 			},
 			{
+				setting_id = "captain_boss_music",
+				type = "checkbox",
+				default_value = false,
+			},
+			{
 				setting_id = "rescan_audio",
 				type = "button",
 				button_text = "rescan_audio_button",

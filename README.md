@@ -45,7 +45,7 @@ All nine folders already exist after install. Put audio files (`.mp3`, `.wav`, a
 | `mission_explore` | In a mission, no meaningful threat. |
 | `mission_combat` | In a mission, while enemies are attacking you outside a horde or a boss fight. The game itself plays no music here. |
 | `mission_horde` | In a mission, during a horde. With no files here, the game's own horde music plays, as it does without the mod. |
-| `mission_boss` | In a mission, while a monstrosity is near you, such as a Chaos Spawn, a Beast of Nurgle, a Plague Ogryn, or an Ogryn Houndmaster. This is exactly when the game plays its own boss music. It does not play during an event, a last stand, or the mission's end, which take priority. It also does not play for an angered Daemonhost unless you turn on its setting. It does not play for captains, or while a scripted boss such as Spillway's psyker is alive, since the game does not report those as bosses. |
+| `mission_boss` | In a mission, while a monstrosity is near you, such as a Chaos Spawn, a Beast of Nurgle, a Plague Ogryn, or an Ogryn Houndmaster. This is exactly when the game plays its own boss music. It does not play during an event, a last stand, or the mission's end, which take priority. It also does not play for an angered Daemonhost unless you turn on its setting. It does not play for captains unless you turn on their setting, or while a scripted boss such as Spillway's psyker is alive, since the game does not report those as bosses. |
 | `mission_event` | In a mission, while an event plays its own music, such as a holdout, a hacking event, an escape, or a scripted boss fight like those in Spillway. It replaces boss, horde, combat, and explore music, as the game's own event music does. It does not play during a last stand or the mission's end, and it stops when the game ends the event's music. |
 | `mission_last_stand` | In a mission, while only one player of the team is still alive. It replaces boss, combat, and explore music, as the game's own last stand music does. |
 | `mission_victory` | From the moment a mission is won until the loading screen or a cutscene. |
@@ -63,6 +63,7 @@ These are in the in-game mod options under Music Replacer.
 |---|---|---|
 | Combat music hold | 8 seconds | How long combat and horde music keep playing after a fight or a horde quiets down, so a short lull does not switch the music. Set it to 0 to switch immediately. |
 | Music in Meat Grinder | Off | Off keeps custom music out of the Meat Grinder training area and also silences the game's own combat music there. On plays your explore and combat music there. |
+| Boss music for captains | Off | On plays your boss music for a captain, including the Karnak Twins, from the moment it engages until it dies. Off leaves captains to the game's own music. Event music still plays during an event. |
 | Boss music for daemonhosts | Off | Off follows the game, which plays no music for an angered daemonhost. On plays your boss music from the moment a daemonhost is angered until it dies. |
 | Rescan audio folders | (button) | Picks up audio files added or removed since the game started, without a restart. A track that is playing keeps playing, and a context that had no files starts its new track right away. |
 | Diagnostic logging | Off | Writes `diagnostic.log` for troubleshooting. |
@@ -91,6 +92,7 @@ These are in the in-game mod options under Music Replacer.
 * [x] Custom music for the last stand, when only one player of the team is still alive.
 * [x] Custom music for mission events, such as holdouts, escapes, and scripted boss fights.
 * [x] A setting for whether angered daemonhosts play boss music, off by default.
+* [x] A setting for whether captains, including the Karnak Twins, play boss music, off by default.
 * [x] A button in the mod settings that rescans the audio folders without a restart.
 * [x] Custom music for hordes, with the game's own horde music when the folder is empty.
 * [ ] A setting per context to choose custom music, the game's own music, or silence, without moving files around.

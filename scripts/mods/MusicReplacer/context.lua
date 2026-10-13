@@ -6,8 +6,9 @@
 --	* The hub is told apart from a mission by `music_zone`, since `music_game_state` is "mission" for both.
 --	* A boss is active while Wwise reports `music_combat == "boss"`, which is when the game plays its own boss music.
 --	  Bosses that only open an encounter window get no boss music in the game, so they get none here either.
---	  Those are Spillway's scripted event bosses and the daemonhost.
---	* A daemonhost's encounter window counts as a boss only with the `daemonhost_boss_music` setting on.
+--	  Those are captains, daemonhosts, and Spillway's psyker, which the game's boss music check leaves out by their breed tags.
+--	* A captain's or a daemonhost's encounter window counts as a boss only with its setting on.
+--	  Scripted captains appear during events, and event music wins over bosses, so the setting only matters for random ones.
 --	* Encounter windows are tracked per boss unit, since several bosses can be open at once and a start can repeat.
 --	  A window stays open until its own end event, which the game sends when the boss dies or despawns.
 --	  A boss that the game leaves stuck somewhere keeps its window open, just as it keeps the game's own boss music.
@@ -78,6 +79,10 @@ local OPT_IN_BOSS_SETTINGS = {
 	chaos_daemonhost = "daemonhost_boss_music",
 	chaos_daemonhost_torment = "daemonhost_boss_music",
 	chaos_mutator_daemonhost = "daemonhost_boss_music",
+	renegade_captain = "captain_boss_music",
+	renegade_twin_captain = "captain_boss_music",
+	renegade_twin_captain_two = "captain_boss_music",
+	cultist_captain = "captain_boss_music",
 }
 
 -- The music_objective value the game sets while one player of the team is alive.
