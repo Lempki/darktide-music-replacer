@@ -143,6 +143,17 @@ describe("context.lua daemonhosts", function()
 		assert_deep_equal(harness.changes, { "mission_boss", "mission_explore" })
 	end)
 
+	it("counts every daemonhost breed with the setting on", function()
+		for _, breed in ipairs({ "chaos_daemonhost", "chaos_daemonhost_torment", "chaos_mutator_daemonhost" }) do
+			local harness = in_mission("zone_3", { daemonhost_boss_music = true })
+			local daemonhost = harness:new_boss(breed)
+
+			harness:boss_start(daemonhost)
+
+			assert_equal(harness:current(), "mission_boss", breed)
+		end
+	end)
+
 	it("counts only daemonhost windows, not other bosses' windows, with the setting on", function()
 		local harness = in_mission("zone_2_depths", { daemonhost_boss_music = true })
 		local captain = harness:new_boss("renegade_captain")

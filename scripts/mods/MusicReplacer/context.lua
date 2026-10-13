@@ -72,8 +72,13 @@ local horde_hold_remaining = 0 -- Seconds left before mission_horde may fall bac
 
 local MISSION_OUTCOME_CONTEXTS = { victory = "mission_victory", defeat = "mission_defeat" }
 
--- Breed name of the daemonhost, which only counts as a boss with the daemonhost_boss_music setting on.
-local DAEMONHOST_BREED = "chaos_daemonhost"
+-- Breeds the game plays no boss music for, mapped to the setting that makes them count as bosses.
+-- The game has several daemonhost breeds, for mutators and other modes, and all of them behave alike.
+local OPT_IN_BOSS_SETTINGS = {
+	chaos_daemonhost = "daemonhost_boss_music",
+	chaos_daemonhost_torment = "daemonhost_boss_music",
+	chaos_mutator_daemonhost = "daemonhost_boss_music",
+}
 
 -- The music_objective value the game sets while one player of the team is alive.
 local LAST_MAN_STANDING = "last_man_standing"
@@ -102,12 +107,10 @@ local function is_boss_active(mod)
 		return true
 	end
 
-	if not mod:get("daemonhost_boss_music") then
-		return false
-	end
-
 	for _, boss in pairs(open_bosses) do
-		if boss.breed == DAEMONHOST_BREED then
+		local setting_id = OPT_IN_BOSS_SETTINGS[boss.breed]
+
+		if setting_id and mod:get(setting_id) then
 			return true
 		end
 	end
