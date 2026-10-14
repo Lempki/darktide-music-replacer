@@ -14,6 +14,19 @@ typedef struct { uint32_t Data1; uint16_t Data2; uint16_t Data3; uint8_t Data4[8
 
 typedef struct { void **lpVtbl; } MusicReplacer_ComObject;
 
+/* Audio formats are tightly packed, as in Windows' own headers. */
+#pragma pack(push, 1)
+typedef struct {
+	uint16_t wFormatTag;
+	uint16_t nChannels;
+	uint32_t nSamplesPerSec;
+	uint32_t nAvgBytesPerSec;
+	uint16_t nBlockAlign;
+	uint16_t wBitsPerSample;
+	uint16_t cbSize;
+} MusicReplacer_WAVEFORMATEX;
+#pragma pack(pop)
+
 int32_t MusicReplacer_CoGetApartmentType(int32_t *type, int32_t *qualifier) __asm__("CoGetApartmentType");
 int32_t MusicReplacer_CoIncrementMTAUsage(void **cookie) __asm__("CoIncrementMTAUsage");
 int32_t MusicReplacer_CoCreateInstance(const MusicReplacer_GUID *clsid, void *outer, uint32_t cls_context,
