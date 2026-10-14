@@ -194,67 +194,87 @@ function MediaDecoder.open(path)
 		reader = reader,
 		format = format,
 		duration = read_duration(reader),
-		ended = false,
+		source_ended = false,
+		-- The part of a decoded chunk that did not fit the caller's buffer, on the Windows heap.
+		carry = nil,
+		carry_capacity = 0,
+		carry_offset = 0,
+		carry_bytes = 0,
+		-- Out parameters, made once so reading allocates nothing on the Lua heap.
+		stream_index = ffi.new("uint32_t[1]"),
+		flags = ffi.new("uint32_t[1]"),
+		timestamp = ffi.new("int64_t[1]"),
+		out = ffi.new("void *[1]"),
+		data = ffi.new("uint8_t *[1]"),
+		length = ffi.new("uint32_t[1]"),
 	}, Decoder)
 end
 
--- Decodes at least `seconds` of audio, or what is left of the file.
--- Returns a byte buffer owned by Lua and its length, or nil at the end of the file.
-function Decoder:read(seconds)
-	if self.ended or self.reader == nil then
-		return nil
+-- Keeps the bytes of a decoded chunk that did not fit, growing the carry buffer when a chunk is larger than any before.
+local function keep_rest(self, source, bytes)
+	if bytes > self.carry_capacity then
+		NativeFfi.free(self.carry)
+		self.carry = NativeFfi.alloc(bytes)
+		self.carry_capacity = self.carry and bytes or 0
+		if not self.carry then
+			self.carry_bytes = 0
+			return
+		end
 	end
 
-	local wanted_bytes = math.floor(seconds * self.format.nAvgBytesPerSec)
-	local chunks = {}
-	local total = 0
-	local stream_index = ffi.new("uint32_t[1]")
-	local flags = ffi.new("uint32_t[1]")
-	local timestamp = ffi.new("int64_t[1]")
-	local out = ffi.new("void *[1]")
-	local data = ffi.new("uint8_t *[1]")
-	local length = ffi.new("uint32_t[1]")
+	ffi.copy(self.carry, source, bytes)
+	self.carry_offset = 0
+	self.carry_bytes = bytes
+end
 
-	while total < wanted_bytes do
-		out[0] = nil
-		local hresult = call(self.reader, READ_SAMPLE, FIRST_AUDIO_STREAM, 0, stream_index, flags, timestamp, out)
-		if not NativeFfi.succeeded(hresult) or math.floor(flags[0] / END_OF_STREAM_FLAG) % 2 == 1 then
-			self.ended = true
+-- Fills `target`, a byte pointer with room for `capacity` bytes, and returns how many bytes it wrote.
+-- It writes fewer only at the end of the file. Keep `capacity` a multiple of the format's block size.
+function Decoder:read_into(target, capacity)
+	local written = 0
+
+	if self.carry_bytes > 0 then
+		local count = math.min(self.carry_bytes, capacity)
+		ffi.copy(target, self.carry + self.carry_offset, count)
+		self.carry_offset = self.carry_offset + count
+		self.carry_bytes = self.carry_bytes - count
+		written = count
+	end
+
+	while written < capacity and not self.source_ended and self.reader ~= nil do
+		self.out[0] = nil
+		local hresult = call(self.reader, READ_SAMPLE, FIRST_AUDIO_STREAM, 0, self.stream_index, self.flags, self.timestamp, self.out)
+		if not NativeFfi.succeeded(hresult) or math.floor(self.flags[0] / END_OF_STREAM_FLAG) % 2 == 1 then
+			self.source_ended = true
 		end
 
-		local sample = out[0]
+		local sample = self.out[0]
 		if sample ~= nil then
-			if NativeFfi.succeeded(call(sample, CONVERT_TO_CONTIGUOUS_BUFFER, out)) then
-				local buffer = out[0]
-				if NativeFfi.succeeded(call(buffer, LOCK, data, nil, length)) then
-					local copy = ffi.new("uint8_t[?]", length[0])
-					ffi.copy(copy, data[0], length[0])
-					chunks[#chunks + 1] = { copy, length[0] }
-					total = total + length[0]
+			if NativeFfi.succeeded(call(sample, CONVERT_TO_CONTIGUOUS_BUFFER, self.out)) then
+				local buffer = self.out[0]
+				if NativeFfi.succeeded(call(buffer, LOCK, self.data, nil, self.length)) then
+					local length = self.length[0]
+					local count = math.min(length, capacity - written)
+					ffi.copy(target + written, self.data[0], count)
+					written = written + count
+
+					if length > count then
+						keep_rest(self, self.data[0] + count, length - count)
+					end
+
 					call(buffer, UNLOCK)
 				end
 				NativeFfi.release(buffer)
 			end
 			NativeFfi.release(sample)
 		end
-
-		if self.ended then
-			break
-		end
 	end
 
-	if total == 0 then
-		return nil
-	end
+	return written
+end
 
-	local joined = ffi.new("uint8_t[?]", total)
-	local offset = 0
-	for _, chunk in ipairs(chunks) do
-		ffi.copy(joined + offset, chunk[1], chunk[2])
-		offset = offset + chunk[2]
-	end
-
-	return joined, total
+-- True once every decoded byte has been handed out.
+function Decoder:at_end()
+	return self.source_ended and self.carry_bytes == 0
 end
 
 -- Moves to `seconds` into the file. Returns true on success.
@@ -265,7 +285,8 @@ function Decoder:seek(seconds)
 
 	local ok = NativeFfi.succeeded(call(self.reader, SET_CURRENT_POSITION, guids.null, position))
 	if ok then
-		self.ended = false
+		self.source_ended = false
+		self.carry_bytes = 0
 	end
 	return ok
 end
@@ -275,6 +296,11 @@ function Decoder:close()
 		NativeFfi.release(self.reader)
 		self.reader = nil
 	end
+
+	NativeFfi.free(self.carry)
+	self.carry = nil
+	self.carry_capacity = 0
+	self.carry_bytes = 0
 end
 
 return MediaDecoder

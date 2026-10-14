@@ -161,6 +161,7 @@ darktide-music-replacer/
 │   ├── native_ffi.lua                   # Shared ffi plumbing for Windows APIs: GUIDs, COM calls, COM setup, UTF-16 strings.
 │   ├── session_volume.lua               # Reads and sets one process's Windows audio session volume through Core Audio.
 │   ├── xaudio.lua                       # Plays PCM through XAudio2 voices with live volume control. Not used by the mod yet.
+│   ├── native_player.lua                # Streams songs through media_decoder.lua and xaudio.lua from a fixed buffer pool. Not used by the mod yet.
 │   ├── volume_sessions.lua              # Holds each ffplay's audio session to follow the sliders, and resets Windows' saved volume.
 │   ├── MusicReplacer_data.lua           # DMF mod-options widgets.
 │   └── MusicReplacer_localization.lua   # Mod-options strings.
@@ -174,7 +175,7 @@ darktide-music-replacer/
 │   └── spec/                            # Specs, one *_spec.lua file per subject.
 └── tools/
     ├── build.ps1                        # Builds the zip and optionally deploys straight into the installed mod folder.
-    ├── native_audio_demo.lua            # Plays two files through media_decoder.lua and xaudio.lua outside the game.
+    ├── native_audio_demo.lua            # Plays two files through native_player.lua outside the game.
     └── test.ps1                         # Runs the specs and exits non-zero on failure.
 ```
 

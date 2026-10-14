@@ -38,6 +38,9 @@ int32_t MusicReplacer_MultiByteToWideChar(uint32_t code_page, uint32_t flags, co
 void *MusicReplacer_OpenProcess(uint32_t access, int32_t inherit, uint32_t pid) __asm__("OpenProcess");
 int32_t MusicReplacer_GetExitCodeProcess(void *process, uint32_t *exit_code) __asm__("GetExitCodeProcess");
 int32_t MusicReplacer_CloseHandle(void *handle) __asm__("CloseHandle");
+void *MusicReplacer_GetProcessHeap(void) __asm__("GetProcessHeap");
+void *MusicReplacer_HeapAlloc(void *heap, uint32_t flags, size_t bytes) __asm__("HeapAlloc");
+int32_t MusicReplacer_HeapFree(void *heap, uint32_t flags, void *memory) __asm__("HeapFree");
 ]]
 
 local CO_E_NOTINITIALIZED = -2147221008 -- 0x800401F0
@@ -148,6 +151,22 @@ end
 function NativeFfi.release(object)
 	if object ~= nil then
 		NativeFfi.call(object, 2, "uint32_t (*)(void *)")
+	end
+end
+
+-- Allocates `bytes` from the Windows process heap, outside the Lua heap, which the game's own memory use already strains.
+-- Returns a uint8_t pointer, or nil. Free it with NativeFfi.free(), since the garbage collector never will.
+function NativeFfi.alloc(bytes)
+	local memory = kernel32.MusicReplacer_HeapAlloc(kernel32.MusicReplacer_GetProcessHeap(), 0, bytes)
+	if memory == nil then
+		return nil
+	end
+	return ffi.cast("uint8_t *", memory)
+end
+
+function NativeFfi.free(memory)
+	if memory ~= nil then
+		kernel32.MusicReplacer_HeapFree(kernel32.MusicReplacer_GetProcessHeap(), 0, memory)
 	end
 end
 
