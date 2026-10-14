@@ -103,6 +103,7 @@ These are in the in-game mod options under Music Replacer.
 * [ ] An optional periodic rescan of the audio folders, on top of the rescan button.
 * [ ] Runtime volume control through the Windows audio session, replacing the relaunch on a slider change.
 * [ ] True crossfades between tracks, once runtime volume control works.
+* [ ] Lowering custom music while the pause menu is open, as the game does with its own music, once runtime volume control works.
 * [x] Songs continuing from where they left off: explore and combat whenever they come back, and a horde or boss fight after an interruption while it is still going.
 * [ ] Optional loudness normalization, so quiet and loud files play at a similar level without changing the files. It would have a setting to turn it on and a target level.
 * [ ] "Let the current track finish" toggle, with a per-category override. For example, a boss track could play out even after the boss dies.
