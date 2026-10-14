@@ -69,12 +69,14 @@ These are in the in-game mod options under Music Replacer.
 | Boss music for captains | Off | On plays your boss music for a captain, including the Karnak Twins, from the moment it engages until it dies. Off leaves captains to the game's own music. Event music still plays during an event. |
 | Boss music for daemonhosts | Off | Off follows the game, which plays no music for an angered daemonhost. On plays your boss music from the moment a daemonhost is angered until it dies. |
 | Rescan audio folders | (button) | Picks up audio files added or removed since the game started, without a restart. A track that is playing keeps playing, and a context that had no files starts its new track right away. |
+| Instant volume changes | On | Lowering the master or music volume slider changes a playing track's volume at once, without restarting it. Turn it off if music volume misbehaves, and every slider change restarts the track instead. |
 | Diagnostic logging | Off | Writes `diagnostic.log` for troubleshooting. |
 | Reset log on launch | On | Clears `diagnostic.log` at the start of each session. Only matters while diagnostic logging is on. |
 
 ## Limitations
 
-* Changing the master or music volume slider restarts the playing track. Music plays through a separate ffplay process, started by the Audio Plugin and DarktideLocalServer. That process takes its volume when it starts and cannot be adjusted from outside once it is running. On a slider change, Music Replacer stops the process and starts a new one at the same position with the new volume. The request goes through the local server, so expect a slight delay and a brief pause or cut in the music. While you drag a slider this happens at most once per second, and the final volume is applied once you stop.
+* Raising the master or music volume slider above where the playing track started restarts that track. Music plays through a separate ffplay process, started by the Audio Plugin and DarktideLocalServer, which takes its volume when it starts. Music Replacer lowers a running track through that process's Windows audio session, the same per-app volume the Windows Volume Mixer shows, so lowering a slider is instant. A session cannot go above the volume the track started at, so raising past it stops the process and starts a new one at the same position. The request goes through the local server, so expect a slight delay and a brief pause or cut in the music. While you drag a slider this happens at most once per second, and the next track starts at the new volume anyway.
+* The audio session calls go to Windows' Core Audio API directly from Lua, through the ffi the mod loader provides, so the mod ships no DLL or executable. Music Replacer only changes the sessions of the ffplay processes it started itself, and puts back the volume Windows remembers for ffplay once each one ends, so other mods' Audio Plugin sounds keep their own volume.
 * Each audio folder is scanned when the game launches. After adding or removing files while the game runs, press Rescan Audio Folders in the mod settings, or restart the game. Until then, a file you removed is skipped and a file you added is not picked up.
 * A hard crash can leave a track playing until it ends on its own. Quitting normally stops it. A crash runs no mod code at all, so nothing can intervene. If it happens, end `ffplay_dt.exe` in Task Manager.
 * Music Replacer only affects your own game. Squadmates hear the game's own music regardless.
@@ -99,10 +101,10 @@ These are in the in-game mod options under Music Replacer.
 * [x] A button in the mod settings that rescans the audio folders without a restart.
 * [x] Custom music for hordes, with the game's own horde music when the folder is empty, and its own hold setting.
 * [x] Songs continuing from where they left off: explore and combat whenever they come back, and a horde, boss fight, or event after an interruption while it is still going.
+* [x] Runtime volume control through the Windows audio session, so lowering a volume slider no longer restarts the track.
 * [ ] A setting per context to choose custom music, the game's own music, or silence, without moving files around.
 * [ ] More Meat Grinder options, such as choosing which contexts play there.
 * [ ] An optional periodic rescan of the audio folders, on top of the rescan button.
-* [ ] Runtime volume control through the Windows audio session, replacing the relaunch on a slider change.
 * [ ] True crossfades between tracks, once runtime volume control works.
 * [ ] Lowering custom music while the pause menu is open, as the game does with its own music, once runtime volume control works.
 * [ ] Optional loudness normalization, so quiet and loud files play at a similar level without changing the files. It would have a setting to turn it on and a target level.
@@ -155,7 +157,7 @@ darktide-music-replacer/
 │   ├── event_probe.lua                  # Logging-only probe that records Wwise event names.
 │   ├── mission_probe.lua                # Logging-only probe that records the current mission's name and type.
 │   ├── session_volume.lua               # Reads and sets one process's Windows audio session volume through Core Audio.
-│   ├── session_probe.lua                # Logging-only probe that records the playing track's session volume.
+│   ├── volume_sessions.lua              # Holds each ffplay's audio session to follow the sliders, and resets Windows' saved volume.
 │   ├── MusicReplacer_data.lua           # DMF mod-options widgets.
 │   └── MusicReplacer_localization.lua   # Mod-options strings.
 ├── docs/

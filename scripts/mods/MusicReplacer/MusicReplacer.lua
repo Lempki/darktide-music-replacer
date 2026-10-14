@@ -10,7 +10,7 @@ local ResumePoints = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/res
 local EventProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/event_probe")
 local MissionProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/mission_probe")
 local SessionVolume = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/session_volume")
-local SessionProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/session_probe")
+local VolumeSessions = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/volume_sessions")
 local DiagnosticLog = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/diagnostic_log")
 
 DiagnosticLog.init(mod)
@@ -208,7 +208,6 @@ end)
 Suppression.init(log)
 EventProbe.init(log)
 MissionProbe.init(log)
-SessionProbe.init(mod, SessionVolume, log)
 ResumePoints.init(mod)
 Context.on_state_change(Suppression.on_state_change)
 Context.on_state_change(ResumePoints.on_state_change)
@@ -216,7 +215,11 @@ Context.init(mod, log)
 
 mod.on_all_mods_loaded = function()
 	Library.init(log)
-	AudioClient.init(log)
+	local audio_mod = get_mod("Audio")
+	VolumeSessions.init(SessionVolume, audio_mod and audio_mod.file_pid, function()
+		return mod:get("instant_volume")
+	end, log)
+	AudioClient.init(log, VolumeSessions)
 
 	-- A mod can only install one hook per method on itself.
 	-- So Suppression and EventProbe cannot each hook WwiseWorld.trigger_resource_event on their own.
@@ -276,7 +279,6 @@ mod.update = function(dt)
 	end
 	AudioClient.update(dt)
 	MissionProbe.update()
-	SessionProbe.update(dt, AudioClient.current_pid())
 
 	if has_pending_change then
 		debounce_elapsed = debounce_elapsed + dt

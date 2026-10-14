@@ -9,19 +9,29 @@ local SessionVolume = {}
 
 local ffi = (Mods and Mods.lua and Mods.lua.ffi) or (not Mods and require("ffi")) or nil
 
--- The mod loader and every reload share one LuaJIT state, and ffi.cdef rejects redefining a type.
--- The prefix keeps these names apart from other mods' definitions.
+-- Every mod shares one LuaJIT state, and ffi.cdef rejects redefining a name that another mod may also declare, as DMF does.
+-- So every name is prefixed, and the functions are redirected to their real symbols.
+-- A mod reload finds the names already defined and skips the block.
 local CDEF = [[
 typedef struct { uint32_t Data1; uint16_t Data2; uint16_t Data3; uint8_t Data4[8]; } MusicReplacer_GUID;
 
 typedef struct { void **lpVtbl; } MusicReplacer_ComObject;
 
-int32_t CoIncrementMTAUsage(void **cookie);
-int32_t CoCreateInstance(const MusicReplacer_GUID *clsid, void *outer, uint32_t cls_context, const MusicReplacer_GUID *iid, void **object);
+int32_t MusicReplacer_CoIncrementMTAUsage(void **cookie) __asm__("CoIncrementMTAUsage");
+int32_t MusicReplacer_CoCreateInstance(const MusicReplacer_GUID *clsid, void *outer, uint32_t cls_context,
+	const MusicReplacer_GUID *iid, void **object) __asm__("CoCreateInstance");
+
+void *MusicReplacer_OpenProcess(uint32_t access, int32_t inherit, uint32_t pid) __asm__("OpenProcess");
+int32_t MusicReplacer_GetExitCodeProcess(void *process, uint32_t *exit_code) __asm__("GetExitCodeProcess");
+int32_t MusicReplacer_CloseHandle(void *handle) __asm__("CloseHandle");
 ]]
+
+local PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+local STILL_ACTIVE = 259
 
 -- Each signature is the method's own, with the object pointer first. Indexes are vtable slots, counting IUnknown's three.
 local METHODS = {
+	add_ref = { 1, "uint32_t (*)(void *)" },
 	release = { 2, "uint32_t (*)(void *)" },
 	enum_audio_endpoints = { 3, "int32_t (*)(void *, int32_t, uint32_t, void **)" }, -- IMMDeviceEnumerator
 	activate = { 3, "int32_t (*)(void *, const MusicReplacer_GUID *, uint32_t, void *, void **)" }, -- IMMDevice
@@ -42,6 +52,7 @@ local E_RENDER = 0
 local DEVICE_STATE_ACTIVE = 1
 
 local ole32 = nil
+local kernel32 = nil
 local method_types = {}
 local guids = {}
 local device_enumerator = nil
@@ -88,7 +99,9 @@ local function ensure_initialized()
 	end
 
 	local ok, err = pcall(function()
-		pcall(ffi.cdef, CDEF) -- Already defined after a mod reload, which is fine.
+		if not pcall(ffi.typeof, "MusicReplacer_GUID") then
+			ffi.cdef(CDEF)
+		end
 
 		for name, method in pairs(METHODS) do
 			method_types[name] = ffi.typeof(method[2])
@@ -101,6 +114,7 @@ local function ensure_initialized()
 		guids.iid_simple_audio_volume = guid(0x87CE5498, 0x68D6, 0x44E5, { 0x92, 0x15, 0x6D, 0xA4, 0x7E, 0xF8, 0x83, 0xD8 })
 
 		ole32 = ffi.load("ole32")
+		kernel32 = ffi.load("kernel32")
 	end)
 
 	if not ok then
@@ -110,14 +124,14 @@ local function ensure_initialized()
 
 	local out = ffi.new("void *[1]")
 	local function create_enumerator()
-		return ole32.CoCreateInstance(guids.clsid_device_enumerator, nil, CLSCTX_ALL, guids.iid_device_enumerator, out)
+		return ole32.MusicReplacer_CoCreateInstance(guids.clsid_device_enumerator, nil, CLSCTX_ALL, guids.iid_device_enumerator, out)
 	end
 
 	-- CoInitializeEx would change how the calling thread runs COM for the whole game, so it is never called.
 	-- If this thread has no COM yet, CoIncrementMTAUsage lets it use the process-wide multithreaded apartment without joining it.
 	local hresult = create_enumerator()
 	if hresult == CO_E_NOTINITIALIZED then
-		ole32.CoIncrementMTAUsage(ffi.new("void *[1]"))
+		ole32.MusicReplacer_CoIncrementMTAUsage(ffi.new("void *[1]"))
 		hresult = create_enumerator()
 	end
 
@@ -241,6 +255,71 @@ function SessionVolume.get(pid)
 		end
 		return nil
 	end)
+end
+
+-- An open session keeps its ISimpleAudioVolume, so each call skips the device and session walk.
+-- It still works after its process ends, which the caller can use to reset the volume Windows stores for the program.
+local Session = {}
+Session.__index = Session
+
+function Session:get()
+	if self.pointer == nil then
+		return nil
+	end
+
+	local level = ffi.new("float[1]")
+	if succeeded(call(self.pointer, "get_master_volume", level)) then
+		return level[0]
+	end
+	return nil
+end
+
+function Session:set(volume)
+	if self.pointer == nil then
+		return false
+	end
+
+	return succeeded(call(self.pointer, "set_master_volume", math.max(0, math.min(1, volume)), nil))
+end
+
+-- True once the session's process has exited, which is when setting the volume can no longer be heard.
+function Session:process_ended()
+	local process = kernel32.MusicReplacer_OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, self.pid)
+	if process == nil then
+		return true
+	end
+
+	local exit_code = ffi.new("uint32_t[1]")
+	local ok = kernel32.MusicReplacer_GetExitCodeProcess(process, exit_code) ~= 0
+	kernel32.MusicReplacer_CloseHandle(process)
+
+	return ok and exit_code[0] ~= STILL_ACTIVE
+end
+
+function Session:close()
+	if self.pointer ~= nil then
+		release(ffi.gc(self.pointer, nil))
+		self.pointer = nil
+	end
+end
+
+-- Opens the session of `pid`, or returns nil when that process has no audio session yet or COM is unavailable.
+function SessionVolume.open(pid)
+	if not pid or not ensure_initialized() then
+		return nil
+	end
+
+	local pointer = with_session_volume(pid, function(simple_volume)
+		call(simple_volume, "add_ref")
+		return simple_volume
+	end)
+
+	if pointer == nil then
+		return nil
+	end
+
+	-- Released on close, or by the garbage collector if a caller drops it.
+	return setmetatable({ pointer = ffi.gc(pointer, release), pid = pid }, Session)
 end
 
 -- Sets the session volume of `pid`, clamped to 0 to 1.

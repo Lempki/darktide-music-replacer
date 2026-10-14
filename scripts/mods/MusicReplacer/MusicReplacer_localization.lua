@@ -50,6 +50,12 @@ return {
 	captain_boss_music_description = {
 		en = "On plays your boss music for a captain, including the Karnak Twins, from the moment it engages until it dies. Off leaves captains to the game's own music. Event music still plays during an event.",
 	},
+	instant_volume = {
+		en = "Instant Volume Changes",
+	},
+	instant_volume_description = {
+		en = "Lowers a playing track through its Windows audio session the moment you move the master or music volume slider. Raising a slider above where the track started still restarts it at the same spot. Turn this off if music volume misbehaves, and every slider change restarts the track instead.",
+	},
 	debug = {
 		en = "Debug",
 	},

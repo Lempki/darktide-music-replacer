@@ -11,9 +11,10 @@
 --	  So a crossfade is a one-sided fade-in overlap, not a symmetric fade.
 --	  A relaunch-based symmetric fade glitches audibly, which sounds worse than not fading at all.
 --	* The Audio Plugin bakes -volume in once at launch (confirmed from play_file.lua).
---	  AudioClient.update() reacts to a slider change on the next tick, then ignores further changes for VOLUME_RELAUNCH_COOLDOWN_SECONDS.
+--	  A lower slider level scales the running track through its Windows audio session instead (see volume_sessions.lua).
+--	  Raising a slider above the level the track launched at, or a track whose session never appeared, still needs a relaunch.
+--	  AudioClient.update() relaunches on the next tick, then holds further relaunches for VOLUME_RELAUNCH_COOLDOWN_SECONDS.
 --	  Each relaunch stops the track and starts it again at its current position.
---	  That is accepted since a slider change is rare and deliberate.
 --	* -ss after -i combined with -loop restarts every loop iteration from the seeked position, not the file's true start (confirmed in-game).
 --	  So a native_loop relaunch plays a finite tail to the file's true end first, then resumes native looping from position 0.
 --	  That is the same seam the loop already uses, so it sounds like an ordinary loop and not a restart.
@@ -29,14 +30,18 @@ local FADE_OUT_SECONDS = 2 -- Also used for a track's own natural-end fade-out.
 -- Longer than FADE_IN_SECONDS so the incoming track masks the cutoff.
 local CROSSFADE_OVERLAP_SECONDS = 3
 
--- After reacting to a change, ignore further changes for this long.
+-- After a relaunch for a slider change, hold further relaunches for this long.
 -- This caps a continued drag without delaying the first reaction.
 local VOLUME_RELAUNCH_COOLDOWN_SECONDS = 1
+
+-- A slider drag changes the session volume every tick, so its log line waits until the sliders settle.
+local VOLUME_LOG_DELAY_SECONDS = 0.5
 
 local _os = Mods and Mods.lua and Mods.lua.os -- Only for AudioClient.shutdown()'s direct kill.
 
 local audio_mod = nil
 local dls_mod = nil
+local VolumeSessions = nil
 local log_fn = function() end -- Replaced with the real logger by AudioClient.init(log), see MusicReplacer.lua.
 local current_play_file_id = nil
 local pending_stop_ids = {} -- play_file_id -> true for kills that are not yet confirmed.
@@ -60,11 +65,14 @@ local current_on_finished = nil
 local current_master_slider = nil
 local current_music_slider = nil
 local volume_cooldown_elapsed = VOLUME_RELAUNCH_COOLDOWN_SECONDS -- Starts elapsed, so the first real change is never held back.
+local volume_log_remaining = nil
 
-function AudioClient.init(log)
+-- `volume_sessions` is an initialized volume_sessions.lua, or nil to relaunch on every slider change.
+function AudioClient.init(log, volume_sessions)
 	audio_mod = get_mod("Audio")
 	dls_mod = get_mod("DarktideLocalServer")
 	log_fn = log or log_fn
+	VolumeSessions = volume_sessions
 end
 
 function AudioClient.available()
@@ -85,11 +93,6 @@ end
 
 function AudioClient.is_playing()
 	return current_play_file_id ~= nil
-end
-
--- The current track's process id, or nil until the Audio Plugin has received it.
-function AudioClient.current_pid()
-	return audio_mod and current_play_file_id and audio_mod.file_pid(current_play_file_id) or nil
 end
 
 -- Retries stops that had no known pid yet.
@@ -115,6 +118,9 @@ local function stop_id(play_file_id)
 
 	audio_mod.stop_file(play_file_id)
 	pending_stop_ids[play_file_id] = true -- May not have actually killed anything yet.
+	if VolumeSessions then
+		VolumeSessions.retire(play_file_id)
+	end
 	retry_pending_stops()
 end
 
@@ -123,6 +129,24 @@ local function read_volume_sliders()
 	local master = Application.user_setting("sound_settings", "option_master_slider") or 100
 	local music = Application.user_setting("sound_settings", "options_music_slider") or 100
 	return master, music
+end
+
+-- The music volume the sliders ask for, from 0 to 100.
+local function slider_percent(master, music)
+	return master * music / 100
+end
+
+-- Every track is started here, so each process's session is tracked from the level the Audio Plugin bakes into it.
+local function launch(file_path, settings)
+	local master, music = read_volume_sliders()
+	settings.audio_type = "music"
+	local play_file_id = audio_mod.play_file(file_path, settings)
+
+	if VolumeSessions then
+		VolumeSessions.track(play_file_id, math.floor(slider_percent(master, music) + 0.5))
+	end
+
+	return play_file_id
 end
 
 -- Builds the afade filter string, or nil for none.
@@ -181,8 +205,7 @@ local function relaunch_at_current_volume()
 		local seek_position = AudioClient.position()
 
 		local tail_play_file_id
-		tail_play_file_id = audio_mod.play_file(file_path, {
-			audio_type = "music",
+		tail_play_file_id = launch(file_path, {
 			loop = 1,
 			pos = seek_position > 0 and seek_position or nil,
 			track_status = function()
@@ -193,8 +216,7 @@ local function relaunch_at_current_volume()
 				log_fn(string.format("[volume] %s: tail finished, resuming native loop from start", file_path))
 
 				local resumed_play_file_id
-				resumed_play_file_id = audio_mod.play_file(file_path, {
-					audio_type = "music",
+				resumed_play_file_id = launch(file_path, {
 					loop = 0,
 					track_status = function()
 						if on_finished and current_play_file_id == resumed_play_file_id then
@@ -216,8 +238,7 @@ local function relaunch_at_current_volume()
 	local seek_position = AudioClient.position()
 
 	local play_file_id
-	play_file_id = audio_mod.play_file(file_path, {
-		audio_type = "music",
+	play_file_id = launch(file_path, {
 		loop = 1,
 		-- After a seek, ffplay's filters still see timestamps from the file's own timeline.
 		-- So the fade-out point is measured against the full duration, not what is left.
@@ -233,9 +254,42 @@ local function relaunch_at_current_volume()
 	current_play_file_id = play_file_id
 end
 
+-- Follows a slider change through the session volume of the current track and of any outgoing ones.
+-- Returns false when the current track needs a relaunch instead.
+local function follow_sliders_by_session(percent)
+	if not VolumeSessions or not VolumeSessions.set_level(current_play_file_id, percent) then
+		return false
+	end
+
+	for _, entry in ipairs(scheduled_stops) do
+		VolumeSessions.set_level(entry.play_file_id, percent)
+	end
+
+	volume_log_remaining = VOLUME_LOG_DELAY_SECONDS
+	return true
+end
+
+local function update_volume_log(dt)
+	if not volume_log_remaining then
+		return
+	end
+
+	volume_log_remaining = volume_log_remaining - dt
+	if volume_log_remaining <= 0 then
+		volume_log_remaining = nil
+		log_fn(string.format("[volume] following the sliders without a relaunch (master=%s, music=%s)",
+			tostring(current_master_slider), tostring(current_music_slider)))
+	end
+end
+
 -- Call every tick to catch late pids, advance crossfade timers, and check the volume sliders.
 function AudioClient.update(dt)
 	retry_pending_stops()
+
+	if VolumeSessions then
+		VolumeSessions.update(dt)
+	end
+	update_volume_log(dt)
 
 	for i = #scheduled_stops, 1, -1 do
 		local entry = scheduled_stops[i]
@@ -252,14 +306,16 @@ function AudioClient.update(dt)
 	end
 
 	current_elapsed = current_elapsed + dt
+	volume_cooldown_elapsed = volume_cooldown_elapsed + dt
 
-	if volume_cooldown_elapsed < VOLUME_RELAUNCH_COOLDOWN_SECONDS then
-		volume_cooldown_elapsed = volume_cooldown_elapsed + dt
+	local master_slider, music_slider = read_volume_sliders()
+	if master_slider == current_master_slider and music_slider == current_music_slider then
 		return
 	end
 
-	local master_slider, music_slider = read_volume_sliders()
-	if master_slider ~= current_master_slider or music_slider ~= current_music_slider then
+	if follow_sliders_by_session(slider_percent(master_slider, music_slider)) then
+		current_master_slider, current_music_slider = master_slider, music_slider
+	elseif volume_cooldown_elapsed >= VOLUME_RELAUNCH_COOLDOWN_SECONDS then
 		current_master_slider, current_music_slider = master_slider, music_slider
 		volume_cooldown_elapsed = 0
 		relaunch_at_current_volume()
@@ -322,6 +378,10 @@ function AudioClient.shutdown()
 	end
 
 	stop_if_backend_exists() -- Extra insurance in case the normal path does land.
+
+	if VolumeSessions then
+		VolumeSessions.shutdown()
+	end
 end
 
 -- Plays file_path as 2D music, crossfading with whatever was playing (see the header).
@@ -361,8 +421,7 @@ function AudioClient.play(file_path, opts)
 	-- play_file_id is declared before the assignment so the closure captures the upvalue this call fills in.
 	-- `local x = f(x)` would capture a stale value instead.
 	local play_file_id
-	play_file_id = audio_mod.play_file(file_path, {
-		audio_type = "music",
+	play_file_id = launch(file_path, {
 		loop = opts.native_loop and 0 or 1,
 		afade = build_afade(opts),
 		pos = current_start_position > 0 and current_start_position or nil,

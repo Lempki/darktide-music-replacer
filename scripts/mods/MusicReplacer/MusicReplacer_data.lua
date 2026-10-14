@@ -53,6 +53,11 @@ return {
 				type = "group",
 				sub_widgets = {
 					{
+						setting_id = "instant_volume",
+						type = "checkbox",
+						default_value = true,
+					},
+					{
 						setting_id = "diagnostic_mode",
 						type = "checkbox",
 						default_value = false,
