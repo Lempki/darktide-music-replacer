@@ -31,10 +31,10 @@ describe("resume_points.lua", function()
 		assert_deep_equal({ ResumePoints.take("mission_explore") }, { "mission_explore/a.ogg", 30 })
 	end)
 
-	it("remembers no hub, event, last stand, or mission end song", function()
+	it("remembers no hub, last stand, or mission end song", function()
 		local ResumePoints = load_resume_points()
 
-		for _, context_name in ipairs({ "hub", "mission_event", "mission_last_stand", "mission_victory", "mission_defeat" }) do
+		for _, context_name in ipairs({ "hub", "mission_last_stand", "mission_victory", "mission_defeat" }) do
 			assert_equal(ResumePoints.remember(context_name, context_name .. "/a.ogg", 30, 200, false, "mission_explore"), nil)
 			assert_equal(ResumePoints.take(context_name), nil)
 		end
@@ -123,7 +123,7 @@ describe("resume_points.lua", function()
 		assert_equal(ResumePoints.take("mission_explore"), nil)
 	end)
 
-	describe("hordes and boss fights", function()
+	describe("hordes, boss fights, and events", function()
 		it("continues a horde song after a boss, an event, or a last stand interrupts the horde", function()
 			for _, interruption in ipairs({ "mission_boss", "mission_event", "mission_last_stand" }) do
 				local ResumePoints = load_resume_points()
@@ -193,6 +193,29 @@ describe("resume_points.lua", function()
 
 			assert_deep_equal({ ResumePoints.take("mission_horde") }, { "mission_horde/a.ogg", 45 })
 			assert_equal(ResumePoints.take("mission_boss"), nil)
+		end)
+
+		it("continues an event song after a last stand", function()
+			local ResumePoints = load_resume_points()
+
+			assert_equal(ResumePoints.remember("mission_event", "mission_event/a.ogg", 45, 200, false, "mission_last_stand"), 45)
+			ResumePoints.enter("mission_last_stand")
+			ResumePoints.enter("mission_event")
+
+			assert_deep_equal({ ResumePoints.take("mission_event") }, { "mission_event/a.ogg", 45 })
+		end)
+
+		it("ends an event's song when the music drops to a boss, a horde, combat, or explore", function()
+			for _, next_context in ipairs({ "mission_boss", "mission_horde", "mission_combat", "mission_explore" }) do
+				local ResumePoints = load_resume_points()
+				assert_equal(ResumePoints.remember("mission_event", "mission_event/a.ogg", 45, 200, false, next_context), nil, next_context)
+
+				ResumePoints.remember("mission_event", "mission_event/a.ogg", 45, 200, false, "mission_last_stand")
+				ResumePoints.enter("mission_last_stand")
+				ResumePoints.enter(next_context)
+
+				assert_equal(ResumePoints.take("mission_event"), nil, next_context)
+			end
 		end)
 	end)
 end)

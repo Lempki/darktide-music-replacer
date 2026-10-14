@@ -5,21 +5,20 @@
 local ResumePoints = {}
 
 -- Explore and combat take turns all through a mission, so their songs continue whenever they come back.
--- Hordes and boss fights continue only under the rule below.
--- Events, last stands, and the mission's end start a fresh song every time.
-local RESUMABLE_CONTEXTS = { mission_explore = true, mission_combat = true, mission_horde = true, mission_boss = true }
+-- Hordes, boss fights, and events continue only under the sequence rule below.
+-- Last stands, the hub, and the mission's end start a fresh song every time.
+local RESUMABLE_CONTEXTS = { mission_explore = true, mission_combat = true, mission_horde = true, mission_boss = true, mission_event = true }
 
--- A horde or a boss fight is one stretch that higher-priority music, such as an event, can interrupt.
+-- Mission contexts by the priority context.lua resolves them in, lowest first.
+local PRIORITY = { mission_explore = 1, mission_combat = 2, mission_horde = 3, mission_boss = 4, mission_event = 5, mission_last_stand = 6 }
+
+-- A horde, a boss fight, or an event is one stretch that higher-priority music can interrupt, such as a last stand during an event.
 -- Its song continues only if the music did not drop to a lower-priority context in between, which shows that it ended.
--- A new horde or fight then gets a new pick, so a folder with several songs still varies.
-local SEQUENCE_ENDED_BY = {
-	mission_horde = { mission_combat = true, mission_explore = true },
-	mission_boss = { mission_horde = true, mission_combat = true, mission_explore = true },
-}
+-- A new horde, fight, or event then gets a new pick, so a folder with several songs still varies.
+local SEQUENCES = { mission_horde = true, mission_boss = true, mission_event = true }
 
 local function ends_sequence(context_name, next_context_name)
-	local ended_by = SEQUENCE_ENDED_BY[context_name]
-	return ended_by ~= nil and ended_by[next_context_name] == true
+	return SEQUENCES[context_name] == true and PRIORITY[next_context_name] ~= nil and PRIORITY[next_context_name] < PRIORITY[context_name]
 end
 
 -- Resuming this close to the end would play a few seconds and then switch songs anyway.
@@ -50,9 +49,9 @@ function ResumePoints.forget_all()
 	points = {}
 end
 
--- Call on every context change, before take(), to forget the hordes and boss fights that the new context ends.
+-- Call on every context change, before take(), to forget the sequences that the new context ends.
 function ResumePoints.enter(context_name)
-	for sequence_name in pairs(SEQUENCE_ENDED_BY) do
+	for sequence_name in pairs(SEQUENCES) do
 		if ends_sequence(sequence_name, context_name) then
 			points[sequence_name] = nil
 		end
