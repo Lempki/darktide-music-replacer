@@ -1,9 +1,9 @@
--- Plays songs natively: each stream is a Media Foundation decoder feeding an XAudio2 voice.
+-- Plays songs directly inside the game: each stream is a Media Foundation decoder feeding an XAudio2 voice.
 -- A stream decodes into a fixed pool of buffers on the Windows heap, allocated once, so playing never grows the Lua heap.
 -- The pool keeps several seconds queued, so the music plays on while the game's thread stalls, as it can during loading.
 -- A stream's volume is its gain times its fade. The gain follows settings such as the sliders, and the fade shapes fades and crossfades.
 
-local NativePlayer = {}
+local DirectPlayer = {}
 
 local CHUNK_SECONDS = 0.25
 local SLOT_COUNT = 16 -- 4 seconds queued.
@@ -26,31 +26,36 @@ local function clock()
 end
 
 -- `native_ffi`, `media_decoder`, and `xaudio` are loaded and initialized modules.
-function NativePlayer.init(native_ffi, media_decoder, xaudio)
+function DirectPlayer.init(native_ffi, media_decoder, xaudio)
 	NativeFfi = native_ffi
 	MediaDecoder = media_decoder
 	XAudio = xaudio
 end
 
-function NativePlayer.available()
+function DirectPlayer.available()
 	return MediaDecoder ~= nil and MediaDecoder.available() and XAudio.available()
 end
 
--- Why NativePlayer.available() is false, or nil.
-function NativePlayer.error()
+-- Why DirectPlayer.available() is false, or nil.
+function DirectPlayer.error()
 	if not MediaDecoder then
-		return "native_player.lua is not initialized"
+		return "direct_player.lua is not initialized"
 	end
 	return MediaDecoder.error() or XAudio.error()
 end
 
+-- Recreates the XAudio2 engine on next use, after a stream failed. Destroy every stream first.
+function DirectPlayer.reset()
+	XAudio.shutdown()
+end
+
 -- Bytes held by every open stream's pool, for logging.
-function NativePlayer.pool_bytes()
+function DirectPlayer.pool_bytes()
 	return pool_bytes
 end
 
 -- The slowest refill so far in milliseconds, for logging.
-function NativePlayer.slowest_fill_ms()
+function DirectPlayer.slowest_fill_ms()
 	return slowest_fill_ms
 end
 
@@ -116,7 +121,7 @@ end
 -- Opens `path` and starts it playing. Returns the stream, or nil and why.
 -- opts.start_position starts partway in, in seconds. opts.loop repeats the file without a gap.
 -- opts.gain and opts.fade set the starting levels, 1 by default.
-function NativePlayer.open(path, opts)
+function DirectPlayer.open(path, opts)
 	opts = opts or {}
 
 	local decoder, err = MediaDecoder.open(path)
@@ -271,4 +276,4 @@ function Stream:destroy()
 	pool_bytes = pool_bytes - self.slot_bytes * SLOT_COUNT
 end
 
-return NativePlayer
+return DirectPlayer

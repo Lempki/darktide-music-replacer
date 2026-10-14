@@ -171,14 +171,14 @@ local function read_duration(reader)
 	return nil
 end
 
--- Opens `path`, a UTF-8 file path. Returns a decoder, or nil and why.
+-- Opens `path`, a UTF-8 file path, absolute or relative to the game's working directory. Returns a decoder, or nil and why.
 function MediaDecoder.open(path)
 	if not MediaDecoder.available() then
 		return nil, init_error
 	end
 
 	local out = ffi.new("void *[1]")
-	local hresult = mfreadwrite.MusicReplacer_MFCreateSourceReaderFromURL(NativeFfi.wide(path), nil, out)
+	local hresult = mfreadwrite.MusicReplacer_MFCreateSourceReaderFromURL(NativeFfi.wide_full_path(path), nil, out)
 	if not NativeFfi.succeeded(hresult) then
 		return nil, "opening the file failed with " .. NativeFfi.hex(hresult)
 	end

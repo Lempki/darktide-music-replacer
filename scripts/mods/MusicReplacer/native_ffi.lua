@@ -41,6 +41,8 @@ int32_t MusicReplacer_CloseHandle(void *handle) __asm__("CloseHandle");
 void *MusicReplacer_GetProcessHeap(void) __asm__("GetProcessHeap");
 void *MusicReplacer_HeapAlloc(void *heap, uint32_t flags, size_t bytes) __asm__("HeapAlloc");
 int32_t MusicReplacer_HeapFree(void *heap, uint32_t flags, void *memory) __asm__("HeapFree");
+uint32_t MusicReplacer_GetFullPathNameW(const uint16_t *name, uint32_t length, uint16_t *buffer, uint16_t **file_part)
+	__asm__("GetFullPathNameW");
 ]]
 
 local CO_E_NOTINITIALIZED = -2147221008 -- 0x800401F0
@@ -175,6 +177,19 @@ function NativeFfi.wide(text)
 	local length = kernel32.MusicReplacer_MultiByteToWideChar(CP_UTF8, 0, text, -1, nil, 0)
 	local buffer = ffi.new("uint16_t[?]", math.max(length, 1))
 	kernel32.MusicReplacer_MultiByteToWideChar(CP_UTF8, 0, text, -1, buffer, length)
+	return buffer
+end
+
+-- A NUL-terminated UTF-16 full path for a UTF-8 path, which may be relative to the game's working directory.
+function NativeFfi.wide_full_path(text)
+	local relative = NativeFfi.wide(text)
+	local length = kernel32.MusicReplacer_GetFullPathNameW(relative, 0, nil, nil)
+	if length == 0 then
+		return relative
+	end
+
+	local buffer = ffi.new("uint16_t[?]", length)
+	kernel32.MusicReplacer_GetFullPathNameW(relative, length, buffer, nil)
 	return buffer
 end
 

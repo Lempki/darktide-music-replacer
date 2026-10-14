@@ -272,6 +272,11 @@ function Library.pick_file(context_name)
 	return picked.file_path, picked.duration, #usable == 1
 end
 
+-- The path of a picked file on disk, relative to the game's working directory.
+function Library.disk_path(file_path)
+	return AUDIO_ROOT .. "/" .. file_path
+end
+
 -- Returns the same values as pick_file() for one specific file, or nil if the context no longer has it.
 -- A song resumed after a rescan may have been removed, or its folder may have gained or lost files.
 function Library.find_file(context_name, file_path)
