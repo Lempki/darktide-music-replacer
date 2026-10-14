@@ -7,32 +7,12 @@
 
 local SessionVolume = {}
 
-local ffi = (Mods and Mods.lua and Mods.lua.ffi) or (not Mods and require("ffi")) or nil
-
--- Every mod shares one LuaJIT state, and ffi.cdef rejects redefining a name that another mod may also declare, as DMF does.
--- So every name is prefixed, and the functions are redirected to their real symbols.
--- A mod reload finds the names already defined and skips the block.
-local CDEF = [[
-typedef struct { uint32_t Data1; uint16_t Data2; uint16_t Data3; uint8_t Data4[8]; } MusicReplacer_GUID;
-
-typedef struct { void **lpVtbl; } MusicReplacer_ComObject;
-
-int32_t MusicReplacer_CoIncrementMTAUsage(void **cookie) __asm__("CoIncrementMTAUsage");
-int32_t MusicReplacer_CoCreateInstance(const MusicReplacer_GUID *clsid, void *outer, uint32_t cls_context,
-	const MusicReplacer_GUID *iid, void **object) __asm__("CoCreateInstance");
-
-void *MusicReplacer_OpenProcess(uint32_t access, int32_t inherit, uint32_t pid) __asm__("OpenProcess");
-int32_t MusicReplacer_GetExitCodeProcess(void *process, uint32_t *exit_code) __asm__("GetExitCodeProcess");
-int32_t MusicReplacer_CloseHandle(void *handle) __asm__("CloseHandle");
-]]
-
 local PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
 local STILL_ACTIVE = 259
 
 -- Each signature is the method's own, with the object pointer first. Indexes are vtable slots, counting IUnknown's three.
 local METHODS = {
 	add_ref = { 1, "uint32_t (*)(void *)" },
-	release = { 2, "uint32_t (*)(void *)" },
 	enum_audio_endpoints = { 3, "int32_t (*)(void *, int32_t, uint32_t, void **)" }, -- IMMDeviceEnumerator
 	activate = { 3, "int32_t (*)(void *, const MusicReplacer_GUID *, uint32_t, void *, void **)" }, -- IMMDevice
 	collection_get_count = { 3, "int32_t (*)(void *, uint32_t *)" }, -- IMMDeviceCollection
@@ -46,26 +26,15 @@ local METHODS = {
 	get_master_volume = { 4, "int32_t (*)(void *, float *)" },
 }
 
-local CO_E_NOTINITIALIZED = -2147221008 -- 0x800401F0
 local CLSCTX_ALL = 23
 local E_RENDER = 0
 local DEVICE_STATE_ACTIVE = 1
 
-local ole32 = nil
-local kernel32 = nil
-local method_types = {}
+local NativeFfi = nil
+local ffi = nil
 local guids = {}
 local device_enumerator = nil
 local init_error = nil
-
-local function guid(data1, data2, data3, d4)
-	local value = ffi.new("MusicReplacer_GUID")
-	value.Data1, value.Data2, value.Data3 = data1, data2, data3
-	for index = 1, 8 do
-		value.Data4[index - 1] = d4[index]
-	end
-	return value
-end
 
 local function succeeded(hresult)
 	return hresult >= 0
@@ -73,17 +42,20 @@ end
 
 local function call(object, method_name, ...)
 	local method = METHODS[method_name]
-	local vtable = ffi.cast("MusicReplacer_ComObject *", object).lpVtbl
-	return ffi.cast(method_types[method_name], vtable[method[1]])(object, ...)
+	return NativeFfi.call(object, method[1], method[2], ...)
 end
 
 local function release(object)
-	if object ~= nil then
-		call(object, "release")
-	end
+	NativeFfi.release(object)
 end
 
--- Sets up ffi and COM once. Returns false, with SessionVolume.error() saying why, when anything is missing.
+-- `native_ffi` is a loaded native_ffi.lua.
+function SessionVolume.init(native_ffi)
+	NativeFfi = native_ffi
+	ffi = native_ffi and native_ffi.ffi
+end
+
+-- Sets up COM once. Returns false, with SessionVolume.error() saying why, when anything is missing.
 local function ensure_initialized()
 	if device_enumerator ~= nil then
 		return true
@@ -93,50 +65,26 @@ local function ensure_initialized()
 		return false
 	end
 
-	if not ffi or ffi.os ~= "Windows" then
-		init_error = "ffi is not available"
+	if not NativeFfi or not NativeFfi.load() then
+		init_error = NativeFfi and NativeFfi.error() or "native_ffi.lua is not loaded"
 		return false
 	end
 
-	local ok, err = pcall(function()
-		if not pcall(ffi.typeof, "MusicReplacer_GUID") then
-			ffi.cdef(CDEF)
-		end
+	local guid = NativeFfi.guid
+	guids.clsid_device_enumerator = guid(0xBCDE0395, 0xE52F, 0x467C, { 0x8E, 0x3D, 0xC4, 0x57, 0x92, 0x91, 0x69, 0x2E })
+	guids.iid_device_enumerator = guid(0xA95664D2, 0x9614, 0x4F35, { 0xA7, 0x46, 0xDE, 0x8D, 0xB6, 0x36, 0x17, 0xE6 })
+	guids.iid_session_manager2 = guid(0x77AA99A0, 0x1BD6, 0x484F, { 0x8B, 0xC7, 0x2C, 0x65, 0x4C, 0x9A, 0x9B, 0x6F })
+	guids.iid_session_control2 = guid(0xBFB7FF88, 0x7239, 0x4FC9, { 0x8F, 0xA2, 0x07, 0xC9, 0x50, 0xBE, 0x9C, 0x6D })
+	guids.iid_simple_audio_volume = guid(0x87CE5498, 0x68D6, 0x44E5, { 0x92, 0x15, 0x6D, 0xA4, 0x7E, 0xF8, 0x83, 0xD8 })
 
-		for name, method in pairs(METHODS) do
-			method_types[name] = ffi.typeof(method[2])
-		end
-
-		guids.clsid_device_enumerator = guid(0xBCDE0395, 0xE52F, 0x467C, { 0x8E, 0x3D, 0xC4, 0x57, 0x92, 0x91, 0x69, 0x2E })
-		guids.iid_device_enumerator = guid(0xA95664D2, 0x9614, 0x4F35, { 0xA7, 0x46, 0xDE, 0x8D, 0xB6, 0x36, 0x17, 0xE6 })
-		guids.iid_session_manager2 = guid(0x77AA99A0, 0x1BD6, 0x484F, { 0x8B, 0xC7, 0x2C, 0x65, 0x4C, 0x9A, 0x9B, 0x6F })
-		guids.iid_session_control2 = guid(0xBFB7FF88, 0x7239, 0x4FC9, { 0x8F, 0xA2, 0x07, 0xC9, 0x50, 0xBE, 0x9C, 0x6D })
-		guids.iid_simple_audio_volume = guid(0x87CE5498, 0x68D6, 0x44E5, { 0x92, 0x15, 0x6D, 0xA4, 0x7E, 0xF8, 0x83, 0xD8 })
-
-		ole32 = ffi.load("ole32")
-		kernel32 = ffi.load("kernel32")
-	end)
-
-	if not ok then
-		init_error = "ffi setup failed: " .. tostring(err)
-		return false
-	end
+	NativeFfi.ensure_com()
 
 	local out = ffi.new("void *[1]")
-	local function create_enumerator()
-		return ole32.MusicReplacer_CoCreateInstance(guids.clsid_device_enumerator, nil, CLSCTX_ALL, guids.iid_device_enumerator, out)
-	end
-
-	-- CoInitializeEx would change how the calling thread runs COM for the whole game, so it is never called.
-	-- If this thread has no COM yet, CoIncrementMTAUsage lets it use the process-wide multithreaded apartment without joining it.
-	local hresult = create_enumerator()
-	if hresult == CO_E_NOTINITIALIZED then
-		ole32.MusicReplacer_CoIncrementMTAUsage(ffi.new("void *[1]"))
-		hresult = create_enumerator()
-	end
+	local hresult = NativeFfi.ole32().MusicReplacer_CoCreateInstance(guids.clsid_device_enumerator, nil, CLSCTX_ALL,
+		guids.iid_device_enumerator, out)
 
 	if not succeeded(hresult) then
-		init_error = string.format("creating the device enumerator failed with 0x%08X", hresult < 0 and hresult + 2 ^ 32 or hresult)
+		init_error = "creating the device enumerator failed with " .. NativeFfi.hex(hresult)
 		return false
 	end
 
@@ -284,6 +232,7 @@ end
 
 -- True once the session's process has exited, which is when setting the volume can no longer be heard.
 function Session:process_ended()
+	local kernel32 = NativeFfi.kernel32()
 	local process = kernel32.MusicReplacer_OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, self.pid)
 	if process == nil then
 		return true
