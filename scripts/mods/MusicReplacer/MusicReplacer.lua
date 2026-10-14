@@ -12,6 +12,10 @@ local MissionProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/mis
 local NativeFfi = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/native_ffi")
 local SessionVolume = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/session_volume")
 local VolumeSessions = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/volume_sessions")
+local MediaDecoder = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/media_decoder")
+local XAudio = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/xaudio")
+local DirectPlayer = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/direct_player")
+local DirectAudioClient = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/direct_audio_client")
 local DiagnosticLog = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/diagnostic_log")
 
 DiagnosticLog.init(mod)
@@ -33,6 +37,10 @@ log("[startup] " .. version_line)
 
 local current_context = nil
 
+-- The audio client playing music: ffplay through the Audio Plugin, or direct playback when its setting is on and it works.
+-- Both have the same interface.
+local Playback = AudioClient
+
 -- context_name -> true once a single-file context has finished its first filtered play-through and switched to native looping.
 local native_loop_active = {}
 
@@ -44,16 +52,16 @@ local MAX_QUICK_ENDS = 3
 local quick_ends = {} -- context_name -> consecutive tracks that ended right after starting.
 local gave_up = {} -- context_name -> true once that context stopped retrying.
 
--- The custom track AudioClient was last asked to play, so a context change can remember where it stopped.
+-- The custom track Playback was last asked to play, so a context change can remember where it stopped.
 local playing_track = nil -- { context_name, file_path, duration, is_only_file }
 
 local function remember_playing_track(next_context_name)
-	if not playing_track or playing_track.context_name == next_context_name or not AudioClient.is_playing() then
+	if not playing_track or playing_track.context_name == next_context_name or not Playback.is_playing() then
 		return
 	end
 
 	local position = ResumePoints.remember(playing_track.context_name, playing_track.file_path,
-		AudioClient.position(), playing_track.duration, playing_track.is_only_file, next_context_name)
+		Playback.position(), playing_track.duration, playing_track.is_only_file, next_context_name)
 
 	if position then
 		log(string.format("[resume] %s: remembering %s at %.1fs", playing_track.context_name, playing_track.file_path, position))
@@ -86,20 +94,20 @@ local function play_context(context_name, is_new_context)
 	end
 
 	if not context_name then
-		AudioClient.stop()
+		Playback.stop()
 		Suppression.release()
 		return
 	end
 
 	if context_name == "silence" then
-		AudioClient.stop()
+		Playback.stop()
 		Suppression.engage(context_name)
 		log("[playback] silence: no custom music, combat and exploration event suppression on")
 		return
 	end
 
 	if gave_up[context_name] then
-		AudioClient.stop()
+		Playback.stop()
 		Suppression.release()
 		log(string.format("[playback] %s: its tracks would not play earlier, using native music", context_name))
 		return
@@ -115,7 +123,7 @@ local function play_context(context_name, is_new_context)
 	if not file_path then
 		-- No replacement is available: no folder, an empty folder, no Audio Plugin, or a scan that has not finished.
 		-- Native music is left alone.
-		AudioClient.stop()
+		Playback.stop()
 		Suppression.release()
 		log(string.format("[playback] %s: no file available, using native music", context_name))
 		return
@@ -137,7 +145,7 @@ local function play_context(context_name, is_new_context)
 
 	-- A single file loops forever, so a natural-end fade-out would only fade to silence before a hard restart of the same track.
 	-- Leaving the duration out is what disables that fade-out, including after a volume relaunch.
-	AudioClient.play(file_path, {
+	Playback.play(file_path, {
 		duration_seconds = not is_only_file and duration or nil,
 		fade_in = is_new_context,
 		native_loop = use_native_loop,
@@ -150,14 +158,14 @@ local function play_context(context_name, is_new_context)
 			end
 
 			-- Without a known duration, or for a very short file, ending quickly is normal, so the check is skipped.
-			if duration and duration > QUICK_END_SECONDS * 2 and AudioClient.elapsed() < QUICK_END_SECONDS then
+			if duration and duration > QUICK_END_SECONDS * 2 and Playback.elapsed() < QUICK_END_SECONDS then
 				quick_ends[context_name] = (quick_ends[context_name] or 0) + 1
 
 				if quick_ends[context_name] >= MAX_QUICK_ENDS then
 					gave_up[context_name] = true
 					log(string.format("[playback] %s: %d tracks in a row ended within %ds, giving up and using native music until the game restarts",
 						context_name, MAX_QUICK_ENDS, QUICK_END_SECONDS))
-					AudioClient.stop()
+					Playback.stop()
 					Suppression.release()
 					return
 				end
@@ -215,6 +223,31 @@ Context.on_state_change(Suppression.on_state_change)
 Context.on_state_change(ResumePoints.on_state_change)
 Context.init(mod, log)
 
+-- Direct playback only when its setting is on and it works, and ffplay otherwise.
+local function choose_playback()
+	if mod:get("direct_playback") then
+		if DirectAudioClient.available() then
+			return DirectAudioClient
+		end
+		log("[direct] unavailable, using ffplay instead: " .. tostring(DirectAudioClient.error()))
+	end
+
+	return AudioClient
+end
+
+-- Moves the music to the other audio client when the choice changed, and starts the current context there.
+local function switch_playback()
+	local chosen = choose_playback()
+	if chosen == Playback then
+		return
+	end
+
+	Playback.stop()
+	Playback = chosen
+	log(string.format("[playback] now playing through %s", Playback == DirectAudioClient and "direct playback" or "ffplay"))
+	play_context(current_context, true)
+end
+
 mod.on_all_mods_loaded = function()
 	Library.init(log)
 	local audio_mod = get_mod("Audio")
@@ -222,6 +255,11 @@ mod.on_all_mods_loaded = function()
 		return mod:get("instant_volume")
 	end, log)
 	AudioClient.init(log, VolumeSessions)
+	MediaDecoder.init(NativeFfi)
+	XAudio.init(NativeFfi)
+	DirectPlayer.init(NativeFfi, MediaDecoder, XAudio)
+	DirectAudioClient.init(log, { direct_player = DirectPlayer, disk_path = Library.disk_path })
+	Playback = choose_playback()
 
 	-- A mod can only install one hook per method on itself.
 	-- So Suppression and EventProbe cannot each hook WwiseWorld.trigger_resource_event on their own.
@@ -245,7 +283,7 @@ mod.on_all_mods_loaded = function()
 		)
 	end
 
-	-- The context may have resolved before Library and AudioClient were ready.
+	-- The context may have resolved before Library and Playback were ready.
 	-- Re-evaluate now, bypassing the debounce, since this is a one-off catch-up.
 	has_pending_change = false
 	current_context = Context.current()
@@ -257,6 +295,8 @@ mod.on_setting_changed = function(setting_id)
 		Context.refresh(mod)
 	elseif setting_id == "resume_songs" and not mod:get("resume_songs") then
 		ResumePoints.forget_all()
+	elseif setting_id == "direct_playback" then
+		switch_playback()
 	end
 end
 
@@ -265,7 +305,14 @@ mod.rescan_audio = function()
 	Library.request_rescan()
 end
 
+-- An update gap at least this long is logged, which shows how long the game's thread stalls, as during loading screens.
+local STALL_LOG_SECONDS = 1
+
 mod.update = function(dt)
+	if dt >= STALL_LOG_SECONDS then
+		log(string.format("[timing] the game's thread stalled for %.1fs", dt))
+	end
+
 	Context.update(mod, dt)
 
 	if Library.update(dt) then
@@ -275,11 +322,18 @@ mod.update = function(dt)
 
 		-- A context that played native music for lack of files starts its new track now, not at its next change.
 		-- A custom track that is playing keeps playing, and the next pick uses the new list.
-		if not AudioClient.is_playing() then
+		if not Playback.is_playing() then
 			play_context(current_context, true)
 		end
 	end
+	-- Both clients update, so songs still fading out after a switch between them finish their fade.
 	AudioClient.update(dt)
+	DirectAudioClient.update(dt)
+
+	-- Direct playback can give up for the session after repeated failures, and the music then moves to ffplay.
+	if Playback == DirectAudioClient and not DirectAudioClient.available() then
+		switch_playback()
+	end
 	MissionProbe.update()
 
 	if has_pending_change then
@@ -294,5 +348,6 @@ end
 mod.on_unload = function()
 	Context.shutdown(mod)
 	AudioClient.shutdown() -- Direct OS-level kill, since the normal stop cannot be relied on here.
+	DirectAudioClient.shutdown()
 	DiagnosticLog.close()
 end

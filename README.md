@@ -69,6 +69,7 @@ These are in the in-game mod options under Music Replacer.
 | Boss music for captains | Off | On plays your boss music for a captain, including the Karnak Twins, from the moment it engages until it dies. Off leaves captains to the game's own music. Event music still plays during an event. |
 | Boss music for daemonhosts | Off | Off follows the game, which plays no music for an angered daemonhost. On plays your boss music from the moment a daemonhost is angered until it dies. |
 | Rescan audio folders | (button) | Picks up audio files added or removed since the game started, without a restart. A track that is playing keeps playing, and a context that had no files starts its new track right away. |
+| Direct playback (experimental) | Off | Plays your music inside the game through Windows' own decoder and audio engine instead of ffplay. Songs crossfade properly, and the volume sliders change the music at once in both directions without restarting it. Plays mp3, m4a, wav, and flac. Ogg files may not play. |
 | Instant volume changes | On | Lowering the master or music volume slider changes a playing track's volume at once, without restarting it. Turn it off if music volume misbehaves, and every slider change restarts the track instead. |
 | Diagnostic logging | Off | Writes `diagnostic.log` for troubleshooting. |
 | Reset log on launch | On | Clears `diagnostic.log` at the start of each session. Only matters while diagnostic logging is on. |
