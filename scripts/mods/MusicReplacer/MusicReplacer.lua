@@ -68,9 +68,24 @@ local function remember_playing_track(next_context_name)
 	end
 end
 
--- The context's remembered song if it still has that file, else a new pick from Library.pick_file().
--- Returns file_path, duration, is_only_file, and the start position of a resumed song.
+-- The song playing when the music moves to the other audio client, so it continues there instead of a new pick.
+local carried_track = nil -- { context_name, file_path, position }
+
+-- The carried song, else the context's remembered song if it still has that file, else a new pick from Library.pick_file().
+-- Returns file_path, duration, is_only_file, and the start position of a continued song.
 local function choose_file(context_name, is_new_context)
+	local carried = carried_track
+	carried_track = nil
+
+	if carried and carried.context_name == context_name then
+		local file_path, duration, is_only_file = Library.find_file(context_name, carried.file_path)
+		if file_path then
+			-- A single file looping in ffplay counts its time past the file's end.
+			local position = duration and duration > 0 and carried.position % duration or carried.position
+			return file_path, duration, is_only_file, position
+		end
+	end
+
 	if is_new_context then
 		local resume_path, position = ResumePoints.take(context_name)
 
@@ -240,6 +255,10 @@ local function switch_playback()
 	local chosen = choose_playback()
 	if chosen == Playback then
 		return
+	end
+
+	if playing_track and playing_track.context_name == current_context and Playback.is_playing() then
+		carried_track = { context_name = current_context, file_path = playing_track.file_path, position = Playback.position() }
 	end
 
 	Playback.stop()
