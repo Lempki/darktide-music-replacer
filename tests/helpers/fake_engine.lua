@@ -94,6 +94,7 @@ end
 
 -- Options:
 -- * `settings`: the values mod:get() returns, by setting id.
+-- * `user_settings`: the values Application.user_setting() returns, by name, such as the volume sliders.
 -- * `mods`: other mods get_mod() returns, by name.
 -- * `backend`: a replacement for the fake Managers.backend.
 -- * `lua`: the Mods.lua table, for example `{ os = fake_os }`. Empty by default.
@@ -102,6 +103,7 @@ function FakeEngine.new(options)
 
 	local engine = setmetatable({
 		settings = options.settings or {},
+		user_settings = options.user_settings or {},
 		hooks = {},
 		messages = {},
 		event_listeners = {},
@@ -145,7 +147,7 @@ function FakeEngine.new(options)
 	}
 
 	Application = {
-		user_setting = function() return nil end,
+		user_setting = function(_, name) return engine.user_settings[name] end,
 	}
 
 	-- Mods.lua.io and Mods.lua.os are left out by default, so no spec reaches the real file system by accident.

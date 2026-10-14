@@ -171,3 +171,32 @@ describe("library.lua file selection", function()
 		assert_equal(Library.pick_file("mission_horde"), nil)
 	end)
 end)
+
+describe("library.lua finding a specific file", function()
+	it("returns the file, its duration, and whether it is the only one", function()
+		local Library = scanned_library({ mission_explore = { "mission_explore/a.ogg", "mission_explore/b.ogg" } })
+
+		assert_deep_equal({ Library.find_file("mission_explore", "mission_explore/b.ogg") }, { "mission_explore/b.ogg", 102, false })
+	end)
+
+	it("returns nil for a file the folder no longer lists", function()
+		local Library = scanned_library({ mission_explore = { "mission_explore/a.ogg" } })
+
+		assert_equal(Library.find_file("mission_explore", "mission_explore/gone.ogg"), nil)
+	end)
+
+	it("returns nil for a listed file that is missing on disk", function()
+		local Library = scanned_library({ mission_explore = { "mission_explore/a.ogg", "mission_explore/b.ogg" } }, { "mission_explore/a.ogg" })
+
+		assert_equal(Library.find_file("mission_explore", "mission_explore/b.ogg"), nil)
+	end)
+
+	it("does not change which file pick_file avoids next", function()
+		local Library = scanned_library({ hub = { "hub/a.ogg", "hub/b.ogg" } })
+		local first = Library.pick_file("hub")
+
+		Library.find_file("hub", first == "hub/a.ogg" and "hub/b.ogg" or "hub/a.ogg")
+
+		assert_equal(Library.pick_file("hub") ~= first, true)
+	end)
+end)

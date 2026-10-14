@@ -199,14 +199,8 @@ function Library.update(dt)
 	return advance_rescan(dt)
 end
 
--- Returns file_path, duration_seconds and is_only_file, or nil if no file is available.
--- Nil means the folder is missing, empty or not yet scanned, or no listed file exists any more.
--- It also means the scan has not started yet, or the Audio Plugin is missing.
--- The caller should fall back to native music on nil.
--- duration may be nil even with a file_path.
--- is_only_file flags a folder with exactly one usable file for native looping (see audio_client.lua).
--- With two or more usable files, the pick is random and never the file returned last time.
-function Library.pick_file(context_name)
+-- The context's listed entries that still exist on disk, or nil when there are none.
+local function usable_entries(context_name)
 	local handler = handlers[context_name]
 	if not handler then
 		return nil
@@ -243,6 +237,22 @@ function Library.pick_file(context_name)
 		return nil
 	end
 
+	return usable
+end
+
+-- Returns file_path, duration_seconds and is_only_file, or nil if no file is available.
+-- Nil means the folder is missing, empty or not yet scanned, or no listed file exists any more.
+-- It also means the scan has not started yet, or the Audio Plugin is missing.
+-- The caller should fall back to native music on nil.
+-- duration may be nil even with a file_path.
+-- is_only_file flags a folder with exactly one usable file for native looping (see audio_client.lua).
+-- With two or more usable files, the pick is random and never the file returned last time.
+function Library.pick_file(context_name)
+	local usable = usable_entries(context_name)
+	if not usable then
+		return nil
+	end
+
 	local previous = last_picked[context_name]
 	local pool = usable
 
@@ -260,6 +270,23 @@ function Library.pick_file(context_name)
 	last_picked[context_name] = picked.file_path
 
 	return picked.file_path, picked.duration, #usable == 1
+end
+
+-- Returns the same values as pick_file() for one specific file, or nil if the context no longer has it.
+-- A song resumed after a rescan may have been removed, or its folder may have gained or lost files.
+function Library.find_file(context_name, file_path)
+	local usable = usable_entries(context_name)
+	if not usable then
+		return nil
+	end
+
+	for _, entry in ipairs(usable) do
+		if entry.file_path == file_path then
+			return entry.file_path, entry.duration, #usable == 1
+		end
+	end
+
+	return nil
 end
 
 return Library

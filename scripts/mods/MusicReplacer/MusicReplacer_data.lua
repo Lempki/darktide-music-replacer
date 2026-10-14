@@ -23,6 +23,11 @@ return {
 				unit_text = "s",
 			},
 			{
+				setting_id = "resume_songs",
+				type = "checkbox",
+				default_value = true,
+			},
+			{
 				setting_id = "meat_grinder_music",
 				type = "checkbox",
 				default_value = false,

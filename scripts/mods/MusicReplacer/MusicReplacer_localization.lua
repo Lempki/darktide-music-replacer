@@ -17,6 +17,12 @@ return {
 	horde_hold_seconds_description = {
 		en = "How long horde music keeps playing after the game stops reporting a horde. The game drops its horde signal for a second or two whenever few enemies are on you, so a short hold keeps the track from restarting. Set to 0 to follow the game exactly.",
 	},
+	resume_songs = {
+		en = "Resume Songs",
+	},
+	resume_songs_description = {
+		en = "When explore or combat music comes back, its song continues from where it stopped instead of a new song starting. A horde or boss song also continues after an event, a last stand, or a boss interrupts it, as long as that horde or boss fight did not end in between. A new song is picked once one ends on its own. Every mission and hub visit starts with fresh songs.",
+	},
 	meat_grinder_music = {
 		en = "Music in Meat Grinder",
 	},

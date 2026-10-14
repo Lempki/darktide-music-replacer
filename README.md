@@ -7,6 +7,7 @@ This is Music Replacer, a mod for Warhammer 40,000: Darktide that replaces the g
 * Replaces hub, mission-explore, combat, horde, boss, event, last stand, victory, and defeat music with your own audio files.
 * Several files in a folder are picked at random, never repeating the file that just played.
 * Exactly one file in a folder loops natively and indefinitely, instead of restarting on every repeat.
+* Explore and combat songs continue from where they stopped when the mission switches back to them, instead of restarting. Horde and boss songs continue too after an event, a last stand, or a boss interrupts them, as long as that horde or fight is still going.
 * Fades in on a real context change, fades out at a track's own end when its folder holds several files, and overlaps briefly on a switch instead of cutting abruptly.
 * Follows the in-game master and music volume sliders.
 * Keeps the Meat Grinder training area silent unless you turn music on there, which doubles as a quick way to test your files.
@@ -63,6 +64,7 @@ These are in the in-game mod options under Music Replacer.
 |---|---|---|
 | Combat music hold | 8 seconds | How long combat music keeps playing after a fight quiets down, so a short lull does not switch to explore music. Set it to 0 to switch immediately. |
 | Horde music hold | 3 seconds | How long horde music keeps playing after the game stops reporting a horde. The game drops its horde signal for a second or two whenever few enemies are on you, so a short hold keeps the track from restarting. Set it to 0 to follow the game exactly. |
+| Resume songs | On | When explore or combat music comes back, its song continues from where it stopped. A horde or boss song also continues after an event, a last stand, or a boss interrupts it, as long as that horde or boss fight did not end in between. A new horde or boss fight gets a new pick. A new song is also picked once one ends on its own. Every mission and hub visit starts with fresh songs. |
 | Music in Meat Grinder | Off | Off keeps custom music out of the Meat Grinder training area and also silences the game's own combat music there. On plays your explore and combat music there. |
 | Boss music for captains | Off | On plays your boss music for a captain, including the Karnak Twins, from the moment it engages until it dies. Off leaves captains to the game's own music. Event music still plays during an event. |
 | Boss music for daemonhosts | Off | Off follows the game, which plays no music for an angered daemonhost. On plays your boss music from the moment a daemonhost is angered until it dies. |
@@ -101,7 +103,7 @@ These are in the in-game mod options under Music Replacer.
 * [ ] An optional periodic rescan of the audio folders, on top of the rescan button.
 * [ ] Runtime volume control through the Windows audio session, replacing the relaunch on a slider change.
 * [ ] True crossfades between tracks, once runtime volume control works.
-* [ ] Continuing each context's song from where it left off when that context returns, for example explore and combat, and picking the next song only once a song ends on its own.
+* [x] Songs continuing from where they left off: explore and combat whenever they come back, and a horde or boss fight after an interruption while it is still going.
 * [ ] Optional loudness normalization, so quiet and loud files play at a similar level without changing the files. It would have a setting to turn it on and a target level.
 * [ ] "Let the current track finish" toggle, with a per-category override. For example, a boss track could play out even after the boss dies.
 * [ ] Different music per mission type or game mode, such as Operations, Havoc, Mortis Trials, and Expeditions.
@@ -146,6 +148,7 @@ darktide-music-replacer/
 │   ├── context.lua                      # Tracks Wwise music state and boss encounters, resolves one context string.
 │   ├── suppression.lua                  # Silences the game's own music while a custom track plays.
 │   ├── library.lua                      # Picks a file for a context from its audio/ folder.
+│   ├── resume_points.lua                # Remembers where interrupted songs stopped, until the next loading screen.
 │   ├── audio_client.lua                 # Playback: fades, crossfade overlap, looping, and process cleanup.
 │   ├── diagnostic_log.lua               # Writes diagnostic.log, opt-in, with a size cap and an optional reset on launch.
 │   ├── event_probe.lua                  # Logging-only probe that records Wwise event names.

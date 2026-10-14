@@ -6,6 +6,7 @@ local Context = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/context"
 local Suppression = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/suppression")
 local Library = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/library")
 local AudioClient = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/audio_client")
+local ResumePoints = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/resume_points")
 local EventProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/event_probe")
 local MissionProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/mission_probe")
 local DiagnosticLog = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/diagnostic_log")
@@ -40,9 +41,47 @@ local MAX_QUICK_ENDS = 3
 local quick_ends = {} -- context_name -> consecutive tracks that ended right after starting.
 local gave_up = {} -- context_name -> true once that context stopped retrying.
 
+-- The custom track AudioClient was last asked to play, so a context change can remember where it stopped.
+local playing_track = nil -- { context_name, file_path, duration, is_only_file }
+
+local function remember_playing_track(next_context_name)
+	if not playing_track or playing_track.context_name == next_context_name or not AudioClient.is_playing() then
+		return
+	end
+
+	local position = ResumePoints.remember(playing_track.context_name, playing_track.file_path,
+		AudioClient.position(), playing_track.duration, playing_track.is_only_file, next_context_name)
+
+	if position then
+		log(string.format("[resume] %s: remembering %s at %.1fs", playing_track.context_name, playing_track.file_path, position))
+	end
+end
+
+-- The context's remembered song if it still has that file, else a new pick from Library.pick_file().
+-- Returns file_path, duration, is_only_file, and the start position of a resumed song.
+local function choose_file(context_name, is_new_context)
+	if is_new_context then
+		local resume_path, position = ResumePoints.take(context_name)
+
+		if resume_path then
+			local file_path, duration, is_only_file = Library.find_file(context_name, resume_path)
+			if file_path then
+				return file_path, duration, is_only_file, position
+			end
+		end
+	end
+
+	return Library.pick_file(context_name)
+end
+
 -- is_new_context separates a real context change from advancing within the same context.
 -- Advancing means a playlist continuation or a native loop's own repeat, and only a real change should fade in again.
 local function play_context(context_name, is_new_context)
+	if is_new_context then
+		remember_playing_track(context_name)
+		ResumePoints.enter(context_name)
+	end
+
 	if not context_name then
 		AudioClient.stop()
 		Suppression.release()
@@ -68,7 +107,7 @@ local function play_context(context_name, is_new_context)
 		native_loop_active[context_name] = nil
 	end
 
-	local file_path, duration, is_only_file = Library.pick_file(context_name)
+	local file_path, duration, is_only_file, start_position = choose_file(context_name, is_new_context)
 
 	if not file_path then
 		-- No replacement is available: no folder, an empty folder, no Audio Plugin, or a scan that has not finished.
@@ -86,8 +125,12 @@ local function play_context(context_name, is_new_context)
 	-- ffplay's -loop re-triggers filters every iteration, so a fade-in from the start would otherwise repeat forever.
 	local use_native_loop = is_only_file and native_loop_active[context_name] == true
 
-	log(string.format("[playback] %s: playing %s (duration=%s%s)",
-		context_name, file_path, tostring(duration), use_native_loop and ", looping natively" or ""))
+	log(string.format("[playback] %s: %s %s%s (duration=%s%s)",
+		context_name, start_position and "resuming" or "playing", file_path,
+		start_position and string.format(" at %.1fs", start_position) or "",
+		tostring(duration), use_native_loop and ", looping natively" or ""))
+
+	playing_track = { context_name = context_name, file_path = file_path, duration = duration, is_only_file = is_only_file }
 
 	-- A single file loops forever, so a natural-end fade-out would only fade to silence before a hard restart of the same track.
 	-- Leaving the duration out is what disables that fade-out, including after a volume relaunch.
@@ -95,6 +138,7 @@ local function play_context(context_name, is_new_context)
 		duration_seconds = not is_only_file and duration or nil,
 		fade_in = is_new_context,
 		native_loop = use_native_loop,
+		start_position = start_position,
 		on_finished = function()
 			-- A native loop only gets here if its process died.
 			-- After a context change, whatever triggered it already called play_context for the new context.
@@ -162,7 +206,9 @@ end)
 Suppression.init(log)
 EventProbe.init(log)
 MissionProbe.init(log)
+ResumePoints.init(mod)
 Context.on_state_change(Suppression.on_state_change)
+Context.on_state_change(ResumePoints.on_state_change)
 Context.init(mod, log)
 
 mod.on_all_mods_loaded = function()
@@ -201,6 +247,8 @@ end
 mod.on_setting_changed = function(setting_id)
 	if setting_id == "meat_grinder_music" or setting_id == "daemonhost_boss_music" or setting_id == "captain_boss_music" then
 		Context.refresh(mod)
+	elseif setting_id == "resume_songs" and not mod:get("resume_songs") then
+		ResumePoints.forget_all()
 	end
 end
 

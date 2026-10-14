@@ -48,7 +48,10 @@ local current_file_path = nil
 -- The file's full duration, fixed across a volume relaunch so the fade-out lands at the file's real end.
 local current_total_duration = nil
 
--- Seconds into the file's timeline.
+-- Where in the file's timeline the current track started, nonzero for a resumed song.
+local current_start_position = 0
+
+-- Seconds since the current track started.
 -- Keeps counting across a relaunch and resets only on a new AudioClient.play call.
 local current_elapsed = 0
 
@@ -72,6 +75,12 @@ end
 -- It keeps counting across a volume relaunch.
 function AudioClient.elapsed()
 	return current_elapsed
+end
+
+-- Seconds into the current file's timeline.
+-- A native loop keeps counting past the file's end, since this client does not know a looping file's duration.
+function AudioClient.position()
+	return current_start_position + current_elapsed
 end
 
 function AudioClient.is_playing()
@@ -129,7 +138,12 @@ local function build_afade(opts)
 	local afade = nil
 
 	if opts.fade_in then
-		afade = string.format("t=in:d=%s", FADE_IN_SECONDS)
+		-- A fade-in from the default st=0 would already be over at a resumed song's seek position (see the header).
+		if opts.start_position and opts.start_position > 0 then
+			afade = string.format("t=in:st=%.3f:d=%s", opts.start_position, FADE_IN_SECONDS)
+		else
+			afade = string.format("t=in:d=%s", FADE_IN_SECONDS)
+		end
 	end
 
 	if opts.duration_seconds and opts.duration_seconds > (FADE_IN_SECONDS + FADE_OUT_SECONDS) then
@@ -148,7 +162,7 @@ local function relaunch_at_current_volume()
 	end
 
 	log_fn(string.format("[volume] relaunching %s at %.1fs (master=%s, music=%s)",
-		current_file_path, current_elapsed, tostring(current_master_slider), tostring(current_music_slider)))
+		current_file_path, AudioClient.position(), tostring(current_master_slider), tostring(current_music_slider)))
 
 	stop_id(current_play_file_id) -- Stopped at once, not crossfade-scheduled, since this continues the same track and is not a switch.
 
@@ -159,7 +173,7 @@ local function relaunch_at_current_volume()
 		-- A plain reseek would permanently shorten the loop (see the header).
 		-- So this finishes the cycle as a finite play to the file's true end.
 		-- It then resumes native looping from position 0, the same seam the loop already uses.
-		local seek_position = current_elapsed
+		local seek_position = AudioClient.position()
 
 		local tail_play_file_id
 		tail_play_file_id = audio_mod.play_file(file_path, {
@@ -184,7 +198,9 @@ local function relaunch_at_current_volume()
 					end,
 				})
 				current_play_file_id = resumed_play_file_id
-				current_elapsed = 0 -- The file restarted from its true beginning.
+				-- The file restarted from its true beginning.
+				current_start_position = 0
+				current_elapsed = 0
 			end,
 		})
 
@@ -192,7 +208,7 @@ local function relaunch_at_current_volume()
 		return
 	end
 
-	local seek_position = current_elapsed
+	local seek_position = AudioClient.position()
 
 	local play_file_id
 	play_file_id = audio_mod.play_file(file_path, {
@@ -261,6 +277,7 @@ function AudioClient.stop()
 
 	current_file_path = nil
 	current_total_duration = nil
+	current_start_position = 0
 	current_elapsed = 0
 end
 
@@ -310,6 +327,7 @@ end
 -- Advancing means a playlist continuation or a loop's own repeat.
 -- opts.native_loop plays with ffplay loop=0 for a single-file context, instead of relaunching per repeat.
 -- opts.on_finished fires once on natural end. It never fires with native_loop or for an interrupted play.
+-- opts.start_position starts partway into the file, to resume a song. Not for native_loop, which would loop from there (see the header).
 function AudioClient.play(file_path, opts)
 	if not audio_mod then
 		return false
@@ -326,6 +344,7 @@ function AudioClient.play(file_path, opts)
 
 	current_file_path = file_path
 	current_total_duration = opts.duration_seconds
+	current_start_position = opts.start_position or 0
 	current_elapsed = 0
 	current_native_loop = opts.native_loop or false
 	current_on_finished = opts.on_finished
@@ -341,6 +360,7 @@ function AudioClient.play(file_path, opts)
 		audio_type = "music",
 		loop = opts.native_loop and 0 or 1,
 		afade = build_afade(opts),
+		pos = current_start_position > 0 and current_start_position or nil,
 		track_status = function()
 			if on_finished and current_play_file_id == play_file_id then
 				on_finished()
