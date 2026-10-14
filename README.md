@@ -154,6 +154,8 @@ darktide-music-replacer/
 │   ├── diagnostic_log.lua               # Writes diagnostic.log, opt-in, with a size cap and an optional reset on launch.
 │   ├── event_probe.lua                  # Logging-only probe that records Wwise event names.
 │   ├── mission_probe.lua                # Logging-only probe that records the current mission's name and type.
+│   ├── session_volume.lua               # Reads and sets one process's Windows audio session volume through Core Audio.
+│   ├── session_probe.lua                # Logging-only probe that records the playing track's session volume.
 │   ├── MusicReplacer_data.lua           # DMF mod-options widgets.
 │   └── MusicReplacer_localization.lua   # Mod-options strings.
 ├── docs/

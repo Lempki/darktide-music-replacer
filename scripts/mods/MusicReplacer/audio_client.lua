@@ -87,6 +87,11 @@ function AudioClient.is_playing()
 	return current_play_file_id ~= nil
 end
 
+-- The current track's process id, or nil until the Audio Plugin has received it.
+function AudioClient.current_pid()
+	return audio_mod and current_play_file_id and audio_mod.file_pid(current_play_file_id) or nil
+end
+
 -- Retries stops that had no known pid yet.
 -- Cheap and normally a no-op, so it can run every tick.
 local function retry_pending_stops()
