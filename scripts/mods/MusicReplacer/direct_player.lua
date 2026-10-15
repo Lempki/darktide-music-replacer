@@ -165,6 +165,7 @@ function DirectPlayer.open(path, opts)
 		submitted = 0,
 		finishing = false,
 		failed = nil,
+		paused = false,
 		gain = opts.gain or 1,
 		fade = opts.fade or 1,
 		ramp = nil,
@@ -203,6 +204,26 @@ function Stream:fading()
 	return self.ramp ~= nil
 end
 
+-- Stops playing but keeps the queue and the position, so the song can continue later exactly where it stopped.
+function Stream:pause()
+	if not self.paused then
+		self.voice:stop()
+		self.paused = true
+	end
+end
+
+function Stream:resume()
+	if self.paused then
+		self.voice:start()
+		self.paused = false
+		self.stalled_seconds = 0
+	end
+end
+
+function Stream:is_paused()
+	return self.paused
+end
+
 -- Seconds into the file. A looping stream wraps back at the file's end.
 function Stream:position()
 	local position = self.start_position + self.voice:samples_played() / self.sample_rate
@@ -224,7 +245,7 @@ end
 
 -- Call every tick: moves the fade, refills the queue, and watches for a lost device.
 function Stream:update(dt)
-	if self.failed then
+	if self.failed or self.paused then
 		return
 	end
 

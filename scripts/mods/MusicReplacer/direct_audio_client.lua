@@ -3,12 +3,18 @@
 -- The volume sliders set every stream's gain directly, up or down, so no slider change restarts a song.
 -- A file that cannot be opened behaves like a track that ended at once, so MusicReplacer.lua's quick-end guard handles it.
 -- When the audio device is lost and XAudio2 cannot follow, the engine is rebuilt and the song resumes where it was.
+--
+-- A song that fades out is paused and parked rather than freed. If the mod resumes that song while it is parked,
+-- the same stream fades back in from exactly where it stopped, with no reopening, no seek, and no repeated seconds.
 
 local DirectAudioClient = {}
 
 local CROSSFADE_SECONDS = 2
 local NATURAL_END_FADE_SECONDS = 2 -- Also how long before the end a song that is not looping starts fading out.
 local STOP_FADE_SECONDS = 0.5
+
+-- How long a faded-out song stays parked. Each holds about 0.7 MB, and most returns, like combat after a lull, come sooner.
+local PARK_SECONDS = 60
 
 -- Recoveries in a row before giving up for the session. Playing well for HEALTHY_SECONDS resets the count.
 local MAX_RECOVERIES = 3
@@ -21,7 +27,7 @@ local disk_path = function(file_path) return file_path end
 local log_fn = function() end
 
 local current = nil -- { stream, file_path, loop, duration, on_finished, elapsed, end_fading }
-local outgoing = {} -- Streams fading out after a switch or a stop.
+local outgoing = {} -- { stream, file_path, parked_elapsed } for songs fading out or parked, after a switch or a stop.
 local finished_elapsed = 0 -- The last finished track's elapsed time, which on_finished reads through elapsed() like with audio_client.lua.
 local gain = 1
 local current_master_slider = nil
@@ -75,9 +81,9 @@ local function slider_gain(master, music)
 	return master * music / 10000
 end
 
-local function fade_out(stream, seconds)
-	stream:fade_to(0, seconds)
-	outgoing[#outgoing + 1] = stream
+local function fade_out(entry, seconds)
+	entry.stream:fade_to(0, seconds)
+	outgoing[#outgoing + 1] = { stream = entry.stream, file_path = entry.file_path, parked_elapsed = nil }
 end
 
 local function destroy_all()
@@ -86,10 +92,21 @@ local function destroy_all()
 	end
 	current = nil
 
-	for _, stream in ipairs(outgoing) do
-		stream:destroy()
+	for _, entry in ipairs(outgoing) do
+		entry.stream:destroy()
 	end
 	outgoing = {}
+end
+
+-- Takes the fading or parked stream of `file_path` out of the outgoing list, or returns nil.
+local function take_outgoing(file_path)
+	for index, entry in ipairs(outgoing) do
+		if entry.file_path == file_path and not entry.stream:ended() and not entry.stream:failure() then
+			table.remove(outgoing, index)
+			return entry.stream
+		end
+	end
+	return nil
 end
 
 -- Plays file_path, crossfading with whatever was playing. Takes the same opts as audio_client.lua's play.
@@ -101,9 +118,12 @@ function DirectAudioClient.play(file_path, opts)
 
 	opts = opts or {}
 
+	-- Only a resume continues a parked song. A fresh pick of the same file starts it over, as the resume rules want.
+	local revived = opts.start_position and take_outgoing(file_path)
+
 	if current and current.stream then
 		if opts.fade_in then
-			fade_out(current.stream, CROSSFADE_SECONDS)
+			fade_out(current, CROSSFADE_SECONDS)
 		else
 			current.stream:destroy() -- A continuation follows a track that has already ended.
 		end
@@ -115,19 +135,29 @@ function DirectAudioClient.play(file_path, opts)
 	gain = slider_gain(current_master_slider, current_music_slider)
 
 	local loop = opts.native_loop == true
-	local stream, err = DirectPlayer.open(disk_path(file_path), {
-		start_position = opts.start_position,
-		loop = loop,
-		gain = gain,
-		fade = opts.fade_in and 0 or 1,
-	})
+	local stream, err
 
-	if stream then
-		if opts.fade_in then
-			stream:fade_to(1, CROSSFADE_SECONDS)
-		end
+	if revived then
+		stream = revived
+		stream:resume()
+		stream:set_gain(gain)
+		stream:fade_to(1, opts.fade_in and CROSSFADE_SECONDS or 0)
+		log_fn(string.format("[direct] continuing %s from %.1fs, where it faded out", file_path, stream:position()))
 	else
-		log_fn(string.format("[direct] %s could not be played: %s", file_path, tostring(err)))
+		stream, err = DirectPlayer.open(disk_path(file_path), {
+			start_position = opts.start_position,
+			loop = loop,
+			gain = gain,
+			fade = opts.fade_in and 0 or 1,
+		})
+
+		if stream then
+			if opts.fade_in then
+				stream:fade_to(1, CROSSFADE_SECONDS)
+			end
+		else
+			log_fn(string.format("[direct] %s could not be played: %s", file_path, tostring(err)))
+		end
 	end
 
 	current = {
@@ -146,7 +176,7 @@ end
 -- Fades the current track out quickly, for the native-music fallback and contexts without music.
 function DirectAudioClient.stop()
 	if current and current.stream then
-		fade_out(current.stream, STOP_FADE_SECONDS)
+		fade_out(current, STOP_FADE_SECONDS)
 	end
 	current = nil
 	finished_elapsed = 0
@@ -254,8 +284,8 @@ function DirectAudioClient.update(dt)
 		if current and current.stream then
 			current.stream:set_gain(gain)
 		end
-		for _, stream in ipairs(outgoing) do
-			stream:set_gain(gain)
+		for _, entry in ipairs(outgoing) do
+			entry.stream:set_gain(gain)
 		end
 	end
 
@@ -273,12 +303,20 @@ function DirectAudioClient.update(dt)
 	end
 
 	for index = #outgoing, 1, -1 do
-		local stream = outgoing[index]
+		local entry = outgoing[index]
+		local stream = entry.stream
 		stream:update(dt)
 
-		if not stream:fading() or stream:ended() or stream:failure() then
+		if entry.parked_elapsed then
+			entry.parked_elapsed = entry.parked_elapsed + dt
+		end
+
+		if stream:ended() or stream:failure() or (entry.parked_elapsed and entry.parked_elapsed >= PARK_SECONDS) then
 			stream:destroy()
 			table.remove(outgoing, index)
+		elseif not entry.parked_elapsed and not stream:fading() then
+			stream:pause()
+			entry.parked_elapsed = 0
 		end
 	end
 end

@@ -15,8 +15,13 @@ local function new_stream(path, opts)
 		is_ended = false,
 		failed = nil,
 		destroyed = false,
+		paused = false,
 		duration = 200,
 	}
+
+	function stream.pause(self) self.paused = true end
+	function stream.resume(self) self.paused = false end
+	function stream.is_paused(self) return self.paused end
 
 	function stream.fade_to(self, target, seconds)
 		self.fades[#self.fades + 1] = { target, seconds }
@@ -79,7 +84,7 @@ describe("direct_audio_client.lua", function()
 		assert_equal(DirectAudioClient.is_playing(), true)
 	end)
 
-	it("crossfades a real switch, and frees the outgoing song once it has faded", function()
+	it("crossfades a real switch, parks the outgoing song once it has faded, and frees it after 60 seconds", function()
 		local DirectAudioClient, _, streams = load_client()
 		DirectAudioClient.play("hub/a.mp3", { fade_in = true })
 
@@ -89,11 +94,59 @@ describe("direct_audio_client.lua", function()
 		assert_deep_equal(streams[2].fades, { { 1, 2 } })
 
 		DirectAudioClient.update(1)
+		assert_equal(streams[1].paused, false)
+
+		DirectAudioClient.update(1.1)
+		assert_equal(streams[1].paused, true)
 		assert_equal(streams[1].destroyed, false)
 
+		DirectAudioClient.update(59)
+		assert_equal(streams[1].destroyed, false)
 		DirectAudioClient.update(1.1)
 		assert_equal(streams[1].destroyed, true)
 		assert_equal(streams[2].destroyed, false)
+	end)
+
+	it("continues a parked song where it faded out when the mod resumes it", function()
+		local DirectAudioClient, _, streams, _, lines = load_client()
+		DirectAudioClient.play("mission_explore/a.mp3", { fade_in = true })
+		DirectAudioClient.play("mission_combat/b.mp3", { fade_in = true })
+		DirectAudioClient.update(2.1)
+		streams[1].current_position = 95
+
+		DirectAudioClient.play("mission_explore/a.mp3", { fade_in = true, start_position = 93 })
+
+		assert_equal(#streams, 2)
+		assert_equal(streams[1].paused, false)
+		assert_deep_equal(streams[1].fades[#streams[1].fades], { 1, 2 })
+		assert_deep_equal(streams[2].fades[#streams[2].fades], { 0, 2 })
+		assert_equal(DirectAudioClient.position(), 95)
+		assert_equal(lines[#lines], "[direct] continuing mission_explore/a.mp3 from 95.0s, where it faded out")
+	end)
+
+	it("takes back a song still fading out, fading it up from where it is", function()
+		local DirectAudioClient, _, streams = load_client()
+		DirectAudioClient.play("mission_explore/a.mp3", { fade_in = true })
+		DirectAudioClient.play("mission_combat/b.mp3", { fade_in = true })
+		DirectAudioClient.update(1)
+
+		DirectAudioClient.play("mission_explore/a.mp3", { fade_in = true, start_position = 10 })
+
+		assert_equal(#streams, 2)
+		assert_deep_equal(streams[1].fades[#streams[1].fades], { 1, 2 })
+	end)
+
+	it("starts a fresh pick of a parked file over, since only a resume continues it", function()
+		local DirectAudioClient, _, streams = load_client()
+		DirectAudioClient.play("mission_horde/a.mp3", { fade_in = true })
+		DirectAudioClient.play("mission_combat/b.mp3", { fade_in = true })
+		DirectAudioClient.update(2.1)
+
+		DirectAudioClient.play("mission_horde/a.mp3", { fade_in = true })
+
+		assert_equal(#streams, 3)
+		assert_equal(streams[3].path, "audio/mission_horde/a.mp3")
+		assert_equal(streams[1].paused, true)
 	end)
 
 	it("starts a continuation at full level after freeing the track that ended", function()
@@ -214,7 +267,7 @@ describe("direct_audio_client.lua", function()
 		assert_deep_equal(streams[1].fades[#streams[1].fades], { 0, 0.5 })
 
 		DirectAudioClient.update(0.6)
-		assert_equal(streams[1].destroyed, true)
+		assert_equal(streams[1].paused, true)
 	end)
 
 	it("rebuilds the engine after a failure and resumes the song where it was", function()

@@ -183,6 +183,28 @@ describe("direct_player.lua", function()
 		assert_equal(stream.underruns, 1)
 	end)
 
+	it("neither refills nor counts a stall while paused, and plays on after resuming", function()
+		local DirectPlayer, _, voice = load_player(60)
+		local stream = DirectPlayer.open("a.mp3")
+		local stops = 0
+		function voice.stop() stops = stops + 1 end
+
+		stream:pause()
+		for _ = 1, 30 do
+			stream:update(0.1)
+		end
+
+		assert_equal(stops, 1)
+		assert_equal(#voice.submitted, 2)
+		assert_equal(stream:failure(), nil)
+
+		stream:resume()
+		stream:update(0.1)
+
+		assert_equal(stream:is_paused(), false)
+		assert_equal(#voice.submitted, 4)
+	end)
+
 	it("reports a failure when queued audio stops playing for 2 seconds", function()
 		local DirectPlayer, _, voice = load_player(60)
 		local stream = DirectPlayer.open("a.mp3")
