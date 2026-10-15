@@ -283,6 +283,8 @@ mod.on_all_mods_loaded = function()
 	DirectPlayer.init(NativeFfi, MediaDecoder, XAudio)
 	DirectAudioClient.init(log, { direct_player = DirectPlayer, disk_path = Library.disk_path })
 	Playback = choose_playback()
+	log(string.format("[playback] playing through %s%s", Playback == DirectAudioClient and "direct playback" or "ffplay",
+		AudioClient.available() and "" or ", since the Audio Plugin is not installed"))
 
 	-- A mod can only install one hook per method on itself.
 	-- So Suppression and EventProbe cannot each hook WwiseWorld.trigger_resource_event on their own.
