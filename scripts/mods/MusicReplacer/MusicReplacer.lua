@@ -72,7 +72,7 @@ end
 local carried_track = nil -- { context_name, file_path, position }
 
 -- The carried song, else the context's remembered song if it still has that file, else a new pick from Library.pick_file().
--- Returns file_path, duration, is_only_file, and the start position of a continued song.
+-- Returns file_path, duration, is_only_file, the start position of a continued song, and whether it was carried.
 local function choose_file(context_name, is_new_context)
 	local carried = carried_track
 	carried_track = nil
@@ -82,7 +82,7 @@ local function choose_file(context_name, is_new_context)
 		if file_path then
 			-- A single file looping in ffplay counts its time past the file's end.
 			local position = duration and duration > 0 and carried.position % duration or carried.position
-			return file_path, duration, is_only_file, position
+			return file_path, duration, is_only_file, position, true
 		end
 	end
 
@@ -133,7 +133,7 @@ local function play_context(context_name, is_new_context)
 		native_loop_active[context_name] = nil
 	end
 
-	local file_path, duration, is_only_file, start_position = choose_file(context_name, is_new_context)
+	local file_path, duration, is_only_file, start_position, carried = choose_file(context_name, is_new_context)
 
 	if not file_path then
 		-- No replacement is available: no folder, an empty folder, no Audio Plugin, or a scan that has not finished.
@@ -162,7 +162,8 @@ local function play_context(context_name, is_new_context)
 	-- Leaving the duration out is what disables that fade-out, including after a volume relaunch.
 	Playback.play(file_path, {
 		duration_seconds = not is_only_file and duration or nil,
-		fade_in = is_new_context,
+		-- A song carried over from the other audio client continues at full level, since the listener never left it.
+		fade_in = is_new_context and not carried,
 		native_loop = use_native_loop,
 		start_position = start_position,
 		on_finished = function()
