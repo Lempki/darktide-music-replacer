@@ -39,7 +39,7 @@ local current_context = nil
 -- DMF then disables the mod's hooks but keeps calling update, so nothing may start playing while this is false.
 local enabled = true
 
--- True until playback has started, and again once it gives up for the session.
+-- True while playback is unavailable: before it has started, while Windows has no audio output, and once it gives up for the session.
 local playback_lost = true
 
 -- A track that ends within QUICK_END_SECONDS of starting did not really play, for example because Windows could not decode the file.
@@ -325,10 +325,17 @@ mod.update = function(dt)
 
 	AudioClient.update(dt)
 
-	-- Playback that gives up mid-session hands the music back to the game at once, not at the next context change.
-	if not playback_lost and not AudioClient.available() then
+	-- Playback that stops working hands the music back to the game at once, not at the next context change.
+	-- Playback that works again, such as once a headset is plugged back in, takes over again at once too.
+	local available = AudioClient.available()
+	if not playback_lost and not available then
 		playback_lost = true
 		Suppression.release()
+	elseif playback_lost and available then
+		playback_lost = false
+		if enabled then
+			play_context(current_context, true)
+		end
 	end
 
 	MissionProbe.update()

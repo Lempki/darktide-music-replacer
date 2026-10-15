@@ -46,19 +46,37 @@ local function load_client()
 	local AudioClient = engine:load("audio_client")
 	local streams = {}
 	local lines = {}
-	local player = { resets = 0, refuse = {} }
+	-- `output` is false while Windows has no audio output. Like XAudio2, a failed start stays failed until reset.
+	-- `engine_failure_reason` is a failure left behind by a stream.
+	-- `refuse` maps a path to why it cannot be opened, and `refuse_voice` maps a path to how many voices XAudio2 refuses it.
+	local player = { resets = 0, refuse = {}, refuse_voice = {}, output = true, start_failed = false, engine_failure_reason = nil }
 
-	function player.available() return true end
-	function player.error() return nil end
+	function player.available()
+		if not player.start_failed and not player.output then
+			player.start_failed = true
+		end
+		return not player.start_failed
+	end
+	function player.can_retry() return player.start_failed end
+	function player.error() return player.start_failed and "creating the output failed" or nil end
+	function player.engine_failure() return player.engine_failure_reason end
 	function player.open(path, opts)
 		if player.refuse[path] then
-			return nil, "unsupported format"
+			return nil, player.refuse[path]
+		end
+		if (player.refuse_voice[path] or 0) > 0 then
+			player.refuse_voice[path] = player.refuse_voice[path] - 1
+			return nil, "creating a voice failed", true
 		end
 		local stream = new_stream(path, opts)
 		streams[#streams + 1] = stream
 		return stream
 	end
-	function player.reset() player.resets = player.resets + 1 end
+	function player.reset()
+		player.resets = player.resets + 1
+		player.start_failed = false
+		player.engine_failure_reason = nil
+	end
 	function player.pool_bytes() return 0 end
 	function player.slowest_fill_ms() return 0 end
 
@@ -248,7 +266,7 @@ describe("audio_client.lua", function()
 
 	it("treats a file it cannot open as a track that ended at once", function()
 		local AudioClient, player, _, _, lines = load_client()
-		player.refuse["audio/hub/a.ogg"] = true
+		player.refuse["audio/hub/a.ogg"] = "unsupported format"
 		local finished_after = nil
 		AudioClient.play("hub/a.ogg", {
 			fade_in = true,
@@ -300,6 +318,90 @@ describe("audio_client.lua", function()
 		assert_equal(AudioClient.available(), false)
 		assert_equal(AudioClient.is_playing(), false)
 		assert_equal(lines[#lines]:find("gave up after 3 recoveries", 1, true) ~= nil, true, lines[#lines])
+	end)
+
+	it("tries for an audio output every 5 seconds, without counting it as a recovery, and plays once there is one", function()
+		local AudioClient, player, streams, _, lines = load_client()
+		AudioClient.play("hub/a.mp3", { fade_in = true })
+		streams[1].failed = "the voice stopped playing with audio queued"
+		player.output = false
+
+		AudioClient.update(0.1)
+
+		assert_equal(player.resets, 1)
+		assert_equal(AudioClient.available(), false)
+		assert_equal(AudioClient.can_retry(), true)
+		assert_equal(lines[#lines], "[player] no audio output (creating the output failed), trying again every 5s")
+
+		for _ = 1, 10 do
+			AudioClient.update(5)
+		end
+
+		assert_equal(player.resets, 11)
+		assert_equal(AudioClient.can_retry(), true)
+
+		player.output = true
+		AudioClient.update(5)
+
+		assert_equal(AudioClient.available(), true)
+		assert_equal(lines[#lines], "[player] the audio output is back")
+
+		AudioClient.update(5)
+		assert_equal(player.resets, 12)
+	end)
+
+	it("rebuilds the engine before opening a song when a failure outlived its stream", function()
+		local AudioClient, player, streams, _, lines = load_client()
+		AudioClient.play("hub/a.mp3", { fade_in = true })
+		AudioClient.stop()
+		AudioClient.update(1)
+		player.engine_failure_reason = "submitting a buffer failed with 0x88960001"
+
+		AudioClient.play("hub/b.mp3", { fade_in = true })
+
+		assert_equal(player.resets, 1)
+		assert_equal(streams[1].destroyed, true)
+		assert_equal(streams[2].path, "audio/hub/b.mp3")
+		assert_equal(lines[1], "[player] the engine stopped working (submitting a buffer failed with 0x88960001), rebuilding it")
+	end)
+
+	it("rebuilds the engine and tries once more when a voice is refused with no song fading out", function()
+		local AudioClient, player, streams = load_client()
+		player.refuse_voice["audio/hub/a.mp3"] = 1
+
+		AudioClient.play("hub/a.mp3", { fade_in = true })
+
+		assert_equal(player.resets, 1)
+		assert_equal(streams[1].path, "audio/hub/a.mp3")
+		assert_equal(AudioClient.is_playing(), true)
+	end)
+
+	it("treats a file refused again after the rebuild as one that cannot be played, without counting a recovery", function()
+		local AudioClient, player = load_client()
+		local failures = 0
+		player.refuse_voice["audio/hub/a.mp3"] = 100
+
+		for _ = 1, 5 do
+			AudioClient.play("hub/a.mp3", { on_finished = function(failed) failures = failures + (failed and 1 or 0) end })
+			AudioClient.update(0.1)
+		end
+
+		assert_equal(failures, 5)
+		assert_equal(AudioClient.available(), true)
+	end)
+
+	it("does not rebuild for a refused voice while another song fades out, since the engine plays", function()
+		local AudioClient, player, streams = load_client()
+		AudioClient.play("hub/a.mp3", { fade_in = true })
+		player.refuse_voice["audio/hub/b.mp3"] = 1
+		local failed_open = nil
+
+		AudioClient.play("hub/b.mp3", { fade_in = true, on_finished = function(failed) failed_open = failed end })
+		AudioClient.update(0.1)
+
+		assert_equal(player.resets, 0)
+		assert_equal(streams[1].destroyed, false)
+		assert_equal(failed_open, true)
 	end)
 
 	it("stops everything at once on shutdown", function()

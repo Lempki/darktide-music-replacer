@@ -56,7 +56,8 @@ local function new_voice()
 end
 
 -- Returns player.lua initialized with fakes, and the fakes: the decoder `seconds` long, the voice, and freed pools.
-local function load_player(seconds)
+-- `voice_error`, if given, makes XAudio2 refuse the voice with that error.
+local function load_player(seconds, voice_error)
 	local engine = FakeEngine.new()
 	local Player = engine:load("player")
 	local decoder = new_decoder(seconds)
@@ -66,7 +67,16 @@ local function load_player(seconds)
 	Player.init(
 		{ alloc = function() return POOL end, free = function(memory) freed[#freed + 1] = memory end },
 		{ open = function() return decoder end, available = function() return true end, error = function() return nil end },
-		{ create_voice = function() return voice end, failure = function() return nil end, available = function() return true end }
+		{
+			create_voice = function()
+				if voice_error then
+					return nil, voice_error
+				end
+				return voice
+			end,
+			failure = function() return nil end,
+			available = function() return true end,
+		}
 	)
 
 	return Player, decoder, voice, freed
@@ -85,6 +95,15 @@ describe("player.lua", function()
 		stream:destroy()
 
 		assert_equal(voice.destroyed, true)
+		assert_equal(decoder.closed, true)
+		assert_deep_equal(freed, { POOL })
+		assert_equal(Player.pool_bytes(), 0)
+	end)
+
+	it("says when XAudio2 refused the voice, and frees what it had opened", function()
+		local Player, decoder, _, freed = load_player(60, "creating a voice failed with 0x88960001")
+
+		assert_deep_equal({ Player.open("a.mp3") }, { nil, "creating a voice failed with 0x88960001", true })
 		assert_equal(decoder.closed, true)
 		assert_deep_equal(freed, { POOL })
 		assert_equal(Player.pool_bytes(), 0)

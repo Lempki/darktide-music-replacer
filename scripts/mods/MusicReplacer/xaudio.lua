@@ -64,21 +64,11 @@ local library = nil -- Kept for the engine's lifetime, since a collected ffi lib
 local engine = nil
 local mastering_voice = nil
 local init_error = nil
+local init_can_retry = false -- True when init_error came from creating the engine or its output, which an audio device coming back can fix.
 local failure = nil -- Why the engine stopped working, or nil.
 
 local function call(object, method, ...)
 	return NativeFfi.call(object, method[1], method[2], ...)
-end
-
--- Calls a method that returns an HRESULT, and records the first failure. Returns true on success.
-local function checked(what, object, method, ...)
-	local hresult = call(object, method, ...)
-	if NativeFfi.succeeded(hresult) then
-		return true
-	end
-
-	failure = failure or string.format("%s failed with %s", what, NativeFfi.hex(hresult))
-	return false
 end
 
 -- `native_ffi` is a loaded native_ffi.lua.
@@ -118,14 +108,17 @@ function XAudio.available()
 	local hresult = library.MusicReplacer_XAudio2Create(out, 0, XAUDIO2_DEFAULT_PROCESSOR)
 	if not NativeFfi.succeeded(hresult) then
 		init_error = "XAudio2Create failed with " .. NativeFfi.hex(hresult)
+		init_can_retry = true
 		return false
 	end
 	local created = out[0]
 
+	-- This fails while Windows has no audio output at all, for example right after the only headset is unplugged.
 	hresult = call(created, CREATE_MASTERING_VOICE, out, 0, 0, 0, nil, nil, AUDIO_CATEGORY_GAME_MEDIA)
 	if not NativeFfi.succeeded(hresult) then
 		NativeFfi.release(created)
 		init_error = "creating the output failed with " .. NativeFfi.hex(hresult)
+		init_can_retry = true
 		return false
 	end
 
@@ -138,6 +131,12 @@ function XAudio.error()
 	return init_error
 end
 
+-- True when the engine could not be created for a reason that can pass, such as having no audio output.
+-- Calling XAudio.shutdown() clears the error, so the next XAudio.available() tries again.
+function XAudio.can_retry()
+	return init_error ~= nil and init_can_retry
+end
+
 -- Why the engine stopped working, or nil. Destroy every voice, call XAudio.shutdown(), and start again to recover.
 function XAudio.failure()
 	return failure
@@ -147,14 +146,16 @@ local Voice = {}
 Voice.__index = Voice
 
 -- Creates a stopped voice for PCM in `format`, a MusicReplacer_WAVEFORMATEX. Returns the voice, or nil and why.
+-- A refused voice is not recorded as an engine failure, since one file's format, such as a sample rate above 200 kHz, can cause it.
 function XAudio.create_voice(format)
 	if not XAudio.available() then
 		return nil, init_error
 	end
 
 	local out = ffi.new("void *[1]")
-	if not checked("creating a voice", engine, CREATE_SOURCE_VOICE, out, format, 0, XAUDIO2_DEFAULT_FREQ_RATIO, nil, nil, nil) then
-		return nil, failure
+	local hresult = call(engine, CREATE_SOURCE_VOICE, out, format, 0, XAUDIO2_DEFAULT_FREQ_RATIO, nil, nil, nil)
+	if not NativeFfi.succeeded(hresult) then
+		return nil, "creating a voice failed with " .. NativeFfi.hex(hresult)
 	end
 
 	local pointer = out[0]
@@ -263,6 +264,7 @@ function XAudio.shutdown()
 
 	failure = nil
 	init_error = nil
+	init_can_retry = false
 end
 
 return XAudio

@@ -49,6 +49,17 @@ function Player.reset()
 	XAudio.shutdown()
 end
 
+-- True when Player.available() is false only for a reason that can pass, such as having no audio output.
+-- Player.reset() followed by Player.available() tries again.
+function Player.can_retry()
+	return MediaDecoder ~= nil and MediaDecoder.available() and XAudio.can_retry()
+end
+
+-- Why the XAudio2 engine stopped working, or nil. It stays set after the stream that ran into it is gone.
+function Player.engine_failure()
+	return XAudio.failure()
+end
+
 -- Bytes held by every open stream's pool, for logging.
 function Player.pool_bytes()
 	return pool_bytes
@@ -118,7 +129,8 @@ local function fill(self, max_fills)
 	slowest_fill_ms = math.max(slowest_fill_ms, (clock() - started) * 1000)
 end
 
--- Opens `path` and starts it playing. Returns the stream, or nil and why.
+-- Opens `path` and starts it playing.
+-- Returns the stream, or nil, why, and whether XAudio2 refused the voice, which a dead engine also does.
 -- opts.start_position starts partway in, in seconds. opts.loop repeats the file without a gap.
 -- opts.gain and opts.fade set the starting levels, 1 by default.
 function Player.open(path, opts)
@@ -148,7 +160,7 @@ function Player.open(path, opts)
 	if not voice then
 		NativeFfi.free(pool)
 		decoder:close()
-		return nil, err
+		return nil, err, true
 	end
 
 	pool_bytes = pool_bytes + slot_bytes * SLOT_COUNT

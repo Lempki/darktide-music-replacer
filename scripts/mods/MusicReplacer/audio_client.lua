@@ -20,6 +20,9 @@ local PARK_SECONDS = 60
 local MAX_RECOVERIES = 3
 local HEALTHY_SECONDS = 30
 
+-- How often to try again while Windows has no audio output, such as after the only headset was unplugged.
+local RETRY_SECONDS = 5
+
 local STATS_LOG_SECONDS = 300
 
 local Player = nil
@@ -34,6 +37,7 @@ local current_master_slider = nil
 local current_music_slider = nil
 local recoveries = 0
 local healthy_elapsed = 0
+local retry_elapsed = 0
 local broken = nil -- Why playback gave up for the session, or nil.
 local stats_elapsed = 0
 local longest_gap = 0
@@ -49,6 +53,12 @@ end
 
 function AudioClient.available()
 	return Player ~= nil and broken == nil and Player.available()
+end
+
+-- True when playback is unavailable only for a reason that can pass, such as having no audio output.
+-- AudioClient.update() tries again every few seconds, and AudioClient.available() turns true once it works.
+function AudioClient.can_retry()
+	return Player ~= nil and broken == nil and Player.can_retry()
 end
 
 -- Why playback is unavailable, or nil.
@@ -98,6 +108,32 @@ local function destroy_all()
 	outgoing = {}
 end
 
+-- Destroys every stream and recreates the engine on next use.
+-- Returns false once that has happened more than MAX_RECOVERIES times in a row, and playback gives up for the session.
+local function rebuild_engine(reason)
+	destroy_all()
+	Player.reset()
+
+	recoveries = recoveries + 1
+	if recoveries > MAX_RECOVERIES then
+		broken = string.format("gave up after %d recoveries in a row, the last after: %s", MAX_RECOVERIES, reason)
+		log_fn("[player] " .. broken)
+		return false
+	end
+
+	return true
+end
+
+-- True while a song is fading out, which shows the engine still plays.
+local function has_live_stream()
+	for _, entry in ipairs(outgoing) do
+		if not entry.parked_elapsed and not entry.stream:failure() then
+			return true
+		end
+	end
+	return false
+end
+
 -- Takes the fading or parked stream of `file_path` out of the outgoing list, or returns nil.
 local function take_outgoing(file_path)
 	for index, entry in ipairs(outgoing) do
@@ -114,6 +150,15 @@ end
 function AudioClient.play(file_path, opts)
 	if not AudioClient.available() then
 		return false
+	end
+
+	-- A failure that outlived its stream means the engine stopped working while no song needed it, so it is rebuilt first.
+	local engine_failure = Player.engine_failure()
+	if engine_failure then
+		log_fn(string.format("[player] the engine stopped working (%s), rebuilding it", engine_failure))
+		if not rebuild_engine(engine_failure) or not AudioClient.available() then
+			return false
+		end
 	end
 
 	opts = opts or {}
@@ -144,12 +189,26 @@ function AudioClient.play(file_path, opts)
 		stream:fade_to(1, opts.fade_in and CROSSFADE_SECONDS or 0)
 		log_fn(string.format("[player] continuing %s from %.1fs, where it faded out", file_path, stream:position()))
 	else
-		stream, err = Player.open(disk_path(file_path), {
+		local open_opts = {
 			start_position = opts.start_position,
 			loop = loop,
 			gain = gain,
 			fade = opts.fade_in and 0 or 1,
-		})
+		}
+		local refused_voice
+		stream, err, refused_voice = Player.open(disk_path(file_path), open_opts)
+
+		-- A dead engine refuses every voice, and so can one file's format.
+		-- With no song fading out to show the engine still plays, it is rebuilt and the file gets one more try.
+		-- That is not counted as a recovery, since a file the engine refuses again was the cause.
+		if not stream and refused_voice and not has_live_stream() then
+			log_fn(string.format("[player] %s was refused a voice (%s), rebuilding the engine and trying once more", file_path, tostring(err)))
+			destroy_all()
+			Player.reset()
+			if AudioClient.available() then
+				stream, err = Player.open(disk_path(file_path), open_opts)
+			end
+		end
 
 		if stream then
 			if opts.fade_in then
@@ -202,26 +261,24 @@ local function recover(reason)
 	local resume = current
 	local position = resume and resume.stream and resume.stream:position() or 0
 
-	destroy_all()
-	Player.reset()
-
-	recoveries = recoveries + 1
-	if recoveries > MAX_RECOVERIES then
-		broken = string.format("gave up after %d recoveries in a row, the last after: %s", MAX_RECOVERIES, reason)
-		log_fn("[player] " .. broken)
+	if not rebuild_engine(reason) then
 		return
 	end
 
 	log_fn(string.format("[player] playback failed (%s), rebuilding the engine and resuming at %.1fs", reason, position))
 
 	if resume then
-		AudioClient.play(resume.file_path, {
+		local resumed = AudioClient.play(resume.file_path, {
 			start_position = position,
 			loop = resume.loop,
 			duration_seconds = resume.duration,
 			on_finished = resume.on_finished,
 			fade_in = true,
 		})
+
+		if not resumed and AudioClient.can_retry() then
+			log_fn(string.format("[player] no audio output (%s), trying again every %ds", tostring(Player.error()), RETRY_SECONDS))
+		end
 	end
 end
 
@@ -274,6 +331,21 @@ end
 function AudioClient.update(dt)
 	if not Player then
 		return
+	end
+
+	-- A lost audio output leaves no engine to rebuild until Windows has an output again.
+	-- Retrying does not count as a recovery, so a headset that stays unplugged for long never gives up playback.
+	if AudioClient.can_retry() then
+		retry_elapsed = retry_elapsed + dt
+		if retry_elapsed >= RETRY_SECONDS then
+			retry_elapsed = 0
+			Player.reset()
+			if Player.available() then
+				log_fn("[player] the audio output is back")
+			end
+		end
+	else
+		retry_elapsed = 0
 	end
 
 	log_stats(dt)
