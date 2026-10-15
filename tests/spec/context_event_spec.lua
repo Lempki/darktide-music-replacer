@@ -7,7 +7,7 @@ local function in_mission(zone)
 	local harness = Harness.new()
 	harness:cold_start_to_hub()
 	harness:leave_hub()
-	harness:enter_mission(zone and "fm_cargo" or "op_train", zone)
+	harness:enter_mission(zone and "fm_cargo" or "zoneless_mission", zone)
 	harness:clear_changes()
 
 	return harness

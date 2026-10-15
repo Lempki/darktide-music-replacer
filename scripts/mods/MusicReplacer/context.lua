@@ -56,6 +56,7 @@ local music_game_state = nil -- Current value of the "music_game_state" state gr
 local music_objective = nil -- Current value of the "music_objective" state group.
 local mission_name = nil -- Name of the current mission, or nil while none is loaded.
 local mission_is_hub = false -- True while the loaded mission's template is the hub.
+local mission_is_operation = false -- True while the loaded mission is an Operation.
 local mission_outcome = nil -- "victory" or "defeat" from that game state until the next level starts, else nil.
 local open_bosses = {} -- Boss unit -> { breed = name, order = n } for every open encounter window.
 local boss_open_count = 0 -- Increases with every newly opened window, so the latest one can be found.
@@ -154,24 +155,26 @@ local function is_combat_active()
 	return wwise_combat_state == "normal" or wwise_combat_state == "horde_low" or wwise_combat_state == "horde_high"
 end
 
--- Returns the current mission's name and whether its template is the hub, or nil and false before a level has loaded.
+-- Returns the current mission's name, whether its template is the hub, and whether it is an Operation.
+-- Returns nil, false, false before a level has loaded.
 local function read_mission()
 	local game_state = Managers and Managers.state
 	local mission_manager = game_state and game_state.mission
 
 	if not mission_manager then
-		return nil, false
+		return nil, false, false
 	end
 
 	local ok, name = pcall(mission_manager.mission_name, mission_manager)
 
 	if not ok or not name then
-		return nil, false
+		return nil, false, false
 	end
 
 	local template_ok, template = pcall(mission_manager.mission, mission_manager)
+	local has_template = template_ok and type(template) == "table"
 
-	return name, template_ok and type(template) == "table" and template.is_hub == true
+	return name, has_template and template.is_hub == true, has_template and template.mission_type == "operations"
 end
 
 -- Wwise reports "None" as a string, not as nil.
@@ -213,7 +216,8 @@ local function resolve(mod)
 		return "mission_last_stand"
 	end
 
-	if music_objective and music_objective ~= "None" then
+	-- Operations script their music across the whole mission, in stages with short gaps between them, so each is one long event.
+	if (music_objective and music_objective ~= "None") or mission_is_operation then
 		return "mission_event"
 	end
 
@@ -395,11 +399,13 @@ end
 -- Call from the main mod file's mod.update.
 -- Managers.event does not exist at mod-load time, so the boss callbacks are registered on the first tick where it does.
 function Context.update(mod, dt)
-	local current_mission_name, current_mission_is_hub = read_mission()
+	local current_mission_name, current_mission_is_hub, current_mission_is_operation = read_mission()
 
-	if current_mission_name ~= mission_name or current_mission_is_hub ~= mission_is_hub then
+	if current_mission_name ~= mission_name or current_mission_is_hub ~= mission_is_hub
+		or current_mission_is_operation ~= mission_is_operation then
 		mission_name = current_mission_name
 		mission_is_hub = current_mission_is_hub
+		mission_is_operation = current_mission_is_operation
 		recompute(mod)
 	end
 

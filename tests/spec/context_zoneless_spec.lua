@@ -1,4 +1,4 @@
--- Pins how context.lua resolves missions that never report a zone, such as op_train.
+-- Pins how context.lua resolves a mission that never reports a zone and is not an Operation.
 
 local Harness = require("tests.helpers.context_harness")
 
@@ -7,7 +7,7 @@ local function in_zoneless_mission()
 	local harness = Harness.new()
 	harness:cold_start_to_hub()
 	harness:leave_hub()
-	harness:enter_mission("op_train", nil)
+	harness:enter_mission("zoneless_mission", nil)
 
 	return harness
 end
@@ -20,7 +20,7 @@ describe("context.lua zoneless missions", function()
 		harness:clear_changes()
 
 		harness:state("music_game_state", "mission_briefing")
-		harness:mission("op_train")
+		harness:mission("zoneless_mission")
 		harness:state("music_game_state", "mission_intro")
 
 		assert_deep_equal(harness.changes, {})
