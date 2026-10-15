@@ -147,10 +147,10 @@ local function play_context(context_name, is_new_context)
 
 	Suppression.engage(context_name)
 
-	-- A single-file context plays once normally first, with loop=1 and the fades.
-	-- After that it switches to native looping, with loop=0 and no filters.
+	-- Direct playback loops a single file from its first play, fading only at the start, so the loop has no seam.
+	-- With ffplay it plays once normally first, with loop=1 and the fades, and then switches to native looping, with loop=0 and no filters.
 	-- ffplay's -loop re-triggers filters every iteration, so a fade-in from the start would otherwise repeat forever.
-	local use_native_loop = is_only_file and native_loop_active[context_name] == true
+	local use_native_loop = is_only_file and (Playback == DirectAudioClient or native_loop_active[context_name] == true)
 
 	log(string.format("[playback] %s: %s %s%s (duration=%s%s)",
 		context_name, start_position and "resuming" or "playing", file_path,
