@@ -23,6 +23,15 @@ return {
 				unit_text = "s",
 			},
 			{
+				setting_id = "event_hold_seconds",
+				type = "numeric",
+				default_value = 5,
+				range = { 0, 30 },
+				decimals_number = 0,
+				step_size_value = 1,
+				unit_text = "s",
+			},
+			{
 				setting_id = "resume_songs",
 				type = "checkbox",
 				default_value = true,

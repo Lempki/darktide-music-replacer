@@ -38,6 +38,8 @@
 --	* Any other `music_objective` value is mission event music, for example "kill_event" or "fortification_event".
 --	  It resolves "mission_event", over bosses, as the game's own event music does. Spillway's scripted bosses are events.
 --	  Last stand and event music share the group, so the game itself decides between them, and last stand wins there.
+--	  Some events clear `music_objective` for a few seconds between their stages, such as Cargo's end event.
+--	  So `mission_event` holds for `event_hold_seconds` after it clears, and the event's song does not start over at every stage.
 --	* Mortis Trials is recognized by its own music zone, "horde_mode".
 --	  Its waves, objective rounds and final win set `music_objective` and resolve "mortis_trials_wave".
 --	  The breaks between them resolve "mortis_trials_break".
@@ -78,9 +80,11 @@ local diagnostic_log = function() end -- No-op unless a real logger is passed to
 -- Fallbacks for when the hold settings read nil.
 local COMBAT_HOLD_SECONDS_DEFAULT = 8
 local HORDE_HOLD_SECONDS_DEFAULT = 3
+local EVENT_HOLD_SECONDS_DEFAULT = 5
 
 local combat_hold_remaining = 0 -- Seconds left before mission_combat may fall back to mission_explore.
 local horde_hold_remaining = 0 -- Seconds left before mission_horde may fall back to the plain combat state.
+local event_hold_remaining = 0 -- Seconds left before mission_event may fall back to the states below it.
 
 local MISSION_OUTCOME_CONTEXTS = { victory = "mission_victory", defeat = "mission_defeat" }
 
@@ -162,6 +166,15 @@ local function horde_hold_seconds(mod)
 	return mod:get("horde_hold_seconds") or HORDE_HOLD_SECONDS_DEFAULT
 end
 
+local function event_hold_seconds(mod)
+	return mod:get("event_hold_seconds") or EVENT_HOLD_SECONDS_DEFAULT
+end
+
+-- Operations count as one event from start to end. Last stand shares the group, but is not an event.
+local function is_event_active()
+	return (music_objective ~= nil and music_objective ~= "None" and music_objective ~= LAST_MAN_STANDING) or mission_is_operation
+end
+
 local function is_combat_active()
 	return wwise_combat_state == "normal" or wwise_combat_state == "horde_low" or wwise_combat_state == "horde_high"
 end
@@ -233,7 +246,13 @@ local function resolve(mod)
 	end
 
 	-- Operations script their music across the whole mission, in stages with short gaps between them, so each is one long event.
-	if (music_objective and music_objective ~= "None") or mission_is_operation then
+	if is_event_active() then
+		event_hold_remaining = event_hold_seconds(mod)
+		return "mission_event"
+	end
+
+	if event_hold_remaining > 0 then
+		diagnostic_log(string.format("[hold] event quiet, holding mission_event for %.1fs more", event_hold_remaining))
 		return "mission_event"
 	end
 
@@ -374,6 +393,7 @@ function Context.init(mod, log)
 				open_bosses = {}
 				combat_hold_remaining = 0 -- A new zone starts fresh, not partway through the last hold.
 				horde_hold_remaining = 0
+				event_hold_remaining = 0
 			end
 		elseif group_name == "music_game_state" then
 			diagnostic_log(describe_transition(group_name, current, new_state))
@@ -454,8 +474,16 @@ function Context.update(mod, dt)
 		recompute(mod)
 	end
 
-	-- The hold only counts down once combat is inactive.
-	-- resolve() refreshes it to its full value on every active tick, so it must not also drain while combat is active.
+	-- A hold only counts down once its state is inactive.
+	-- resolve() refreshes it to its full value on every active tick, so it must not also drain while its state is active.
+	if event_hold_remaining > 0 and not is_event_active() then
+		event_hold_remaining = math.max(event_hold_remaining - dt, 0)
+
+		if event_hold_remaining == 0 then
+			recompute(mod)
+		end
+	end
+
 	if horde_hold_remaining > 0 and not is_horde_active() then
 		horde_hold_remaining = math.max(horde_hold_remaining - dt, 0)
 

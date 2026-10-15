@@ -22,6 +22,7 @@ describe("context.lua mission events", function()
 		harness:state("music_combat", "None")
 		harness:wait(120)
 		harness:state("music_objective", "None")
+		harness:wait(5.1)
 
 		assert_deep_equal(harness.changes, { "mission_combat", "mission_event", "mission_explore" })
 	end)
@@ -43,6 +44,7 @@ describe("context.lua mission events", function()
 		harness:boss_start(boss)
 		harness:boss_end(boss)
 		harness:state("music_objective", "None")
+		harness:wait(5.1)
 
 		assert_deep_equal(harness.changes, { "mission_event", "mission_explore" })
 	end)
@@ -74,8 +76,61 @@ describe("context.lua mission events", function()
 		assert_equal(harness:current(), "mission_event")
 
 		harness:state("music_objective", "None")
+		harness:wait(5.1)
 
 		assert_equal(harness:current(), "mission_boss")
+	end)
+
+	-- Cargo's end event clears its music for 1, 1, and 4 seconds between stages, then for 10 seconds before the escape.
+	it("holds mission_event through short gaps between an event's stages, and lets a longer gap end the event", function()
+		local harness = in_mission("zone_3")
+
+		harness:state("music_objective", "fortification_event")
+		for _, gap in ipairs({ 1, 1, 4 }) do
+			harness:wait(60)
+			harness:state("music_objective", "None")
+			harness:wait(gap)
+			harness:state("music_objective", "fortification_event")
+		end
+		assert_deep_equal(harness.changes, { "mission_event" })
+
+		harness:wait(60)
+		harness:state("music_objective", "None")
+		harness:wait(10)
+		harness:state("music_objective", "escape_event")
+
+		assert_deep_equal(harness.changes, { "mission_event", "mission_explore", "mission_event" })
+	end)
+
+	it("holds for as long as the setting says, and follows the game at once at 0", function()
+		local harness = in_mission("zone_3")
+		harness:set_setting("event_hold_seconds", 0)
+
+		harness:state("music_objective", "fortification_event")
+		harness:state("music_objective", "None")
+
+		assert_deep_equal(harness.changes, { "mission_event", "mission_explore" })
+
+		harness:set_setting("event_hold_seconds", 12)
+		harness:state("music_objective", "fortification_event")
+		harness:state("music_objective", "None")
+		harness:wait(11.9)
+		assert_equal(harness:current(), "mission_event")
+		harness:wait(0.2)
+		assert_equal(harness:current(), "mission_explore")
+	end)
+
+	it("lets a last stand take over during the hold, and still ends the event once the hold runs out", function()
+		local harness = in_mission("zone_3")
+		harness:state("music_objective", "fortification_event")
+		harness:state("music_objective", "None")
+		harness:wait(1)
+
+		harness:state("music_objective", "last_man_standing")
+		harness:wait(10)
+		harness:state("music_objective", "None")
+
+		assert_deep_equal(harness.changes, { "mission_event", "mission_last_stand", "mission_explore" })
 	end)
 
 	it("follows a change from one event to the next without leaving mission_event", function()

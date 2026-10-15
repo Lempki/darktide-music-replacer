@@ -17,6 +17,12 @@ return {
 	horde_hold_seconds_description = {
 		en = "How long horde music keeps playing after the game stops reporting a horde. The game drops its horde signal for a second or two whenever few enemies are on you, so a short hold keeps the track from restarting. Set to 0 to follow the game exactly.",
 	},
+	event_hold_seconds = {
+		en = "Event Music Hold",
+	},
+	event_hold_seconds_description = {
+		en = "How long event music keeps playing after the game ends an event's music. Some events pause their music for a few seconds between stages, so a short hold keeps the event's song from starting over at every stage. Set to 0 to follow the game exactly.",
+	},
 	resume_songs = {
 		en = "Resume Songs",
 	},
