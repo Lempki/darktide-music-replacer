@@ -68,7 +68,7 @@ describe("resume_points.lua", function()
 		assert_equal(ResumePoints.take("mission_explore"), nil)
 	end)
 
-	it("wraps a single file's native loop back into the file", function()
+	it("wraps a single file's loop back into the file", function()
 		local ResumePoints = load_resume_points()
 
 		assert_equal(ResumePoints.remember("mission_combat", "mission_combat/only.ogg", 250, 100, true), 50)

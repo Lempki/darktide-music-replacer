@@ -50,18 +50,6 @@ return {
 	captain_boss_music_description = {
 		en = "On plays your boss music for a captain, including the Karnak Twins, from the moment it engages until it dies. Off leaves captains to the game's own music. Event music still plays during an event.",
 	},
-	direct_playback = {
-		en = "Direct Playback (Experimental)",
-	},
-	direct_playback_description = {
-		en = "Plays your music inside the game through Windows' own decoder and audio engine, instead of through the Audio Plugin's ffplay. Songs crossfade properly, and the volume sliders change the music at once in both directions without restarting it. Plays mp3, m4a, wav, and flac. Ogg files may not play, and their contexts fall back to the game's own music. Takes effect at once.",
-	},
-	instant_volume = {
-		en = "Instant Volume Changes",
-	},
-	instant_volume_description = {
-		en = "Lowers a playing track through its Windows audio session the moment you move the master or music volume slider. Raising a slider above where the track started still restarts it at the same spot. Turn this off if music volume misbehaves, and every slider change restarts the track instead.",
-	},
 	debug = {
 		en = "Debug",
 	},

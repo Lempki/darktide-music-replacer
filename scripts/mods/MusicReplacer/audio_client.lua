@@ -1,440 +1,335 @@
--- Thin wrapper over the Audio Plugin's play_file API.
--- Plays one music track at a time, crossfading between switches, either playlisting through a folder or native-looping a single file.
--- Knows nothing about context or file choice. See context.lua, library.lua and MusicReplacer.lua.
--- Plugin API: https://github.com/ronvoluted/darktide-mods/tree/main/Audio
+-- Plays the music inside the game through player.lua, one song at a time with crossfades between them.
+-- A switch is a true crossfade: the outgoing song fades out while the incoming one fades in.
+-- The volume sliders set every stream's gain directly, up or down, so no slider change restarts a song.
+-- A file that cannot be opened behaves like a track that ended at once, so MusicReplacer.lua's quick-end guard handles it.
+-- When the audio device is lost and XAudio2 cannot follow, the engine is rebuilt and the song resumes where it was.
 --
--- Constraints the rest of this file is built around:
---	* play_file() learns its OS pid asynchronously.
---	  Stopping before the pid arrives cannot kill anything, and the Audio Plugin never retries, which orphans the process.
---	  retry_pending_stops() below mitigates this.
---	* ffplay is headless with no live control channel, so an already-playing track's volume and filters cannot change.
---	  So a crossfade is a one-sided fade-in overlap, not a symmetric fade.
---	  A relaunch-based symmetric fade glitches audibly, which sounds worse than not fading at all.
---	* The Audio Plugin bakes -volume in once at launch (confirmed from play_file.lua).
---	  A lower slider level scales the running track through its Windows audio session instead (see volume_sessions.lua).
---	  Raising a slider above the level the track launched at, or a track whose session never appeared, still needs a relaunch.
---	  AudioClient.update() relaunches on the next tick, then holds further relaunches for VOLUME_RELAUNCH_COOLDOWN_SECONDS.
---	  Each relaunch stops the track and starts it again at its current position.
---	* -ss after -i combined with -loop restarts every loop iteration from the seeked position, not the file's true start (confirmed in-game).
---	  So a native_loop relaunch plays a finite tail to the file's true end first, then resumes native looping from position 0.
---	  That is the same seam the loop already uses, so it sounds like an ordinary loop and not a restart.
---	* After -ss, ffplay's filters see timestamps from the file's own timeline (verified by printing frame timestamps).
---	  So afade's st is measured against the full file duration, not against the seek point.
+-- A song that fades out is paused and parked rather than freed. If the mod resumes that song while it is parked,
+-- the same stream fades back in from exactly where it stopped, with no reopening, no seek, and no repeated seconds.
 
 local AudioClient = {}
 
-local FADE_IN_SECONDS = 2
-local FADE_OUT_SECONDS = 2 -- Also used for a track's own natural-end fade-out.
+local CROSSFADE_SECONDS = 2
+local NATURAL_END_FADE_SECONDS = 2 -- Also how long before the end a song that is not looping starts fading out.
+local STOP_FADE_SECONDS = 0.5
 
--- How long an outgoing track keeps playing unmodified alongside an incoming one before it is stopped.
--- Longer than FADE_IN_SECONDS so the incoming track masks the cutoff.
-local CROSSFADE_OVERLAP_SECONDS = 3
+-- How long a faded-out song stays parked. Each holds about 0.7 MB, and most returns, like combat after a lull, come sooner.
+local PARK_SECONDS = 60
 
--- After a relaunch for a slider change, hold further relaunches for this long.
--- This caps a continued drag without delaying the first reaction.
-local VOLUME_RELAUNCH_COOLDOWN_SECONDS = 1
+-- Recoveries in a row before giving up for the session. Playing well for HEALTHY_SECONDS resets the count.
+local MAX_RECOVERIES = 3
+local HEALTHY_SECONDS = 30
 
--- A slider drag changes the session volume every tick, so its log line waits until the sliders settle.
-local VOLUME_LOG_DELAY_SECONDS = 0.5
+local STATS_LOG_SECONDS = 300
 
-local _os = Mods and Mods.lua and Mods.lua.os -- Only for AudioClient.shutdown()'s direct kill.
+local Player = nil
+local disk_path = function(file_path) return file_path end
+local log_fn = function() end
 
-local audio_mod = nil
-local dls_mod = nil
-local VolumeSessions = nil
-local log_fn = function() end -- Replaced with the real logger by AudioClient.init(log), see MusicReplacer.lua.
-local current_play_file_id = nil
-local pending_stop_ids = {} -- play_file_id -> true for kills that are not yet confirmed.
-local scheduled_stops = {} -- List of {remaining, play_file_id} entries for the crossfade overlap.
-
--- Tracks the current track well enough to relaunch it at a new volume. See AudioClient.update().
-local current_file_path = nil
-
--- The file's full duration, fixed across a volume relaunch so the fade-out lands at the file's real end.
-local current_total_duration = nil
-
--- Where in the file's timeline the current track started, nonzero for a resumed song.
-local current_start_position = 0
-
--- Seconds since the current track started.
--- Keeps counting across a relaunch and resets only on a new AudioClient.play call.
-local current_elapsed = 0
-
-local current_native_loop = false
-local current_on_finished = nil
+local current = nil -- { stream, file_path, loop, duration, on_finished, elapsed, end_fading }
+local outgoing = {} -- { stream, file_path, parked_elapsed } for songs fading out or parked, after a switch or a stop.
+local finished_elapsed = 0 -- The last finished track's elapsed time, which on_finished reads through elapsed() like with audio_client.lua.
+local gain = 1
 local current_master_slider = nil
 local current_music_slider = nil
-local volume_cooldown_elapsed = VOLUME_RELAUNCH_COOLDOWN_SECONDS -- Starts elapsed, so the first real change is never held back.
-local volume_log_remaining = nil
+local recoveries = 0
+local healthy_elapsed = 0
+local broken = nil -- Why playback gave up for the session, or nil.
+local stats_elapsed = 0
+local longest_gap = 0
+local used = false -- Set by the first play, so the stats only show once music has played.
 
--- `volume_sessions` is an initialized volume_sessions.lua, or nil to relaunch on every slider change.
-function AudioClient.init(log, volume_sessions)
-	audio_mod = get_mod("Audio")
-	dls_mod = get_mod("DarktideLocalServer")
+-- `options.player` is an initialized player.lua.
+-- `options.disk_path(file_path)` turns a library path into a path on disk.
+function AudioClient.init(log, options)
 	log_fn = log or log_fn
-	VolumeSessions = volume_sessions
+	Player = options.player
+	disk_path = options.disk_path or disk_path
 end
 
 function AudioClient.available()
-	return audio_mod ~= nil
+	return Player ~= nil and broken == nil and Player.available()
 end
 
--- Seconds the current track has been playing since it was started, or 0 if nothing is playing.
--- It keeps counting across a volume relaunch.
+-- Why playback is unavailable, or nil.
+function AudioClient.error()
+	return broken or (Player and Player.error())
+end
+
+-- Seconds since the current track started. After a track ends, its time until the next play or stop.
 function AudioClient.elapsed()
-	return current_elapsed
+	return current and current.elapsed or finished_elapsed
 end
 
--- Seconds into the current file's timeline.
--- A native loop keeps counting past the file's end, since this client does not know a looping file's duration.
+-- Seconds into the current file.
 function AudioClient.position()
-	return current_start_position + current_elapsed
+	return current and current.stream and current.stream:position() or 0
 end
 
 function AudioClient.is_playing()
-	return current_play_file_id ~= nil
+	return current ~= nil
 end
 
--- Retries stops that had no known pid yet.
--- Cheap and normally a no-op, so it can run every tick.
-local function retry_pending_stops()
-	if not audio_mod or not dls_mod then
-		return
-	end
-
-	for play_file_id in pairs(pending_stop_ids) do
-		local pid = audio_mod.file_pid(play_file_id)
-		if pid then
-			dls_mod.stop_process(pid)
-			pending_stop_ids[play_file_id] = nil
-		end
-	end
-end
-
-local function stop_id(play_file_id)
-	if not audio_mod or not play_file_id then
-		return
-	end
-
-	audio_mod.stop_file(play_file_id)
-	pending_stop_ids[play_file_id] = true -- May not have actually killed anything yet.
-	if VolumeSessions then
-		VolumeSessions.retire(play_file_id)
-	end
-	retry_pending_stops()
-end
-
--- Reads the same two sliders the Audio Plugin multiplies together for music volume, defaulting to 100 like it does.
-local function read_volume_sliders()
+local function read_sliders()
 	local master = Application.user_setting("sound_settings", "option_master_slider") or 100
 	local music = Application.user_setting("sound_settings", "options_music_slider") or 100
 	return master, music
 end
 
--- The music volume the sliders ask for, from 0 to 100.
-local function slider_percent(master, music)
-	return master * music / 100
+-- The game's master and music sliders multiplied, as a linear amplitude scale.
+local function slider_gain(master, music)
+	return master * music / 10000
 end
 
--- Every track is started here, so each process's session is tracked from the level the Audio Plugin bakes into it.
-local function launch(file_path, settings)
-	local master, music = read_volume_sliders()
-	settings.audio_type = "music"
-	local play_file_id = audio_mod.play_file(file_path, settings)
-
-	if VolumeSessions then
-		VolumeSessions.track(play_file_id, math.floor(slider_percent(master, music) + 0.5))
-	end
-
-	return play_file_id
+local function fade_out(entry, seconds)
+	entry.stream:fade_to(0, seconds)
+	outgoing[#outgoing + 1] = { stream = entry.stream, file_path = entry.file_path, parked_elapsed = nil }
 end
 
--- Builds the afade filter string, or nil for none.
--- It has a fade-in if opts.fade_in, plus a natural-end fade-out if duration_seconds is known.
--- Neither applies to opts.native_loop.
--- ffplay's -loop re-triggers baked-in filters every iteration, so a fade would recur forever.
--- ffmpeg allows several comma-separated afade instances in one chain, each with its own time window.
---
--- The Audio Plugin's play_file() prepends one "afade=" to whatever this returns.
--- So only a chained second instance may restate the filter name itself.
--- A fade-out alone, as in every relaunch and every playlist continuation, would otherwise become "afade=afade=...".
--- ffplay rejects that and kills the process almost immediately.
-local function build_afade(opts)
-	if opts.native_loop then
-		return nil
+local function destroy_all()
+	if current and current.stream then
+		current.stream:destroy()
 	end
+	current = nil
 
-	local afade = nil
+	for _, entry in ipairs(outgoing) do
+		entry.stream:destroy()
+	end
+	outgoing = {}
+end
 
-	if opts.fade_in then
-		-- A fade-in from the default st=0 would already be over at a resumed song's seek position (see the header).
-		if opts.start_position and opts.start_position > 0 then
-			afade = string.format("t=in:st=%.3f:d=%s", opts.start_position, FADE_IN_SECONDS)
-		else
-			afade = string.format("t=in:d=%s", FADE_IN_SECONDS)
+-- Takes the fading or parked stream of `file_path` out of the outgoing list, or returns nil.
+local function take_outgoing(file_path)
+	for index, entry in ipairs(outgoing) do
+		if entry.file_path == file_path and not entry.stream:ended() and not entry.stream:failure() then
+			table.remove(outgoing, index)
+			return entry.stream
 		end
 	end
-
-	if opts.duration_seconds and opts.duration_seconds > (FADE_IN_SECONDS + FADE_OUT_SECONDS) then
-		local fade_out_args = string.format("t=out:st=%s:d=%s", opts.duration_seconds - FADE_OUT_SECONDS, FADE_OUT_SECONDS)
-		afade = afade and (afade .. ",afade=" .. fade_out_args) or fade_out_args
-	end
-
-	return afade
+	return nil
 end
 
--- Relaunches the current track so a slider change reaches a track that is already playing.
--- Only called from the slider check in AudioClient.update().
-local function relaunch_at_current_volume()
-	if not current_play_file_id or not current_file_path then
-		return
-	end
-
-	log_fn(string.format("[volume] relaunching %s at %.1fs (master=%s, music=%s)",
-		current_file_path, AudioClient.position(), tostring(current_master_slider), tostring(current_music_slider)))
-
-	stop_id(current_play_file_id) -- Stopped at once, not crossfade-scheduled, since this continues the same track and is not a switch.
-
-	local file_path = current_file_path
-	local on_finished = current_on_finished
-
-	if current_native_loop then
-		-- A plain reseek would permanently shorten the loop (see the header).
-		-- So this finishes the cycle as a finite play to the file's true end.
-		-- It then resumes native looping from position 0, the same seam the loop already uses.
-		local seek_position = AudioClient.position()
-
-		local tail_play_file_id
-		tail_play_file_id = launch(file_path, {
-			loop = 1,
-			pos = seek_position > 0 and seek_position or nil,
-			track_status = function()
-				if current_play_file_id ~= tail_play_file_id then
-					return -- Superseded by a real context change before the tail finished.
-				end
-
-				log_fn(string.format("[volume] %s: tail finished, resuming native loop from start", file_path))
-
-				local resumed_play_file_id
-				resumed_play_file_id = launch(file_path, {
-					loop = 0,
-					track_status = function()
-						if on_finished and current_play_file_id == resumed_play_file_id then
-							on_finished()
-						end
-					end,
-				})
-				current_play_file_id = resumed_play_file_id
-				-- The file restarted from its true beginning.
-				current_start_position = 0
-				current_elapsed = 0
-			end,
-		})
-
-		current_play_file_id = tail_play_file_id
-		return
-	end
-
-	local seek_position = AudioClient.position()
-
-	local play_file_id
-	play_file_id = launch(file_path, {
-		loop = 1,
-		-- After a seek, ffplay's filters still see timestamps from the file's own timeline.
-		-- So the fade-out point is measured against the full duration, not what is left.
-		afade = build_afade({ native_loop = false, duration_seconds = current_total_duration, fade_in = false }),
-		pos = seek_position > 0 and seek_position or nil,
-		track_status = function()
-			if on_finished and current_play_file_id == play_file_id then
-				on_finished()
-			end
-		end,
-	})
-
-	current_play_file_id = play_file_id
-end
-
--- Follows a slider change through the session volume of the current track and of any outgoing ones.
--- Returns false when the current track needs a relaunch instead.
-local function follow_sliders_by_session(percent)
-	if not VolumeSessions or not VolumeSessions.set_level(current_play_file_id, percent) then
-		return false
-	end
-
-	for _, entry in ipairs(scheduled_stops) do
-		VolumeSessions.set_level(entry.play_file_id, percent)
-	end
-
-	volume_log_remaining = VOLUME_LOG_DELAY_SECONDS
-	return true
-end
-
-local function update_volume_log(dt)
-	if not volume_log_remaining then
-		return
-	end
-
-	volume_log_remaining = volume_log_remaining - dt
-	if volume_log_remaining <= 0 then
-		volume_log_remaining = nil
-		log_fn(string.format("[volume] following the sliders without a relaunch (master=%s, music=%s)",
-			tostring(current_master_slider), tostring(current_music_slider)))
-	end
-end
-
--- Call every tick to catch late pids, advance crossfade timers, and check the volume sliders.
-function AudioClient.update(dt)
-	retry_pending_stops()
-
-	if VolumeSessions then
-		VolumeSessions.update(dt)
-	end
-	update_volume_log(dt)
-
-	for i = #scheduled_stops, 1, -1 do
-		local entry = scheduled_stops[i]
-		entry.remaining = entry.remaining - dt
-
-		if entry.remaining <= 0 then
-			table.remove(scheduled_stops, i)
-			stop_id(entry.play_file_id)
-		end
-	end
-
-	if not current_play_file_id then
-		return
-	end
-
-	current_elapsed = current_elapsed + dt
-	volume_cooldown_elapsed = volume_cooldown_elapsed + dt
-
-	local master_slider, music_slider = read_volume_sliders()
-	if master_slider == current_master_slider and music_slider == current_music_slider then
-		return
-	end
-
-	if follow_sliders_by_session(slider_percent(master_slider, music_slider)) then
-		current_master_slider, current_music_slider = master_slider, music_slider
-	elseif volume_cooldown_elapsed >= VOLUME_RELAUNCH_COOLDOWN_SECONDS then
-		current_master_slider, current_music_slider = master_slider, music_slider
-		volume_cooldown_elapsed = 0
-		relaunch_at_current_volume()
-	end
-end
-
--- Immediate silence, for the native-music fallback and mod unload.
--- Not a handoff, unlike the crossfade switch in AudioClient.play.
-function AudioClient.stop()
-	if current_play_file_id then
-		local play_file_id = current_play_file_id
-		current_play_file_id = nil
-		stop_id(play_file_id)
-	end
-
-	for _, entry in ipairs(scheduled_stops) do
-		stop_id(entry.play_file_id)
-	end
-	scheduled_stops = {}
-
-	current_file_path = nil
-	current_total_duration = nil
-	current_start_position = 0
-	current_elapsed = 0
-end
-
--- Call from mod.on_unload only.
--- The normal stop path needs the game's network manager to relay a kill to DarktideLocalServer.
--- That manager can already be torn down on a normal quit, which leaves the track running.
--- This kills directly through a synchronous pid lookup and os.execute(), which needs nothing the game may be tearing down.
--- It cannot help a hard crash.
--- It blocks the calling thread, so never call it outside shutdown.
-function AudioClient.shutdown()
-	-- The plugin's stop request indexes Managers.backend, which is already gone at game exit and would raise an error there.
-	-- On a mod reload the backend still exists, so the request still goes out.
-	local function stop_if_backend_exists()
-		if Managers and Managers.backend then
-			AudioClient.stop()
-		end
-	end
-
-	if not audio_mod or not _os or not _os.execute then
-		stop_if_backend_exists()
-		return
-	end
-
-	local function force_kill(play_file_id)
-		local pid = audio_mod.file_pid(play_file_id)
-		if pid then
-			pcall(_os.execute, string.format('taskkill /PID %s /F /T >nul 2>nul', pid))
-		end
-	end
-
-	if current_play_file_id then
-		force_kill(current_play_file_id)
-	end
-
-	for _, entry in ipairs(scheduled_stops) do
-		force_kill(entry.play_file_id)
-	end
-
-	stop_if_backend_exists() -- Extra insurance in case the normal path does land.
-
-	if VolumeSessions then
-		VolumeSessions.shutdown()
-	end
-end
-
--- Plays file_path as 2D music, crossfading with whatever was playing (see the header).
--- Returns false if the Audio Plugin is not available, and the caller should fall back to native music.
---
--- opts.duration_seconds schedules the natural-end fade-out. Leaving it out means no fade-out.
--- opts.fade_in is only for a real context change, not for advancing within an unchanged one.
--- Advancing means a playlist continuation or a loop's own repeat.
--- opts.native_loop plays with ffplay loop=0 for a single-file context, instead of relaunching per repeat.
--- opts.on_finished fires once on natural end. It never fires with native_loop or for an interrupted play.
--- opts.start_position starts partway into the file, to resume a song. Not for native_loop, which would loop from there (see the header).
+-- Plays file_path, crossfading with whatever was playing. Takes the same opts as audio_client.lua's play.
+-- Returns false when playback is unavailable.
 function AudioClient.play(file_path, opts)
-	if not audio_mod then
+	if not AudioClient.available() then
 		return false
 	end
 
 	opts = opts or {}
 
-	if current_play_file_id then
-		scheduled_stops[#scheduled_stops + 1] = {
-			remaining = CROSSFADE_OVERLAP_SECONDS,
-			play_file_id = current_play_file_id,
-		}
+	-- Only a resume continues a parked song. A fresh pick of the same file starts it over, as the resume rules want.
+	local revived = opts.start_position and take_outgoing(file_path)
+
+	if current and current.stream then
+		if opts.fade_in then
+			fade_out(current, CROSSFADE_SECONDS)
+		else
+			current.stream:destroy() -- A continuation follows a track that has already ended.
+		end
 	end
 
-	current_file_path = file_path
-	current_total_duration = opts.duration_seconds
-	current_start_position = opts.start_position or 0
-	current_elapsed = 0
-	current_native_loop = opts.native_loop or false
-	current_on_finished = opts.on_finished
-	current_master_slider, current_music_slider = read_volume_sliders()
-	volume_cooldown_elapsed = VOLUME_RELAUNCH_COOLDOWN_SECONDS
+	used = true
+	finished_elapsed = 0
+	current_master_slider, current_music_slider = read_sliders()
+	gain = slider_gain(current_master_slider, current_music_slider)
 
-	local on_finished = opts.on_finished
+	local loop = opts.loop == true
+	local stream, err
 
-	-- play_file_id is declared before the assignment so the closure captures the upvalue this call fills in.
-	-- `local x = f(x)` would capture a stale value instead.
-	local play_file_id
-	play_file_id = launch(file_path, {
-		loop = opts.native_loop and 0 or 1,
-		afade = build_afade(opts),
-		pos = current_start_position > 0 and current_start_position or nil,
-		track_status = function()
-			if on_finished and current_play_file_id == play_file_id then
-				on_finished()
+	if revived then
+		stream = revived
+		stream:resume()
+		stream:set_gain(gain)
+		stream:fade_to(1, opts.fade_in and CROSSFADE_SECONDS or 0)
+		log_fn(string.format("[player] continuing %s from %.1fs, where it faded out", file_path, stream:position()))
+	else
+		stream, err = Player.open(disk_path(file_path), {
+			start_position = opts.start_position,
+			loop = loop,
+			gain = gain,
+			fade = opts.fade_in and 0 or 1,
+		})
+
+		if stream then
+			if opts.fade_in then
+				stream:fade_to(1, CROSSFADE_SECONDS)
 			end
-		end,
-	})
+		else
+			log_fn(string.format("[player] %s could not be played: %s", file_path, tostring(err)))
+		end
+	end
 
-	current_play_file_id = play_file_id
+	current = {
+		stream = stream,
+		file_path = file_path,
+		loop = loop,
+		duration = opts.duration_seconds,
+		on_finished = opts.on_finished,
+		elapsed = 0,
+		end_fading = false,
+	}
 
 	return true
+end
+
+-- Fades the current track out quickly, for the native-music fallback and contexts without music.
+function AudioClient.stop()
+	if current and current.stream then
+		fade_out(current, STOP_FADE_SECONDS)
+	end
+	current = nil
+	finished_elapsed = 0
+end
+
+-- Calls on_finished with true when the file could not be played at all.
+local function finish()
+	local on_finished = current.on_finished
+	local failed = current.stream == nil
+	finished_elapsed = current.elapsed
+	if current.stream then
+		current.stream:destroy()
+	end
+	current = nil
+
+	if on_finished then
+		on_finished(failed)
+	end
+end
+
+-- Rebuilds the engine after a failure and resumes the current song where it was.
+local function recover(reason)
+	local resume = current
+	local position = resume and resume.stream and resume.stream:position() or 0
+
+	destroy_all()
+	Player.reset()
+
+	recoveries = recoveries + 1
+	if recoveries > MAX_RECOVERIES then
+		broken = string.format("gave up after %d recoveries in a row, the last after: %s", MAX_RECOVERIES, reason)
+		log_fn("[player] " .. broken)
+		return
+	end
+
+	log_fn(string.format("[player] playback failed (%s), rebuilding the engine and resuming at %.1fs", reason, position))
+
+	if resume then
+		AudioClient.play(resume.file_path, {
+			start_position = position,
+			loop = resume.loop,
+			duration_seconds = resume.duration,
+			on_finished = resume.on_finished,
+			fade_in = true,
+		})
+	end
+end
+
+local function update_current(dt)
+	current.elapsed = current.elapsed + dt
+	local stream = current.stream
+
+	if not stream then
+		finish()
+		return
+	end
+
+	stream:update(dt)
+
+	if stream:failure() then
+		recover(stream:failure())
+		return
+	end
+
+	if stream:ended() then
+		finish()
+		return
+	end
+
+	-- The decoder's own duration matches its positions, while the library's can differ by a second or more for the same file.
+	-- A caller without a duration asked for no fade-out, as for a single file that is about to loop.
+	local duration = current.duration and (stream.duration or current.duration)
+	if duration and not current.loop and not current.end_fading and stream:position() >= duration - NATURAL_END_FADE_SECONDS then
+		current.end_fading = true
+		stream:fade_to(0, math.max(0.1, duration - stream:position()))
+	end
+end
+
+local function log_stats(dt)
+	if not used then
+		return
+	end
+
+	longest_gap = math.max(longest_gap, dt)
+	stats_elapsed = stats_elapsed + dt
+	if stats_elapsed >= STATS_LOG_SECONDS then
+		stats_elapsed = 0
+		log_fn(string.format("[player] pools %d KB, Lua heap %d KB, slowest refill %.1f ms, longest update gap %.2fs",
+			Player.pool_bytes() / 1024, collectgarbage("count"), Player.slowest_fill_ms(), longest_gap))
+		longest_gap = 0
+	end
+end
+
+-- Call every tick: follows the sliders, moves fades, refills queues, and finishes ended tracks.
+function AudioClient.update(dt)
+	if not Player then
+		return
+	end
+
+	log_stats(dt)
+
+	local master, music = read_sliders()
+	if master ~= current_master_slider or music ~= current_music_slider then
+		current_master_slider, current_music_slider = master, music
+		gain = slider_gain(master, music)
+
+		if current and current.stream then
+			current.stream:set_gain(gain)
+		end
+		for _, entry in ipairs(outgoing) do
+			entry.stream:set_gain(gain)
+		end
+	end
+
+	if current then
+		update_current(dt)
+	end
+
+	if current and current.stream and not current.stream:failure() then
+		healthy_elapsed = healthy_elapsed + dt
+		if healthy_elapsed >= HEALTHY_SECONDS then
+			recoveries = 0
+		end
+	else
+		healthy_elapsed = 0
+	end
+
+	for index = #outgoing, 1, -1 do
+		local entry = outgoing[index]
+		local stream = entry.stream
+		stream:update(dt)
+
+		if entry.parked_elapsed then
+			entry.parked_elapsed = entry.parked_elapsed + dt
+		end
+
+		if stream:ended() or stream:failure() or (entry.parked_elapsed and entry.parked_elapsed >= PARK_SECONDS) then
+			stream:destroy()
+			table.remove(outgoing, index)
+		elseif not entry.parked_elapsed and not stream:fading() then
+			stream:pause()
+			entry.parked_elapsed = 0
+		end
+	end
+end
+
+-- Call from mod.on_unload. Stops everything at once and releases XAudio2.
+function AudioClient.shutdown()
+	destroy_all()
+
+	if Player then
+		Player.reset()
+	end
 end
 
 return AudioClient

@@ -64,7 +64,7 @@ describe("FakeEngine", function()
 		assert_equal(engine.mod:get("combat_hold_seconds"), 5)
 		assert_equal(get_mod("MusicReplacer"), engine.mod)
 		assert_equal(get_mod("Audio"), audio)
-		assert_equal(get_mod("DarktideLocalServer"), nil)
+		assert_equal(get_mod("SomeOtherMod"), nil)
 	end)
 
 	it("calls registered event listeners by method name", function()

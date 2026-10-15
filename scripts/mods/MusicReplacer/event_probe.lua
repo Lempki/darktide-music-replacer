@@ -1,7 +1,7 @@
 -- Logging-only probe for Wwise events.
 -- It never changes or silences anything.
 -- Useful for finding the events behind a sound.
--- Also useful for spotting new, missing or renamed events after a game or Audio Plugin update.
+-- Also useful for spotting new, missing or renamed events after a game update.
 
 local EventProbe = {}
 

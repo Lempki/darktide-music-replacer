@@ -3,7 +3,7 @@
 -- The pool keeps several seconds queued, so the music plays on while the game's thread stalls, as it can during loading.
 -- A stream's volume is its gain times its fade. The gain follows settings such as the sliders, and the fade shapes fades and crossfades.
 
-local DirectPlayer = {}
+local Player = {}
 
 local CHUNK_SECONDS = 0.25
 local SLOT_COUNT = 16 -- 4 seconds queued.
@@ -26,36 +26,36 @@ local function clock()
 end
 
 -- `native_ffi`, `media_decoder`, and `xaudio` are loaded and initialized modules.
-function DirectPlayer.init(native_ffi, media_decoder, xaudio)
+function Player.init(native_ffi, media_decoder, xaudio)
 	NativeFfi = native_ffi
 	MediaDecoder = media_decoder
 	XAudio = xaudio
 end
 
-function DirectPlayer.available()
+function Player.available()
 	return MediaDecoder ~= nil and MediaDecoder.available() and XAudio.available()
 end
 
--- Why DirectPlayer.available() is false, or nil.
-function DirectPlayer.error()
+-- Why Player.available() is false, or nil.
+function Player.error()
 	if not MediaDecoder then
-		return "direct_player.lua is not initialized"
+		return "player.lua is not initialized"
 	end
 	return MediaDecoder.error() or XAudio.error()
 end
 
 -- Recreates the XAudio2 engine on next use, after a stream failed. Destroy every stream first.
-function DirectPlayer.reset()
+function Player.reset()
 	XAudio.shutdown()
 end
 
 -- Bytes held by every open stream's pool, for logging.
-function DirectPlayer.pool_bytes()
+function Player.pool_bytes()
 	return pool_bytes
 end
 
 -- The slowest refill so far in milliseconds, for logging.
-function DirectPlayer.slowest_fill_ms()
+function Player.slowest_fill_ms()
 	return slowest_fill_ms
 end
 
@@ -121,7 +121,7 @@ end
 -- Opens `path` and starts it playing. Returns the stream, or nil and why.
 -- opts.start_position starts partway in, in seconds. opts.loop repeats the file without a gap.
 -- opts.gain and opts.fade set the starting levels, 1 by default.
-function DirectPlayer.open(path, opts)
+function Player.open(path, opts)
 	opts = opts or {}
 
 	local decoder, err = MediaDecoder.open(path)
@@ -297,4 +297,4 @@ function Stream:destroy()
 	pool_bytes = pool_bytes - self.slot_bytes * SLOT_COUNT
 end
 
-return DirectPlayer
+return Player

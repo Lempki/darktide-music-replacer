@@ -1,7 +1,7 @@
--- Standalone check of direct playback outside the game, through direct_player.lua.
+-- Standalone check of playback outside the game, through player.lua.
 -- Timeline: A fades in, the script freezes for 3 seconds like a stalled game thread, A crossfades into B,
 -- B starts 12 seconds before its end with looping on, so it wraps to its start without a gap, and B fades out.
--- Usage: luajit tools/direct_audio_demo.lua <file A> <file B> [--silent]
+-- Usage: luajit tools/player_demo.lua <file A> <file B> [--silent]
 -- --silent runs the same timeline at volume 0, to check decoding and feeding without making a sound.
 
 local ffi = require("ffi")
@@ -11,11 +11,11 @@ local modules = here .. "../scripts/mods/MusicReplacer/"
 local NativeFfi = dofile(modules .. "native_ffi.lua")
 local MediaDecoder = dofile(modules .. "media_decoder.lua")
 local XAudio = dofile(modules .. "xaudio.lua")
-local DirectPlayer = dofile(modules .. "direct_player.lua")
+local Player = dofile(modules .. "player.lua")
 
 local file_a, file_b = arg[1], arg[2]
 local silent = arg[3] == "--silent"
-assert(file_a and file_b, "usage: luajit tools/direct_audio_demo.lua <file A> <file B> [--silent]")
+assert(file_a and file_b, "usage: luajit tools/player_demo.lua <file A> <file B> [--silent]")
 
 local GAIN = silent and 0 or 0.25
 local FRAME_MS = 16
@@ -24,8 +24,8 @@ io.stdout:setvbuf("no")
 assert(NativeFfi.load(), NativeFfi.error())
 MediaDecoder.init(NativeFfi)
 XAudio.init(NativeFfi)
-DirectPlayer.init(NativeFfi, MediaDecoder, XAudio)
-assert(DirectPlayer.available(), DirectPlayer.error())
+Player.init(NativeFfi, MediaDecoder, XAudio)
+assert(Player.available(), Player.error())
 
 if not pcall(ffi.typeof, "MusicReplacer_DemoSleep") then
 	ffi.cdef([[void MusicReplacer_DemoSleep(uint32_t milliseconds) __asm__("Sleep");]])
@@ -40,7 +40,7 @@ local function describe(name, stream)
 		stream:failure() and (", FAILED: " .. stream:failure()) or "")
 end
 
-local a = assert(DirectPlayer.open(file_a, { gain = GAIN, fade = 0 }))
+local a = assert(Player.open(file_a, { gain = GAIN, fade = 0 }))
 a:fade_to(1, 2)
 print(string.format("A: %s, %.1f s long", file_a:match("[^/\\]+$"), a.duration or -1))
 
@@ -64,7 +64,7 @@ while true do
 		local probe = assert(MediaDecoder.open(file_b))
 		local start = (probe.duration or 60) - 12
 		probe:close()
-		b = assert(DirectPlayer.open(file_b, { gain = GAIN, fade = 0, start_position = start, loop = true }))
+		b = assert(Player.open(file_b, { gain = GAIN, fade = 0, start_position = start, loop = true }))
 		print(string.format("B: %s from %.1f s, looping", file_b:match("[^/\\]+$"), start))
 		a:fade_to(0, 4)
 		b:fade_to(1, 4)
@@ -83,7 +83,7 @@ while true do
 	if t >= next_report then
 		next_report = next_report + 1
 		print(string.format("%5.1f s | %s | %s | slowest fill %.1f ms | pools %d KB | Lua heap %d KB",
-			t, describe("A", a), describe("B", b), DirectPlayer.slowest_fill_ms(), DirectPlayer.pool_bytes() / 1024,
+			t, describe("A", a), describe("B", b), Player.slowest_fill_ms(), Player.pool_bytes() / 1024,
 			collectgarbage("count")))
 	end
 
@@ -92,4 +92,4 @@ end
 
 b:destroy()
 XAudio.shutdown()
-print(string.format("done, pools %d KB", DirectPlayer.pool_bytes() / 1024))
+print(string.format("done, pools %d KB", Player.pool_bytes() / 1024))

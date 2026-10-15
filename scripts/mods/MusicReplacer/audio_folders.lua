@@ -1,11 +1,10 @@
 -- Lists, checks, and creates the audio folders through Windows' own file functions, and measures durations with Media Foundation.
--- It replaces the Audio Plugin's file handler, which lists folders through DarktideLocalServer.
 -- Names go through the wide-character functions, so files named in any script work.
--- Media Foundation's durations match the decoded audio, while DarktideLocalServer's ran over a second short for mp3 files.
+-- Media Foundation's durations match the decoded audio to within milliseconds.
 
 local AudioFolders = {}
 
--- Media Foundation decodes the first five. Ogg and Opus are listed for ffplay, and direct playback falls back from them.
+-- Ogg and Opus play where Windows has Microsoft's Web Media Extensions, and otherwise fall back to the game's music.
 local EXTENSIONS = { mp3 = true, m4a = true, aac = true, wav = true, flac = true, wma = true, ogg = true, opus = true }
 
 local INVALID_HANDLE = -1

@@ -1,5 +1,5 @@
--- Pins direct_player.lua's own logic with fake decoders and voices: the buffer pool, refills, ends, loops, fades, and stalls.
--- The Windows calls underneath are checked outside the specs with tools/direct_audio_demo.lua.
+-- Pins player.lua's own logic with fake decoders and voices: the buffer pool, refills, ends, loops, fades, and stalls.
+-- The Windows calls underneath are checked outside the specs with tools/player_demo.lua.
 
 local FakeEngine = require("tests.helpers.fake_engine")
 
@@ -55,44 +55,44 @@ local function new_voice()
 	return voice
 end
 
--- Returns direct_player.lua initialized with fakes, and the fakes: the decoder `seconds` long, the voice, and freed pools.
+-- Returns player.lua initialized with fakes, and the fakes: the decoder `seconds` long, the voice, and freed pools.
 local function load_player(seconds)
 	local engine = FakeEngine.new()
-	local DirectPlayer = engine:load("direct_player")
+	local Player = engine:load("player")
 	local decoder = new_decoder(seconds)
 	local voice = new_voice()
 	local freed = {}
 
-	DirectPlayer.init(
+	Player.init(
 		{ alloc = function() return POOL end, free = function(memory) freed[#freed + 1] = memory end },
 		{ open = function() return decoder end, available = function() return true end, error = function() return nil end },
 		{ create_voice = function() return voice end, failure = function() return nil end, available = function() return true end }
 	)
 
-	return DirectPlayer, decoder, voice, freed
+	return Player, decoder, voice, freed
 end
 
-describe("direct_player.lua", function()
+describe("player.lua", function()
 	it("queues two buffers and starts at once, and holds a 16-buffer pool until destroyed", function()
-		local DirectPlayer, decoder, voice, freed = load_player(60)
+		local Player, decoder, voice, freed = load_player(60)
 
-		local stream = DirectPlayer.open("a.mp3")
+		local stream = Player.open("a.mp3")
 
 		assert_equal(#voice.submitted, 2)
 		assert_equal(voice.started, true)
-		assert_equal(DirectPlayer.pool_bytes(), 16 * SLOT_BYTES)
+		assert_equal(Player.pool_bytes(), 16 * SLOT_BYTES)
 
 		stream:destroy()
 
 		assert_equal(voice.destroyed, true)
 		assert_equal(decoder.closed, true)
 		assert_deep_equal(freed, { POOL })
-		assert_equal(DirectPlayer.pool_bytes(), 0)
+		assert_equal(Player.pool_bytes(), 0)
 	end)
 
 	it("refills at most two buffers per update, and never queues more than the pool holds", function()
-		local DirectPlayer, _, voice = load_player(60)
-		local stream = DirectPlayer.open("a.mp3")
+		local Player, _, voice = load_player(60)
+		local stream = Player.open("a.mp3")
 
 		stream:update(0.016)
 		assert_equal(voice.queue, 4)
@@ -104,8 +104,8 @@ describe("direct_player.lua", function()
 	end)
 
 	it("writes each buffer to the next slot of the pool, wrapping around", function()
-		local DirectPlayer, _, voice = load_player(60)
-		local stream = DirectPlayer.open("a.mp3")
+		local Player, _, voice = load_player(60)
+		local stream = Player.open("a.mp3")
 		for _ = 1, 7 do
 			stream:update(0.016)
 		end
@@ -118,8 +118,8 @@ describe("direct_player.lua", function()
 	end)
 
 	it("marks the file's last buffer, and ends once it has played", function()
-		local DirectPlayer, _, voice = load_player(1)
-		local stream = DirectPlayer.open("a.mp3")
+		local Player, _, voice = load_player(1)
+		local stream = Player.open("a.mp3")
 		stream:update(0.016)
 
 		assert_equal(#voice.submitted, 4)
@@ -132,8 +132,8 @@ describe("direct_player.lua", function()
 	end)
 
 	it("loops back to the file's start without ever marking a last buffer", function()
-		local DirectPlayer, decoder, voice = load_player(1)
-		local stream = DirectPlayer.open("a.mp3", { loop = true })
+		local Player, decoder, voice = load_player(1)
+		local stream = Player.open("a.mp3", { loop = true })
 
 		for _ = 1, 4 do
 			voice:play(2)
@@ -148,8 +148,8 @@ describe("direct_player.lua", function()
 	end)
 
 	it("starts partway in, and reports positions from there", function()
-		local DirectPlayer, decoder, voice = load_player(60)
-		local stream = DirectPlayer.open("a.mp3", { start_position = 30 })
+		local Player, decoder, voice = load_player(60)
+		local stream = Player.open("a.mp3", { start_position = 30 })
 
 		voice:play(2)
 
@@ -158,8 +158,8 @@ describe("direct_player.lua", function()
 	end)
 
 	it("sets the voice to gain times fade, and fades on an equal-power curve", function()
-		local DirectPlayer, _, voice = load_player(60)
-		local stream = DirectPlayer.open("a.mp3", { gain = 0.5, fade = 0 })
+		local Player, _, voice = load_player(60)
+		local stream = Player.open("a.mp3", { gain = 0.5, fade = 0 })
 
 		stream:fade_to(1, 2)
 		stream:update(1)
@@ -174,8 +174,8 @@ describe("direct_player.lua", function()
 	end)
 
 	it("counts an underrun when the queue ran dry before the file's end", function()
-		local DirectPlayer, _, voice = load_player(60)
-		local stream = DirectPlayer.open("a.mp3")
+		local Player, _, voice = load_player(60)
+		local stream = Player.open("a.mp3")
 
 		voice:play(2)
 		stream:update(0.016)
@@ -184,8 +184,8 @@ describe("direct_player.lua", function()
 	end)
 
 	it("neither refills nor counts a stall while paused, and plays on after resuming", function()
-		local DirectPlayer, _, voice = load_player(60)
-		local stream = DirectPlayer.open("a.mp3")
+		local Player, _, voice = load_player(60)
+		local stream = Player.open("a.mp3")
 		local stops = 0
 		function voice.stop() stops = stops + 1 end
 
@@ -206,8 +206,8 @@ describe("direct_player.lua", function()
 	end)
 
 	it("reports a failure when queued audio stops playing for 2 seconds", function()
-		local DirectPlayer, _, voice = load_player(60)
-		local stream = DirectPlayer.open("a.mp3")
+		local Player, _, voice = load_player(60)
+		local stream = Player.open("a.mp3")
 
 		for _ = 1, 10 do
 			voice:play(1)

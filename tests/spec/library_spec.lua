@@ -1,91 +1,199 @@
--- Checks when library.lua scans the audio folders.
+-- Pins how library.lua lists the audio folders through audio_folders.lua and picks a file for a context.
 
 local FakeEngine = require("tests.helpers.fake_engine")
 
-local CONTEXTS = { "hub", "mission_explore", "mission_combat", "mission_horde", "mission_boss", "mission_event", "mission_last_stand", "mission_victory", "mission_defeat" }
+local ROOT = "./../mods/MusicReplacer/audio"
 
--- A fake Audio Plugin whose files handlers list `files_by_context` and record which folders were scanned.
-local function new_audio_mod(files_by_context)
-	local audio = { scanned = {} }
+-- A fake audio_folders.lua over `disk`, which maps a context to its file names, and `lengths`, which maps a file path to seconds.
+-- `missing` lists file paths that are listed but no longer exist.
+local function new_audio_folders(disk, lengths, missing)
+	local folders = { created = {}, measured = {}, missing = missing or {} }
 
-	function audio.new_files_handler(_, context_name)
-		audio.scanned[#audio.scanned + 1] = context_name
-		local files = files_by_context and files_by_context[context_name] or {}
-
-		return {
-			count = function() return #files end,
-			lookup = function(_, index) return { file_path = files[index], duration = 60 } end,
-		}
+	function folders.available() return true end
+	function folders.list(folder)
+		local names = disk[folder:sub(#ROOT + 2)]
+		return names and { unpack(names) } or nil
+	end
+	function folders.exists(path)
+		return not folders.missing[path:sub(#ROOT + 2)]
+	end
+	function folders.create(folder) folders.created[#folders.created + 1] = folder end
+	function folders.duration(path)
+		local file_path = path:sub(#ROOT + 2)
+		folders.measured[#folders.measured + 1] = file_path
+		return lengths[file_path]
 	end
 
-	return audio
+	return folders
 end
 
--- Returns a fake engine, the fake Audio Plugin, and a freshly loaded and initialized library.lua.
-local function load_library(audio, backend)
-	local engine = FakeEngine.new({ mods = { Audio = audio }, backend = backend })
+-- Returns a library.lua that has listed `disk`, the fake folders, and the logged lines.
+local function listed_library(disk, lengths, missing)
+	local engine = FakeEngine.new()
 	local Library = engine:load("library")
-	Library.init()
+	local folders = new_audio_folders(disk, lengths or {}, missing)
+	local lines = {}
+	Library.init(function(line) lines[#lines + 1] = line end, folders)
+	Library.update(0.016)
 
-	return engine, Library
+	return Library, folders, lines
 end
 
-describe("library.lua", function()
-	it("does not scan before the game backend is ready", function()
-		local audio = new_audio_mod()
-		local _, Library = load_library(audio)
+describe("library.lua listing", function()
+	it("creates the audio folder and every context folder", function()
+		local _, folders = listed_library({})
 
-		for _ = 1, 100 do
-			Library.update(0.1)
+		assert_equal(folders.created[1], ROOT)
+		assert_equal(folders.created[2], ROOT .. "/hub")
+		assert_equal(#folders.created, 10)
+	end)
+
+	it("lists every folder on the first update, and logs how many files each has", function()
+		local Library, _, lines = listed_library({ hub = { "a.mp3" }, mission_boss = { "b.mp3", "c.mp3" } })
+
+		assert_equal(Library.pick_file("hub"), "hub/a.mp3")
+		assert_equal(lines[1]:find("[library] listed the audio folders: hub=1 ", 1, true) ~= nil, true, lines[1])
+		assert_equal(lines[1]:find("mission_boss=2", 1, true) ~= nil, true, lines[1])
+	end)
+
+	it("lists nothing before the first update", function()
+		local engine = FakeEngine.new()
+		local Library = engine:load("library")
+		Library.init(nil, new_audio_folders({ hub = { "a.mp3" } }, {}))
+
+		assert_equal(Library.pick_file("hub"), nil)
+	end)
+
+	it("lists nothing without a working audio_folders.lua", function()
+		local engine = FakeEngine.new()
+		local Library = engine:load("library")
+		Library.init(nil, { available = function() return false end })
+		Library.update(0.016)
+
+		assert_equal(Library.pick_file("hub"), nil)
+		assert_equal(Library.update(0.016), false)
+	end)
+
+	it("measures one file's duration per update, and serves it once measured", function()
+		local Library, folders, lines = listed_library(
+			{ hub = { "a.mp3" }, mission_combat = { "b.mp3" } },
+			{ ["hub/a.mp3"] = 245.5, ["mission_combat/b.mp3"] = 120 }
+		)
+		assert_deep_equal({ Library.pick_file("hub") }, { "hub/a.mp3", nil, true })
+
+		Library.update(0.016)
+		assert_deep_equal(folders.measured, { "hub/a.mp3" })
+		assert_deep_equal({ Library.pick_file("hub") }, { "hub/a.mp3", 245.5, true })
+
+		Library.update(0.016)
+		assert_deep_equal(folders.measured, { "hub/a.mp3", "mission_combat/b.mp3" })
+		assert_equal(lines[#lines]:find("[library] measured every file's duration", 1, true) ~= nil, true, lines[#lines])
+	end)
+
+	it("serves a file that could not be measured with no duration", function()
+		local Library = listed_library({ hub = { "a.ogg" } })
+
+		Library.update(0.016)
+
+		assert_deep_equal({ Library.pick_file("hub") }, { "hub/a.ogg", nil, true })
+	end)
+
+	it("picks up an added file on a rescan, and measures every file again", function()
+		local disk = { hub = { "a.mp3" } }
+		local Library, folders = listed_library(disk, { ["hub/a.mp3"] = 100, ["hub/b.mp3"] = 200 })
+		Library.update(0.016)
+
+		disk.hub = { "a.mp3", "b.mp3" }
+		Library.request_rescan()
+
+		assert_equal(Library.update(0.016), true)
+		assert_equal(Library.find_file("hub", "hub/b.mp3"), "hub/b.mp3")
+
+		Library.update(0.016)
+		Library.update(0.016)
+		assert_deep_equal(folders.measured, { "hub/a.mp3", "hub/a.mp3", "hub/b.mp3" })
+	end)
+
+	it("reports no finished rescan when none was requested", function()
+		local Library = listed_library({ hub = { "a.mp3" } })
+
+		for _ = 1, 5 do
+			assert_equal(Library.update(0.016), false)
+		end
+	end)
+end)
+
+describe("library.lua file selection", function()
+	it("returns nil for an empty or missing folder, and for a context it does not know", function()
+		local Library = listed_library({ hub = {} })
+
+		assert_equal(Library.pick_file("hub"), nil)
+		assert_equal(Library.pick_file("mission_horde"), nil)
+		assert_equal(Library.pick_file("not_a_context"), nil)
+	end)
+
+	it("never picks the same file twice in a row when there is a choice", function()
+		math.randomseed(1)
+		local Library = listed_library({ mission_combat = { "a.mp3", "b.mp3", "c.mp3" } })
+		local previous = Library.pick_file("mission_combat")
+
+		for _ = 1, 50 do
+			local file_path, _, is_only_file = Library.pick_file("mission_combat")
+
+			assert_equal(file_path ~= previous, true, "picked " .. file_path .. " twice in a row")
+			assert_equal(is_only_file, false)
+			previous = file_path
+		end
+	end)
+
+	it("alternates between two files", function()
+		local Library = listed_library({ hub = { "a.mp3", "b.mp3" } })
+		local picks = {}
+
+		for index = 1, 4 do
+			picks[index] = Library.pick_file("hub")
 		end
 
-		assert_deep_equal(audio.scanned, {})
-		assert_equal(Library.pick_file("hub"), nil)
+		assert_equal(picks[1] ~= picks[2] and picks[1] == picks[3] and picks[2] == picks[4], true, table.concat(picks, ", "))
 	end)
 
-	it("scans every context folder once, on the first update after the backend is ready", function()
-		local audio = new_audio_mod()
-		local engine, Library = load_library(audio)
+	it("skips a listed file that has since been deleted, whatever its name, and logs it once", function()
+		local missing = {}
+		local Library, _, lines = listed_library({ hub = { "Mötley.mp3", "kept.mp3" } }, {}, missing)
+		missing["hub/Mötley.mp3"] = true
 
-		Library.update(0.1)
-		engine:initialize_backend()
-		Library.update(0.1)
-		Library.update(0.1)
-
-		assert_deep_equal(audio.scanned, CONTEXTS)
-	end)
-
-	it("picks a file only once the scan has run", function()
-		local audio = new_audio_mod({ hub = { "hub/track.ogg" } })
-		local engine, Library = load_library(audio)
-
-		assert_equal(Library.pick_file("hub"), nil)
-
-		engine:initialize_backend()
-		Library.update(0.1)
-
-		assert_equal(Library.pick_file("hub"), "hub/track.ogg")
-	end)
-
-	it("scans after 30 seconds when the backend gives no ready signal", function()
-		local audio = new_audio_mod()
-		local _, Library = load_library(audio, {})
-
-		for _ = 1, 29 do
-			Library.update(1)
+		for _ = 1, 10 do
+			assert_deep_equal({ Library.pick_file("hub") }, { "hub/kept.mp3", nil, true })
 		end
-		assert_deep_equal(audio.scanned, {})
 
-		Library.update(1)
-		assert_deep_equal(audio.scanned, CONTEXTS)
+		local missing_lines = 0
+		for _, line in ipairs(lines) do
+			if line:find("Mötley", 1, true) then
+				missing_lines = missing_lines + 1
+			end
+		end
+		assert_equal(missing_lines, 1)
 	end)
 
-	it("does nothing without the Audio Plugin", function()
-		local engine, Library = load_library(nil)
-
-		engine:initialize_backend()
-		Library.update(60)
+	it("returns nil when every listed file is missing on disk", function()
+		local Library = listed_library({ hub = { "gone.mp3" } }, {}, { ["hub/gone.mp3"] = true })
 
 		assert_equal(Library.pick_file("hub"), nil)
+	end)
+
+	it("finds a specific file with the same values as a pick, or nil once the folder no longer has it", function()
+		local Library = listed_library({ mission_explore = { "a.mp3", "b.mp3" } }, {}, { ["mission_explore/c.mp3"] = true })
+
+		assert_deep_equal({ Library.find_file("mission_explore", "mission_explore/b.mp3") }, { "mission_explore/b.mp3", nil, false })
+		assert_equal(Library.find_file("mission_explore", "mission_explore/gone.mp3"), nil)
+	end)
+
+	it("does not change which file pick_file avoids next when finding one", function()
+		local Library = listed_library({ hub = { "a.mp3", "b.mp3" } })
+		local first = Library.pick_file("hub")
+
+		Library.find_file("hub", first == "hub/a.mp3" and "hub/b.mp3" or "hub/a.mp3")
+
+		assert_equal(Library.pick_file("hub") ~= first, true)
 	end)
 end)
