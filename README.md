@@ -1,25 +1,22 @@
 # darktide-music-replacer
 
-This is Music Replacer, a mod for Warhammer 40,000: Darktide that replaces the game's music with your own audio files, chosen by what is actually happening in the hub or a mission. It wraps the [Audio](https://www.nexusmods.com/warhammer40kdarktide/mods/196) and [DarktideLocalServer](https://www.nexusmods.com/warhammer40kdarktide/mods/211) plugins to play files through ffplay. Any context left without files keeps Darktide's own music, by construction rather than as a special case.
+This is Music Replacer, a mod for Warhammer 40,000: Darktide that replaces the game's music with your own audio files, chosen by what is actually happening in the hub or a mission. It plays them inside the game through Windows' own audio decoder and game audio engine, so it needs no other mods and no extra programs. Any context left without files keeps Darktide's own music, by construction rather than as a special case.
 
 ## Features
 
 * Replaces hub, mission-explore, combat, horde, boss, event, last stand, victory, and defeat music with your own audio files.
 * Several files in a folder are picked at random, never repeating the file that just played.
-* Exactly one file in a folder loops natively and indefinitely, instead of restarting on every repeat.
+* Exactly one file in a folder loops seamlessly and indefinitely.
+* Switching between songs is a true crossfade: the outgoing song fades out while the incoming one fades in.
 * Explore and combat songs continue from where they stopped when the mission switches back to them, instead of restarting. Horde, boss, and event songs continue too after higher-priority music interrupts them, such as a boss during a horde or a last stand during an event, as long as that horde, fight, or event is still going.
-* Fades in on a real context change, fades out at a track's own end when its folder holds several files, and overlaps briefly on a switch instead of cutting abruptly.
-* Follows the in-game master and music volume sliders.
+* Follows the in-game master and music volume sliders at once, in both directions, without restarting the song.
 * Keeps the Meat Grinder training area silent unless you turn music on there, which doubles as a quick way to test your files.
 * Native music is silenced only once a replacement track is confirmed playing, so a context with no files behaves exactly like an unmodified game.
 
 ## Prerequisites
 
-* You must install [Darktide Mod Loader](https://www.nexusmods.com/warhammer40kdarktide/mods/19) and [Darktide Mod Framework](https://www.nexusmods.com/warhammer40kdarktide/mods/8). This mod and the two below all run on this modding base.
-* You must install [DarktideLocalServer](https://www.nexusmods.com/warhammer40kdarktide/mods/211).
-* You must install [Audio](https://www.nexusmods.com/warhammer40kdarktide/mods/196), which depends on DarktideLocalServer above.
-
-List all four in this order in `mod_load_order.txt`, followed by Music Replacer itself.
+* You must install [Darktide Mod Loader](https://www.nexusmods.com/warhammer40kdarktide/mods/19) and [Darktide Mod Framework](https://www.nexusmods.com/warhammer40kdarktide/mods/8). List Music Replacer below `dmf` in `mod_load_order.txt`.
+* Windows 10 or later. On a Windows "N" edition, install Microsoft's free Media Feature Pack, which provides the audio decoder the mod uses.
 
 ## Setup
 
@@ -38,7 +35,9 @@ Install this mod like any other Darktide mod, then drop your own audio files int
     mission_defeat\
 ```
 
-All nine folders already exist after install. Put audio files (`.mp3`, `.wav`, and so on) directly inside whichever ones you want music for. One level deep only, since this layout is fixed by the Audio Plugin, not by this mod.
+All nine folders already exist after install. Put audio files directly inside whichever ones you want music for. Files in subfolders inside them are not read.
+
+Supported formats are `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, and `.wma`. `.ogg` and `.opus` play where Windows has Microsoft's Web Media Extensions, which most Windows 10 and 11 systems come with. File names in any language work.
 
 | Folder | When it plays |
 |---|---|
@@ -69,17 +68,22 @@ These are in the in-game mod options under Music Replacer.
 | Boss music for captains | Off | On plays your boss music for a captain, including the Karnak Twins, from the moment it engages until it dies. Off leaves captains to the game's own music. Event music still plays during an event. |
 | Boss music for daemonhosts | Off | Off follows the game, which plays no music for an angered daemonhost. On plays your boss music from the moment a daemonhost is angered until it dies. |
 | Rescan audio folders | (button) | Picks up audio files added or removed since the game started, without a restart. A track that is playing keeps playing, and a context that had no files starts its new track right away. |
-| Direct playback (experimental) | Off | Plays your music inside the game through Windows' own decoder and audio engine instead of ffplay. Songs crossfade properly, and the volume sliders change the music at once in both directions without restarting it. Plays mp3, m4a, wav, and flac. Ogg files may not play. |
-| Instant volume changes | On | Lowering the master or music volume slider changes a playing track's volume at once, without restarting it. Turn it off if music volume misbehaves, and every slider change restarts the track instead. |
 | Diagnostic logging | Off | Writes `diagnostic.log` for troubleshooting. |
 | Reset log on launch | On | Clears `diagnostic.log` at the start of each session. Only matters while diagnostic logging is on. |
 
+## How it plays
+
+Music Replacer decodes your files with Media Foundation, Windows' own audio decoder, and plays them with XAudio2, the audio engine Windows provides for games. It calls both from Lua through the ffi the mod loader provides, so the mod ships no DLL or executable.
+
+* Each playing song holds a fixed buffer of about 0.7 MB, allocated once and outside the game's Lua memory, and freed when the song is done.
+* About four seconds of music are always queued ahead, so the music plays on through a stalled frame or a busy loading moment.
+* XAudio2 follows a change of the default audio device by itself. If the device is lost in a way it cannot follow, the mod rebuilds the engine and continues the song where it was. After three failures in a row it gives up for the session and the game's own music plays.
+* The music plays inside the game's own process, so it stops with the game, including after a crash.
+
 ## Limitations
 
-* Raising the master or music volume slider above where the playing track started restarts that track. Music plays through a separate ffplay process, started by the Audio Plugin and DarktideLocalServer, which takes its volume when it starts. Music Replacer lowers a running track through that process's Windows audio session, the same per-app volume the Windows Volume Mixer shows, so lowering a slider is instant. A session cannot go above the volume the track started at, so raising past it stops the process and starts a new one at the same position. The request goes through the local server, so expect a slight delay and a brief pause or cut in the music. While you drag a slider this happens at most once per second, and the next track starts at the new volume anyway.
-* The audio session calls go to Windows' Core Audio API directly from Lua, through the ffi the mod loader provides, so the mod ships no DLL or executable. Music Replacer only changes the sessions of the ffplay processes it started itself, and puts back the volume Windows remembers for ffplay once each one ends, so other mods' Audio Plugin sounds keep their own volume.
-* Each audio folder is scanned when the game launches. After adding or removing files while the game runs, press Rescan Audio Folders in the mod settings, or restart the game. Until then, a file you removed is skipped and a file you added is not picked up.
-* A hard crash can leave a track playing until it ends on its own. Quitting normally stops it. A crash runs no mod code at all, so nothing can intervene. If it happens, end `ffplay_dt.exe` in Task Manager.
+* Each audio folder is listed when the game launches. After adding or removing files while the game runs, press Rescan Audio Folders in the mod settings, or restart the game. Until then, a file you removed is skipped and a file you added is not picked up.
+* A file Windows cannot decode is skipped. After three such files in a row, that context uses the game's own music until the game restarts or you press Rescan Audio Folders.
 * Music Replacer only affects your own game. Squadmates hear the game's own music regardless.
 * Loading screens, the mission briefing, the mission intro, and cutscenes play the game's own music. Custom music starts once you are in the hub or the mission itself.
 
@@ -87,11 +91,11 @@ These are in the in-game mod options under Music Replacer.
 
 * [x] Context-aware hub, explore, combat, boss, victory, and defeat switching.
 * [x] Fallback to native music for any context without files.
-* [x] Fade-in, natural-end fade-out, crossfade overlap.
-* [x] Native looping for a single-file folder.
+* [x] Fade-in, natural-end fade-out, and true crossfades between songs.
+* [x] Seamless looping for a single-file folder.
 * [x] Native music suppressed while a custom track plays, only once a replacement is confirmed available.
 * [x] All audio folders provisioned automatically, ready to use right after install.
-* [x] Custom music following the in-game volume sliders.
+* [x] Custom music following the in-game volume sliders at once, in both directions.
 * [x] Adjustable combat music hold, so a lull in a fight does not drop back to explore music.
 * [x] Opt-in diagnostic-mode setting, off by default.
 * [x] A setting for whether Meat Grinder plays music, off by default.
@@ -102,12 +106,11 @@ These are in the in-game mod options under Music Replacer.
 * [x] A button in the mod settings that rescans the audio folders without a restart.
 * [x] Custom music for hordes, with the game's own horde music when the folder is empty, and its own hold setting.
 * [x] Songs continuing from where they left off: explore and combat whenever they come back, and a horde, boss fight, or event after an interruption while it is still going.
-* [x] Runtime volume control through the Windows audio session, so lowering a volume slider no longer restarts the track.
+* [x] Playback inside the game through Windows' own decoder and audio engine, with no other mods or programs needed.
 * [ ] A setting per context to choose custom music, the game's own music, or silence, without moving files around.
 * [ ] More Meat Grinder options, such as choosing which contexts play there.
 * [ ] An optional periodic rescan of the audio folders, on top of the rescan button.
-* [ ] True crossfades between tracks, once runtime volume control works.
-* [ ] Lowering custom music while the pause menu is open, as the game does with its own music, once runtime volume control works.
+* [ ] Lowering custom music while the pause menu is open, as the game does with its own music.
 * [ ] Optional loudness normalization, so quiet and loud files play at a similar level without changing the files. It would have a setting to turn it on and a target level.
 * [ ] "Let the current track finish" toggle, with a per-category override. For example, a boss track could play out even after the boss dies.
 * [ ] Different music per mission type or game mode, such as Operations, Havoc, Mortis Trials, and Expeditions.
@@ -121,17 +124,18 @@ These are in the in-game mod options under Music Replacer.
 tools\build.ps1           # Build dist\MusicReplacer.zip, for Vortex "Install from File".
 tools\build.ps1 -Deploy   # Also copy the source straight into the installed mod folder.
 tools\test.ps1            # Run the specs under tests\spec with LuaJIT.
-luajit tools\direct_audio_demo.lua <file A> <file B> [--silent]   # Try direct playback outside the game.
+luajit tools\player_demo.lua <file A> <file B> [--silent]   # Play two files through the mod's player outside the game.
 luacheck .                # Static analysis with the settings in .luacheckrc.
 ```
 
-`-Deploy` is the fast iteration path. It overwrites the `.lua` files in place, leaving `audio\` alone, so a change can be tested by restarting the game rather than reinstalling through Vortex. The zip stays the real artifact, and a Vortex purge discards anything deployed this way.
+`-Deploy` is the fast iteration path. It overwrites the `.lua` files in place, leaving `audio\` alone, so a change can be tested by restarting the game rather than reinstalling through Vortex. It never deletes a file, so remove a module that was deleted from the source by hand. The zip stays the real artifact, and a Vortex purge discards anything deployed this way.
 
 The build stamps the packaged `info.json` with the commit and build time, and the mod logs it at startup.
 A `-dirty` suffix means the packaged files had uncommitted changes.
 
 The specs need [LuaJIT 2.1](https://luajit.org/) on `PATH`, the same Lua runtime the game uses.
 `tools\test.ps1` exits non-zero when any spec fails.
+The Windows calls themselves need real audio hardware, so they are checked with `tools\player_demo.lua` rather than in the specs.
 Static analysis needs [luacheck](https://github.com/lunarmodules/luacheck) on `PATH`.
 The standalone `luacheck.exe` from its releases page is enough.
 
@@ -152,20 +156,17 @@ darktide-music-replacer/
 │   ├── MusicReplacer.lua                # Wires everything together and debounces context changes.
 │   ├── context.lua                      # Tracks Wwise music state and boss encounters, resolves one context string.
 │   ├── suppression.lua                  # Silences the game's own music while a custom track plays.
-│   ├── library.lua                      # Picks a file for a context from its audio/ folder.
+│   ├── library.lua                      # Keeps each context's file list and picks a file for a context.
 │   ├── audio_folders.lua                # Lists, checks, and creates the audio folders through Windows, and measures durations.
-│   ├── media_decoder.lua                # Decodes audio files to PCM with Windows Media Foundation.
 │   ├── resume_points.lua                # Remembers where interrupted songs stopped, until the next loading screen.
-│   ├── audio_client.lua                 # Playback: fades, crossfade overlap, looping, and process cleanup.
+│   ├── audio_client.lua                 # Plays the music: crossfades, end fades, sliders, parked songs, and recovery.
+│   ├── player.lua                       # Streams one song through media_decoder.lua and xaudio.lua from a fixed buffer pool.
+│   ├── media_decoder.lua                # Decodes audio files to PCM with Windows Media Foundation.
+│   ├── xaudio.lua                       # Plays PCM through XAudio2 voices with live volume control.
+│   ├── native_ffi.lua                   # Shared ffi plumbing for Windows APIs: GUIDs, COM calls, COM setup, UTF-16 strings.
 │   ├── diagnostic_log.lua               # Writes diagnostic.log, opt-in, with a size cap and an optional reset on launch.
 │   ├── event_probe.lua                  # Logging-only probe that records Wwise event names.
 │   ├── mission_probe.lua                # Logging-only probe that records the current mission's name and type.
-│   ├── native_ffi.lua                   # Shared ffi plumbing for Windows APIs: GUIDs, COM calls, COM setup, UTF-16 strings.
-│   ├── session_volume.lua               # Reads and sets one process's Windows audio session volume through Core Audio.
-│   ├── xaudio.lua                       # Plays PCM through XAudio2 voices with live volume control.
-│   ├── direct_player.lua                # Streams songs through media_decoder.lua and xaudio.lua from a fixed buffer pool.
-│   ├── direct_audio_client.lua          # Direct playback with audio_client.lua's interface: crossfades, sliders, and recovery.
-│   ├── volume_sessions.lua              # Holds each ffplay's audio session to follow the sliders, and resets Windows' saved volume.
 │   ├── MusicReplacer_data.lua           # DMF mod-options widgets.
 │   └── MusicReplacer_localization.lua   # Mod-options strings.
 ├── docs/
@@ -178,7 +179,7 @@ darktide-music-replacer/
 │   └── spec/                            # Specs, one *_spec.lua file per subject.
 └── tools/
     ├── build.ps1                        # Builds the zip and optionally deploys straight into the installed mod folder.
-    ├── direct_audio_demo.lua            # Plays two files through direct_player.lua outside the game.
+    ├── player_demo.lua                  # Plays two files through player.lua outside the game.
     └── test.ps1                         # Runs the specs and exits non-zero on failure.
 ```
 

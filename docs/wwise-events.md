@@ -145,8 +145,6 @@ Redeploy with `tools\build.ps1 -Deploy` and restart the game.
 4. If no probe line fits, check whether a `[raw] music_*` transition lines up with the sound. Native music also comes from state groups, and the probe cannot see events that fire before its hook is installed.
 5. If an event fits, add its pattern to `SUPPRESSED_MUSIC_EVENT_PATTERNS` in `suppression.lua`. If a state group is responsible, add a forcing toggle beside the existing ones.
 
-The Audio Plugin has its own Wwise event logging, the `log_wwise` setting, which prints to the game's console log instead of this file.
-
 ## The mission probe
 
 `scripts/mods/MusicReplacer/mission_probe.lua` logs which mission is running, so mission types and game modes can be told apart.
