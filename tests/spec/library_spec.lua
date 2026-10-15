@@ -5,9 +5,9 @@ local FakeEngine = require("tests.helpers.fake_engine")
 local ROOT = "./../mods/MusicReplacer/audio"
 
 -- A fake audio_folders.lua over `disk`, which maps a context to its file names, and `lengths`, which maps a file path to seconds.
--- `missing` lists file paths that are listed but no longer exist.
-local function new_audio_folders(disk, lengths, missing)
-	local folders = { created = {}, measured = {}, missing = missing or {} }
+-- `missing` lists file paths that are listed but no longer exist, and `broken` maps a file path Windows cannot open to why.
+local function new_audio_folders(disk, lengths, missing, broken)
+	local folders = { created = {}, measured = {}, missing = missing or {}, broken = broken or {} }
 
 	function folders.available() return true end
 	function folders.list(folder)
@@ -21,6 +21,9 @@ local function new_audio_folders(disk, lengths, missing)
 	function folders.duration(path)
 		local file_path = path:sub(#ROOT + 2)
 		folders.measured[#folders.measured + 1] = file_path
+		if folders.broken[file_path] then
+			return nil, folders.broken[file_path]
+		end
 		return lengths[file_path]
 	end
 
@@ -28,10 +31,10 @@ local function new_audio_folders(disk, lengths, missing)
 end
 
 -- Returns a library.lua that has listed `disk`, the fake folders, and the logged lines.
-local function listed_library(disk, lengths, missing)
+local function listed_library(disk, lengths, missing, broken)
 	local engine = FakeEngine.new()
 	local Library = engine:load("library")
-	local folders = new_audio_folders(disk, lengths or {}, missing)
+	local folders = new_audio_folders(disk, lengths or {}, missing, broken)
 	local lines = {}
 	Library.init(function(line) lines[#lines + 1] = line end, folders)
 	Library.update(0.016)
@@ -90,12 +93,56 @@ describe("library.lua listing", function()
 		assert_equal(lines[#lines]:find("[library] measured every file's duration", 1, true) ~= nil, true, lines[#lines])
 	end)
 
-	it("serves a file that could not be measured with no duration", function()
-		local Library = listed_library({ hub = { "a.ogg" } })
+	it("serves a file that opens but reports no duration with no duration", function()
+		local Library = listed_library({ hub = { "a.mp3" } })
 
 		Library.update(0.016)
 
-		assert_deep_equal({ Library.pick_file("hub") }, { "hub/a.ogg", nil, true })
+		assert_deep_equal({ Library.pick_file("hub") }, { "hub/a.mp3", nil, true })
+	end)
+
+	it("skips a file Windows cannot open once it is measured, and logs why once", function()
+		local Library, _, lines = listed_library(
+			{ hub = { "bad.mp3", "good.mp3" } },
+			{ ["hub/good.mp3"] = 100 },
+			{},
+			{ ["hub/bad.mp3"] = "opening the file failed with 0xC00D36C4" }
+		)
+		Library.update(0.016)
+
+		for _ = 1, 10 do
+			assert_deep_equal({ Library.pick_file("hub") }, { "hub/good.mp3", nil, true })
+		end
+		assert_equal(Library.find_file("hub", "hub/bad.mp3"), nil)
+
+		local bad_lines = {}
+		for _, line in ipairs(lines) do
+			if line:find("bad.mp3", 1, true) then
+				bad_lines[#bad_lines + 1] = line
+			end
+		end
+		assert_deep_equal(bad_lines, { "[library] hub/bad.mp3 cannot be played, skipping it: opening the file failed with 0xC00D36C4" })
+	end)
+
+	it("returns nil when Windows can open none of a folder's files, so the game's music plays", function()
+		local Library = listed_library({ hub = { "bad.mp3" } }, {}, {}, { ["hub/bad.mp3"] = "unsupported" })
+
+		assert_equal(Library.pick_file("hub"), "hub/bad.mp3")
+		Library.update(0.016)
+		assert_equal(Library.pick_file("hub"), nil)
+	end)
+
+	it("tries a skipped file again on a rescan, in case it was replaced", function()
+		local Library, folders = listed_library({ hub = { "a.mp3" } }, { ["hub/a.mp3"] = 100 }, {}, { ["hub/a.mp3"] = "unsupported" })
+		Library.update(0.016)
+		assert_equal(Library.pick_file("hub"), nil)
+
+		folders.broken = {}
+		Library.request_rescan()
+		Library.update(0.016)
+		Library.update(0.016)
+
+		assert_deep_equal({ Library.pick_file("hub") }, { "hub/a.mp3", 100, true })
 	end)
 
 	it("picks up an added file on a rescan, and measures every file again", function()

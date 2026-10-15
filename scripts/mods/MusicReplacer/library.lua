@@ -3,6 +3,7 @@
 --
 -- The folders are listed on the first update and again when a rescan is requested.
 -- Every file's duration is measured in the background, one file per update, so a large library never stalls a frame for long.
+-- A file Windows cannot open while it is measured is left out of the picks from then on, so it cannot use up the caller's retries.
 -- A file deleted after a listing is still listed until the next one, so pick_file() checks that a file exists before returning it.
 -- A missing or empty folder resolves to nil here, which is the fallback-to-native-music signal the caller needs.
 
@@ -24,6 +25,7 @@ local rescan_requested = false
 local lists = {} -- context_name -> file paths, each starting with the context folder name.
 local last_picked = {} -- context_name -> the file path most recently returned.
 local reported_missing = {} -- file_path -> true once a missing file has been logged.
+local unplayable = {} -- file_path -> true once Windows could not open the file.
 
 -- file_path -> seconds, or false when the file could not be measured.
 local durations = {}
@@ -80,8 +82,14 @@ local function measure_next_duration()
 
 	if durations[file_path] == nil then
 		local started = clock()
-		durations[file_path] = AudioFolders.duration(AUDIO_ROOT .. "/" .. file_path) or false
+		local duration, err = AudioFolders.duration(AUDIO_ROOT .. "/" .. file_path)
 		measure_seconds = measure_seconds + (clock() - started)
+		durations[file_path] = duration or false
+
+		if err then
+			unplayable[file_path] = true
+			diagnostic_log(string.format("[library] %s cannot be played, skipping it: %s", file_path, err))
+		end
 	end
 
 	if not measure_queue[measure_index] then
@@ -142,6 +150,7 @@ function Library.update()
 
 	-- A file replaced under the same name gets measured again.
 	durations = {}
+	unplayable = {}
 	measure_queue = {}
 	measure_index = 1
 	measure_seconds = 0
@@ -160,11 +169,14 @@ local function usable_entries(context_name)
 	local usable = {}
 
 	for _, file_path in ipairs(file_paths) do
-		if AudioFolders.exists(AUDIO_ROOT .. "/" .. file_path) then
-			usable[#usable + 1] = { file_path = file_path, duration = durations[file_path] or nil }
-		elseif not reported_missing[file_path] then
-			reported_missing[file_path] = true
-			diagnostic_log(string.format("[library] %s is listed but missing on disk, skipping it. Press Rescan Audio Folders in the mod settings after changing files.", file_path))
+		-- An unplayable file was already logged when it was measured.
+		if not unplayable[file_path] then
+			if AudioFolders.exists(AUDIO_ROOT .. "/" .. file_path) then
+				usable[#usable + 1] = { file_path = file_path, duration = durations[file_path] or nil }
+			elseif not reported_missing[file_path] then
+				reported_missing[file_path] = true
+				diagnostic_log(string.format("[library] %s is listed but missing on disk, skipping it. Press Rescan Audio Folders in the mod settings after changing files.", file_path))
+			end
 		end
 	end
 

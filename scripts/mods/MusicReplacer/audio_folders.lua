@@ -4,8 +4,9 @@
 
 local AudioFolders = {}
 
--- Ogg and Opus play where Windows has Microsoft's Web Media Extensions, and otherwise fall back to the game's music.
-local EXTENSIONS = { mp3 = true, m4a = true, aac = true, wav = true, flac = true, wma = true, ogg = true, opus = true }
+-- What Media Foundation decodes in a desktop program.
+-- Ogg and Opus are left out, since Microsoft's Web Media Extensions only add them for Store apps.
+local EXTENSIONS = { mp3 = true, m4a = true, aac = true, wav = true, flac = true, wma = true }
 
 local INVALID_HANDLE = -1
 local INVALID_FILE_ATTRIBUTES = 0xFFFFFFFF
@@ -67,11 +68,16 @@ function AudioFolders.create(folder)
 	NativeFfi.kernel32().MusicReplacer_CreateDirectoryW(NativeFfi.wide(folder), nil)
 end
 
--- The duration of the file at `path` in seconds, or nil when Media Foundation cannot open it.
+-- The duration of the file at `path` in seconds, or nil when Media Foundation cannot tell.
+-- When Media Foundation works but cannot open this file, the second value says why.
 function AudioFolders.duration(path)
-	local decoder = MediaDecoder and MediaDecoder.open(path)
-	if not decoder then
+	if not (MediaDecoder and MediaDecoder.available()) then
 		return nil
+	end
+
+	local decoder, err = MediaDecoder.open(path)
+	if not decoder then
+		return nil, err
 	end
 
 	local duration = decoder.duration

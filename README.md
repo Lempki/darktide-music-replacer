@@ -37,7 +37,7 @@ Install this mod like any other Darktide mod, then drop your own audio files int
 
 All nine folders already exist after install. Put audio files directly inside whichever ones you want music for. Files in subfolders inside them are not read.
 
-Supported formats are `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, and `.wma`. `.ogg` and `.opus` play where Windows has Microsoft's Web Media Extensions, which most Windows 10 and 11 systems come with. File names in any language work.
+Supported formats are `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, and `.wma`. Other files, such as `.ogg` and `.opus`, are ignored, so convert those to a supported format first. File names in any language work.
 
 | Folder | When it plays |
 |---|---|
@@ -83,7 +83,7 @@ Music Replacer decodes your files with Media Foundation, Windows' own audio deco
 ## Limitations
 
 * Each audio folder is listed when the game launches. After adding or removing files while the game runs, press Rescan Audio Folders in the mod settings, or restart the game. Until then, a file you removed is skipped and a file you added is not picked up.
-* A file Windows cannot decode is skipped. After three such files in a row, that context uses the game's own music until the game restarts or you press Rescan Audio Folders.
+* A file Windows cannot decode is skipped once the mod has measured it, shortly after launch, and Diagnostic Logging names it. If one is picked before then and fails three times in a row, that context uses the game's own music until the game restarts or you press Rescan Audio Folders.
 * Music Replacer only affects your own game. Squadmates hear the game's own music regardless.
 * Loading screens, the mission briefing, the mission intro, and cutscenes play the game's own music. Custom music starts once you are in the hub or the mission itself.
 
