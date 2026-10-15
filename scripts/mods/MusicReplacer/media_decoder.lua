@@ -72,9 +72,7 @@ function MediaDecoder.available()
 	end
 
 	local ok, err = pcall(function()
-		if not pcall(ffi.typeof, "MusicReplacer_PROPVARIANT") then
-			ffi.cdef(CDEF)
-		end
+		NativeFfi.define(CDEF)
 
 		mfplat = ffi.load("mfplat")
 		mfreadwrite = ffi.load("mfreadwrite")

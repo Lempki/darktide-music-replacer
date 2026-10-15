@@ -103,9 +103,7 @@ function XAudio.available()
 	end
 
 	local ok, err = pcall(function()
-		if not pcall(ffi.typeof, "MusicReplacer_XAUDIO2_BUFFER") then
-			ffi.cdef(CDEF)
-		end
+		NativeFfi.define(CDEF)
 		library = ffi.load("xaudio2_9")
 	end)
 

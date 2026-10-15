@@ -1,5 +1,10 @@
--- Wraps the Audio Plugin's AudioFilesHandler (Audio.new_files_handler), with one handler per music context.
+-- Keeps one file list per music context.
 -- Each context is a single-level subfolder of this mod's "audio/" directory, for example ".../mods/MusicReplacer/audio/hub/".
+--
+-- With Windows' own file functions available through audio_folders.lua, the folders are listed directly, and every file's
+-- duration is measured in the background, one file per update. Otherwise each context gets the Audio Plugin's
+-- AudioFilesHandler (Audio.new_files_handler), which lists its folder through DarktideLocalServer.
+-- Both lists have the same shape, so everything after listing is shared.
 --
 -- Everything below is pcall-guarded.
 -- AudioFilesHandler's async scan leaves a field nil until it resolves, and :count() and :lookup() index that field directly.
@@ -33,6 +38,7 @@ local SCAN_FALLBACK_SECONDS = 30
 local RESCAN_TIMEOUT_SECONDS = 10
 
 local diagnostic_log = function() end -- No-op unless a real logger is passed to Library.init.
+local AudioFolders = nil -- audio_folders.lua when Windows' file functions are available, else nil for the Audio Plugin's lists.
 local audio_mod = nil
 local waiting_to_scan = false
 local scan_wait_elapsed = 0
@@ -43,11 +49,21 @@ local rescan_elapsed = 0
 local last_picked = {} -- context_name -> the file path most recently returned.
 local reported_missing = {} -- file_path -> true once a missing file has been logged.
 
+-- file_path -> seconds, or false when the file could not be measured. Only for directly listed folders.
+local durations = {}
+local measure_queue = {}
+local measure_index = 1
+local measure_seconds = 0
+
 -- The handler's file paths start with the context folder name, so they sit directly under AUDIO_ROOT.
 -- If io is unavailable the file is assumed to exist, so this check can never block playback.
 -- The same goes for a name with non-ASCII characters.
 -- The handler's paths are UTF-8, and io.open on Windows reads them in the system code page, so an existing file could look missing.
 local function file_exists(file_path)
+	if AudioFolders then
+		return AudioFolders.exists(AUDIO_ROOT .. "/" .. file_path)
+	end
+
 	if not _io or file_path:find("[\128-\255]") then
 		return true
 	end
@@ -65,6 +81,12 @@ end
 -- Windows mkdir creates missing parents and does nothing if the folder exists.
 -- pick_file()'s own fallback matters more than this succeeding.
 local function ensure_audio_folder(context_name)
+	if AudioFolders then
+		AudioFolders.create(AUDIO_ROOT)
+		AudioFolders.create(AUDIO_ROOT .. "/" .. context_name)
+		return
+	end
+
 	if not _os or not _os.execute then
 		return
 	end
@@ -78,15 +100,68 @@ local function is_backend_ready()
 	return backend ~= nil and backend._initialized == true
 end
 
+-- A list shaped like the Audio Plugin's handler, over a directly listed folder that is complete at once.
+-- Files not measured yet go on the queue, and their duration reads nil until measured.
+local function folder_handler(context_name)
+	local file_paths = {}
+
+	for _, name in ipairs(AudioFolders.list(AUDIO_ROOT .. "/" .. context_name) or {}) do
+		local file_path = context_name .. "/" .. name
+		file_paths[#file_paths + 1] = file_path
+
+		if durations[file_path] == nil then
+			measure_queue[#measure_queue + 1] = file_path
+		end
+	end
+
+	return {
+		count = function()
+			return #file_paths
+		end,
+		lookup = function(_, index)
+			local file_path = file_paths[index]
+			return { file_path = file_path, duration = durations[file_path] or nil }
+		end,
+	}
+end
+
+-- Measures one queued file's duration per call, so a large library never stalls a frame for long.
+local function measure_next_duration()
+	local file_path = measure_queue[measure_index]
+	if not file_path then
+		return
+	end
+
+	measure_queue[measure_index] = nil
+	measure_index = measure_index + 1
+
+	if durations[file_path] == nil then
+		local started = _os and _os.clock and _os.clock() or 0
+		durations[file_path] = AudioFolders.duration(AUDIO_ROOT .. "/" .. file_path) or false
+		measure_seconds = measure_seconds + ((_os and _os.clock and _os.clock() or 0) - started)
+	end
+
+	if not measure_queue[measure_index] then
+		diagnostic_log(string.format("[library] measured every file's duration, %.0f ms in total", measure_seconds * 1000))
+		measure_queue = {}
+		measure_index = 1
+		measure_seconds = 0
+	end
+end
+
 local function new_handlers()
 	local result = {}
 
 	for _, context_name in ipairs(CONTEXTS) do
-		-- This call is not pcall-wrapped.
-		-- new_files_handler finds its path by walking the call stack for the calling mod's name.
-		-- A pcall frame in that walk silently breaks the resolved path.
-		-- The call itself has no crash risk, unlike the calls in pick_file().
-		result[context_name] = audio_mod.new_files_handler(nil, context_name)
+		if AudioFolders then
+			result[context_name] = folder_handler(context_name)
+		else
+			-- This call is not pcall-wrapped.
+			-- new_files_handler finds its path by walking the call stack for the calling mod's name.
+			-- A pcall frame in that walk silently breaks the resolved path.
+			-- The call itself has no crash risk, unlike the calls in pick_file().
+			result[context_name] = audio_mod.new_files_handler(nil, context_name)
+		end
 	end
 
 	return result
@@ -147,12 +222,14 @@ end
 -- Call once, after all mods have loaded.
 -- The folders are scanned later, by Library.update().
 -- `log`, if given, receives a line when the scan starts and the first time a listed file turns out to be missing.
-function Library.init(log)
+-- `audio_folders`, if given and available, lists the folders directly instead of through the Audio Plugin.
+function Library.init(log, audio_folders)
 	diagnostic_log = log or diagnostic_log
 
+	AudioFolders = audio_folders and audio_folders.available() and audio_folders or nil
 	audio_mod = get_mod("Audio")
-	if not audio_mod then
-		return -- Audio Plugin missing. pick_file() below correctly returns nil.
+	if not AudioFolders and not audio_mod then
+		return -- No way to list the folders. pick_file() below correctly returns nil.
 	end
 
 	for _, context_name in ipairs(CONTEXTS) do
@@ -165,7 +242,7 @@ end
 -- Asks for a rescan of every folder on the next update.
 -- DMF calls a settings button through a pcall, which would break new_files_handler's call stack walk, so the scan waits for update.
 function Library.request_rescan()
-	if audio_mod then
+	if AudioFolders or audio_mod then
 		rescan_requested = true
 	end
 end
@@ -173,10 +250,16 @@ end
 -- Call from the main mod file's mod.update, so the scan's call stack stays inside this mod.
 -- Returns true on the update where a rescan finishes, so the caller can start a track for a context that had no files.
 function Library.update(dt)
+	if AudioFolders then
+		measure_next_duration()
+	end
+
 	if waiting_to_scan then
 		scan_wait_elapsed = scan_wait_elapsed + dt
 
-		if is_backend_ready() then
+		if AudioFolders then
+			scan_folders("listing them directly")
+		elseif is_backend_ready() then
 			scan_folders("the game backend is ready")
 		elseif scan_wait_elapsed >= SCAN_FALLBACK_SECONDS then
 			scan_folders("with no ready signal from the game backend")
@@ -189,6 +272,12 @@ function Library.update(dt)
 		rescan_requested = false
 		rescan_elapsed = 0
 		diagnostic_log("[library] rescanning audio folders")
+
+		-- A file replaced under the same name gets measured again.
+		durations = {}
+		measure_queue = {}
+		measure_index = 1
+
 		pending_handlers = new_handlers()
 	end
 

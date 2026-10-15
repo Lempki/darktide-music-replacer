@@ -8,7 +8,6 @@ NativeFfi.ffi = ffi
 
 -- Every mod shares one LuaJIT state, and ffi.cdef rejects redefining a name that another mod may also declare, as DMF does.
 -- So every name is prefixed, and the functions are redirected to their real symbols.
--- A mod reload finds the names already defined and skips the block.
 local CDEF = [[
 typedef struct { uint32_t Data1; uint16_t Data2; uint16_t Data3; uint8_t Data4[8]; } MusicReplacer_GUID;
 
@@ -43,6 +42,28 @@ void *MusicReplacer_HeapAlloc(void *heap, uint32_t flags, size_t bytes) __asm__(
 int32_t MusicReplacer_HeapFree(void *heap, uint32_t flags, void *memory) __asm__("HeapFree");
 uint32_t MusicReplacer_GetFullPathNameW(const uint16_t *name, uint32_t length, uint16_t *buffer, uint16_t **file_part)
 	__asm__("GetFullPathNameW");
+int32_t MusicReplacer_WideCharToMultiByte(uint32_t code_page, uint32_t flags, const uint16_t *source, int32_t source_length,
+	char *target, int32_t target_length, const char *default_char, int32_t *used_default) __asm__("WideCharToMultiByte");
+
+typedef struct { uint32_t low; uint32_t high; } MusicReplacer_FILETIME;
+typedef struct {
+	uint32_t dwFileAttributes;
+	MusicReplacer_FILETIME ftCreationTime;
+	MusicReplacer_FILETIME ftLastAccessTime;
+	MusicReplacer_FILETIME ftLastWriteTime;
+	uint32_t nFileSizeHigh;
+	uint32_t nFileSizeLow;
+	uint32_t dwReserved0;
+	uint32_t dwReserved1;
+	uint16_t cFileName[260];
+	uint16_t cAlternateFileName[14];
+} MusicReplacer_WIN32_FIND_DATAW;
+
+void *MusicReplacer_FindFirstFileW(const uint16_t *pattern, MusicReplacer_WIN32_FIND_DATAW *data) __asm__("FindFirstFileW");
+int32_t MusicReplacer_FindNextFileW(void *find, MusicReplacer_WIN32_FIND_DATAW *data) __asm__("FindNextFileW");
+int32_t MusicReplacer_FindClose(void *find) __asm__("FindClose");
+uint32_t MusicReplacer_GetFileAttributesW(const uint16_t *path) __asm__("GetFileAttributesW");
+int32_t MusicReplacer_CreateDirectoryW(const uint16_t *path, void *security) __asm__("CreateDirectoryW");
 ]]
 
 local CO_E_NOTINITIALIZED = -2147221008 -- 0x800401F0
@@ -53,6 +74,34 @@ local kernel32 = nil
 local method_types = {}
 local com_ready = false
 local load_error = nil
+
+-- Declares each top-level C declaration in `text` on its own.
+-- A mod reload finds the earlier ones already defined, which ffi.cdef rejects, so each failure is skipped and newer ones still land.
+-- A packed region between #pragma pack(push) and #pragma pack(pop) stays one declaration.
+function NativeFfi.define(text)
+	local chunk = {}
+	local depth = 0
+	local packed = false
+
+	for line in text:gmatch("[^\n]+") do
+		chunk[#chunk + 1] = line
+
+		if line:find("^#pragma pack%(push") then
+			packed = true
+		elseif line:find("^#pragma pack%(pop") then
+			packed = false
+		end
+
+		local _, opened = line:gsub("{", "")
+		local _, closed = line:gsub("}", "")
+		depth = depth + opened - closed
+
+		if not packed and depth == 0 and (line:find(";%s*$") or line:find("^#pragma pack%(pop")) then
+			pcall(ffi.cdef, table.concat(chunk, "\n"))
+			chunk = {}
+		end
+	end
+end
 
 -- Loads the declarations and libraries once. Returns false, with NativeFfi.error() saying why, when anything is missing.
 function NativeFfi.load()
@@ -70,9 +119,7 @@ function NativeFfi.load()
 	end
 
 	local ok, err = pcall(function()
-		if not pcall(ffi.typeof, "MusicReplacer_GUID") then
-			ffi.cdef(CDEF)
-		end
+		NativeFfi.define(CDEF)
 
 		ole32 = ffi.load("ole32")
 		kernel32 = ffi.load("kernel32")
@@ -191,6 +238,18 @@ function NativeFfi.wide_full_path(text)
 	local buffer = ffi.new("uint16_t[?]", length)
 	kernel32.MusicReplacer_GetFullPathNameW(relative, length, buffer, nil)
 	return buffer
+end
+
+-- A UTF-8 Lua string from a NUL-terminated UTF-16 buffer, as the wide-character APIs return.
+function NativeFfi.utf8(wide)
+	local length = kernel32.MusicReplacer_WideCharToMultiByte(CP_UTF8, 0, wide, -1, nil, 0, nil, nil)
+	if length <= 1 then
+		return ""
+	end
+
+	local buffer = ffi.new("char[?]", length)
+	kernel32.MusicReplacer_WideCharToMultiByte(CP_UTF8, 0, wide, -1, buffer, length, nil, nil)
+	return ffi.string(buffer, length - 1)
 end
 
 return NativeFfi

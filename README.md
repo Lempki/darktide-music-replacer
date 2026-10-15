@@ -153,6 +153,7 @@ darktide-music-replacer/
 │   ├── context.lua                      # Tracks Wwise music state and boss encounters, resolves one context string.
 │   ├── suppression.lua                  # Silences the game's own music while a custom track plays.
 │   ├── library.lua                      # Picks a file for a context from its audio/ folder.
+│   ├── audio_folders.lua                # Lists, checks, and creates the audio folders through Windows, and measures durations.
 │   ├── media_decoder.lua                # Decodes audio files to PCM with Windows Media Foundation.
 │   ├── resume_points.lua                # Remembers where interrupted songs stopped, until the next loading screen.
 │   ├── audio_client.lua                 # Playback: fades, crossfade overlap, looping, and process cleanup.

@@ -13,6 +13,7 @@ local NativeFfi = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/native
 local SessionVolume = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/session_volume")
 local VolumeSessions = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/volume_sessions")
 local MediaDecoder = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/media_decoder")
+local AudioFolders = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/audio_folders")
 local XAudio = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/xaudio")
 local DirectPlayer = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/direct_player")
 local DirectAudioClient = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/direct_audio_client")
@@ -240,8 +241,9 @@ Context.on_state_change(ResumePoints.on_state_change)
 Context.init(mod, log)
 
 -- Direct playback only when its setting is on and it works, and ffplay otherwise.
+-- Without the Audio Plugin, direct playback is the only way to play, whatever its setting says.
 local function choose_playback()
-	if mod:get("direct_playback") then
+	if mod:get("direct_playback") or not AudioClient.available() then
 		if DirectAudioClient.available() then
 			return DirectAudioClient
 		end
@@ -269,13 +271,14 @@ local function switch_playback()
 end
 
 mod.on_all_mods_loaded = function()
-	Library.init(log)
+	MediaDecoder.init(NativeFfi)
+	AudioFolders.init(NativeFfi, MediaDecoder)
+	Library.init(log, AudioFolders)
 	local audio_mod = get_mod("Audio")
 	VolumeSessions.init(SessionVolume, audio_mod and audio_mod.file_pid, function()
 		return mod:get("instant_volume")
 	end, log)
 	AudioClient.init(log, VolumeSessions)
-	MediaDecoder.init(NativeFfi)
 	XAudio.init(NativeFfi)
 	DirectPlayer.init(NativeFfi, MediaDecoder, XAudio)
 	DirectAudioClient.init(log, { direct_player = DirectPlayer, disk_path = Library.disk_path })
@@ -295,11 +298,10 @@ mod.on_all_mods_loaded = function()
 		return func(wwise_world, event_name, ...)
 	end)
 
-	if not AudioClient.available() then
+	if not Playback.available() then
 		mod:error(
-			"[MusicReplacer] Audio Plugin not found -- music replacement disabled, native music will play "
-				.. "normally. Install 'Audio' (and its dependency 'DarktideLocalServer') from Nexus Mods and "
-				.. "place both above MusicReplacer in mod_load_order.txt."
+			"[MusicReplacer] Neither direct playback nor the Audio Plugin is available, so the game's own music plays as usual. "
+				.. "Install 'Audio' and its dependency 'DarktideLocalServer' from Nexus Mods, above MusicReplacer in mod_load_order.txt."
 		)
 	end
 
