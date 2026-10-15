@@ -111,16 +111,18 @@ Music Replacer decodes your files with Media Foundation, Windows' own audio deco
 * [x] Custom music for hordes, with the game's own horde music when the folder is empty, and its own hold setting.
 * [x] Songs continuing from where they left off: explore and combat whenever they come back, and a horde, boss fight, or event after an interruption while it is still going.
 * [x] Playback inside the game through Windows' own decoder and audio engine, with no other mods or programs needed.
+* [x] Custom music for Mortis Trials, with separate folders for its waves and the breaks between them.
 * [ ] A setting per context to choose custom music, the game's own music, or silence, without moving files around.
 * [ ] More Meat Grinder options, such as choosing which contexts play there.
 * [ ] An optional periodic rescan of the audio folders, on top of the rescan button.
 * [ ] Lowering custom music while the pause menu is open, as the game does with its own music.
 * [ ] Optional loudness normalization, so quiet and loud files play at a similar level without changing the files. It would have a setting to turn it on and a target level.
 * [ ] "Let the current track finish" toggle, with a per-category override. For example, a boss track could play out even after the boss dies.
-* [ ] Different music per mission type or game mode, such as Operations, Havoc, Mortis Trials, and Expeditions.
+* [ ] Different music per mission type or game mode, such as Operations, Havoc, and Expeditions.
 * [ ] Separate folders per kind of mission event, so for example a scripted boss fight and a holdout can have different music.
 * [ ] Separate boss folders per kind of monstrosity, so each one can have its own boss music.
 * [ ] Custom music for loading screens.
+* [ ] A short log of the important events written by default, with the previous session's log kept beside it as `diagnostic-prev.log`, so either can be attached to a bug report. Diagnostic Logging would add the detailed lines on top, as it does now.
 
 ## Development
 
