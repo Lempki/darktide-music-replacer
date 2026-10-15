@@ -35,6 +35,10 @@ log("[startup] " .. version_line)
 
 local current_context = nil
 
+-- False while the mod is turned off in the mod options.
+-- DMF then disables the mod's hooks but keeps calling update, so nothing may start playing while this is false.
+local enabled = true
+
 -- True until playback has started, and again once it gives up for the session.
 local playback_lost = true
 
@@ -190,6 +194,11 @@ local function commit_pending_context()
 end
 
 Context.on_change(function(new_context, old_context, boss_breed)
+	-- Boss events still arrive while the mod is off, since they are not hooks. Turning it back on catches up anyway.
+	if not enabled then
+		return
+	end
+
 	log(string.format("[context] %s -> %s%s",
 		tostring(old_context), tostring(new_context),
 		boss_breed and (" (breed=" .. boss_breed .. ")") or ""))
@@ -243,8 +252,40 @@ mod.on_all_mods_loaded = function()
 	-- The context may have resolved before Library and AudioClient were ready.
 	-- Re-evaluate now, bypassing the debounce, since this is a one-off catch-up.
 	has_pending_change = false
-	current_context = Context.current()
-	play_context(current_context, true)
+	if enabled then
+		current_context = Context.current()
+		play_context(current_context, true)
+	end
+end
+
+-- DMF also calls these once at startup with initial_call set, to report the saved state. Nothing plays yet then.
+mod.on_disabled = function(initial_call)
+	enabled = false
+
+	if initial_call then
+		return
+	end
+
+	-- A song that is turned off mid-mission continues from there if the mod is turned on again before the next loading screen.
+	remember_playing_track(nil)
+	has_pending_change = false
+	current_context = nil
+	playing_track = nil
+	AudioClient.stop()
+	Suppression.release()
+	log("[mod] turned off, the game's own music plays")
+end
+
+mod.on_enabled = function(initial_call)
+	enabled = true
+
+	if initial_call then
+		return
+	end
+
+	-- The hooks missed every state change while the mod was off.
+	Context.relearn()
+	log("[mod] turned on, catching up with the game's music states")
 end
 
 mod.on_setting_changed = function(setting_id)
@@ -277,7 +318,7 @@ mod.update = function(dt)
 
 		-- A context that played native music for lack of files starts its new track now, not at its next change.
 		-- A custom track that is playing keeps playing, and the next pick uses the new list.
-		if not AudioClient.is_playing() then
+		if enabled and not AudioClient.is_playing() then
 			play_context(current_context, true)
 		end
 	end
@@ -292,7 +333,7 @@ mod.update = function(dt)
 
 	MissionProbe.update()
 
-	if has_pending_change then
+	if enabled and has_pending_change then
 		debounce_elapsed = debounce_elapsed + dt
 
 		if debounce_elapsed >= DEBOUNCE_SECONDS then
@@ -301,8 +342,15 @@ mod.update = function(dt)
 	end
 end
 
-mod.on_unload = function()
+mod.on_unload = function(exit_game)
 	Context.shutdown(mod)
 	AudioClient.shutdown()
+
+	-- A reload hands the music back to the game, or a silenced zone or game state stays silent until the game changes it.
+	-- The reloaded mod reads the game's states again on its first tick.
+	if not exit_game then
+		Suppression.release()
+	end
+
 	DiagnosticLog.close()
 end

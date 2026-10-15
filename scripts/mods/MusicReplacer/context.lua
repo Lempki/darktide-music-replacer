@@ -66,6 +66,10 @@ local open_bosses = {} -- Boss unit -> { breed = name, order = n } for every ope
 local boss_open_count = 0 -- Increases with every newly opened window, so the latest one can be found.
 
 local resolved_context = nil -- Last computed context string, for example "hub".
+
+-- State group name -> true once the hook has seen that group since this module loaded or Context.relearn() ran.
+-- The game sets every group again on every tick, so a group not yet seen is caught up on the next tick even when its value has not changed.
+local learned_groups = {}
 local change_listeners = {}
 local state_listeners = {}
 local listeners_registered = false
@@ -287,6 +291,15 @@ local function recompute(mod)
 	end
 end
 
+-- A group caught up with its value unchanged, after a load or Context.relearn(), has no real previous value to show.
+local function describe_transition(group_name, from, to)
+	if from == to then
+		return string.format("[raw] %s: %s, read again", group_name, tostring(to))
+	end
+
+	return string.format("[raw] %s: %s -> %s", group_name, tostring(from), tostring(to))
+end
+
 -- ###########################################################################
 -- Public API
 -- ###########################################################################
@@ -305,6 +318,14 @@ function Context.refresh(mod)
 	recompute(mod)
 end
 
+-- Makes the next value the game sets for every state group count as a change, so this module and its listeners catch up.
+-- For when the hook may have missed changes, as while the mod is turned off, since DMF disables a mod's hooks then.
+-- The next change it resolves is reported even if it matches the context from before.
+function Context.relearn()
+	learned_groups = {}
+	resolved_context = nil
+end
+
 -- Register a function to call on every real transition of a music state group, after context.lua has tracked it.
 -- The listener receives (group_name, new_state) for music_combat, music_zone, music_game_state and music_objective only.
 function Context.on_state_change(listener)
@@ -319,7 +340,7 @@ function Context.init(mod, log)
 
 	mod:hook(WwiseGameSyncManager, "_set_state", function(func, self, group_name, new_state)
 		local current = self._wwise_state_group_states and self._wwise_state_group_states[group_name]
-		local is_transition = current ~= new_state
+		local is_transition = current ~= new_state or not learned_groups[group_name]
 
 		func(self, group_name, new_state)
 
@@ -327,28 +348,35 @@ function Context.init(mod, log)
 			return
 		end
 
+		learned_groups[group_name] = true
+
 		if group_name == "music_combat" then
 			wwise_combat_state = new_state
-			diagnostic_log(string.format("[raw] music_combat: %s -> %s", tostring(current), tostring(new_state)))
+			diagnostic_log(describe_transition(group_name, current, new_state))
 		elseif group_name == "music_zone" then
-			diagnostic_log(string.format("[raw] music_zone: %s -> %s", tostring(music_zone), tostring(new_state)))
+			diagnostic_log(describe_transition(group_name, music_zone, new_state))
+
+			-- Catching up after a load or Context.relearn() is not a zone change, so it keeps the outcome and the boss windows.
+			local zone_changed = music_zone ~= nil and new_state ~= music_zone
 			music_zone = new_state
 
-			-- A real zone means a new level has started, which ends the previous mission's outcome.
-			-- The score screen sets the zone to "None", so that case keeps the outcome.
-			if not has_no_zone() then
-				mission_outcome = nil
-			end
+			if zone_changed then
+				-- A real zone means a new level has started, which ends the previous mission's outcome.
+				-- The score screen sets the zone to "None", so that case keeps the outcome.
+				if not has_no_zone() then
+					mission_outcome = nil
+				end
 
-			-- A real zone change clears both boss signals, since either can get stuck on its own.
-			-- The tracked combat state is only this module's copy, so it corrects itself on the next real transition.
-			-- A boss encounter that is still open keeps is_boss_active() true anyway.
-			wwise_combat_state = nil
-			open_bosses = {}
-			combat_hold_remaining = 0 -- A new zone starts fresh, not partway through the last hold.
-			horde_hold_remaining = 0
+				-- A real zone change clears both boss signals, since either can get stuck on its own.
+				-- The tracked combat state is only this module's copy, so it corrects itself on the next real transition.
+				-- A boss encounter that is still open keeps is_boss_active() true anyway.
+				wwise_combat_state = nil
+				open_bosses = {}
+				combat_hold_remaining = 0 -- A new zone starts fresh, not partway through the last hold.
+				horde_hold_remaining = 0
+			end
 		elseif group_name == "music_game_state" then
-			diagnostic_log(string.format("[raw] music_game_state: %s -> %s", tostring(current), tostring(new_state)))
+			diagnostic_log(describe_transition(group_name, current, new_state))
 			music_game_state = new_state
 
 			-- The state returns to "mission" between victory or defeat and the next loading screen.
@@ -361,11 +389,11 @@ function Context.init(mod, log)
 				mission_outcome = nil
 			end
 		elseif group_name == "music_objective" then
-			diagnostic_log(string.format("[raw] music_objective: %s -> %s", tostring(current), tostring(new_state)))
+			diagnostic_log(describe_transition(group_name, current, new_state))
 			music_objective = new_state
 		else
 			if LOGGED_ONLY_STATE_GROUPS[group_name] then
-				diagnostic_log(string.format("[raw] %s: %s -> %s", group_name, tostring(current), tostring(new_state)))
+				diagnostic_log(describe_transition(group_name, current, new_state))
 			end
 
 			return

@@ -159,6 +159,19 @@ function FakeEngine:set_state(group_name, state)
 	self.wwise_game_sync:_set_state(group_name, state)
 end
 
+-- Sets a state group without going through any hook, as the game does while DMF has the mod's hooks disabled.
+function FakeEngine:set_state_unseen(group_name, state)
+	self.wwise_game_sync._wwise_state_group_states[group_name] = state
+	Wwise.set_state(group_name, state)
+end
+
+-- Sets every listed group again to the value it already has, as the game does on every tick.
+function FakeEngine:reassert_states(group_names)
+	for _, group_name in ipairs(group_names) do
+		self:set_state(group_name, self.wwise_game_sync._wwise_state_group_states[group_name])
+	end
+end
+
 -- Returns the value Wwise last received for a state group, from the game or from the mod.
 -- That is the value the player hears, while the game's own manager may still hold the real one.
 function FakeEngine:wwise_state(group_name)
