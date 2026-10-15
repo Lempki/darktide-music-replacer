@@ -383,13 +383,18 @@ function Context.init(mod, log)
 
 	-- Managers.event:register needs the callback as a string method name, looked up on the registered object.
 	-- Passing a function registers without error, then crashes the game when the event fires.
-	-- A repeated start for an open unit keeps its window as it is.
+	-- A repeated start for an open unit keeps its window as it is, and is not logged.
+	-- Meat Grinder's boss dummies repeat their start over and over.
 	function mod.on_boss_start(self, unit, boss_extension)
+		if unit and open_bosses[unit] then
+			return
+		end
+
 		local breed = boss_extension and boss_extension._breed
 		local breed_name = breed and breed.name or "<unknown>"
 		diagnostic_log(string.format("[raw] boss_encounter_start breed=%s", breed_name))
 
-		if unit and not open_bosses[unit] then
+		if unit then
 			boss_open_count = boss_open_count + 1
 			open_bosses[unit] = { breed = breed_name, order = boss_open_count }
 		end

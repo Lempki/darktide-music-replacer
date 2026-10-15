@@ -79,4 +79,25 @@ describe("context.lua state logging", function()
 		})
 		assert_equal((Context.current()), nil)
 	end)
+
+	it("logs a boss encounter's start once, however often the game repeats it", function()
+		local engine = FakeEngine.new()
+		local Context = engine:load("context")
+		local lines = {}
+		Context.init(engine.mod, function(line) lines[#lines + 1] = line end)
+		Context.update(engine.mod, 0)
+
+		local dummy = { extension = { _breed = { name = "chaos_spawn" } } }
+		for _ = 1, 25 do
+			engine:fire_event("boss_encounter_start", dummy, dummy.extension)
+		end
+		engine:fire_event("boss_encounter_end", dummy, dummy.extension)
+		engine:fire_event("boss_encounter_start", dummy, dummy.extension)
+
+		assert_deep_equal(lines, {
+			"[raw] boss_encounter_start breed=chaos_spawn",
+			"[raw] boss_encounter_end",
+			"[raw] boss_encounter_start breed=chaos_spawn",
+		})
+	end)
 end)
