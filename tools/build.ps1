@@ -21,7 +21,7 @@ $ErrorActionPreference = 'Stop'
 
 $ModName = 'MusicReplacer'
 $SourceItems = @("$ModName.mod", 'info.json', 'scripts')
-$AudioContexts = @('hub', 'mission_explore', 'mission_combat', 'mission_horde', 'mission_boss', 'mission_event', 'mission_last_stand', 'mission_victory', 'mission_defeat') # Keep in sync with CONTEXTS in library.lua.
+$AudioContexts = @('hub', 'mission_explore', 'mission_combat', 'mission_horde', 'mission_boss', 'mission_event', 'mission_last_stand', 'mission_victory', 'mission_defeat', 'mortis_trials_wave', 'mortis_trials_break') # Keep in sync with CONTEXTS in library.lua.
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 if (-not $OutDir) {
@@ -154,7 +154,7 @@ Write-Host ""
 Write-Host "audio\ (files never touched by this script):"
 foreach ($context in Get-ChildItem -LiteralPath (Join-Path $target 'audio') -Directory) {
     $count = @(Get-ChildItem -LiteralPath $context.FullName -File).Count # @() so that a single file still counts as an array.
-    Write-Host ("  {0,-18} {1} file(s)" -f $context.Name, $count)
+    Write-Host ("  {0,-20} {1} file(s)" -f $context.Name, $count)
 }
 
 exit 0

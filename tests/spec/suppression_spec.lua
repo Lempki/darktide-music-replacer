@@ -219,6 +219,19 @@ describe("suppression.lua last stand", function()
 		assert_equal(engine:wwise_state("music_objective"), "fortification_event")
 	end)
 
+	it("forces Mortis Trials' wave music to None for mortis_trials_wave, and leaves it to the game between waves", function()
+		local engine, Suppression = load_suppression()
+		engine:set_state("music_objective", "horde_mode_wave")
+
+		Suppression.engage("mortis_trials_wave")
+
+		assert_equal(engine:wwise_state("music_objective"), "None")
+
+		Suppression.engage("mortis_trials_break")
+
+		assert_equal(engine:wwise_state("music_objective"), "horde_mode_wave")
+	end)
+
 	it("leaves event music alone for other contexts", function()
 		local engine, Suppression = load_suppression()
 		engine:set_state("music_objective", "end_event")

@@ -21,7 +21,7 @@ return {
 		en = "Resume Songs",
 	},
 	resume_songs_description = {
-		en = "When explore or combat music comes back, its song continues from where it stopped instead of a new song starting. A horde, boss, or event song also continues after higher-priority music interrupts it, such as a boss during a horde or a last stand during an event, as long as that horde, fight, or event did not end in between. A new song is picked once one ends on its own. Every mission and hub visit starts with fresh songs.",
+		en = "When explore or combat music, or a Mortis Trials wave or break, comes back, its song continues from where it stopped instead of a new song starting. A horde, boss, or event song also continues after higher-priority music interrupts it, such as a boss during a horde or a last stand during an event, as long as that horde, fight, or event did not end in between. A new song is picked once one ends on its own. Every mission and hub visit starts with fresh songs.",
 	},
 	meat_grinder_music = {
 		en = "Music in Meat Grinder",

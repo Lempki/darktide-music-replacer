@@ -38,6 +38,10 @@
 --	* Any other `music_objective` value is mission event music, for example "kill_event" or "fortification_event".
 --	  It resolves "mission_event", over bosses, as the game's own event music does. Spillway's scripted bosses are events.
 --	  Last stand and event music share the group, so the game itself decides between them, and last stand wins there.
+--	* Mortis Trials is recognized by its own music zone, "horde_mode".
+--	  Its waves, objective rounds and final win set `music_objective` and resolve "mortis_trials_wave".
+--	  The breaks between them resolve "mortis_trials_break".
+--	  Bosses, hordes and combat change neither, since nearly every wave brings bosses. A last stand still wins over both.
 --	* Victory and defeat resolve to their own contexts, from their state until the next level starts.
 --	  The game state returns to "mission" in between, so the outcome is tracked in `mission_outcome`.
 --	  A loading screen or a real zone clears it, since a story mission's cutscene can skip the loading screen.
@@ -105,6 +109,9 @@ local IN_WORLD_GAME_STATES = { mission = true, mission_board = true, mission_rea
 -- Mission name of the training area where Meat Grinder runs.
 -- Its template has no wwise_state, so music_zone reads "None" there.
 local MEAT_GRINDER_MISSION = "tg_shooting_range"
+
+-- The music_zone value the game sets for Mortis Trials.
+local MORTIS_TRIALS_ZONE = "horde_mode"
 
 -- ###########################################################################
 -- Resolution
@@ -214,6 +221,11 @@ local function resolve(mod)
 
 	if music_objective == LAST_MAN_STANDING then
 		return "mission_last_stand"
+	end
+
+	if music_zone == MORTIS_TRIALS_ZONE then
+		local in_wave = music_objective ~= nil and music_objective ~= "None"
+		return in_wave and "mortis_trials_wave" or "mortis_trials_break"
 	end
 
 	-- Operations script their music across the whole mission, in stages with short gaps between them, so each is one long event.

@@ -119,7 +119,7 @@ function Suppression.set_game_state(should_suppress)
 end
 
 -- Forces music_objective to "None" so the game's own last stand or event music stops.
--- It is engaged only for the last stand and event contexts, which are the ones this group decides.
+-- It is engaged only for the last stand, event and Mortis Trials wave contexts, which are the ones this group decides.
 -- The game sets this group repeatedly, so it is forced again after every real transition while on.
 function Suppression.set_objective(should_suppress)
 	set_reforced_group("music_objective", should_suppress)
@@ -184,13 +184,13 @@ end
 
 -- Turns on the levers for a context that has a custom track confirmed playing.
 -- Combat and event suppression apply to every context.
--- The hub, the victory and defeat contexts, and the last stand and event contexts each need one more.
+-- The hub, the victory and defeat contexts, and the last stand, event and Mortis Trials wave contexts each need one more.
 function Suppression.engage(context_name)
 	Suppression.set_combat(true)
 	Suppression.set_events(true)
 	Suppression.set_zone(context_name == "hub")
 	Suppression.set_game_state(context_name == "mission_victory" or context_name == "mission_defeat")
-	Suppression.set_objective(context_name == "mission_last_stand" or context_name == "mission_event")
+	Suppression.set_objective(context_name == "mission_last_stand" or context_name == "mission_event" or context_name == "mortis_trials_wave")
 end
 
 -- Turns every lever off, for no context or a context with no custom track.

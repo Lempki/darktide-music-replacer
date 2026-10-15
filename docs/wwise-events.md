@@ -51,7 +51,7 @@ Each mechanism switches on only while a custom track is confirmed playing for th
 | `Suppression.set_combat` | Forces `music_combat` to `"None"` right away and again after every real transition. | Combat music reported gone in two hectic missions. Not yet checked in a controlled test. |
 | `Suppression.set_zone` | Forces `music_zone` to `"None"` while a hub track plays, and restores the real zone when it stops. | **Confirmed** by ear in the hub, including a round trip through a mission. |
 | `Suppression.set_game_state` | Forces `music_game_state` to `"None"` for the victory and defeat contexts, and again after every real transition. | **Not yet confirmed.** It only runs when a file is present in `mission_victory` or `mission_defeat`. |
-| `Suppression.set_objective` | Forces `music_objective` to `"None"` for the last stand and event contexts, and again after every real transition. | **Not yet confirmed.** It only runs when a file is present in `mission_last_stand` or `mission_event`. |
+| `Suppression.set_objective` | Forces `music_objective` to `"None"` for the last stand, event and Mortis Trials wave contexts, and again after every real transition. | **Not yet confirmed.** It only runs when a file is present in `mission_last_stand`, `mission_event` or `mortis_trials_wave`. |
 | `Suppression.set_events` | Drops any event containing `events/music/play_exploration`, so it never starts. | **Not yet confirmed as silencing.** It was not actually running for a while, see "DMF Quirks Found" below. |
 
 Forcing a state calls `Wwise.set_state` directly.
@@ -172,11 +172,12 @@ Missions seen so far:
 | `hub_ship` | The hub. `wwise_state` is `hub`. |
 | `tg_shooting_range` | The training area that Meat Grinder runs in. The game's template has `game_mode_name = "shooting_range"`, `mechanism_name = "onboarding"` and no `wwise_state`, which is why `music_zone` reads `"None"` there. The console log recorded this name for Meat Grinder visits. The mod uses it to tell Meat Grinder apart from a mission. |
 | `fm_cargo`, `fm_resurgence`, `lm_rails`, `km_enforcer` | Ordinary missions. `mission_type` was `raid` for `fm_cargo` and `lm_rails`, `strike` for `fm_resurgence` and `assassination` for `km_enforcer`. |
+| `psykhanium` | Mortis Trials. `mission_type` is `horde` and `game_mode_name` is `survival`. Its `music_zone` is `horde_mode` from the briefing until after the win. Waves set `music_objective` to `horde_mode_wave`, objective rounds to `horde_mode_objective`, the last wave to `horde_mode_wave_last` and the win to `horde_mode_win`, with `None` between them. The mod recognizes Mortis Trials by its zone. |
 | `op_train`, `op_no_mans_land` | Names starting with `op_` appear in the console logs. They have not been checked in the mission probe. |
 
 It is not known whether the free Psykhanium also uses `tg_shooting_range`. If it does, the Meat Grinder setting covers it too.
 
-Havoc, Mortis Trials and Expeditions have not been checked yet.
+Havoc and Expeditions have not been checked yet.
 
 ## DMF quirks found
 

@@ -33,9 +33,11 @@ Install this mod like any other Darktide mod, then drop your own audio files int
     mission_last_stand\
     mission_victory\
     mission_defeat\
+    mortis_trials_wave\
+    mortis_trials_break\
 ```
 
-All nine folders already exist after install. Put audio files directly inside whichever ones you want music for. Files in subfolders inside them are not read.
+All eleven folders already exist after install. Put audio files directly inside whichever ones you want music for. Files in subfolders inside them are not read.
 
 Supported formats are `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, and `.wma`. Other files, such as `.ogg` and `.opus`, are ignored, so convert those to a supported format first. File names in any language work.
 
@@ -50,6 +52,8 @@ Supported formats are `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, and `.wma`. Other
 | `mission_last_stand` | In a mission, while only one player of the team is still alive. It replaces boss, combat, and explore music, as the game's own last stand music does. |
 | `mission_victory` | From the moment a mission is won until the loading screen or a cutscene. |
 | `mission_defeat` | From the moment a mission is lost until the loading screen or a cutscene. |
+| `mortis_trials_wave` | In Mortis Trials, during a wave or an objective round, through to the final win. Bosses, hordes, and fights do not interrupt it, since nearly every wave brings bosses. A last stand still takes over. In Mortis Trials, this and the break folder replace the mission folders above, apart from last stand, victory, and defeat. |
+| `mortis_trials_break` | In Mortis Trials, between waves. |
 
 No custom music plays during cutscenes. The game's own music takes over there.
 
@@ -63,7 +67,7 @@ These are in the in-game mod options under Music Replacer.
 |---|---|---|
 | Combat music hold | 8 seconds | How long combat music keeps playing after a fight quiets down, so a short lull does not switch to explore music. Set it to 0 to switch immediately. |
 | Horde music hold | 3 seconds | How long horde music keeps playing after the game stops reporting a horde. The game drops its horde signal for a second or two whenever few enemies are on you, so a short hold keeps the track from restarting. Set it to 0 to follow the game exactly. |
-| Resume songs | On | When explore or combat music comes back, its song continues from where it stopped. A horde, boss, or event song also continues after higher-priority music interrupts it, such as a boss during a horde or a last stand during an event, as long as that horde, fight, or event did not end in between. A new horde, boss fight, or event gets a new pick. A new song is also picked once one ends on its own. Every mission and hub visit starts with fresh songs. |
+| Resume songs | On | When explore or combat music, or a Mortis Trials wave or break, comes back, its song continues from where it stopped. A horde, boss, or event song also continues after higher-priority music interrupts it, such as a boss during a horde or a last stand during an event, as long as that horde, fight, or event did not end in between. A new horde, boss fight, or event gets a new pick. A new song is also picked once one ends on its own. Every mission and hub visit starts with fresh songs. |
 | Music in Meat Grinder | Off | Off keeps custom music out of the Meat Grinder training area and also silences the game's own combat music there. On plays your explore and combat music there. |
 | Boss music for captains | Off | On plays your boss music for a captain, including the Karnak Twins, from the moment it engages until it dies. Off leaves captains to the game's own music. Event music still plays during an event. |
 | Boss music for daemonhosts | Off | Off follows the game, which plays no music for an angered daemonhost. On plays your boss music from the moment a daemonhost is angered until it dies. |

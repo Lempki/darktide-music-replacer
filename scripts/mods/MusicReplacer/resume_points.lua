@@ -4,10 +4,19 @@
 
 local ResumePoints = {}
 
--- Explore and combat take turns all through a mission, so their songs continue whenever they come back.
+-- Explore and combat take turns all through a mission, as do Mortis Trials' waves and breaks.
+-- So their songs continue whenever they come back.
 -- Hordes, boss fights, and events continue only under the sequence rule below.
 -- Last stands, the hub, and the mission's end start a fresh song every time.
-local RESUMABLE_CONTEXTS = { mission_explore = true, mission_combat = true, mission_horde = true, mission_boss = true, mission_event = true }
+local RESUMABLE_CONTEXTS = {
+	mission_explore = true,
+	mission_combat = true,
+	mission_horde = true,
+	mission_boss = true,
+	mission_event = true,
+	mortis_trials_wave = true,
+	mortis_trials_break = true,
+}
 
 -- Mission contexts by the priority context.lua resolves them in, lowest first.
 local PRIORITY = { mission_explore = 1, mission_combat = 2, mission_horde = 3, mission_boss = 4, mission_event = 5, mission_last_stand = 6 }

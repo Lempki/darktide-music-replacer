@@ -80,6 +80,24 @@ describe("resume_points.lua", function()
 		assert_equal(ResumePoints.remember("mission_explore", "mission_explore/a.ogg", 500, nil, false), 500)
 	end)
 
+	it("continues Mortis Trials' wave and break songs every time either comes back", function()
+		local ResumePoints = load_resume_points()
+
+		for round = 1, 3 do
+			ResumePoints.enter("mortis_trials_wave")
+			ResumePoints.take("mortis_trials_wave")
+			assert_equal(ResumePoints.remember("mortis_trials_wave", "mortis_trials_wave/a.mp3", 60 * round, 400, false, "mortis_trials_break"), 60 * round)
+
+			ResumePoints.enter("mortis_trials_break")
+			ResumePoints.take("mortis_trials_break")
+			assert_equal(ResumePoints.remember("mortis_trials_break", "mortis_trials_break/b.mp3", 20 * round, 400, false, "mortis_trials_wave"), 20 * round)
+		end
+
+		ResumePoints.enter("mortis_trials_wave")
+		assert_deep_equal({ ResumePoints.take("mortis_trials_wave") }, { "mortis_trials_wave/a.mp3", 180 })
+		assert_deep_equal({ ResumePoints.take("mortis_trials_break") }, { "mortis_trials_break/b.mp3", 60 })
+	end)
+
 	it("forgets everything at a loading screen, so the next mission starts fresh", function()
 		local ResumePoints = load_resume_points()
 		ResumePoints.remember("mission_explore", "mission_explore/a.ogg", 30, 200, false)
