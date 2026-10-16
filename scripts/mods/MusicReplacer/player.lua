@@ -292,7 +292,8 @@ function Stream:update(dt)
 	if ramp then
 		ramp.elapsed = ramp.elapsed + dt
 		local progress = math.min(1, ramp.elapsed / ramp.seconds)
-		self.fade = shaped(ramp.from, ramp.to, progress)
+		-- The curve's last step lands a hair off its target, so a finished fade takes the target itself, and a fade to 0 is silent.
+		self.fade = progress >= 1 and ramp.to or shaped(ramp.from, ramp.to, progress)
 		apply_volume(self)
 		if progress >= 1 then
 			self.ramp = nil

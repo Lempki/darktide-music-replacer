@@ -43,6 +43,9 @@ local function new_voice()
 	function voice.queued(self) return self.queue end
 	function voice.samples_played(self) return self.played end
 	function voice.submit(self, data, bytes, last)
+		if self.refuse_submit then
+			return false
+		end
 		self.submitted[#self.submitted + 1] = { data = data, bytes = bytes, last = last }
 		self.queue = self.queue + 1
 		return true
@@ -278,5 +281,46 @@ describe("player.lua", function()
 		end
 
 		assert_equal(stream:failure(), "the voice stopped playing with audio queued")
+	end)
+
+	it("reports a failure when XAudio2 refuses a buffer", function()
+		local Player, _, voice = load_player(60)
+		local stream = Player.open("a.mp3")
+
+		voice.refuse_submit = true
+		stream:update(0.016)
+
+		assert_equal(stream:failure(), "XAudio2 refused a buffer")
+	end)
+
+	it("wraps a looping stream's position back into the file", function()
+		local Player, _, voice = load_player(1)
+		local stream = Player.open("a.mp3", { loop = true })
+
+		voice:play(6)
+
+		assert_equal(stream:position(), 0.5)
+	end)
+
+	it("finishes a fade at once after a frame gap longer than the fade", function()
+		local Player = load_player(60)
+		local stream = Player.open("a.mp3", { fade = 1 })
+
+		stream:fade_to(0, 2)
+		stream:update(1000)
+
+		assert_equal(stream.fade, 0)
+		assert_equal(stream:fading(), false)
+	end)
+
+	it("frees everything once when destroyed twice", function()
+		local Player, _, _, freed = load_player(60)
+		local stream = Player.open("a.mp3")
+
+		stream:destroy()
+		stream:destroy()
+
+		assert_deep_equal(freed, { POOL })
+		assert_equal(Player.pool_bytes(), 0)
 	end)
 end)
