@@ -212,7 +212,8 @@ darktide-music-replacer/
 │   ├── run.lua                          # Minimal spec runner, needs only LuaJIT.
 │   ├── helpers/
 │   │   ├── context_harness.lua          # Replays the game's real state sequences through context.lua.
-│   │   └── fake_engine.lua              # Fakes the game and DMF globals so the mod's modules run outside the game.
+│   │   ├── fake_engine.lua              # Fakes the game and DMF globals so the mod's modules run outside the game.
+│   │   └── main_harness.lua             # Runs MusicReplacer.lua with stand-ins for the library and the audio client.
 │   └── spec/                            # Specs, one *_spec.lua file per subject.
 └── tools/
     ├── build.ps1                        # Builds the zip and optionally deploys straight into the installed mod folder.

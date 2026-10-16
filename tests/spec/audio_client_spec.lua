@@ -457,6 +457,69 @@ describe("audio_client.lua", function()
 		assert_equal(failed_open, true)
 	end)
 
+	it("starts counting recoveries afresh after 30 seconds of healthy playing", function()
+		local AudioClient, _, streams = load_client()
+		AudioClient.play("hub/a.mp3", { fade_in = true })
+
+		for _ = 1, 3 do
+			streams[#streams].failed = "lost"
+			AudioClient.update(0.1)
+		end
+		AudioClient.update(30)
+
+		for _ = 1, 3 do
+			streams[#streams].failed = "lost"
+			AudioClient.update(0.1)
+		end
+
+		assert_equal(AudioClient.available(), true)
+		assert_equal(AudioClient.is_playing(), true)
+	end)
+
+	it("frees a song that fails while fading out, without rebuilding the engine", function()
+		local AudioClient, player, streams = load_client()
+		AudioClient.play("hub/a.mp3", { fade_in = true })
+		AudioClient.play("hub/b.mp3", { fade_in = true })
+
+		streams[1].failed = "lost"
+		AudioClient.update(0.1)
+
+		assert_equal(streams[1].destroyed, true)
+		assert_equal(streams[2].destroyed, false)
+		assert_equal(player.resets, 0)
+	end)
+
+	it("does not take back a parked song that has ended or failed", function()
+		local AudioClient, _, streams = load_client()
+		AudioClient.play("mission_explore/a.mp3", { fade_in = true })
+		AudioClient.play("mission_combat/b.mp3", { fade_in = true })
+		AudioClient.update(2.1)
+		streams[1].failed = "lost"
+
+		AudioClient.play("mission_explore/a.mp3", { fade_in = true, start_position = 93 })
+
+		assert_equal(#streams, 3)
+		assert_equal(streams[3].opts.start_position, 93)
+	end)
+
+	it("fades out at once when a song resumes within its last 2 seconds", function()
+		local AudioClient, _, streams = load_client()
+		AudioClient.play("hub/a.mp3", { fade_in = true, start_position = 199, duration_seconds = 200 })
+
+		AudioClient.update(0.1)
+
+		assert_deep_equal(streams[1].fades[#streams[1].fades], { 0, 1 })
+	end)
+
+	it("plays nothing and says so while playback is unavailable", function()
+		local AudioClient, player, streams = load_client()
+		player.output = false
+
+		assert_equal(AudioClient.play("hub/a.mp3", { fade_in = true }), false)
+		assert_equal(#streams, 0)
+		assert_equal(AudioClient.is_playing(), false)
+	end)
+
 	it("stops everything at once on shutdown", function()
 		local AudioClient, player, streams = load_client()
 		AudioClient.play("hub/a.mp3", { fade_in = true })

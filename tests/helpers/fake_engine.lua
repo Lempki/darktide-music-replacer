@@ -55,8 +55,24 @@ local function new_mod(engine)
 		return engine.settings[setting_id]
 	end
 
+	function mod:get_metadata(key)
+		return engine.metadata[key]
+	end
+
+	-- DMF keeps these through a mod reload. Here they last as long as the engine.
+	function mod:persistent_table(name)
+		engine.persistent_tables[name] = engine.persistent_tables[name] or {}
+		return engine.persistent_tables[name]
+	end
+
 	-- Unlike DMF, a load error is raised, so a broken module fails its spec instead of returning nil.
+	-- A module named in the engine's `modules` option is returned instead of loading the real file.
 	function mod:io_dofile(path)
+		local stand_in = engine.modules[path:match("([^/]+)$")]
+		if stand_in then
+			return stand_in
+		end
+
 		local module_path = path:gsub("^" .. MOD_NAME .. "/", "")
 		local file = package.searchpath(module_path, package.path)
 		assert(file, "module not found: " .. path)
@@ -97,6 +113,8 @@ end
 -- * `user_settings`: the values Application.user_setting() returns, by name, such as the volume sliders.
 -- * `mods`: other mods get_mod() returns, by name.
 -- * `lua`: the Mods.lua table, for example `{ os = fake_os }`. Empty by default.
+-- * `modules`: stand-ins for the mod's own modules, by file name, which mod:io_dofile() returns instead of the real ones.
+-- * `metadata`: the values mod:get_metadata() returns, such as the version.
 function FakeEngine.new(options)
 	options = options or {}
 
@@ -107,6 +125,9 @@ function FakeEngine.new(options)
 		messages = {},
 		event_listeners = {},
 		wwise_calls = {},
+		modules = options.modules or {},
+		metadata = options.metadata or {},
+		persistent_tables = {},
 	}, FakeEngine)
 
 	engine.mod = new_mod(engine)
