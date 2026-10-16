@@ -3,7 +3,7 @@ return {
 		en = "Diagnostic Logging",
 	},
 	diagnostic_mode_description = {
-		en = "Log Wwise state transitions, boss events, and playback decisions to %%APPDATA%%/Fatshark/Darktide/MusicReplacer/diagnostic.log. Off by default. Turn it on only while troubleshooting, since it writes a lot.",
+		en = "Logs Wwise state transitions, boss events, and playback decisions to %%APPDATA%%\\Fatshark\\Darktide\\MusicReplacer\\diagnostic.log. Off by default. Turn it on only while troubleshooting, since it writes a lot.",
 	},
 	combat_hold_seconds = {
 		en = "Combat Music Hold",
@@ -63,6 +63,6 @@ return {
 		en = "Reset Log on Launch",
 	},
 	reset_log_on_launch_description = {
-		en = "Clear diagnostic.log at the start of each session instead of appending to it. Only takes effect while Diagnostic Logging is also on.",
+		en = "Clears diagnostic.log at the start of each session instead of appending to it. Only takes effect while Diagnostic Logging is also on.",
 	},
 }

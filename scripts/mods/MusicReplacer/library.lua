@@ -114,7 +114,8 @@ end
 
 -- Call once, after all mods have loaded, with an initialized audio_folders.lua.
 -- Creates any missing folder at once, and lists them on the first update.
--- `log`, if given, receives a line for each listing and the first time a listed file turns out to be missing.
+-- `log`, if given, receives a line for each listing and the total measuring time.
+-- It also receives one for each file Windows cannot open, and the first time a listed file turns out to be missing.
 function Library.init(log, audio_folders)
 	diagnostic_log = log or diagnostic_log
 

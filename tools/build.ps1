@@ -3,7 +3,7 @@
 .SYNOPSIS
     Builds dist\MusicReplacer.zip for Vortex, and optionally deploys straight into the game.
 .PARAMETER Deploy
-    Copy the built files into the installed mod folder under -GameDir instead of reinstalling through Vortex. Never touches audio\.
+    Copy the built files into the installed mod folder under -GameDir instead of reinstalling through Vortex. Never touches files in audio\.
 .PARAMETER GameDir
     Darktide install directory. Defaults to the usual Steam location.
 .PARAMETER OutDir
@@ -80,7 +80,7 @@ $infoText = [System.IO.File]::ReadAllText($StagedInfo)
 $infoText = ([regex]'\{').Replace($infoText, "{`n  `"build`": `"$BuildStamp`",", 1)
 [System.IO.File]::WriteAllText($StagedInfo, $infoText, (New-Object System.Text.UTF8Encoding $false)) # UTF-8 without a BOM, like the source file.
 
-# Empty folders so a fresh install is ready to receive files immediately, without waiting for the mod's own runtime mkdir (library.lua) to run once first.
+# Empty folders so a fresh install is ready to receive files immediately, without waiting for the mod to create them on its first launch.
 # Synthesized here, since git cannot track an empty directory.
 foreach ($context in $AudioContexts) {
     New-Item -ItemType Directory -Path (Join-Path $StageMod "audio\$context") -Force | Out-Null

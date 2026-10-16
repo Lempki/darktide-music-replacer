@@ -400,7 +400,7 @@ function Context.init(mod, log)
 			music_game_state = new_state
 
 			-- The state returns to "mission" between victory or defeat and the next loading screen.
-			-- So the outcome is only cleared by a loading screen or a mission intro.
+			-- So within this group, only a loading screen or a mission intro clears the outcome.
 			if new_state == "victory" or new_state == "game_score_win" then
 				mission_outcome = "victory"
 			elseif new_state == "defeat" or new_state == "game_score_lose" then

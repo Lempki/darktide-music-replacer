@@ -55,7 +55,7 @@ describe("context.lua boss signals", function()
 		assert_deep_equal(harness.changes, { "mission_boss", "mission_explore" })
 	end)
 
-	-- A raid's final boss set the boss music state with no start event for about 12 minutes.
+	-- The boss music state can stay on for minutes with no start event, as it does for a raid's final boss.
 	it("keeps mission_boss for a boss with no start event until the boss music state ends", function()
 		local harness = in_mission("zone_5")
 

@@ -4,8 +4,9 @@
 -- A file that cannot be opened behaves like a track that ended at once, so MusicReplacer.lua's quick-end guard handles it.
 -- When the audio device is lost and XAudio2 cannot follow, the engine is rebuilt and the song resumes where it was.
 --
--- A song that fades out is paused and parked rather than freed. If the mod resumes that song while it is parked,
--- the same stream fades back in from exactly where it stopped, with no reopening, no seek, and no repeated seconds.
+-- A song that fades out is paused and parked rather than freed.
+-- If the mod resumes a parked song, the same stream fades back in from exactly where it stopped.
+-- Nothing is reopened or sought, so no second of the song plays twice.
 
 local AudioClient = {}
 
@@ -31,7 +32,7 @@ local log_fn = function() end
 
 local current = nil -- { stream, file_path, loop, duration, on_finished, elapsed, end_fading }
 local outgoing = {} -- { stream, file_path, parked_elapsed } for songs fading out or parked, after a switch or a stop.
-local finished_elapsed = 0 -- The last finished track's elapsed time, which on_finished reads through elapsed() like with audio_client.lua.
+local finished_elapsed = 0 -- The last finished track's elapsed time, which on_finished reads through elapsed().
 local gain = 1
 local current_master_slider = nil
 local current_music_slider = nil
@@ -145,7 +146,8 @@ local function take_outgoing(file_path)
 	return nil
 end
 
--- Plays file_path, crossfading with whatever was playing. Takes the same opts as audio_client.lua's play.
+-- Plays file_path, crossfading with whatever was playing.
+-- opts: fade_in, loop, start_position, duration_seconds, and on_finished(failed).
 -- Returns false when playback is unavailable.
 function AudioClient.play(file_path, opts)
 	if not AudioClient.available() then

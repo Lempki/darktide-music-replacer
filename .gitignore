@@ -1,4 +1,4 @@
-# Packaged output -- rebuilt from source by tools/build.ps1
+# Packaged output, rebuilt from source by tools/build.ps1.
 /dist/
 
 # Windows

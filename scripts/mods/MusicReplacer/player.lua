@@ -1,4 +1,4 @@
--- Plays songs directly inside the game: each stream is a Media Foundation decoder feeding an XAudio2 voice.
+-- Plays songs inside the game: each stream is a Media Foundation decoder feeding an XAudio2 voice.
 -- A stream decodes into a fixed pool of buffers on the Windows heap, allocated once, so playing never grows the Lua heap.
 -- The pool keeps several seconds queued, so the music plays on while the game's thread stalls, as it can during loading.
 -- A stream's volume is its gain times its fade. The gain follows settings such as the sliders, and the fade shapes fades and crossfades.
@@ -193,7 +193,7 @@ function Player.open(path, opts)
 	return self
 end
 
--- Sets the gain at once, for slider changes and ducking.
+-- Sets the gain at once, for slider changes.
 function Stream:set_gain(gain)
 	self.gain = gain
 	apply_volume(self)

@@ -30,7 +30,7 @@ log("[startup] " .. version_line)
 -- Playback Orchestration
 -- ###########################################################################
 -- Combines "what context" (context.lua) with "is there a file for it" (library.lua) to decide what audio_client.lua does.
--- Native music is only silenced once a replacement is confirmed playing.
+-- Native music is only silenced once a replacement is available.
 -- So a context with no file falls back to native music by construction.
 
 local current_context = nil
