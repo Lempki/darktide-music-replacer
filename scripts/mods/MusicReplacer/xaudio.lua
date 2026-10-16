@@ -49,12 +49,10 @@ local DESTROY_VOICE = { 18, "void (*)(void *)" } -- IXAudio2Voice, also used on 
 -- Slots 12 to 18 are IXAudio2Voice's, and 19 onward are IXAudio2SourceVoice's.
 local VOICE_METHODS = {
 	set_volume = { 12, "int32_t (*)(void *, float, uint32_t)" },
-	get_volume = { 13, "void (*)(void *, float *)" },
 	destroy_voice = DESTROY_VOICE,
 	start = { 19, "int32_t (*)(void *, uint32_t, uint32_t)" },
 	stop = { 20, "int32_t (*)(void *, uint32_t, uint32_t)" },
 	submit_source_buffer = { 21, "int32_t (*)(void *, const MusicReplacer_XAUDIO2_BUFFER *, void *)" },
-	flush_source_buffers = { 22, "int32_t (*)(void *)" },
 	get_state = { 25, "void (*)(void *, MusicReplacer_XAUDIO2_VOICE_STATE *, uint32_t)" },
 }
 
@@ -173,7 +171,6 @@ function XAudio.create_voice(format)
 		-- Made once and reused, since XAudio2 copies the descriptor when a buffer is submitted.
 		buffer = ffi.new("MusicReplacer_XAUDIO2_BUFFER"),
 		state = ffi.new("MusicReplacer_XAUDIO2_VOICE_STATE"),
-		level = ffi.new("float[1]"),
 	}, Voice)
 end
 
@@ -224,22 +221,12 @@ function Voice:set_volume(volume)
 	checked_voice(self, "setting a volume", "set_volume", math.max(0, volume), 0)
 end
 
-function Voice:volume()
-	self.methods.get_volume(self.pointer, self.level)
-	return self.level[0]
-end
-
 function Voice:start()
 	checked_voice(self, "starting a voice", "start", 0, 0)
 end
 
 function Voice:stop()
 	checked_voice(self, "stopping a voice", "stop", 0, 0)
-end
-
--- Drops every queued buffer that has not started playing.
-function Voice:flush()
-	checked_voice(self, "flushing a voice", "flush_source_buffers")
 end
 
 -- Stops and frees the voice. XAudio2 has finished with every buffer once this returns.

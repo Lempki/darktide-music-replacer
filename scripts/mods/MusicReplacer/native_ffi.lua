@@ -1,4 +1,5 @@
 -- Shared plumbing for calling Windows APIs through LuaJIT's ffi: GUIDs, COM vtable calls, COM setup, and UTF-16 strings.
+-- It also covers memory on the Windows heap and the file functions audio_folders.lua uses.
 -- The mod loader exposes ffi as Mods.lua.ffi. Outside the game, plain LuaJIT's own ffi is used, so these modules can be tried standalone.
 
 local NativeFfi = {}
@@ -28,15 +29,10 @@ typedef struct {
 
 int32_t MusicReplacer_CoGetApartmentType(int32_t *type, int32_t *qualifier) __asm__("CoGetApartmentType");
 int32_t MusicReplacer_CoIncrementMTAUsage(void **cookie) __asm__("CoIncrementMTAUsage");
-int32_t MusicReplacer_CoCreateInstance(const MusicReplacer_GUID *clsid, void *outer, uint32_t cls_context,
-	const MusicReplacer_GUID *iid, void **object) __asm__("CoCreateInstance");
 void MusicReplacer_CoTaskMemFree(void *memory) __asm__("CoTaskMemFree");
 
 int32_t MusicReplacer_MultiByteToWideChar(uint32_t code_page, uint32_t flags, const char *source, int32_t source_length,
 	uint16_t *target, int32_t target_length) __asm__("MultiByteToWideChar");
-void *MusicReplacer_OpenProcess(uint32_t access, int32_t inherit, uint32_t pid) __asm__("OpenProcess");
-int32_t MusicReplacer_GetExitCodeProcess(void *process, uint32_t *exit_code) __asm__("GetExitCodeProcess");
-int32_t MusicReplacer_CloseHandle(void *handle) __asm__("CloseHandle");
 void *MusicReplacer_GetProcessHeap(void) __asm__("GetProcessHeap");
 void *MusicReplacer_HeapAlloc(void *heap, uint32_t flags, size_t bytes) __asm__("HeapAlloc");
 int32_t MusicReplacer_HeapFree(void *heap, uint32_t flags, void *memory) __asm__("HeapFree");
@@ -189,12 +185,6 @@ function NativeFfi.call(object, index, signature, ...)
 
 	local vtable = ffi.cast("MusicReplacer_ComObject *", object).lpVtbl
 	return ffi.cast(method_type, vtable[index])(object, ...)
-end
-
-function NativeFfi.add_ref(object)
-	if object ~= nil then
-		NativeFfi.call(object, 1, "uint32_t (*)(void *)")
-	end
 end
 
 function NativeFfi.release(object)
