@@ -3,7 +3,7 @@
 std = "luajit"
 
 -- Engine and DMF globals the mod reads but never assigns.
-local engine_globals = { "Application", "CLASS", "Managers", "Mods", "Wwise", "get_mod" }
+local engine_globals = { "Application", "CLASS", "Color", "Managers", "Mods", "Wwise", "get_mod" }
 
 read_globals = engine_globals
 

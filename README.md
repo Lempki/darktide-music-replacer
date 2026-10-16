@@ -61,20 +61,37 @@ Your audio survives reinstalling or updating the mod through Vortex. Vortex only
 
 ## Settings
 
-These are in the in-game mod options under Music Replacer, in the order the menu shows them.
+These are in the in-game mod options under Music Replacer, in four groups, in the order the menu shows them.
+
+### Songs
+
+| Setting | Default | What it does |
+|---|---|---|
+| Rescan Audio Folders | (button) | Picks up audio files added or removed since the game started, without a restart. A track that is playing keeps playing, and a context that had no files starts its new track right away. |
+| Resume Songs | On | When explore or combat music, or a Mortis Trials wave or break, comes back, its song continues from where it stopped. A horde, boss, or event song also continues after higher-priority music interrupts it, such as a boss during a horde or a last stand during an event, as long as that horde, fight, or event did not end in between. A new horde, boss fight, or event gets a new pick. A new song is also picked once one ends on its own. Every mission and hub visit starts with fresh songs. |
+
+### Where Music Plays
+
+| Setting | Default | What it does |
+|---|---|---|
+| Boss Music for Captains | Off | On plays your boss music for a captain, including the Karnak Twins, from the moment it engages until it dies. Off leaves captains to the game's own music. Event music still plays during an event. |
+| Boss Music for Daemonhosts | Off | Off follows the game, which plays no music for an angered daemonhost. On plays your boss music from the moment a daemonhost is angered until it dies. |
+| Music in Meat Grinder | Off | Off keeps custom music out of the Meat Grinder training area and also silences the game's own combat music there. On plays your explore and combat music there. |
+
+### Timing
 
 | Setting | Default | What it does |
 |---|---|---|
 | Combat Music Hold | 8 seconds | How long combat music keeps playing after a fight quiets down, so a short lull does not switch to explore music. Set it to 0 to switch immediately. |
 | Horde Music Hold | 3 seconds | How long horde music keeps playing after the game stops reporting a horde. The game drops its horde signal for a second or two whenever few enemies are on you, so a short hold keeps the track from restarting. Set it to 0 to follow the game exactly. |
 | Event Music Hold | 5 seconds | How long event music keeps playing after the game ends an event's music. Some events pause their music for a few seconds between stages, so a short hold keeps the event's song from starting over at every stage. Set it to 0 to follow the game exactly. |
-| Resume Songs | On | When explore or combat music, or a Mortis Trials wave or break, comes back, its song continues from where it stopped. A horde, boss, or event song also continues after higher-priority music interrupts it, such as a boss during a horde or a last stand during an event, as long as that horde, fight, or event did not end in between. A new horde, boss fight, or event gets a new pick. A new song is also picked once one ends on its own. Every mission and hub visit starts with fresh songs. |
-| Music in Meat Grinder | Off | Off keeps custom music out of the Meat Grinder training area and also silences the game's own combat music there. On plays your explore and combat music there. |
-| Boss Music for Daemonhosts | Off | Off follows the game, which plays no music for an angered daemonhost. On plays your boss music from the moment a daemonhost is angered until it dies. |
-| Boss Music for Captains | Off | On plays your boss music for a captain, including the Karnak Twins, from the moment it engages until it dies. Off leaves captains to the game's own music. Event music still plays during an event. |
-| Rescan Audio Folders | (button) | Picks up audio files added or removed since the game started, without a restart. A track that is playing keeps playing, and a context that had no files starts its new track right away. |
-| Debug: Diagnostic Logging | Off | Writes `%APPDATA%\Fatshark\Darktide\MusicReplacer\diagnostic.log` for troubleshooting. See Troubleshooting below. |
-| Debug: Reset Log on Launch | On | Clears `diagnostic.log` at the start of each session. Only matters while Diagnostic Logging is on. |
+
+### Debug
+
+| Setting | Default | What it does |
+|---|---|---|
+| Diagnostic Logging | Off | Writes `%APPDATA%\Fatshark\Darktide\MusicReplacer\diagnostic.log` for troubleshooting. See Troubleshooting below. |
+| Reset Log on Launch | On | Shown while Diagnostic Logging is on. Clears `diagnostic.log` every time the game launches. Off keeps adding to it, trimmed to its last 2,000 lines. |
 
 ## How it plays
 
@@ -99,7 +116,7 @@ Music Replacer decodes your files with Media Foundation, Windows' own audio deco
 * **The chat shows "Windows audio playback could not start".** The mod could not start Windows' audio decoder or audio engine, so the game's own music plays as usual. The message ends with the reason. On a Windows "N" edition, install the Media Feature Pack. If Windows had no audio output at that moment, the mod keeps trying and starts once there is one.
 * **One file never plays.** Windows cannot decode it. Convert it to another supported format, then press Rescan Audio Folders.
 
-To report a problem, turn on Diagnostic Logging under Debug in the mod options, play until the problem happens, and attach these two files:
+To report a problem, turn on Diagnostic Logging in the Debug group of the mod options, play until the problem happens, and attach these two files:
 
 * `%APPDATA%\Fatshark\Darktide\MusicReplacer\diagnostic.log`
 * The newest file in `%APPDATA%\Fatshark\Darktide\console_logs\`
