@@ -339,9 +339,10 @@ local function update_current(dt)
 	end
 
 	-- The decoder's own duration matches its positions, while the library's can differ by a second or more for the same file.
-	-- A caller without a duration asked for no fade-out, as for a single file that is about to loop.
-	local duration = current.duration and (stream.duration or current.duration)
-	if duration and not current.loop and not current.end_fading and stream:position() >= duration - NATURAL_END_FADE_SECONDS then
+	-- It is also known when the library has not measured the file yet, as right after the folders are listed again.
+	-- A looping file never ends, so it never fades out.
+	local duration = not current.loop and (stream.duration or current.duration)
+	if duration and not current.end_fading and stream:position() >= duration - NATURAL_END_FADE_SECONDS then
 		current.end_fading = true
 		stream:fade_to(0, math.max(0.1, duration - stream:position()))
 	end

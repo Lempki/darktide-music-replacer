@@ -304,17 +304,29 @@ describe("audio_client.lua", function()
 		assert_equal(math.abs(fade[2] - 1.8) < 1e-9, true, tostring(fade[2]))
 	end)
 
-	it("does not fade out without a duration or while looping", function()
+	it("does not fade out while looping", function()
 		local AudioClient, _, streams = load_client()
-		AudioClient.play("hub/a.mp3", { fade_in = false })
 		AudioClient.play("hub/b.mp3", { fade_in = false, duration_seconds = 199, loop = true })
 
 		streams[1].current_position = 199
-		streams[2].current_position = 199
 		AudioClient.update(0.1)
 
-		assert_deep_equal(streams[2].fades, {})
-		assert_equal(streams[2].opts.loop, true)
+		assert_deep_equal(streams[1].fades, {})
+		assert_equal(streams[1].opts.loop, true)
+	end)
+
+	-- Right after the folders are listed again, a song can start before the library has measured it.
+	it("fades out at the decoder's own length when the library has not measured the file", function()
+		local AudioClient, _, streams = load_client()
+		AudioClient.play("hub/a.mp3", { fade_in = false })
+
+		streams[1].current_position = 197
+		AudioClient.update(0.1)
+		assert_deep_equal(streams[1].fades, {})
+
+		streams[1].current_position = 198.5
+		AudioClient.update(0.1)
+		assert_deep_equal(streams[1].fades, { { 0, 1.5 } })
 	end)
 
 	it("treats a file it cannot open as a track that ended at once", function()
