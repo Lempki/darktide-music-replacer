@@ -133,7 +133,7 @@ To report a problem, attach these two files:
 * The mod's log from `%APPDATA%\Fatshark\Darktide\MusicReplacer\`. That is `diagnostic.log` if the problem happened in the current or last game session, or `diagnostic-prev.log` if it happened in the session before that.
 * The newest file in `%APPDATA%\Fatshark\Darktide\console_logs\`.
 
-The mod always logs the important events, such as which music plays and why, and any file it could not play. Every game launch starts a fresh `diagnostic.log` and keeps the previous one as `diagnostic-prev.log`. If you are asked for more detail, turn on Detailed Logging in the Debug group of the mod options and play until the problem happens again.
+The mod always logs the important events, such as which music plays and why, and any file it could not play. Every game launch starts a fresh `diagnostic.log` and keeps the previous one as `diagnostic-prev.log`. If you are asked for more detail, turn on Detailed Logging in the Debug group of the mod options and play until the problem happens again. What the detailed lines mean is explained in [docs/wwise-events.md](docs/wwise-events.md) and [docs/game-internals.md](docs/game-internals.md).
 
 ## Roadmap
 
@@ -184,7 +184,7 @@ The specs need [LuaJIT 2.1](https://luajit.org/) on `PATH`, the same Lua runtime
 
 Static analysis needs [luacheck](https://github.com/lunarmodules/luacheck) on `PATH`. The standalone `luacheck.exe` from its releases page is enough.
 
-How native music reaches the player, how the mod silences it, and how to trace a sound to its Wwise event are covered in [docs/wwise-events.md](docs/wwise-events.md).
+How the game's music reaches the player, how the mod silences it, and how to trace a sound are covered in [docs/wwise-events.md](docs/wwise-events.md). How the game reports its missions and modes is covered in [docs/game-internals.md](docs/game-internals.md).
 
 Logs to check when something misbehaves:
 
@@ -223,7 +223,8 @@ darktide-music-replacer/
 │   ├── MusicReplacer_data.lua           # DMF mod-options widgets.
 │   └── MusicReplacer_localization.lua   # Mod-options strings.
 ├── docs/
-│   └── wwise-events.md                  # Native music sources, suppression, and the event and mission probes.
+│   ├── game-internals.md                # How the game reports its missions and modes, and the mission lines in the log.
+│   └── wwise-events.md                  # The game's music states and events, how the mod silences them, and tracing a sound.
 ├── tests/
 │   ├── run.lua                          # Minimal spec runner, needs only LuaJIT.
 │   ├── helpers/
