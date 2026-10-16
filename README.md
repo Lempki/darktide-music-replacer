@@ -161,7 +161,7 @@ luacheck .                # Static analysis with the settings in .luacheckrc.
 uvx pre-commit run --all-files   # The shared dev-standards hooks: prose rules, synced config files, and file hygiene.
 ```
 
-The repository follows the shared conventions in [dev-standards](https://github.com/Lempki/dev-standards). Its hooks keep `.editorconfig` and the managed blocks in `.gitattributes` and `.gitignore` in sync, and check comments and Markdown against the prose rules. Their settings are in `dev-standards.toml`. Install the hooks once per clone with `uvx pre-commit install`. CI runs dev-standards' Lua workflow on every push to `main` and every pull request: the hooks, luacheck, and the specs under LuaJIT.
+The repository follows the shared conventions in [dev-standards](https://github.com/Lempki/dev-standards). Its hooks keep the managed blocks in `.editorconfig`, `.gitattributes`, and `.gitignore` in sync, and check comments and Markdown against the prose rules. They tell this is a Lua repository from `.luacheckrc`, so it needs no settings file. Install the hooks once per clone with `uvx pre-commit install`. CI runs dev-standards' Lua workflow on every push to `main` and every pull request: the hooks, luacheck, and the specs under LuaJIT.
 
 `-Deploy` is the fast iteration path. It copies the staged files over the installed ones, including `MusicReplacer.mod` and the stamped `info.json`, leaving `audio\` alone, so a change can be tested by restarting the game rather than reinstalling through Vortex. It never deletes a file, so remove a module that was deleted from the source by hand. The zip stays the real artifact, and a Vortex purge discards anything deployed this way.
 
@@ -182,7 +182,7 @@ Logs to check when something misbehaves:
 
 ```
 darktide-music-replacer/
-├── .editorconfig                        # Synced from dev-standards.
+├── .editorconfig                        # Its managed block is synced from dev-standards.
 ├── .gitattributes                       # Its managed block is synced from dev-standards.
 ├── .github/
 │   ├── dependabot.yml                   # Weekly updates of the workflow and hook versions.
@@ -190,7 +190,6 @@ darktide-music-replacer/
 ├── .gitignore                           # Its managed block is synced from dev-standards.
 ├── .luacheckrc                          # luacheck settings: LuaJIT, and the globals the game and DMF provide.
 ├── .pre-commit-config.yaml              # The dev-standards hooks and file hygiene checks.
-├── dev-standards.toml                   # Settings for the dev-standards hooks.
 ├── MusicReplacer.mod
 ├── info.json                            # Version and author metadata, read by DMF at mod init.
 ├── scripts/mods/MusicReplacer/
