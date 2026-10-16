@@ -325,7 +325,7 @@ mod.update = function(dt)
 
 	Context.update(mod, dt)
 
-	if Library.update() then
+	if Library.update(dt) then
 		-- A replaced file deserves another try, so contexts that gave up retry after a rescan.
 		quick_ends = {}
 		gave_up = {}
@@ -366,6 +366,7 @@ end
 
 mod.on_unload = function(exit_game)
 	Context.shutdown(mod)
+	Library.shutdown()
 	AudioClient.shutdown()
 	MediaDecoder.shutdown()
 

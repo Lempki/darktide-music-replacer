@@ -67,7 +67,7 @@ These are in the in-game mod options under Music Replacer, in four groups, in th
 
 | Setting | Default | What it does |
 |---|---|---|
-| Rescan Audio Folders | (button) | Picks up audio files added or removed since the game started, without a restart. A track that is playing keeps playing, and a context that had no files starts its new track right away. |
+| Rescan Audio Folders | (button) | Lists the audio folders again at once. The mod already notices added, removed, and replaced files by itself a few seconds after they change, so this is for drives where Windows cannot report changes, such as some network drives. |
 | Resume Songs | On | When explore or combat music, or a Mortis Trials wave or break, comes back, its song continues from where it stopped. A horde, boss, or event song also continues after higher-priority music interrupts it, such as a boss during a horde or a last stand during an event, as long as that horde, fight, or event did not end in between. A new horde, boss fight, or event gets a new pick. A new song is also picked once one ends on its own. Every mission and hub visit starts with fresh songs. |
 
 ### Where Music Plays
@@ -104,8 +104,8 @@ Music Replacer decodes your files with Media Foundation, Windows' own audio deco
 
 ## Limitations
 
-* Each audio folder is listed when the game launches. After adding or removing files while the game runs, press Rescan Audio Folders in the mod settings, or restart the game. Until then, a file you removed is skipped and a file you added is not picked up.
-* A file Windows cannot decode is skipped once the mod has measured it, shortly after launch, and the log names it. If one is picked before then and fails three times in a row, that context uses the game's own music until the game restarts or you press Rescan Audio Folders.
+* The mod notices audio files added, removed, or replaced while the game runs, and lists the folders again 3 seconds after the changes stop. A song that is playing keeps playing, and a context that had no files starts its new song right away. On a drive where Windows cannot report changes, such as some network drives, press Rescan Audio Folders instead.
+* A file Windows cannot decode is skipped once the mod has measured it, shortly after launch, and the log names it. If one is picked before then and fails three times in a row, that context uses the game's own music until the game restarts or the audio folders are listed again.
 * Music Replacer only affects your own game. Squadmates hear the game's own music regardless.
 * Loading screens, the mission briefing, the mission intro, and cutscenes play the game's own music. Custom music starts once you are in the hub or the mission itself.
 
@@ -113,7 +113,7 @@ Music Replacer decodes your files with Media Foundation, Windows' own audio deco
 
 * **No custom music anywhere.** Check that `MusicReplacer` is listed below `dmf` in `mod_load_order.txt`, that Music Replacer appears in the mod options and is turned on, and that your files sit directly inside the audio folders in a supported format.
 * **The chat shows "Windows audio playback could not start".** The mod could not start Windows' audio decoder or audio engine, so the game's own music plays as usual. The message ends with the reason. On a Windows "N" edition, install the Media Feature Pack. If Windows had no audio output at that moment, the mod keeps trying and starts once there is one.
-* **One file never plays.** Windows cannot decode it. Convert it to another supported format, then press Rescan Audio Folders.
+* **One file never plays.** Windows cannot decode it. Convert it to another supported format. The mod picks up the new file by itself.
 
 To report a problem, attach these two files:
 
@@ -143,8 +143,8 @@ The mod always logs the important events, such as which music plays and why, and
 * [x] Songs continuing from where they left off: explore and combat whenever they come back, and a horde, boss fight, or event after an interruption while it is still going.
 * [x] Playback inside the game through Windows' own decoder and audio engine, with no other mods or programs needed.
 * [x] Custom music for Mortis Trials, with separate folders for its waves and the breaks between them.
+* [x] Picking up added, removed, and replaced audio files by itself while the game runs.
 * [x] A short log of the important events written by default, with the previous session's log kept beside it as `diagnostic-prev.log`, so either can be attached to a bug report. Detailed Logging adds the noisy lines on top.
-* [ ] Picking up added or removed audio files by itself, without pressing Rescan Audio Folders.
 * [ ] Options per context: whether it plays custom music, the game's own music, or silence, and whether a song plays to its end after the context is over, such as a boss song after the boss dies. Meat Grinder becomes one more context with these options.
 * [ ] Volume: lowering custom music while the pause menu is open, as the game does with its own music, and optional loudness normalization, so quiet and loud files play at a similar level without changing the files.
 * [ ] Custom music for loading screens.

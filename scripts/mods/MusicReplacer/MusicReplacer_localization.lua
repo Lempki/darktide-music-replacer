@@ -18,8 +18,9 @@ return {
 		en = "Rescan",
 	},
 	rescan_audio_tooltip = {
-		en = "Finds the audio files you added or removed since the game started.\n\n" ..
-			"A song that is playing keeps playing.",
+		en = "Lists the audio folders again at once.\n\n" ..
+			"The mod notices added, removed, and replaced files by itself a few seconds after they change. " ..
+			"This button is for drives where Windows cannot report changes, such as some network drives.",
 	},
 	resume_songs = {
 		en = "Resume Songs",

@@ -1,10 +1,12 @@
 -- Keeps one file list per music context, listed through audio_folders.lua.
 -- Each context is a single-level subfolder of this mod's "audio/" directory, for example ".../mods/MusicReplacer/audio/hub/".
 --
--- The folders are listed on the first update and again when a rescan is requested.
+-- The folders are listed on the first update, again when a rescan is requested, and again once files change on disk.
+-- Windows reports a change for every step of a copy, so a change only lists the folders once the changes have stopped for a moment.
 -- Every file's duration is measured in the background, one file per update, so a large library never stalls a frame for long.
 -- A file Windows cannot open while it is measured is left out of the picks from then on, so it cannot use up the caller's retries.
 -- A file deleted after a listing is still listed until the next one, so pick_file() checks that a file exists before returning it.
+-- Where Windows cannot watch the folders, as on some network drives, only the Rescan Audio Folders button lists them again.
 -- A missing or empty folder resolves to nil here, which is the fallback-to-native-music signal the caller needs.
 
 local Library = {}
@@ -34,6 +36,12 @@ local diagnostic_log = function() end -- No-op unless a real logger is passed to
 local AudioFolders = nil
 local waiting_to_scan = false
 local rescan_requested = false
+
+-- A file still being copied would be measured half-written and skipped as unplayable, so a change waits for this much quiet.
+local QUIET_SECONDS = 3
+
+local watcher = nil
+local quiet_seconds = nil -- Seconds since the last change Windows reported, or nil while none waits for a listing.
 local lists = {} -- context_name -> file paths, each starting with the context folder name.
 local last_picked = {} -- context_name -> the file path most recently returned.
 local reported_missing = {} -- file_path -> true once a missing file has been logged.
@@ -129,7 +137,35 @@ function Library.init(log, audio_folders)
 		AudioFolders.create(AUDIO_ROOT .. "/" .. context_name)
 	end
 
+	-- Watching starts after the folders exist, so creating them is not reported as a change.
+	local err
+	watcher, err = AudioFolders.watch(AUDIO_ROOT)
+	if not watcher then
+		diagnostic_log(string.format("[library] %s, so changed files need Rescan Audio Folders", tostring(err)))
+	end
+
 	waiting_to_scan = true
+end
+
+-- Call from the main mod file's mod.on_unload. Stops watching the folders.
+function Library.shutdown()
+	if watcher then
+		watcher:close()
+		watcher = nil
+	end
+end
+
+-- Notes a change Windows reported, and asks for a listing once changes have stopped for QUIET_SECONDS.
+local function follow_changes(dt)
+	if watcher:changed() then
+		quiet_seconds = 0
+	elseif quiet_seconds then
+		quiet_seconds = quiet_seconds + dt
+		if quiet_seconds >= QUIET_SECONDS then
+			quiet_seconds = nil
+			rescan_requested = true
+		end
+	end
 end
 
 -- Asks for every folder to be listed again on the next update.
@@ -139,11 +175,15 @@ function Library.request_rescan()
 	end
 end
 
--- Call from the main mod file's mod.update.
+-- Call from the main mod file's mod.update with the seconds since the last update.
 -- Returns true on the update where a rescan finishes, so the caller can start a track for a context that had no files.
-function Library.update()
+function Library.update(dt)
 	if not AudioFolders then
 		return false
+	end
+
+	if watcher then
+		follow_changes(dt or 0)
 	end
 
 	measure_next_duration()
@@ -188,7 +228,7 @@ local function usable_entries(context_name)
 				usable[#usable + 1] = { file_path = file_path, duration = durations[file_path] or nil }
 			elseif not reported_missing[file_path] then
 				reported_missing[file_path] = true
-				diagnostic_log(string.format("[library] %s is listed but missing on disk, skipping it. Press Rescan Audio Folders in the mod settings after changing files.", file_path))
+				diagnostic_log(string.format("[library] %s is listed but missing on disk, skipping it until the folders are listed again", file_path))
 			end
 		end
 	end

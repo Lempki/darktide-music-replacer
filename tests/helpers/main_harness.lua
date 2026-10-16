@@ -27,6 +27,7 @@ local function new_library(files)
 	local last_index = {}
 
 	function library.init() end
+	function library.shutdown() end
 	function library.request_rescan() library.rescan_requested = true end
 	function library.disk_path(file_path) return file_path end
 

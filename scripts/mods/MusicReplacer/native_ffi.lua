@@ -31,15 +31,12 @@ int32_t MusicReplacer_CoGetApartmentType(int32_t *type, int32_t *qualifier) __as
 int32_t MusicReplacer_CoIncrementMTAUsage(void **cookie) __asm__("CoIncrementMTAUsage");
 void MusicReplacer_CoTaskMemFree(void *memory) __asm__("CoTaskMemFree");
 
-int32_t MusicReplacer_MultiByteToWideChar(uint32_t code_page, uint32_t flags, const char *source, int32_t source_length,
-	uint16_t *target, int32_t target_length) __asm__("MultiByteToWideChar");
+int32_t MusicReplacer_MultiByteToWideChar(uint32_t code_page, uint32_t flags, const char *source, int32_t source_length, uint16_t *target, int32_t target_length) __asm__("MultiByteToWideChar");
 void *MusicReplacer_GetProcessHeap(void) __asm__("GetProcessHeap");
 void *MusicReplacer_HeapAlloc(void *heap, uint32_t flags, size_t bytes) __asm__("HeapAlloc");
 int32_t MusicReplacer_HeapFree(void *heap, uint32_t flags, void *memory) __asm__("HeapFree");
-uint32_t MusicReplacer_GetFullPathNameW(const uint16_t *name, uint32_t length, uint16_t *buffer, uint16_t **file_part)
-	__asm__("GetFullPathNameW");
-int32_t MusicReplacer_WideCharToMultiByte(uint32_t code_page, uint32_t flags, const uint16_t *source, int32_t source_length,
-	char *target, int32_t target_length, const char *default_char, int32_t *used_default) __asm__("WideCharToMultiByte");
+uint32_t MusicReplacer_GetFullPathNameW(const uint16_t *name, uint32_t length, uint16_t *buffer, uint16_t **file_part) __asm__("GetFullPathNameW");
+int32_t MusicReplacer_WideCharToMultiByte(uint32_t code_page, uint32_t flags, const uint16_t *source, int32_t source_length, char *target, int32_t target_length, const char *default_char, int32_t *used_default) __asm__("WideCharToMultiByte");
 
 typedef struct { uint32_t low; uint32_t high; } MusicReplacer_FILETIME;
 typedef struct {
@@ -60,6 +57,10 @@ int32_t MusicReplacer_FindNextFileW(void *find, MusicReplacer_WIN32_FIND_DATAW *
 int32_t MusicReplacer_FindClose(void *find) __asm__("FindClose");
 uint32_t MusicReplacer_GetFileAttributesW(const uint16_t *path) __asm__("GetFileAttributesW");
 int32_t MusicReplacer_CreateDirectoryW(const uint16_t *path, void *security) __asm__("CreateDirectoryW");
+void *MusicReplacer_FindFirstChangeNotificationW(const uint16_t *path, int32_t watch_subtree, uint32_t filter) __asm__("FindFirstChangeNotificationW");
+int32_t MusicReplacer_FindNextChangeNotification(void *handle) __asm__("FindNextChangeNotification");
+int32_t MusicReplacer_FindCloseChangeNotification(void *handle) __asm__("FindCloseChangeNotification");
+uint32_t MusicReplacer_WaitForSingleObject(void *handle, uint32_t milliseconds) __asm__("WaitForSingleObject");
 ]]
 
 local CO_E_NOTINITIALIZED = -2147221008 -- 0x800401F0

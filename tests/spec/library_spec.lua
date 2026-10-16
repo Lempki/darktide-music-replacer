@@ -6,8 +6,9 @@ local ROOT = "./../mods/MusicReplacer/audio"
 
 -- A fake audio_folders.lua over `disk`, which maps a context to its file names, and `lengths`, which maps a file path to seconds.
 -- `missing` lists file paths that are listed but no longer exist, and `broken` maps a file path Windows cannot open to why.
+-- Setting `changes` to true makes the watcher report a change on its next check, and `watch_error` makes watching fail.
 local function new_audio_folders(disk, lengths, missing, broken)
-	local folders = { created = {}, measured = {}, missing = missing or {}, broken = broken or {} }
+	local folders = { created = {}, measured = {}, missing = missing or {}, broken = broken or {}, changes = false, closed = false }
 
 	function folders.available() return true end
 	function folders.list(folder)
@@ -18,6 +19,20 @@ local function new_audio_folders(disk, lengths, missing, broken)
 		return not folders.missing[path:sub(#ROOT + 2)]
 	end
 	function folders.create(folder) folders.created[#folders.created + 1] = folder end
+	function folders.watch(folder)
+		if folders.watch_error then
+			return nil, folders.watch_error
+		end
+		folders.watched = folder
+		return {
+			changed = function()
+				local changed = folders.changes
+				folders.changes = false
+				return changed
+			end,
+			close = function() folders.closed = true end,
+		}
+	end
 	function folders.duration(path)
 		local file_path = path:sub(#ROOT + 2)
 		folders.measured[#folders.measured + 1] = file_path
@@ -167,6 +182,61 @@ describe("library.lua listing", function()
 		for _ = 1, 5 do
 			assert_equal(Library.update(0.016), false)
 		end
+	end)
+end)
+
+describe("library.lua watching the folders", function()
+	it("watches the audio folder once it has created the folders", function()
+		local _, folders = listed_library({})
+
+		assert_equal(folders.watched, ROOT)
+	end)
+
+	it("lists the folders again once changes have stopped for 3 seconds", function()
+		local disk = { hub = { "a.mp3" } }
+		local Library, folders, lines = listed_library(disk)
+		disk.hub = { "a.mp3", "b.mp3" }
+
+		folders.changes = true
+		assert_equal(Library.update(1), false)
+		assert_equal(Library.update(2), false)
+		folders.changes = true
+		assert_equal(Library.update(1), false)
+		assert_equal(Library.update(2.5), false)
+		assert_equal(Library.update(0.6), true)
+
+		assert_equal(Library.find_file("hub", "hub/b.mp3"), "hub/b.mp3")
+		assert_equal(lines[#lines]:find("[library] listed the audio folders again", 1, true) ~= nil, true, lines[#lines])
+	end)
+
+	it("does not list the folders again while nothing changes", function()
+		local Library = listed_library({ hub = { "a.mp3" } })
+
+		for _ = 1, 10 do
+			assert_equal(Library.update(1), false)
+		end
+	end)
+
+	it("says so in the log when Windows cannot watch the folders, and still lists them", function()
+		local engine = FakeEngine.new()
+		local Library = engine:load("library")
+		local folders = new_audio_folders({ hub = { "a.mp3" } }, {})
+		folders.watch_error = "Windows cannot report changes in the audio folders"
+		local lines = {}
+		Library.init(function(line) lines[#lines + 1] = line end, folders)
+		Library.update(0.016)
+
+		assert_equal(lines[1], "[library] Windows cannot report changes in the audio folders, so changed files need Rescan Audio Folders")
+		assert_equal(Library.pick_file("hub"), "hub/a.mp3")
+		assert_equal(Library.update(5), false)
+	end)
+
+	it("stops watching on shutdown", function()
+		local Library, folders = listed_library({})
+
+		Library.shutdown()
+
+		assert_equal(folders.closed, true)
 	end)
 end)
 

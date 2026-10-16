@@ -1,4 +1,4 @@
--- Lists, checks, and creates the audio folders through Windows' own file functions, and measures durations with Media Foundation.
+-- Lists, checks, creates, and watches the audio folders through Windows' own file functions, and measures durations with Media Foundation.
 -- Names go through the wide-character functions, so files named in any script work.
 -- Media Foundation's durations match the decoded audio to within milliseconds.
 
@@ -11,6 +11,10 @@ local EXTENSIONS = { mp3 = true, m4a = true, aac = true, wav = true, flac = true
 local INVALID_HANDLE = -1
 local INVALID_FILE_ATTRIBUTES = 0xFFFFFFFF
 local FILE_ATTRIBUTE_DIRECTORY = 0x10
+local WAIT_OBJECT_0 = 0
+
+-- File names, folder names, sizes, and write times, which covers files being added, removed, renamed, copied, or replaced.
+local CHANGE_FILTER = 0x01 + 0x02 + 0x08 + 0x10
 
 local NativeFfi = nil
 local MediaDecoder = nil
@@ -66,6 +70,43 @@ end
 -- Creates `folder` if it is missing. Its parent must exist.
 function AudioFolders.create(folder)
 	NativeFfi.kernel32().MusicReplacer_CreateDirectoryW(NativeFfi.wide(folder), nil)
+end
+
+local Watcher = {}
+Watcher.__index = Watcher
+
+-- Starts watching `folder` and everything below it for changes. Returns a watcher, or nil and why.
+-- Windows only raises a flag, so checking it costs nothing and never waits.
+function AudioFolders.watch(folder)
+	local handle = NativeFfi.kernel32().MusicReplacer_FindFirstChangeNotificationW(NativeFfi.wide_full_path(folder), 1, CHANGE_FILTER)
+	if tonumber(NativeFfi.ffi.cast("intptr_t", handle)) == INVALID_HANDLE then
+		return nil, "Windows cannot report changes in the audio folders"
+	end
+
+	return setmetatable({ handle = handle }, Watcher)
+end
+
+-- True when something changed since the last call.
+function Watcher:changed()
+	if self.handle == nil then
+		return false
+	end
+
+	local kernel32 = NativeFfi.kernel32()
+	if kernel32.MusicReplacer_WaitForSingleObject(self.handle, 0) ~= WAIT_OBJECT_0 then
+		return false
+	end
+
+	-- Raising the flag disarms it, so it is armed again for the next change.
+	kernel32.MusicReplacer_FindNextChangeNotification(self.handle)
+	return true
+end
+
+function Watcher:close()
+	if self.handle ~= nil then
+		NativeFfi.kernel32().MusicReplacer_FindCloseChangeNotification(self.handle)
+		self.handle = nil
+	end
 end
 
 -- The duration of the file at `path` in seconds, or nil when Media Foundation cannot tell.
