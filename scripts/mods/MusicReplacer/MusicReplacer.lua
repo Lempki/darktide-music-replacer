@@ -51,7 +51,7 @@ local quick_ends = {} -- context_name -> consecutive tracks that ended right aft
 local gave_up = {} -- context_name -> true once that context stopped retrying.
 
 -- The custom track AudioClient was last asked to play, so a context change can remember where it stopped.
-local playing_track = nil -- { context_name, file_path, duration, is_only_file }
+local playing_track = nil -- Fields: context_name, file_path, duration, is_only_file.
 
 local function remember_playing_track(next_context_name)
 	if not playing_track or playing_track.context_name == next_context_name or not AudioClient.is_playing() then

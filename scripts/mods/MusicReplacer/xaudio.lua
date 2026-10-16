@@ -44,7 +44,7 @@ local MAX_QUEUED_BUFFERS = 64
 -- Signatures with the object pointer first. IXAudio2 starts with IUnknown's three slots, and its voices have no IUnknown.
 local CREATE_SOURCE_VOICE = { 5, "int32_t (*)(void *, void **, const MusicReplacer_WAVEFORMATEX *, uint32_t, float, void *, void *, void *)" }
 local CREATE_MASTERING_VOICE = { 7, "int32_t (*)(void *, void **, uint32_t, uint32_t, uint32_t, const uint16_t *, void *, int32_t)" }
-local DESTROY_VOICE = { 18, "void (*)(void *)" } -- IXAudio2Voice, also used on the mastering voice
+local DESTROY_VOICE = { 18, "void (*)(void *)" } -- IXAudio2Voice's slot, also used on the mastering voice.
 
 -- Slots 12 to 18 are IXAudio2Voice's, and 19 onward are IXAudio2SourceVoice's.
 local VOICE_METHODS = {

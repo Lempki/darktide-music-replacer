@@ -34,7 +34,7 @@ end
 local MIN_REMAINING_SECONDS = 10
 
 local mod = nil
-local points = {} -- context_name -> { file_path, position }
+local points = {} -- context_name -> a table with file_path and position.
 local is_loading = false
 
 function ResumePoints.init(dmf_mod)

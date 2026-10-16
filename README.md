@@ -118,8 +118,8 @@ Music Replacer decodes your files with Media Foundation, Windows' own audio deco
 
 To report a problem, turn on Diagnostic Logging in the Debug group of the mod options, play until the problem happens, and attach these two files:
 
-* `%APPDATA%\Fatshark\Darktide\MusicReplacer\diagnostic.log`
-* The newest file in `%APPDATA%\Fatshark\Darktide\console_logs\`
+* The mod's log, `%APPDATA%\Fatshark\Darktide\MusicReplacer\diagnostic.log`.
+* The newest file in `%APPDATA%\Fatshark\Darktide\console_logs\`.
 
 Reset Log on Launch clears `diagnostic.log` every time the game starts, so copy the log before launching the game again, or turn that setting off first.
 
@@ -179,7 +179,7 @@ How native music reaches the player, how the mod silences it, and how to trace a
 Logs to check when something misbehaves:
 
 * `%APPDATA%\Fatshark\Darktide\MusicReplacer\diagnostic.log`, written only while Diagnostic Logging is on in the mod options.
-* `%APPDATA%\Fatshark\Darktide\console_logs\`
+* The game's console logs, in `%APPDATA%\Fatshark\Darktide\console_logs\`.
 
 ## Project structure
 

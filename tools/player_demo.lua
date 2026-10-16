@@ -1,7 +1,7 @@
 -- Standalone check of playback outside the game, through player.lua.
 -- Timeline: A fades in, then the script freezes for 3 seconds like a stalled game thread, and A crossfades into B.
 -- B starts 12 seconds before its end with looping on, so it wraps to its start without a gap, and then B fades out.
--- Usage: luajit tools/player_demo.lua <file A> <file B> [--silent]
+-- Run it as `luajit tools/player_demo.lua <file A> <file B> [--silent]`.
 -- --silent runs the same timeline at volume 0, to check decoding and feeding without making a sound.
 
 local ffi = require("ffi")

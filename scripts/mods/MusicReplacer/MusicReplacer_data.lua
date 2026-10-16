@@ -1,5 +1,5 @@
--- The mod options, grouped and ordered by how often players need them: their songs first, then where music plays,
--- then fine timing, and troubleshooting last.
+-- The mod options, grouped and ordered by how often players need them.
+-- Their songs come first, then where music plays, then fine timing, and troubleshooting last.
 -- Every setting names its tooltip, since DMF only formats named tooltips, which turns "%%" in them into "%".
 return {
 	name = "Music Replacer",

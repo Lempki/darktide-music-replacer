@@ -36,7 +36,7 @@ local Player = nil
 local disk_path = function(file_path) return file_path end
 local log_fn = function() end
 
-local current = nil -- { stream, file_path, loop, duration, on_finished, elapsed, end_fading }
+local current = nil -- Fields: stream, file_path, loop, duration, on_finished, elapsed, end_fading.
 local outgoing = {} -- { stream, file_path, loop, parked_elapsed } for songs fading out or parked, after a switch or a stop.
 local finished_elapsed = 0 -- The last finished track's elapsed time, which on_finished reads through elapsed().
 local gain = 1

@@ -1,6 +1,7 @@
 -- Pins how context.lua catches up with the game's music states it did not see change.
--- That happens when the mod loads partway through a level, as after a mod reload, and when it is turned back on,
--- since DMF disables the mod's hooks while it is off. The game sets every group again on every tick, which is what the catch-up relies on.
+-- That happens when the mod loads partway through a level, as after a mod reload.
+-- It also happens when the mod is turned back on, since DMF disables the mod's hooks while it is off.
+-- The game sets every group again on every tick, which is what the catch-up relies on.
 
 local FakeEngine = require("tests.helpers.fake_engine")
 
