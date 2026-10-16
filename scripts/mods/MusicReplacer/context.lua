@@ -35,6 +35,8 @@
 --	* Some missions never report a zone.
 --	  No zone plus `music_game_state == "mission"` counts as a mission until a victory or defeat state ends it.
 --	  It does not count while the hub is still loaded, since leaving the hub clears the zone a moment before the game state changes.
+--	  Nor does it count with no mission loaded at all.
+--	  Leaving the hub for character select unloads the hub a few seconds before the game state changes.
 --	* `music_objective == "last_man_standing"` resolves "mission_last_stand", over bosses, combat and explore.
 --	  The game sets it when one player of the team is alive. Once it ends, the context follows the other states again.
 --	* Any other `music_objective` value is mission event music, for example "kill_event" or "fortification_event".
@@ -210,7 +212,7 @@ end
 
 -- Some missions never report a zone, so a "mission" game state with no zone still counts as a mission.
 local function is_zoneless_mission()
-	return has_no_zone() and music_game_state == "mission" and not mission_outcome and not mission_is_hub
+	return has_no_zone() and music_game_state == "mission" and not mission_outcome and mission_name ~= nil and not mission_is_hub
 end
 
 local function resolve(mod)

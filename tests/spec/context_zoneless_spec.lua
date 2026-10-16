@@ -59,6 +59,22 @@ describe("context.lua zoneless missions", function()
 		assert_equal(harness:current(), "mission_explore")
 	end)
 
+	-- Leaving the hub for character select clears the zone and unloads the hub, but leaves the game state on "mission" for a few seconds.
+	it("resolves no mission when the hub is left for character select", function()
+		local harness = Harness.new()
+		harness:cold_start_to_hub()
+		harness:clear_changes()
+
+		harness:state("music_zone", "None")
+		harness:mission(nil)
+		harness:wait(3)
+		harness:state("music_game_state", "main_menu")
+		harness:state("music_game_state", "loading")
+		harness:arrive_in_hub()
+
+		assert_deep_equal(harness.changes, { "nil", "hub" })
+	end)
+
 	-- A zoneless mission's victory has no zone change to end it.
 	it("ends with mission_victory and does not fall back to mission_explore in the transient mission state", function()
 		local harness = in_zoneless_mission()
