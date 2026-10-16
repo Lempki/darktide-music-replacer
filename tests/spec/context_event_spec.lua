@@ -151,6 +151,18 @@ describe("context.lua mission events", function()
 		assert_deep_equal(harness.changes, { "mission_event", "mission_victory" })
 	end)
 
+	it("resolves the hub even when quitting mid-event left the event music set", function()
+		local harness = in_mission("zone_3")
+		harness:state("music_objective", "fortification_event")
+
+		harness:state("music_zone", "None")
+		harness:state("music_game_state", "loading")
+		harness:mission(nil)
+		harness:arrive_in_hub()
+
+		assert_equal(harness:current(), "hub")
+	end)
+
 	it("resolves no event outside the hub and missions", function()
 		local harness = Harness.new()
 		harness:cold_start_to_hub()

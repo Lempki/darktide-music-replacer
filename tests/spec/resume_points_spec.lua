@@ -118,7 +118,20 @@ describe("resume_points.lua", function()
 
 		ResumePoints.on_state_change("music_game_state", "mission_intro")
 		ResumePoints.on_state_change("music_game_state", "mission")
+		ResumePoints.enter("mission_explore")
 		assert_equal(ResumePoints.remember("mission_explore", "mission_explore/a.mp3", 30, 200, false), 30)
+	end)
+
+	-- The debounced change away from the old level can arrive after the game state has already moved past loading.
+	it("keeps nothing from the old level when its change arrives after the loading screen ended", function()
+		local ResumePoints = load_resume_points()
+
+		ResumePoints.on_state_change("music_game_state", "loading")
+		ResumePoints.on_state_change("music_game_state", "mission_briefing")
+		ResumePoints.enter(nil)
+
+		assert_equal(ResumePoints.remember("mission_explore", "mission_explore/a.mp3", 30, 200, false, nil), nil)
+		assert_equal(ResumePoints.take("mission_explore"), nil)
 	end)
 
 	it("keeps its points through a mid-mission cutscene and other state groups", function()

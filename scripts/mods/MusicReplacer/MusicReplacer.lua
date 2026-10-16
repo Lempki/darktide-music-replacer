@@ -151,15 +151,18 @@ local function play_context(context_name, is_new_context)
 				return
 			end
 
-			-- A file that could not be played always counts, since it has no measured duration to compare with.
-			-- Otherwise, without a known duration or for a very short file, ending quickly is normal, so the check is skipped.
-			local quick = failed or (duration and duration > QUICK_END_SECONDS * 2 and AudioClient.elapsed() < QUICK_END_SECONDS)
+			-- A file that could not be played always counts.
+			-- Otherwise a track counts when it ended within QUICK_END_SECONDS and before half its length.
+			-- So a short file that plays through does not count.
+			-- Without a known duration, ending within QUICK_END_SECONDS is enough, so files that end at once cannot reopen every frame.
+			local elapsed = AudioClient.elapsed()
+			local quick = failed or (elapsed < QUICK_END_SECONDS and (not duration or elapsed < duration / 2))
 			if quick then
 				quick_ends[context_name] = (quick_ends[context_name] or 0) + 1
 
 				if quick_ends[context_name] >= MAX_QUICK_ENDS then
 					gave_up[context_name] = true
-					log(string.format("[playback] %s: %d tracks in a row ended within %ds, giving up and using native music until the game restarts",
+					log(string.format("[playback] %s: %d tracks in a row ended within %ds, using native music until the game restarts or the folders are rescanned",
 						context_name, MAX_QUICK_ENDS, QUICK_END_SECONDS))
 					AudioClient.stop()
 					Suppression.release()
@@ -177,8 +180,13 @@ end
 -- Context changes are debounced, so a state that flickers and returns does not restart the track.
 local DEBOUNCE_SECONDS = 0.6
 
+-- Each change restarts the debounce, so states that keep flickering would never settle, as with both holds set to 0.
+-- A pending change commits after this long anyway.
+local MAX_DEBOUNCE_SECONDS = 3
+
 local pending_context = nil
 local debounce_elapsed = 0
+local pending_elapsed = 0
 local has_pending_change = false
 
 local function commit_pending_context()
@@ -202,6 +210,10 @@ Context.on_change(function(new_context, old_context, boss_breed)
 	log(string.format("[context] %s -> %s%s",
 		tostring(old_context), tostring(new_context),
 		boss_breed and (" (breed=" .. boss_breed .. ")") or ""))
+
+	if not has_pending_change then
+		pending_elapsed = 0
+	end
 
 	pending_context = new_context
 	debounce_elapsed = 0
@@ -342,8 +354,9 @@ mod.update = function(dt)
 
 	if enabled and has_pending_change then
 		debounce_elapsed = debounce_elapsed + dt
+		pending_elapsed = pending_elapsed + dt
 
-		if debounce_elapsed >= DEBOUNCE_SECONDS then
+		if debounce_elapsed >= DEBOUNCE_SECONDS or pending_elapsed >= MAX_DEBOUNCE_SECONDS then
 			commit_pending_context()
 		end
 	end

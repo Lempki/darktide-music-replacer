@@ -4,6 +4,7 @@
 --
 -- Resolution rules that are not obvious from the code:
 --	* The hub is told apart from a mission by `music_zone`, since `music_game_state` is "mission" for both.
+--	  The hub zone wins over every mission state, since quitting mid-event or mid-last-stand can leave `music_objective` set.
 --	* A boss is active while Wwise reports `music_combat == "boss"`, which is when the game plays its own boss music.
 --	  Bosses that only open an encounter window get no boss music in the game, so they get none here either.
 --	  Those are captains, daemonhosts, and Spillway's psyker, which the game's boss music check leaves out by their breed tags.
@@ -12,7 +13,8 @@
 --	* Encounter windows are tracked per boss unit, since several bosses can be open at once and a start can repeat.
 --	  A window stays open until its own end event, which the game sends when the boss dies or despawns.
 --	  A boss that the game leaves stuck somewhere keeps its window open, just as it keeps the game's own boss music.
---	* A boss only counts in the hub or a mission, never on a loading screen.
+--	* A boss only counts in a mission, never in the hub or on a loading screen.
+--	  Boss windows are also cleared by every loading screen, so a window whose end event never came cannot reach the next level.
 --	  Meat Grinder's boss dummies leave `music_combat` at "boss" after leaving, until the next mission's intro ends.
 --	* `music_combat` flips on and off every few seconds in real combat.
 --	  So `mission_combat` holds for `combat_hold_seconds` after combat quiets, and a lull does not drop to `mission_explore`.
@@ -236,6 +238,10 @@ local function resolve(mod)
 		return nil
 	end
 
+	if music_zone == "hub" then
+		return "hub"
+	end
+
 	if music_objective == LAST_MAN_STANDING then
 		return "mission_last_stand"
 	end
@@ -258,10 +264,6 @@ local function resolve(mod)
 
 	if is_boss_active(mod) then
 		return "mission_boss"
-	end
-
-	if music_zone == "hub" then
-		return "hub"
 	end
 
 	if has_no_zone() and resolved_context == nil then
@@ -407,6 +409,11 @@ function Context.init(mod, log)
 				mission_outcome = "defeat"
 			elseif new_state == "loading" or new_state == "mission_intro" then
 				mission_outcome = nil
+			end
+
+			-- A zoneless mission can follow another level with no zone change, which would otherwise keep a stale window open.
+			if new_state == "loading" then
+				open_bosses = {}
 			end
 		elseif group_name == "music_objective" then
 			diagnostic_log(describe_transition(group_name, current, new_state))
