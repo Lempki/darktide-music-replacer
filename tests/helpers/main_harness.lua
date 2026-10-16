@@ -12,6 +12,8 @@ MainHarness.__index = MainHarness
 -- The defaults of the mod's own settings.
 local DEFAULT_SETTINGS = {
 	resume_songs = true,
+	custom_music_volume = 100,
+	menu_volume = 50,
 	captain_boss_music = false,
 	daemonhost_boss_music = false,
 	source_meat_grinder = "silence",
@@ -61,16 +63,18 @@ local function new_library(files)
 	return library
 end
 
--- A stand-in for audio_client.lua that records every play and stop.
+-- A stand-in for audio_client.lua that records every play and stop, and the volume levels it was given.
 -- `available` turns playback off and on, and `position` is what AudioClient.position() reports.
 local function new_audio_client()
-	local client = { plays = {}, stops = 0, available = true, position = 0, elapsed = 0, current = nil, shut_down = false }
+	local client = { plays = {}, stops = 0, available = true, position = 0, elapsed = 0, current = nil, shut_down = false, volume = nil, menu_volume = nil }
 
 	function client.init() end
 	function client.error() return "no audio output" end
 	function client.can_retry() return false end
 	function client.update() end
 	function client.shutdown() client.shut_down = true end
+	function client.set_volume(scale) client.volume = scale end
+	function client.set_menu_volume(target) client.menu_volume = target end
 
 	-- The real module reads these as functions, so they are looked up on the module table, not as fields.
 	local module = setmetatable({}, { __index = client })

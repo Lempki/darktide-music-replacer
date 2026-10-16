@@ -560,3 +560,59 @@ describe("audio_client.lua", function()
 		assert_equal(player.resets, 1)
 	end)
 end)
+
+describe("audio_client.lua volume", function()
+	-- Full sliders, so a stream's gain is the volume settings alone.
+	local function load_full_client()
+		local AudioClient, player, streams, sliders, lines = load_client()
+		sliders.option_master_slider = 100
+		sliders.options_music_slider = 100
+		return AudioClient, player, streams, sliders, lines
+	end
+
+	it("opens a song at the Custom Music Volume, on top of the sliders", function()
+		local AudioClient, _, streams = load_client()
+		AudioClient.set_volume(0.5)
+
+		AudioClient.play("hub/a.mp3", { fade_in = true })
+
+		assert_equal(streams[1].opts.gain, 0.2)
+	end)
+
+	it("follows a changed Custom Music Volume on every stream at once", function()
+		local AudioClient, _, streams = load_full_client()
+		AudioClient.play("hub/a.mp3", { fade_in = true })
+		AudioClient.play("hub/b.mp3", { fade_in = true })
+
+		AudioClient.set_volume(0.25)
+
+		assert_deep_equal(streams[1].gains, { 1, 0.25 })
+		assert_deep_equal(streams[2].gains, { 1, 0.25 })
+	end)
+
+	it("fades down to the menu volume over half a second while a menu is open, and back up once it closes", function()
+		local AudioClient, _, streams = load_full_client()
+		AudioClient.play("hub/a.mp3", { fade_in = true })
+
+		AudioClient.set_menu_volume(0.5)
+		AudioClient.update(0.25)
+		AudioClient.update(0.25)
+		AudioClient.update(0.25)
+		AudioClient.set_menu_volume(1)
+		AudioClient.update(0.25)
+		AudioClient.update(0.25)
+		AudioClient.update(0.25)
+
+		assert_deep_equal(streams[1].gains, { 1, 0.75, 0.5, 0.75, 1 })
+	end)
+
+	it("opens a song during a menu at the menu volume", function()
+		local AudioClient, _, streams = load_full_client()
+		AudioClient.set_menu_volume(0.5)
+		AudioClient.update(0.5)
+
+		AudioClient.play("hub/a.mp3", { fade_in = true })
+
+		assert_equal(streams[1].opts.gain, 0.5)
+	end)
+end)

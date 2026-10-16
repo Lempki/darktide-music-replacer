@@ -1,5 +1,5 @@
 -- The mod options, grouped and ordered by how often players need them.
--- Their songs come first, then where music plays, then fine timing, and troubleshooting last.
+-- Their songs come first, then what plays where and how loud, then fine timing, and troubleshooting last.
 -- Every setting names its tooltip, since DMF only formats named tooltips, which turns "%%" in them into "%".
 
 -- What a context plays. The default keeps the mod's plain behavior: custom songs where there are files, the game's music elsewhere.
@@ -68,6 +68,30 @@ return {
 							{ text = "source_game", value = "game" },
 							{ text = "source_silence", value = "silence" },
 						},
+					},
+				},
+			},
+			{
+				setting_id = "volume",
+				type = "group",
+				sub_widgets = {
+					{
+						setting_id = "custom_music_volume",
+						type = "numeric",
+						tooltip = "custom_music_volume_tooltip",
+						default_value = 100,
+						range = { 0, 100 },
+						decimals_number = 0,
+						unit_text = "percent_unit",
+					},
+					{
+						setting_id = "menu_volume",
+						type = "numeric",
+						tooltip = "menu_volume_tooltip",
+						default_value = 50,
+						range = { 0, 100 },
+						decimals_number = 0,
+						unit_text = "percent_unit",
 					},
 				},
 			},

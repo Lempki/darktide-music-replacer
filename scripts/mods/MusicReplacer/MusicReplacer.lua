@@ -63,6 +63,15 @@ local function source_of(context_name)
 	return mod:get("source_" .. context_name) or "custom"
 end
 
+-- The volume settings are percentages of the music's normal level.
+local function custom_volume()
+	return (mod:get("custom_music_volume") or 100) / 100
+end
+
+local function menu_volume()
+	return Context.menu_open() and (mod:get("menu_volume") or 50) / 100 or 1
+end
+
 local function remember_playing_track(next_context_name)
 	-- A song playing to its end belongs to a context that is over, so there is nothing to come back to.
 	if not playing_track or playing_track.context_name == next_context_name or not AudioClient.is_playing() or finishing_context then
@@ -303,6 +312,7 @@ mod.on_all_mods_loaded = function()
 	XAudio.init(NativeFfi)
 	Player.init(NativeFfi, MediaDecoder, XAudio)
 	AudioClient.init(log, { player = Player, disk_path = Library.disk_path })
+	AudioClient.set_volume(custom_volume())
 
 	-- A mod can only install one hook per method on itself.
 	-- So Suppression and EventProbe cannot each hook WwiseWorld.trigger_resource_event on their own.
@@ -368,6 +378,8 @@ end
 mod.on_setting_changed = function(setting_id)
 	if setting_id == "source_meat_grinder" or setting_id == "daemonhost_boss_music" or setting_id == "captain_boss_music" then
 		Context.refresh(mod)
+	elseif setting_id == "custom_music_volume" then
+		AudioClient.set_volume(custom_volume())
 	elseif setting_id == "resume_songs" and not mod:get("resume_songs") then
 		ResumePoints.forget_all()
 	elseif enabled and current_context and setting_id == "source_" .. current_context then
@@ -406,6 +418,7 @@ mod.update = function(dt)
 		end
 	end
 
+	AudioClient.set_menu_volume(menu_volume())
 	AudioClient.update(dt)
 
 	-- Playback that stops working hands the music back to the game at once, not at the next context change.

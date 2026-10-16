@@ -65,6 +65,27 @@ local strings = {
 			highlight("Game's Own") .. " plays the game's combat music, and " .. highlight("Silence") .. " keeps the area quiet.",
 	},
 
+	volume = {
+		en = "Volume",
+	},
+	percent_unit = {
+		en = "%",
+	},
+	custom_music_volume = {
+		en = "Custom Music Volume",
+	},
+	custom_music_volume_tooltip = {
+		en = "How loud your songs play, on top of the game's master and music volume.\n\n" ..
+			"At " .. highlight("100%%") .. " they play as loud as the files themselves. The game's own music is not affected.",
+	},
+	menu_volume = {
+		en = "Menu Volume",
+	},
+	menu_volume_tooltip = {
+		en = "How loud your songs play while a menu is open, such as the Esc menu, the inventory, the mission board, or a vendor.\n\n" ..
+			"It is a share of the Custom Music Volume. " .. highlight("100%%") .. " keeps the music at full volume in menus.",
+	},
+
 	where_music_plays = {
 		en = "Boss Music",
 	},

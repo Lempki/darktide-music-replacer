@@ -101,3 +101,29 @@ describe("context.lua state logging", function()
 		})
 	end)
 end)
+
+describe("context.lua menus", function()
+	it("reports a menu as open while the game sets the options group, and logs it without changing the context", function()
+		local engine = FakeEngine.new()
+		local Context = engine:load("context")
+		local lines = {}
+		local changes = 0
+		Context.on_change(function() changes = changes + 1 end)
+		Context.init(engine.mod, function(line) lines[#lines + 1] = line end)
+
+		assert_equal(Context.menu_open(), false)
+		engine:set_state("options", "ingame_menu")
+		assert_equal(Context.menu_open(), true)
+		engine:set_state("options", "vendor_menu")
+		assert_equal(Context.menu_open(), true)
+		engine:set_state("options", "None")
+		assert_equal(Context.menu_open(), false)
+
+		assert_deep_equal(lines, {
+			"[raw] options: None -> ingame_menu",
+			"[raw] options: ingame_menu -> vendor_menu",
+			"[raw] options: vendor_menu -> None",
+		})
+		assert_equal(changes, 0)
+	end)
+end)

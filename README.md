@@ -62,7 +62,7 @@ Your audio survives reinstalling or updating the mod through Vortex. Vortex only
 
 ## Settings
 
-These are in the in-game mod options under Music Replacer, in five groups, in the order the menu shows them.
+These are in the in-game mod options under Music Replacer, in six groups, in the order the menu shows them.
 
 ### Songs
 
@@ -83,6 +83,13 @@ One dropdown per context: Hub, Explore, Combat, Horde, Boss, Event, Last Stand, 
 | Silence | Nothing. The game's own music is silenced too. |
 
 Meat Grinder offers Custom, Game's Own, and Silence, and defaults to Silence. There, Custom plays your explore and combat songs, which is a quick way to test them, and Game's Own plays the game's combat music. A changed choice applies at once, also to the context playing now.
+
+### Volume
+
+| Setting | Default | What it does |
+|---|---|---|
+| Custom Music Volume | 100% | How loud your songs play, on top of the game's master and music volume sliders. At 100% they play as loud as the files themselves. The game's own music is not affected. |
+| Menu Volume | 50% | How loud your songs play while a menu is open, as a share of the Custom Music Volume. The menus are the ones the game itself reports to its audio: the Esc menu and its settings, the inventory, the mission board, vendors, the store, and character appearance. The music fades down over half a second and back up once the menu closes. Set it to 100% to keep full volume in menus. |
 
 ### Boss Music
 

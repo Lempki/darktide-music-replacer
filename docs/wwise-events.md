@@ -29,6 +29,10 @@ Wwise reports "no value" as the word `None`.
 * `music_game_state` says where the player is. Custom music only plays while it is `mission`, `mission_board`, or `mission_ready`, so the game's own music plays on loading screens, in the briefing, and during the mission intro. `cinematic` means a cutscene, which never gets custom music. After a mission, a story mission can go straight from `game_score_win` to `cinematic`.
 * `music_objective` carries the last stand and mission event music. Some events set it to `None` for a few seconds between their stages, which the Event Music Hold setting bridges.
 
+One more group, `options`, says which kind of menu is open.
+It is `ingame_menu` in the Esc menu and its settings, the inventory, and the mission board, `vendor_menu` at vendors, `appearance_menu` in character appearance, `credit_store_menu` in the store, and `None` with no menu open.
+The mod lowers custom music to the Menu Volume setting while it is anything but `None`, and logs its changes as `[raw] options` lines.
+
 ### Events
 
 Wwise events start sounds, and a few of them are music.

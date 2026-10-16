@@ -1,6 +1,7 @@
 -- Plays the music inside the game through player.lua, one song at a time with crossfades between them.
 -- A switch is a true crossfade: the outgoing song fades out while the incoming one fades in.
 -- The volume sliders set every stream's gain directly, up or down, so no slider change restarts a song.
+-- The Custom Music Volume setting and an open menu scale that gain too, the menu with a short fade.
 -- A file that cannot be opened behaves like a track that ended at once, so MusicReplacer.lua's quick-end guard handles it.
 -- When the audio device is lost and XAudio2 cannot follow, the engine is rebuilt and the song resumes where it was.
 --
@@ -13,6 +14,9 @@ local AudioClient = {}
 local CROSSFADE_SECONDS = 2
 local NATURAL_END_FADE_SECONDS = 2 -- Also how long before the end a song that is not looping starts fading out.
 local STOP_FADE_SECONDS = 0.5
+
+-- How long the music takes to go down to its menu volume, or back up.
+local MENU_FADE_SECONDS = 0.5
 
 -- How long a faded-out song stays parked. Each holds about 0.7 MB, and most returns, like combat after a lull, come sooner.
 local PARK_SECONDS = 60
@@ -42,6 +46,10 @@ local finished_elapsed = 0 -- The last finished track's elapsed time, which on_f
 local gain = 1
 local current_master_slider = nil
 local current_music_slider = nil
+local volume = 1 -- The Custom Music Volume setting, as a linear amplitude scale.
+local menu_target = 1 -- The menu volume while a menu is open, else 1.
+local menu_level = 1 -- Where the fade toward menu_target is now.
+local menu_rate = 0 -- How far menu_level moves per second.
 local recoveries = 0
 local healthy_elapsed = 0
 local retry_elapsed = 0
@@ -93,9 +101,55 @@ local function read_sliders()
 	return master, music
 end
 
--- The game's master and music sliders multiplied, as a linear amplitude scale.
-local function slider_gain(master, music)
-	return master * music / 10000
+-- The game's master and music sliders, the Custom Music Volume setting, and the menu fade, as a linear amplitude scale.
+local function current_gain()
+	return current_master_slider * current_music_slider / 10000 * volume * menu_level
+end
+
+-- Reads the sliders and sets every stream's gain at once.
+local function apply_gain()
+	current_master_slider, current_music_slider = read_sliders()
+	gain = current_gain()
+
+	if current and current.stream then
+		current.stream:set_gain(gain)
+	end
+	for _, entry in ipairs(outgoing) do
+		entry.stream:set_gain(gain)
+	end
+end
+
+-- Moves menu_level toward menu_target. Returns true while it moves.
+local function move_menu_level(dt)
+	if menu_level == menu_target then
+		return false
+	end
+
+	local step = menu_rate * dt
+	if math.abs(menu_target - menu_level) <= step then
+		menu_level = menu_target
+	elseif menu_target > menu_level then
+		menu_level = menu_level + step
+	else
+		menu_level = menu_level - step
+	end
+	return true
+end
+
+-- Sets the Custom Music Volume, as a linear amplitude scale, at once.
+function AudioClient.set_volume(scale)
+	if scale ~= volume then
+		volume = scale
+		apply_gain()
+	end
+end
+
+-- Sets the level to fade to while a menu is open, or 1 while none is. Call every tick.
+function AudioClient.set_menu_volume(target)
+	if target ~= menu_target then
+		menu_target = target
+		menu_rate = math.abs(menu_target - menu_level) / MENU_FADE_SECONDS
+	end
 end
 
 local function fade_out(entry, seconds)
@@ -202,7 +256,7 @@ function AudioClient.play(file_path, opts)
 	used = true
 	finished_elapsed = 0
 	current_master_slider, current_music_slider = read_sliders()
-	gain = slider_gain(current_master_slider, current_music_slider)
+	gain = current_gain()
 
 	local loop = opts.loop == true
 	local stream, err
@@ -377,7 +431,7 @@ local function log_stats(dt)
 	end
 end
 
--- Call every tick: follows the sliders, moves fades, refills queues, and finishes ended tracks.
+-- Call every tick: follows the sliders and the menu volume, moves fades, refills queues, and finishes ended tracks.
 function AudioClient.update(dt)
 	if not Player then
 		return
@@ -401,16 +455,8 @@ function AudioClient.update(dt)
 	log_stats(dt)
 
 	local master, music = read_sliders()
-	if master ~= current_master_slider or music ~= current_music_slider then
-		current_master_slider, current_music_slider = master, music
-		gain = slider_gain(master, music)
-
-		if current and current.stream then
-			current.stream:set_gain(gain)
-		end
-		for _, entry in ipairs(outgoing) do
-			entry.stream:set_gain(gain)
-		end
+	if move_menu_level(dt) or master ~= current_master_slider or music ~= current_music_slider then
+		apply_gain()
 	end
 
 	if current then

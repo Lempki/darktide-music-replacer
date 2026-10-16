@@ -249,6 +249,29 @@ describe("MusicReplacer.lua music per context", function()
 	end)
 end)
 
+describe("MusicReplacer.lua volume", function()
+	it("sets the Custom Music Volume at startup and follows its changes", function()
+		local harness = in_hub(nil, { settings = { custom_music_volume = 80 } })
+		assert_equal(harness.client.volume, 0.8)
+
+		harness:set_setting("custom_music_volume", 30)
+		assert_equal(harness.client.volume, 0.3)
+	end)
+
+	it("lowers the music to the Menu Volume while a menu is open, and raises it once the menu closes", function()
+		local harness = in_hub(nil, { settings = { menu_volume = 40 } })
+		assert_equal(harness.client.menu_volume, 1)
+
+		harness:state("options", "ingame_menu")
+		harness:tick(0.1)
+		assert_equal(harness.client.menu_volume, 0.4)
+
+		harness:state("options", "None")
+		harness:tick(0.1)
+		assert_equal(harness.client.menu_volume, 1)
+	end)
+end)
+
 describe("MusicReplacer.lua Play to End", function()
 	-- Returns a harness whose boss song plays, with the boss set to Play to End.
 	local function during_boss()

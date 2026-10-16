@@ -51,6 +51,8 @@
 --	* Victory and defeat resolve to their own contexts, from their state until the next level starts.
 --	  The game state returns to "mission" in between, so the outcome is tracked in `mission_outcome`.
 --	  A loading screen or a real zone clears it, since a story mission's cutscene can skip the loading screen.
+--	* Every menu screen sets the `options` group, for example to "ingame_menu" in the Esc menu or "vendor_menu" at a vendor.
+--	  It decides no context. It only tells MusicReplacer.lua that a menu is open, so the music can be lowered.
 
 local Context = {}
 
@@ -64,6 +66,7 @@ local wwise_combat_state = nil -- Current value of the "music_combat" state grou
 local music_zone = nil -- Current value of the "music_zone" state group.
 local music_game_state = nil -- Current value of the "music_game_state" state group.
 local music_objective = nil -- Current value of the "music_objective" state group.
+local menu_state = nil -- Current value of the "options" state group, which names the kind of menu open.
 local mission_name = nil -- Name of the current mission, or nil while none is loaded.
 local mission_is_hub = false -- True while the loaded mission's template is the hub.
 local mission_is_operation = false -- True while the loaded mission is an Operation.
@@ -336,6 +339,11 @@ function Context.current()
 	return resolved_context, current_boss_breed()
 end
 
+-- True while the game shows a menu, such as the Esc menu, the inventory, the mission board, or a vendor.
+function Context.menu_open()
+	return menu_state ~= nil and menu_state ~= "None"
+end
+
 -- Resolves again after a setting change.
 function Context.refresh(mod)
 	recompute(mod)
@@ -420,6 +428,10 @@ function Context.init(mod, log)
 		elseif group_name == "music_objective" then
 			diagnostic_log(describe_transition(group_name, current, new_state))
 			music_objective = new_state
+		elseif group_name == "options" then
+			diagnostic_log(describe_transition(group_name, current, new_state))
+			menu_state = new_state
+			return
 		else
 			if LOGGED_ONLY_STATE_GROUPS[group_name] then
 				diagnostic_log(describe_transition(group_name, current, new_state))
