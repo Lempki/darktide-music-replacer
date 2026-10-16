@@ -3,8 +3,9 @@
 local Harness = require("tests.helpers.context_harness")
 
 -- Returns a harness that has walked from the hub into Meat Grinder.
-local function in_meat_grinder(meat_grinder_music)
-	local harness = Harness.new({ meat_grinder_music = meat_grinder_music })
+-- `source` is the Meat Grinder setting: "custom", "game", or "silence".
+local function in_meat_grinder(source)
+	local harness = Harness.new({ source_meat_grinder = source })
 	harness:cold_start_to_hub()
 	harness:leave_hub()
 	harness:wait(15)
@@ -15,25 +16,31 @@ local function in_meat_grinder(meat_grinder_music)
 end
 
 describe("context.lua Meat Grinder", function()
-	it("resolves silence with the setting off, once the visit starts", function()
-		local harness = in_meat_grinder(false)
+	it("resolves meat_grinder when set to silence, once the visit starts", function()
+		local harness = in_meat_grinder("silence")
 
-		assert_deep_equal(harness.changes, { "hub", "nil", "silence" })
+		assert_deep_equal(harness.changes, { "hub", "nil", "meat_grinder" })
 	end)
 
-	it("stays on silence through combat and boss signals with the setting off", function()
-		local harness = in_meat_grinder(false)
+	it("resolves meat_grinder when set to the game's own music", function()
+		local harness = in_meat_grinder("game")
+
+		assert_equal(harness:current(), "meat_grinder")
+	end)
+
+	it("stays on meat_grinder through combat and boss signals unless set to custom", function()
+		local harness = in_meat_grinder("silence")
 		local boss = harness:new_boss("chaos_ogryn_houndmaster")
 
 		harness:boss_start(boss)
 		harness:state("music_combat", "boss")
 		harness:state("music_combat", "normal")
 
-		assert_equal(harness:current(), "silence")
+		assert_equal(harness:current(), "meat_grinder")
 	end)
 
-	it("resolves mission_explore and mission_combat with the setting on", function()
-		local harness = in_meat_grinder(true)
+	it("resolves mission_explore and mission_combat when set to custom", function()
+		local harness = in_meat_grinder("custom")
 		harness:clear_changes()
 
 		harness:state("music_combat", "normal")
@@ -42,17 +49,17 @@ describe("context.lua Meat Grinder", function()
 	end)
 
 	it("re-resolves at once when the setting changes during a visit", function()
-		local harness = in_meat_grinder(false)
+		local harness = in_meat_grinder("silence")
 		harness:clear_changes()
 
-		harness:set_setting("meat_grinder_music", true)
-		harness:set_setting("meat_grinder_music", false)
+		harness:set_setting("source_meat_grinder", "custom")
+		harness:set_setting("source_meat_grinder", "silence")
 
-		assert_deep_equal(harness.changes, { "mission_explore", "silence" })
+		assert_deep_equal(harness.changes, { "mission_explore", "meat_grinder" })
 	end)
 
 	it("resolves hub after leaving", function()
-		local harness = in_meat_grinder(false)
+		local harness = in_meat_grinder("silence")
 		harness:clear_changes()
 
 		harness:state("music_game_state", "loading")

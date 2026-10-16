@@ -182,7 +182,7 @@ function Suppression.on_state_change(group_name, new_state)
 	end
 end
 
--- Turns on the levers for a context that has a custom track available, and for the silence context.
+-- Turns on the levers for a context that has a custom track available, or that is set to silence.
 -- Combat and event suppression apply to every context.
 -- The hub, the victory and defeat contexts, and the last stand, event and Mortis Trials wave contexts each need one more.
 function Suppression.engage(context_name)

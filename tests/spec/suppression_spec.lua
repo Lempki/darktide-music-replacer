@@ -109,11 +109,11 @@ describe("suppression.lua combat", function()
 		assert_equal(#engine.wwise_calls, calls_before)
 	end)
 
-	it("forces combat for the silence context too", function()
+	it("forces combat for Meat Grinder set to silence too", function()
 		local engine, Suppression = load_suppression()
 		engine:set_state("music_combat", "boss")
 
-		Suppression.engage("silence")
+		Suppression.engage("meat_grinder")
 
 		assert_equal(engine:wwise_state("music_combat"), "None")
 	end)

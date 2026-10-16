@@ -304,6 +304,22 @@ describe("audio_client.lua", function()
 		assert_equal(math.abs(fade[2] - 1.8) < 1e-9, true, tostring(fade[2]))
 	end)
 
+	it("stops a looping song at the end of its file when asked to play it to its end", function()
+		local AudioClient, _, streams = load_client()
+		local finished = nil
+		AudioClient.play("hub/only.mp3", { fade_in = false, loop = true, on_finished = function(failed) finished = failed end })
+
+		AudioClient.play_to_end()
+		streams[1].current_position = 198.5
+		AudioClient.update(0.1)
+		assert_deep_equal(streams[1].fades, { { 0, 1.5 } })
+		assert_equal(finished, nil)
+
+		AudioClient.update(1.5)
+		assert_equal(finished, false)
+		assert_equal(streams[1].destroyed, true)
+	end)
+
 	it("does not fade out while looping", function()
 		local AudioClient, _, streams = load_client()
 		AudioClient.play("hub/b.mp3", { fade_in = false, duration_seconds = 199, loop = true })

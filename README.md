@@ -10,7 +10,8 @@ This is Music Replacer, a mod for Warhammer 40,000: Darktide that replaces the g
 * Switching between songs is a true crossfade: the outgoing song fades out while the incoming one fades in.
 * Explore and combat songs, and Mortis Trials wave and break songs, continue from where they stopped when the music switches back to them, instead of restarting. Horde, boss, and event songs continue too after higher-priority music interrupts them, such as a boss during a horde or a last stand during an event, as long as that horde, fight, or event is still going.
 * Follows the in-game master and music volume sliders at once, in both directions, without restarting the song.
-* Keeps the Meat Grinder training area silent unless you turn music on there, which doubles as a quick way to test your files.
+* Lets you pick, per context, your songs, the game's own music, or silence, and lets a song play to its end, such as a boss song after the boss dies.
+* Keeps the Meat Grinder training area silent unless you pick music there, which doubles as a quick way to test your files.
 * Native music is silenced only once a replacement track is available, so a context with no files behaves exactly like an unmodified game.
 
 ## Prerequisites
@@ -61,7 +62,7 @@ Your audio survives reinstalling or updating the mod through Vortex. Vortex only
 
 ## Settings
 
-These are in the in-game mod options under Music Replacer, in four groups, in the order the menu shows them.
+These are in the in-game mod options under Music Replacer, in five groups, in the order the menu shows them.
 
 ### Songs
 
@@ -70,13 +71,25 @@ These are in the in-game mod options under Music Replacer, in four groups, in th
 | Rescan Audio Folders | (button) | Lists the audio folders again at once. The mod already notices added, removed, and replaced files by itself a few seconds after they change, so this is for drives where Windows cannot report changes, such as some network drives. |
 | Resume Songs | On | When explore or combat music, or a Mortis Trials wave or break, comes back, its song continues from where it stopped. A horde, boss, or event song also continues after higher-priority music interrupts it, such as a boss during a horde or a last stand during an event, as long as that horde, fight, or event did not end in between. A new horde, boss fight, or event gets a new pick. A new song is also picked once one ends on its own. Every mission and hub visit starts with fresh songs. |
 
-### Where Music Plays
+### Music per Context
+
+One dropdown per context: Hub, Explore, Combat, Horde, Boss, Event, Last Stand, Victory, Defeat, Mortis Trials Wave, Mortis Trials Break, and Meat Grinder. Each picks what plays there:
+
+| Choice | What plays |
+|---|---|
+| Custom | Your songs from the context's folder, or the game's own music while the folder is empty. This is the default for every context except Meat Grinder. |
+| Custom (Play to End) | The same, and a song also plays to its end after the music moves to a less important context, such as from a boss back to exploring. The next context's music starts once the song ends. Anything more important, the mission's end, and a loading screen still cut the song short. If the context comes back before the song ends, the song simply goes on. |
+| Game's Own | The game's own music, even with songs in the folder, so you can turn one context off without moving files. |
+| Silence | Nothing. The game's own music is silenced too. |
+
+Meat Grinder offers Custom, Game's Own, and Silence, and defaults to Silence. There, Custom plays your explore and combat songs, which is a quick way to test them, and Game's Own plays the game's combat music. A changed choice applies at once, also to the context playing now.
+
+### Boss Music
 
 | Setting | Default | What it does |
 |---|---|---|
 | Boss Music for Captains | Off | On plays your boss music for a captain, including the Karnak Twins, from the moment it engages until it dies. Off leaves captains to the game's own music. Event music still plays during an event. |
 | Boss Music for Daemonhosts | Off | Off follows the game, which plays no music for an angered daemonhost. On plays your boss music from the moment a daemonhost is angered until it dies. |
-| Music in Meat Grinder | Off | Off keeps custom music out of the Meat Grinder training area and also silences the game's own combat music there. On plays your explore and combat music there. |
 
 ### Timing
 
@@ -134,6 +147,7 @@ The mod always logs the important events, such as which music plays and why, and
 * [x] Adjustable combat music hold, so a lull in a fight does not drop back to explore music.
 * [x] Opt-in diagnostic-mode setting, off by default.
 * [x] A setting for whether Meat Grinder plays music, off by default.
+* [x] Options per context: custom music, the game's own music, or silence, and letting a song play to its end after its context is over. Meat Grinder is one more context with these options.
 * [x] Custom music for the last stand, when only one player of the team is still alive.
 * [x] Custom music for mission events, such as holdouts, escapes, and scripted boss fights.
 * [x] A setting for whether angered daemonhosts play boss music, off by default.
@@ -145,7 +159,6 @@ The mod always logs the important events, such as which music plays and why, and
 * [x] Custom music for Mortis Trials, with separate folders for its waves and the breaks between them.
 * [x] Picking up added, removed, and replaced audio files by itself while the game runs.
 * [x] A short log of the important events written by default, with the previous session's log kept beside it as `diagnostic-prev.log`, so either can be attached to a bug report. Detailed Logging adds the noisy lines on top.
-* [ ] Options per context: whether it plays custom music, the game's own music, or silence, and whether a song plays to its end after the context is over, such as a boss song after the boss dies. Meat Grinder becomes one more context with these options.
 * [ ] Volume: lowering custom music while the pause menu is open, as the game does with its own music, and optional loudness normalization, so quiet and loud files play at a similar level without changing the files.
 * [ ] Custom music for loading screens.
 * [ ] Optional subfolders named after what the game reports, which override a context's folder: per kind of mission event, such as `escape_event`, per kind of monstrosity, such as `chaos_spawn`, and per game mode or mission type, such as Havoc and Expeditions.

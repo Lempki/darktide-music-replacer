@@ -261,6 +261,15 @@ function AudioClient.play(file_path, opts)
 	return true
 end
 
+-- Lets the current song end at the end of its file, for a song that plays to its end after its context is over.
+-- A looping song stops looping there and fades out like any other, while one that does not loop ends anyway.
+function AudioClient.play_to_end()
+	if current and current.loop then
+		current.loop = false
+		current.unlooped = true
+	end
+end
+
 -- Fades the current track out quickly, for the native-music fallback and contexts without music.
 function AudioClient.stop()
 	if current and current.stream then
@@ -345,6 +354,11 @@ local function update_current(dt)
 	if duration and not current.end_fading and stream:position() >= duration - NATURAL_END_FADE_SECONDS then
 		current.end_fading = true
 		stream:fade_to(0, math.max(0.1, duration - stream:position()))
+	end
+
+	-- A song that stopped looping still has its next pass queued, so it ends once its fade is over instead of when its queue runs dry.
+	if current.unlooped and current.end_fading and not stream:fading() then
+		finish()
 	end
 end
 

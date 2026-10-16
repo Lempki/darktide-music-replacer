@@ -28,8 +28,8 @@
 --	  Loading screens, the loadout, the briefing, the intro and menus resolve no context, even once the zone has arrived.
 --	  The game sends the hub zone about 10 seconds before the loading screen ends, and a mission zone partway through the briefing.
 --	* Meat Grinder has no `wwise_state`, so it is recognized by its mission name instead.
---	  It resolves to "silence" unless the `meat_grinder_music` setting is on.
---	  "silence" plays no custom track and keeps the combat and exploration event suppression on.
+--	  It resolves to "meat_grinder", whose own setting picks silence or the game's music there.
+--	  With that setting on "custom", it resolves like a mission instead, so the explore and combat music plays.
 --	* Wwise reports "no zone" as the string "None". Meat Grinder and the loading screens both report it.
 --	  It is treated like nil, so neither plays mission music.
 --	* Some missions never report a zone.
@@ -228,8 +228,8 @@ local function resolve(mod)
 		return nil
 	end
 
-	if mission_name == MEAT_GRINDER_MISSION and not mod:get("meat_grinder_music") then
-		return "silence"
+	if mission_name == MEAT_GRINDER_MISSION and mod:get("source_meat_grinder") ~= "custom" then
+		return "meat_grinder"
 	end
 
 	-- Not in the hub or a mission, for example the main menu, a loading screen or a mission end.

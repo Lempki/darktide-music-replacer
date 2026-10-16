@@ -54,8 +54,18 @@ local gave_up = {} -- context_name -> true once that context stopped retrying.
 -- The custom track AudioClient was last asked to play, so a context change can remember where it stopped.
 local playing_track = nil -- Fields: context_name, file_path, duration, is_only_file.
 
+-- The context whose song plays on to its end after the music moved to a less important context, or nil.
+-- Its setting is "Custom (Play to End)". The current context's own music starts once that song ends.
+local finishing_context = nil
+
+-- What a context plays, from its setting: "custom", "custom_play_to_end", "game", or "silence".
+local function source_of(context_name)
+	return mod:get("source_" .. context_name) or "custom"
+end
+
 local function remember_playing_track(next_context_name)
-	if not playing_track or playing_track.context_name == next_context_name or not AudioClient.is_playing() then
+	-- A song playing to its end belongs to a context that is over, so there is nothing to come back to.
+	if not playing_track or playing_track.context_name == next_context_name or not AudioClient.is_playing() or finishing_context then
 		return
 	end
 
@@ -92,16 +102,28 @@ local function play_context(context_name, is_new_context)
 		ResumePoints.enter(context_name)
 	end
 
+	finishing_context = nil
+
 	if not context_name then
 		AudioClient.stop()
 		Suppression.release()
 		return
 	end
 
-	if context_name == "silence" then
+	-- Meat Grinder only resolves to its own context for these two, since "custom" plays the mission contexts there.
+	local source = source_of(context_name)
+
+	if source == "game" then
+		AudioClient.stop()
+		Suppression.release()
+		log(string.format("[playback] %s: set to the game's own music", context_name))
+		return
+	end
+
+	if source == "silence" then
 		AudioClient.stop()
 		Suppression.engage(context_name)
-		log("[playback] silence: no custom music, combat and exploration event suppression on")
+		log(string.format("[playback] %s: set to silence", context_name))
 		return
 	end
 
@@ -146,6 +168,13 @@ local function play_context(context_name, is_new_context)
 		loop = is_only_file,
 		start_position = start_position,
 		on_finished = function(failed)
+			-- A song that played to its end makes way for the music of the context the game is in now.
+			if finishing_context == context_name then
+				log(string.format("[playback] %s: its song ended, moving on to %s", context_name, tostring(current_context)))
+				play_context(current_context, true)
+				return
+			end
+
 			-- A loop only gets here if its file could not be played.
 			-- After a context change, whatever triggered it already called play_context for the new context.
 			if current_context ~= context_name then
@@ -190,6 +219,15 @@ local debounce_elapsed = 0
 local pending_elapsed = 0
 local has_pending_change = false
 
+-- True when the song playing now belongs to `context_name` and should play to its end before `next_context_name`'s music.
+-- That is only when the music drops to a less important context, such as from a boss back to exploring.
+local function plays_to_end(context_name, next_context_name)
+	return context_name ~= nil and source_of(context_name) == "custom_play_to_end"
+		and playing_track ~= nil and playing_track.context_name == context_name
+		and AudioClient.is_playing()
+		and ResumePoints.outranks(context_name, next_context_name)
+end
+
 local function commit_pending_context()
 	has_pending_change = false
 
@@ -198,7 +236,31 @@ local function commit_pending_context()
 		return
 	end
 
+	local previous_context = current_context
 	current_context = pending_context
+
+	if finishing_context then
+		if pending_context == finishing_context then
+			-- Its context came back before the song ended, so the song simply goes on as that context's music.
+			finishing_context = nil
+			log(string.format("[playback] %s: back before its song ended, so the song goes on", pending_context))
+			return
+		end
+
+		-- The song goes on only through contexts that its own context outranks.
+		-- Anything else cuts it short: something more important, the mission's end, or a loading screen.
+		if ResumePoints.outranks(finishing_context, pending_context) then
+			ResumePoints.enter(pending_context)
+			return
+		end
+	elseif plays_to_end(previous_context, pending_context) then
+		finishing_context = previous_context
+		ResumePoints.enter(pending_context)
+		AudioClient.play_to_end()
+		log(string.format("[playback] %s: playing its song to the end before %s", previous_context, tostring(pending_context)))
+		return
+	end
+
 	play_context(pending_context, true) -- true marks a real context change.
 end
 
@@ -282,6 +344,7 @@ mod.on_disabled = function(initial_call)
 
 	-- A song that is turned off mid-mission continues from there if the mod is turned on again before the next loading screen.
 	remember_playing_track(nil)
+	finishing_context = nil
 	has_pending_change = false
 	current_context = nil
 	playing_track = nil
@@ -303,10 +366,16 @@ mod.on_enabled = function(initial_call)
 end
 
 mod.on_setting_changed = function(setting_id)
-	if setting_id == "meat_grinder_music" or setting_id == "daemonhost_boss_music" or setting_id == "captain_boss_music" then
+	if setting_id == "source_meat_grinder" or setting_id == "daemonhost_boss_music" or setting_id == "captain_boss_music" then
 		Context.refresh(mod)
 	elseif setting_id == "resume_songs" and not mod:get("resume_songs") then
 		ResumePoints.forget_all()
+	elseif enabled and current_context and setting_id == "source_" .. current_context then
+		-- The context playing now follows its new setting at once. A custom song that is already playing keeps playing.
+		local source = source_of(current_context)
+		if source == "game" or source == "silence" or not AudioClient.is_playing() then
+			play_context(current_context, true)
+		end
 	end
 end
 

@@ -11,6 +11,19 @@ local function load_resume_points(settings)
 	return ResumePoints
 end
 
+describe("resume_points.lua ranking", function()
+	it("ranks the mission contexts as context.lua resolves them, and nothing outside them", function()
+		local ResumePoints = load_resume_points()
+
+		assert_equal(ResumePoints.outranks("mission_boss", "mission_explore"), true)
+		assert_equal(ResumePoints.outranks("mission_explore", "mission_boss"), false)
+		assert_equal(ResumePoints.outranks("mission_last_stand", "mission_event"), true)
+		assert_equal(ResumePoints.outranks("mortis_trials_wave", "mortis_trials_break"), true)
+		assert_equal(ResumePoints.outranks("mission_boss", nil), false)
+		assert_equal(ResumePoints.outranks("mission_boss", "hub"), false)
+	end)
+end)
+
 describe("resume_points.lua", function()
 	it("gives back an explore song's position once, then forgets it", function()
 		local ResumePoints = load_resume_points()

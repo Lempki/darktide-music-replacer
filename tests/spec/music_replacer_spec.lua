@@ -220,6 +220,137 @@ describe("MusicReplacer.lua rescans", function()
 	end)
 end)
 
+describe("MusicReplacer.lua music per context", function()
+	it("leaves a context set to Game's Own to the game, even with songs in its folder", function()
+		local harness = in_hub(nil, { settings = { source_hub = "game" } })
+
+		assert_equal(harness:last_play(), nil)
+		assert_equal(harness.engine:wwise_state("music_zone"), "hub")
+		assert_equal(harness:logged("[playback] hub: set to the game's own music"), true)
+	end)
+
+	it("silences a context set to Silence, playing nothing", function()
+		local harness = in_hub(nil, { settings = { source_hub = "silence" } })
+
+		assert_equal(harness:last_play(), nil)
+		assert_equal(harness.engine:wwise_state("music_zone"), "None")
+	end)
+
+	it("follows a changed setting for the context playing now at once", function()
+		local harness = in_hub()
+
+		harness:set_setting("source_hub", "game")
+		assert_equal(harness:playing(), nil)
+		assert_equal(harness.engine:wwise_state("music_zone"), "hub")
+
+		harness:set_setting("source_hub", "custom")
+		assert_equal(harness:playing() ~= nil, true)
+		assert_equal(harness.engine:wwise_state("music_zone"), "None")
+	end)
+end)
+
+describe("MusicReplacer.lua Play to End", function()
+	-- Returns a harness whose boss song plays, with the boss set to Play to End.
+	local function during_boss()
+		local harness = MainHarness.new({
+			settings = { source_mission_boss = "custom_play_to_end" },
+			files = {
+				mission_explore = { { name = "x.mp3", duration = 300 } , { name = "y.mp3", duration = 300 } },
+				mission_boss = { { name = "b.mp3", duration = 200 }, { name = "c.mp3", duration = 200 } },
+				mission_event = { { name = "e.mp3", duration = 200 }, { name = "f.mp3", duration = 200 } },
+			},
+		})
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness:enter_mission("lm_cooling", "zone_3")
+		harness:settle()
+		harness.client.position = 30
+		harness:state("music_combat", "boss")
+		harness:settle()
+		assert_equal(harness:playing(), "mission_boss/b.mp3")
+		return harness
+	end
+
+	it("lets the boss song finish after the boss, then plays explore's song where it stopped", function()
+		local harness = during_boss()
+		local plays = #harness.client.plays
+
+		harness:state("music_combat", "None")
+		harness:settle()
+
+		assert_equal(#harness.client.plays, plays)
+		assert_equal(harness:playing(), "mission_boss/b.mp3")
+		assert_equal(harness.client.played_to_end, "mission_boss/b.mp3")
+
+		harness:finish_song(170, false)
+
+		assert_equal(harness:playing(), "mission_explore/x.mp3")
+		assert_equal(harness:last_play().opts.fade_in, true)
+		assert_equal(harness:last_play().opts.start_position, 30)
+	end)
+
+	it("cuts the finishing song short for something more important, such as an event", function()
+		local harness = during_boss()
+		harness:state("music_combat", "None")
+		harness:settle()
+
+		harness:state("music_objective", "fortification_event")
+		harness:settle()
+
+		assert_equal(harness:playing():find("^mission_event/") ~= nil, true)
+	end)
+
+	it("cuts the finishing song short for the mission's end", function()
+		local harness = during_boss()
+		harness.library.files.mission_victory = { { name = "v.mp3", duration = 60 } }
+		harness:state("music_combat", "None")
+		harness:settle()
+
+		harness:state("music_game_state", "victory")
+		harness:settle()
+
+		assert_equal(harness:playing(), "mission_victory/v.mp3")
+	end)
+
+	it("keeps finishing through other less important contexts, then plays the one the game is in", function()
+		local harness = during_boss()
+		harness.library.files.mission_combat = { { name = "k.mp3", duration = 200 } }
+		harness:state("music_combat", "None")
+		harness:settle()
+
+		harness:state("music_combat", "normal")
+		harness:settle()
+		assert_equal(harness:playing(), "mission_boss/b.mp3")
+
+		harness:finish_song(170, false)
+		assert_equal(harness:playing(), "mission_combat/k.mp3")
+	end)
+
+	it("keeps the song going when its context comes back before it ends", function()
+		local harness = during_boss()
+		local plays = #harness.client.plays
+		harness:state("music_combat", "None")
+		harness:settle()
+
+		harness:state("music_combat", "boss")
+		harness:settle()
+		assert_equal(#harness.client.plays, plays)
+
+		harness:finish_song(170, false)
+		assert_equal(harness:playing(), "mission_boss/c.mp3")
+	end)
+
+	it("switches at once for a context set to plain Custom", function()
+		local harness = during_boss()
+		harness:set_setting("source_mission_boss", "custom")
+
+		harness:state("music_combat", "None")
+		harness:settle()
+
+		assert_equal(harness:playing(), "mission_explore/x.mp3")
+	end)
+end)
+
 describe("MusicReplacer.lua when playback stops working", function()
 	it("hands the music back to the game at once, and takes over again once playback works", function()
 		local harness = in_hub()

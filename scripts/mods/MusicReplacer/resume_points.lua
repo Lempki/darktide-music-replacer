@@ -19,7 +19,17 @@ local RESUMABLE_CONTEXTS = {
 }
 
 -- Mission contexts by the priority context.lua resolves them in, lowest first.
-local PRIORITY = { mission_explore = 1, mission_combat = 2, mission_horde = 3, mission_boss = 4, mission_event = 5, mission_last_stand = 6 }
+-- Mortis Trials' break and wave rank like explore and event, which they replace there.
+local PRIORITY = {
+	mission_explore = 1,
+	mission_combat = 2,
+	mission_horde = 3,
+	mission_boss = 4,
+	mission_event = 5,
+	mission_last_stand = 6,
+	mortis_trials_break = 1,
+	mortis_trials_wave = 5,
+}
 
 -- A horde, a boss fight, or an event is one stretch that higher-priority music can interrupt, such as a last stand during an event.
 -- Its song continues only if the music did not drop to a lower-priority context in between, which shows that it ended.
@@ -28,6 +38,13 @@ local SEQUENCES = { mission_horde = true, mission_boss = true, mission_event = t
 
 local function ends_sequence(context_name, next_context_name)
 	return SEQUENCES[context_name] == true and PRIORITY[next_context_name] ~= nil and PRIORITY[next_context_name] < PRIORITY[context_name]
+end
+
+-- True when context_name ranks above other_context_name.
+-- A context outside the ranking, such as the hub or a loading screen, ranks with nothing.
+function ResumePoints.outranks(context_name, other_context_name)
+	local rank, other_rank = PRIORITY[context_name], PRIORITY[other_context_name]
+	return rank ~= nil and other_rank ~= nil and rank > other_rank
 end
 
 -- Resuming this close to the end would play a few seconds and then switch songs anyway.

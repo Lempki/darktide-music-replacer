@@ -7,7 +7,17 @@ end
 
 -- Each tooltip says what its setting does, then gives the notes that matter in a second paragraph.
 -- The README keeps the full explanations.
-return {
+
+-- Every context's dropdown offers the same choices, so their tooltips share the explanation.
+local function source_tooltip(when)
+	return "What plays " .. when .. ".\n\n" ..
+		highlight("Custom") .. " plays your songs from its folder, or the game's music while the folder is empty. " ..
+		highlight("Custom (Play to End)") .. " also lets a song finish after the music moves to something less important, " ..
+		"such as from a boss back to exploring. " ..
+		highlight("Game's Own") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing."
+end
+
+local strings = {
 	songs = {
 		en = "Songs",
 	},
@@ -31,8 +41,32 @@ return {
 			"Every mission and hub visit starts with fresh songs.",
 	},
 
+	music_per_context = {
+		en = "Music per Context",
+	},
+	source_custom = {
+		en = "Custom",
+	},
+	source_custom_play_to_end = {
+		en = "Custom (Play to End)",
+	},
+	source_game = {
+		en = "Game's Own",
+	},
+	source_silence = {
+		en = "Silence",
+	},
+	source_meat_grinder = {
+		en = "Meat Grinder",
+	},
+	source_meat_grinder_tooltip = {
+		en = "What plays in the Meat Grinder training area.\n\n" ..
+			highlight("Custom") .. " plays your explore and combat songs, which is a quick way to test them. " ..
+			highlight("Game's Own") .. " plays the game's combat music, and " .. highlight("Silence") .. " keeps the area quiet.",
+	},
+
 	where_music_plays = {
-		en = "Where Music Plays",
+		en = "Boss Music",
 	},
 	captain_boss_music = {
 		en = "Boss Music for Captains",
@@ -47,13 +81,6 @@ return {
 	daemonhost_boss_music_tooltip = {
 		en = "Plays your boss music while an angered daemonhost is alive.\n\n" ..
 			highlight("Off") .. " follows the game, which plays no music for daemonhosts.",
-	},
-	meat_grinder_music = {
-		en = "Music in Meat Grinder",
-	},
-	meat_grinder_music_tooltip = {
-		en = "Plays your explore and combat music in the Meat Grinder training area, which is a quick way to test your files.\n\n" ..
-			highlight("Off") .. " keeps the area quiet, including the game's own combat music.",
 	},
 
 	timing = {
@@ -98,3 +125,25 @@ return {
 			"The detailed lines add up quickly, so turn this on only while tracking down a problem.",
 	},
 }
+
+-- Each context's dropdown: its title, and when it plays.
+local CONTEXTS = {
+	{ "hub", "Hub", "in the Mourningstar" },
+	{ "mission_explore", "Explore", "in a mission while nothing threatens you" },
+	{ "mission_combat", "Combat", "while enemies attack you outside a horde or a boss fight" },
+	{ "mission_horde", "Horde", "during a horde" },
+	{ "mission_boss", "Boss", "while a monstrosity is near you" },
+	{ "mission_event", "Event", "while a mission event plays its music, and through a whole Operation" },
+	{ "mission_last_stand", "Last Stand", "while only one player of the team is alive" },
+	{ "mission_victory", "Victory", "after a mission is won" },
+	{ "mission_defeat", "Defeat", "after a mission is lost" },
+	{ "mortis_trials_wave", "Mortis Trials Wave", "during a Mortis Trials wave" },
+	{ "mortis_trials_break", "Mortis Trials Break", "between Mortis Trials waves" },
+}
+
+for _, context in ipairs(CONTEXTS) do
+	strings["source_" .. context[1]] = { en = context[2] }
+	strings["source_" .. context[1] .. "_tooltip"] = { en = source_tooltip(context[3]) }
+end
+
+return strings

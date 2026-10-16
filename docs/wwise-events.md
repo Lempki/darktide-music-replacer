@@ -48,7 +48,7 @@ None of those has been tried as a lever.
 ## How the mod silences it
 
 Each mechanism switches on only once a custom track is available for the current context, so a context with no files keeps the game's own music.
-The "silence" context of Meat Grinder is the one exception, which suppresses combat music and exploration events with no track at all.
+A context set to Silence in the mod options is the one exception, which engages the same mechanisms with no track at all. Meat Grinder defaults to it, which suppresses combat music and exploration events there.
 `play_context` in `MusicReplacer.lua` turns them on with `Suppression.engage` and off with `Suppression.release`, and the code lives in `suppression.lua`.
 
 | Mechanism | What it does | Status |
@@ -180,7 +180,7 @@ Missions seen so far:
 | `psykhanium` | Mortis Trials. `mission_type` is `horde` and `game_mode_name` is `survival`. Its `music_zone` is `horde_mode` from the briefing until after the win. Waves set `music_objective` to `horde_mode_wave`, objective rounds to `horde_mode_objective`, the last wave to `horde_mode_wave_last` and the win to `horde_mode_win`, with `None` between them. The mod recognizes Mortis Trials by its zone. |
 | `op_train`, `op_no_mans_land` | Operations, Rolling Steel and No Man's Land. Their template's `mission_type` is `operations`, which the mod uses to treat the whole mission as one event. |
 
-It is not known whether the free Psykhanium also uses `tg_shooting_range`. If it does, the Meat Grinder setting covers it too.
+It is not known whether the free Psykhanium also uses `tg_shooting_range`. If it does, the Meat Grinder choice in Music per Context covers it too.
 
 Havoc and Expeditions have not been checked yet.
 

@@ -14,7 +14,7 @@ local DEFAULT_SETTINGS = {
 	resume_songs = true,
 	captain_boss_music = false,
 	daemonhost_boss_music = false,
-	meat_grinder_music = false,
+	source_meat_grinder = "silence",
 	combat_hold_seconds = 8,
 	horde_hold_seconds = 3,
 	event_hold_seconds = 5,
@@ -93,6 +93,10 @@ local function new_audio_client()
 	function module.stop()
 		client.current = nil
 		client.stops = client.stops + 1
+	end
+
+	function module.play_to_end()
+		client.played_to_end = client.current and client.current.file_path
 	end
 
 	client.module = module
