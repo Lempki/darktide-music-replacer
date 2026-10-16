@@ -1,4 +1,4 @@
-# Wwise music sources and event probe
+# Wwise music sources, event probe, and mission probe
 
 How Darktide's native music reaches the player, how Music Replacer silences it, and how to find out where a sound comes from.
 
@@ -13,13 +13,15 @@ Native music has two sources, and the mod handles each differently.
 
 The game's `WwiseGameSyncManager` sets Wwise state groups every tick through `_set_state(group_name, new_state)`.
 Only real changes are forwarded to Wwise, so the mod hooks that function and compares old and new values itself.
-Three groups matter for music:
+After the mod loads or is turned back on, it treats the first value it sees for each group as a change, so it catches up with states it did not see change.
+Four groups matter for music:
 
 | Group | Values seen so far |
 |---|---|
 | `music_combat` | `None`, `normal`, `horde_low`, `horde_high`, `boss` |
-| `music_zone` | `hub`, `None`, `zone_2`, `zone_4`, `zone_8`, `operations` |
+| `music_zone` | `hub`, `None`, `zone_1` to `zone_6`, `zone_8`, `zone_2_depths`, `operations`, `horde_mode` |
 | `music_game_state` | `title`, `main_menu`, `loading`, `mission`, `mission_board`, `mission_ready`, `loadout`, `mission_briefing`, `mission_intro`, `victory`, `defeat`, `game_score_win`, `game_score_lose`, `cinematic`, `None` |
+| `music_objective` | `None`, `last_man_standing`, `kill_event`, `kill_event_3`, `fortification_event`, `hacking_event`, `escape_event`, `operation_stage_1`, `operation_2_stage_1` to `_4`, `progression2_stage_1` to `_4`, and in Mortis Trials `horde_mode_wave`, `horde_mode_objective`, `horde_mode_wave_last`, `horde_mode_win` |
 
 Wwise reports "no value" as the string `"None"`, not as Lua `nil`.
 `cinematic` was seen after a mission, during a cutscene. A story mission goes straight from `game_score_win` to `cinematic` with no `loading` in between.
@@ -28,7 +30,9 @@ The hub and mission contexts also need an in-world state: `mission`, `mission_bo
 The zone arrives before that, the hub zone about 10 seconds before the loading screen ends and a mission zone partway through the briefing.
 So custom music starts once the loading screen or the mission intro ends, and the game's own music plays until then.
 Only this post-mission cutscene has been seen so far, so other cutscenes may report a different state.
-The source lists more state groups (circumstance, event intensity, event type, objective, objective progression, minion aggro intensity, options, player state, suppression state).
+`music_objective` decides the last stand, event, and Mortis Trials contexts, as listed in the rules at the top of `context.lua`.
+Some events set it to `None` for a few seconds between their stages, which the Event Music Hold setting bridges.
+The source lists more state groups (circumstance, event intensity, event type, objective progression, minion aggro intensity, options, player state, suppression state).
 None of those has been tried as a lever.
 
 ### Events
@@ -36,31 +40,32 @@ None of those has been tried as a lever.
 `WwiseWorld.trigger_resource_event(wwise_world, event_name, ...)` starts Wwise events, and some of them are music.
 
 * `wwise/events/music/play_music_manager` is triggered once by the manager's own init, according to the game source. The probe has never logged it.
-* `wwise/events/music/play_exploration_music` and `wwise/events/music/play_exploration_the_machine_spiri_1`, `_3` and `_4` were logged during mission event sequences, such as holding a position or minigames. **Confirmed:** native music was audible under a custom track during those sequences, and these were the only music events logged in that mission.
+* `wwise/events/music/play_exploration_music` and `wwise/events/music/play_exploration_the_machine_spiri_1`, `_3` and `_4` were logged during mission event sequences, such as holding a position or minigames. **Confirmed:** native music was audible under a custom track during those sequences, and no other music event fired during them.
 * `cinematics/play_outro_win_generic_01` and `ui/play_ui_eor_start_stinger` were logged during a mission's victory. Neither has "music" in its name. Which of them carries the native victory music has not been isolated.
 * `cinematics/play_mission_intro_stinger_generic` was logged at the start of a mission's intro.
 * `world/stop_all_mission_sounds` was logged when leaving the hub for a mission, and on shutdown.
 
 ## How the mod silences it
 
-Each mechanism switches on only while a custom track is confirmed playing for the current context, so a context with no files keeps the game's own music.
+Each mechanism switches on only once a custom track is available for the current context, so a context with no files keeps the game's own music.
+The "silence" context of Meat Grinder is the one exception, which suppresses combat music and exploration events with no track at all.
 `play_context` in `MusicReplacer.lua` turns them on with `Suppression.engage` and off with `Suppression.release`, and the code lives in `suppression.lua`.
 
 | Mechanism | What it does | Status |
 |---|---|---|
-| `Suppression.set_combat` | Forces `music_combat` to `"None"` right away and again after every real transition. | Combat music reported gone in two hectic missions. Not yet checked in a controlled test. |
+| `Suppression.set_combat` | Forces `music_combat` to `"None"` right away and again after every real transition. | Runs in play. Not yet checked by ear in a controlled test. |
 | `Suppression.set_zone` | Forces `music_zone` to `"None"` while a hub track plays, and restores the real zone when it stops. | **Confirmed** by ear in the hub, including a round trip through a mission. |
-| `Suppression.set_game_state` | Forces `music_game_state` to `"None"` for the victory and defeat contexts, and again after every real transition. | **Not yet confirmed.** It only runs when a file is present in `mission_victory` or `mission_defeat`. |
-| `Suppression.set_objective` | Forces `music_objective` to `"None"` for the last stand, event and Mortis Trials wave contexts, and again after every real transition. | **Not yet confirmed.** It only runs when a file is present in `mission_last_stand`, `mission_event` or `mortis_trials_wave`. |
-| `Suppression.set_events` | Drops any event containing `events/music/play_exploration`, so it never starts. | **Not yet confirmed as silencing.** It was not actually running for a while, see "DMF Quirks Found" below. |
+| `Suppression.set_game_state` | Forces `music_game_state` to `"None"` for the victory and defeat contexts, and again after every real transition. | Runs in play when a file is present in `mission_victory` or `mission_defeat`. Not yet checked by ear in a controlled test. |
+| `Suppression.set_objective` | Forces `music_objective` to `"None"` for the last stand, event and Mortis Trials wave contexts, and again after every real transition. | Runs in play when a file is present in `mission_last_stand`, `mission_event` or `mortis_trials_wave`. Not yet checked by ear in a controlled test. |
+| `Suppression.set_events` | Drops any event containing `events/music/play_exploration`, so it never starts. | Runs in play, as the `[suppress] skipped native music event` lines show. Not yet checked by ear in a controlled test. |
 
 Forcing a state calls `Wwise.set_state` directly.
 That call does not reach the `_set_state` hook, so the mod's own tracked state keeps the game's real value.
 With Diagnostic Logging on, a forced call is never followed by a duplicate transition line in `diagnostic.log`.
 
-The game re-sends a state only when it changes.
-A forced `music_zone` stayed in place until the next real zone change.
-`music_combat` and `music_game_state` change repeatedly, so the mod forces them again after every real transition.
+The game passes a state on to Wwise only when it changes.
+A forced `music_zone` stays in place until the next real zone change.
+`music_combat`, `music_game_state`, and `music_objective` change repeatedly, so the mod forces them again after every real transition.
 
 Dropping an event stops only its start.
 No matching stop event for the exploration events has been logged.
@@ -170,10 +175,10 @@ Missions seen so far:
 | Mission | Notes |
 |---|---|
 | `hub_ship` | The hub. `wwise_state` is `hub`. |
-| `tg_shooting_range` | The training area that Meat Grinder runs in. The game's template has `game_mode_name = "shooting_range"`, `mechanism_name = "onboarding"` and no `wwise_state`, which is why `music_zone` reads `"None"` there. The console log recorded this name for Meat Grinder visits. The mod uses it to tell Meat Grinder apart from a mission. |
+| `tg_shooting_range` | The training area that Meat Grinder runs in. The game's template has `game_mode_name = "shooting_range"`, `mechanism_name = "onboarding"` and no `wwise_state`, which is why `music_zone` reads `"None"` there. The mod uses this name to tell Meat Grinder apart from a mission. |
 | `fm_cargo`, `fm_resurgence`, `lm_rails`, `km_enforcer` | Ordinary missions. `mission_type` was `raid` for `fm_cargo` and `lm_rails`, `strike` for `fm_resurgence` and `assassination` for `km_enforcer`. |
 | `psykhanium` | Mortis Trials. `mission_type` is `horde` and `game_mode_name` is `survival`. Its `music_zone` is `horde_mode` from the briefing until after the win. Waves set `music_objective` to `horde_mode_wave`, objective rounds to `horde_mode_objective`, the last wave to `horde_mode_wave_last` and the win to `horde_mode_win`, with `None` between them. The mod recognizes Mortis Trials by its zone. |
-| `op_train`, `op_no_mans_land` | Names starting with `op_` appear in the console logs. They have not been checked in the mission probe. |
+| `op_train`, `op_no_mans_land` | Operations, Rolling Steel and No Man's Land. Their template's `mission_type` is `operations`, which the mod uses to treat the whole mission as one event. |
 
 It is not known whether the free Psykhanium also uses `tg_shooting_range`. If it does, the Meat Grinder setting covers it too.
 
@@ -185,7 +190,7 @@ Odd DMF or engine behavior found while working on the above. Kept brief and in t
 
 | What | Briefly |
 |---|---|
-| One hook per method per mod | DMF keeps only one hook per `(mod, method)` pair. A second `mod:hook` call from the same mod on the same method is silently rejected instead of chained. `suppression.lua` and `event_probe.lua` used to each hook `trigger_resource_event` on their own. The second one installed did nothing, and the event probe logged nothing for a while, with no error shown. Fixed by sharing one hook, installed once in `MusicReplacer.lua`. |
+| One hook per method per mod | DMF keeps only one hook per `(mod, method)` pair. A second `mod:hook` call from the same mod on the same method is silently rejected instead of chained. `suppression.lua` and `event_probe.lua` used to each hook `trigger_resource_event` on their own. The second one installed did nothing, so the event probe logged nothing, with no error shown. Fixed by sharing one hook, installed once in `MusicReplacer.lua`. |
 
 ## Reading the game's source
 
