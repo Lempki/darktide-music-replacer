@@ -95,15 +95,6 @@ return {
 						type = "checkbox",
 						tooltip = "diagnostic_mode_tooltip",
 						default_value = false,
-						-- DMF shows a checkbox's sub-widgets only while it is on, which is the only time this one matters.
-						sub_widgets = {
-							{
-								setting_id = "reset_log_on_launch",
-								type = "checkbox",
-								tooltip = "reset_log_on_launch_tooltip",
-								default_value = true,
-							},
-						},
 					},
 				},
 			},

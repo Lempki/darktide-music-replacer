@@ -90,8 +90,7 @@ These are in the in-game mod options under Music Replacer, in four groups, in th
 
 | Setting | Default | What it does |
 |---|---|---|
-| Diagnostic Logging | Off | Writes `%APPDATA%\Fatshark\Darktide\MusicReplacer\diagnostic.log` for troubleshooting. See Troubleshooting below. |
-| Reset Log on Launch | On | Shown while Diagnostic Logging is on. Clears `diagnostic.log` every time the game launches. Off keeps adding to it, trimmed to its last 2,000 lines. |
+| Detailed Logging | Off | Adds the game's raw music states, the silencing of its music, and its sound events to `diagnostic.log`. The important events are always logged. See Troubleshooting below. |
 
 ## How it plays
 
@@ -106,7 +105,7 @@ Music Replacer decodes your files with Media Foundation, Windows' own audio deco
 ## Limitations
 
 * Each audio folder is listed when the game launches. After adding or removing files while the game runs, press Rescan Audio Folders in the mod settings, or restart the game. Until then, a file you removed is skipped and a file you added is not picked up.
-* A file Windows cannot decode is skipped once the mod has measured it, shortly after launch, and Diagnostic Logging names it. If one is picked before then and fails three times in a row, that context uses the game's own music until the game restarts or you press Rescan Audio Folders.
+* A file Windows cannot decode is skipped once the mod has measured it, shortly after launch, and the log names it. If one is picked before then and fails three times in a row, that context uses the game's own music until the game restarts or you press Rescan Audio Folders.
 * Music Replacer only affects your own game. Squadmates hear the game's own music regardless.
 * Loading screens, the mission briefing, the mission intro, and cutscenes play the game's own music. Custom music starts once you are in the hub or the mission itself.
 
@@ -116,12 +115,12 @@ Music Replacer decodes your files with Media Foundation, Windows' own audio deco
 * **The chat shows "Windows audio playback could not start".** The mod could not start Windows' audio decoder or audio engine, so the game's own music plays as usual. The message ends with the reason. On a Windows "N" edition, install the Media Feature Pack. If Windows had no audio output at that moment, the mod keeps trying and starts once there is one.
 * **One file never plays.** Windows cannot decode it. Convert it to another supported format, then press Rescan Audio Folders.
 
-To report a problem, turn on Diagnostic Logging in the Debug group of the mod options, play until the problem happens, and attach these two files:
+To report a problem, attach these two files:
 
-* The mod's log, `%APPDATA%\Fatshark\Darktide\MusicReplacer\diagnostic.log`.
+* The mod's log from `%APPDATA%\Fatshark\Darktide\MusicReplacer\`. That is `diagnostic.log` if the problem happened in the current or last game session, or `diagnostic-prev.log` if it happened in the session before that.
 * The newest file in `%APPDATA%\Fatshark\Darktide\console_logs\`.
 
-Reset Log on Launch clears `diagnostic.log` every time the game starts, so copy the log before launching the game again, or turn that setting off first.
+The mod always logs the important events, such as which music plays and why, and any file it could not play. Every game launch starts a fresh `diagnostic.log` and keeps the previous one as `diagnostic-prev.log`. If you are asked for more detail, turn on Detailed Logging in the Debug group of the mod options and play until the problem happens again.
 
 ## Roadmap
 
@@ -144,7 +143,7 @@ Reset Log on Launch clears `diagnostic.log` every time the game starts, so copy 
 * [x] Songs continuing from where they left off: explore and combat whenever they come back, and a horde, boss fight, or event after an interruption while it is still going.
 * [x] Playback inside the game through Windows' own decoder and audio engine, with no other mods or programs needed.
 * [x] Custom music for Mortis Trials, with separate folders for its waves and the breaks between them.
-* [ ] A short log of the important events written by default, with the previous session's log kept beside it as `diagnostic-prev.log`, so either can be attached to a bug report. Diagnostic Logging adds the detailed lines on top.
+* [x] A short log of the important events written by default, with the previous session's log kept beside it as `diagnostic-prev.log`, so either can be attached to a bug report. Detailed Logging adds the noisy lines on top.
 * [ ] Picking up added or removed audio files by itself, without pressing Rescan Audio Folders.
 * [ ] Options per context: whether it plays custom music, the game's own music, or silence, and whether a song plays to its end after the context is over, such as a boss song after the boss dies. Meat Grinder becomes one more context with these options.
 * [ ] Volume: lowering custom music while the pause menu is open, as the game does with its own music, and optional loudness normalization, so quiet and loud files play at a similar level without changing the files.
@@ -176,7 +175,7 @@ How native music reaches the player, how the mod silences it, and how to trace a
 
 Logs to check when something misbehaves:
 
-* `%APPDATA%\Fatshark\Darktide\MusicReplacer\diagnostic.log`, written only while Diagnostic Logging is on in the mod options.
+* `%APPDATA%\Fatshark\Darktide\MusicReplacer\diagnostic.log`, with the previous session's beside it as `diagnostic-prev.log`. Detailed Logging adds the raw state transitions, suppression, and sound events.
 * The game's console logs, in `%APPDATA%\Fatshark\Darktide\console_logs\`.
 
 ## Project structure
@@ -206,7 +205,7 @@ darktide-music-replacer/
 │   ├── media_decoder.lua                # Decodes audio files to PCM with Windows Media Foundation.
 │   ├── xaudio.lua                       # Plays PCM through XAudio2 voices with live volume control.
 │   ├── native_ffi.lua                   # Shared ffi plumbing for Windows APIs: GUIDs, COM calls and setup, UTF-16 strings, heap memory, files.
-│   ├── diagnostic_log.lua               # Writes diagnostic.log, opt-in, with a size cap and an optional reset on launch.
+│   ├── diagnostic_log.lua               # Writes diagnostic.log, keeping the previous session's, with detailed lines on request.
 │   ├── event_probe.lua                  # Logging-only probe that records Wwise event names.
 │   ├── mission_probe.lua                # Logging-only probe that records the current mission's name and type.
 │   ├── MusicReplacer_data.lua           # DMF mod-options widgets.

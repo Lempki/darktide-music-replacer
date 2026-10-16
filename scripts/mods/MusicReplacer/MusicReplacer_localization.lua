@@ -89,17 +89,11 @@ return {
 		en = "Debug",
 	},
 	diagnostic_mode = {
-		en = "Diagnostic Logging",
+		en = "Detailed Logging",
 	},
 	diagnostic_mode_tooltip = {
-		en = "Writes what the mod sees and decides to " .. highlight("diagnostic.log") .. ", to attach to a bug report.\n\n" ..
-			"The file is in %%APPDATA%%\\Fatshark\\Darktide\\MusicReplacer. It writes a lot, so turn it on only while troubleshooting.",
-	},
-	reset_log_on_launch = {
-		en = "Reset Log on Launch",
-	},
-	reset_log_on_launch_tooltip = {
-		en = "Starts " .. highlight("diagnostic.log") .. " afresh every time the game launches.\n\n" ..
-			highlight("Off") .. " keeps adding to it, trimmed to its last 2,000 lines.",
+		en = "Adds the game's raw music states, the silencing of its music, and its sound events to " .. highlight("diagnostic.log") .. ".\n\n" ..
+			"The important events are always logged, which is enough for most bug reports. " ..
+			"The detailed lines add up quickly, so turn this on only while tracking down a problem.",
 	},
 }

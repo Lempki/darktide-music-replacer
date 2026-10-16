@@ -124,7 +124,12 @@ function MainHarness.new(options)
 		modules = {
 			library = library,
 			audio_client = client.module,
-			diagnostic_log = { init = noop, close = noop, write = function(line) lines[#lines + 1] = line end },
+			diagnostic_log = {
+				init = noop,
+				close = noop,
+				write = function(line) lines[#lines + 1] = line end,
+				detail = function(line) lines[#lines + 1] = line end,
+			},
 			native_ffi = {},
 			media_decoder = { init = noop, shutdown = noop },
 			audio_folders = { init = noop },

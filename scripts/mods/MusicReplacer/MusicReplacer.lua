@@ -18,9 +18,10 @@ local DiagnosticLog = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/di
 
 DiagnosticLog.init(mod)
 local log = DiagnosticLog.write
+local log_detail = DiagnosticLog.detail
 
 -- tools/build.ps1 stamps the packaged info.json with the commit and build time, which tells two builds of one version apart.
--- The console log gets the line too, since diagnostic.log is only written while Diagnostic Logging is on.
+-- The console log gets the line too, so a report without diagnostic.log still names the build.
 local version_line = string.format("version %s, build %s",
 	tostring(mod:get_metadata("version")), tostring(mod:get_metadata("build") or "unknown"))
 mod:info("%s", version_line)
@@ -224,13 +225,14 @@ end)
 -- Wiring
 -- ###########################################################################
 
-Suppression.init(log)
-EventProbe.init(log)
+-- Raw state transitions, suppression, and sound events are detailed lines. The rest of the log is the important events.
+Suppression.init(log_detail)
+EventProbe.init(log_detail)
 MissionProbe.init(log)
 ResumePoints.init(mod)
 Context.on_state_change(Suppression.on_state_change)
 Context.on_state_change(ResumePoints.on_state_change)
-Context.init(mod, log)
+Context.init(mod, log_detail)
 
 mod.on_all_mods_loaded = function()
 	MediaDecoder.init(NativeFfi)

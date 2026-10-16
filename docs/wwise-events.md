@@ -61,7 +61,7 @@ The "silence" context of Meat Grinder is the one exception, which suppresses com
 
 Forcing a state calls `Wwise.set_state` directly.
 That call does not reach the `_set_state` hook, so the mod's own tracked state keeps the game's real value.
-With Diagnostic Logging on, a forced call is never followed by a duplicate transition line in `diagnostic.log`.
+With Detailed Logging on, a forced call is never followed by a duplicate transition line in `diagnostic.log`.
 
 The game passes a state on to Wwise only when it changes.
 A forced `music_zone` stays in place until the next real zone change.
@@ -76,7 +76,7 @@ An event that fires while suppression is off is not dropped.
 `event_probe.lua` observes every Wwise event through the shared `trigger_resource_event` hook described above, and logs to `diagnostic.log`.
 It never changes or silences anything.
 
-Turn on **Diagnostic Logging** in the mod options first.
+Turn on **Detailed Logging** in the mod options first.
 The log is written to `%APPDATA%\Fatshark\Darktide\MusicReplacer\diagnostic.log`.
 
 ### What it logs
@@ -144,7 +144,7 @@ Redeploy with `tools\build.ps1 -Deploy` and restart the game.
 
 ## Tracing a new sound
 
-1. Enable Diagnostic Logging and reproduce the sound.
+1. Turn on Detailed Logging and reproduce the sound.
 2. Read `diagnostic.log` around the moment you hear it. The `[raw]`, `[context]`, `[playback]` and `[suppress]` lines show what the mod recorded as happening.
 3. Look for `[probe] music event:` lines first, then for `[probe] new event:` lines that appeared shortly before the sound.
 4. If no probe line fits, check whether a `[raw] music_*` transition lines up with the sound. Native music also comes from state groups, and the probe cannot see events that fire before its hook is installed.
@@ -153,7 +153,7 @@ Redeploy with `tools\build.ps1 -Deploy` and restart the game.
 ## The mission probe
 
 `scripts/mods/MusicReplacer/mission_probe.lua` logs which mission is running, so mission types and game modes can be told apart.
-Like the event probe, it only logs, and it needs Diagnostic Logging on.
+Unlike the event probe, its lines are always logged, since a bug report needs to say which mission it came from.
 
 Each time the current mission name changes, including on entering the hub, it writes one line:
 
