@@ -8,6 +8,7 @@
 -- A file deleted after a listing is still listed until the next one, so pick_file() checks that a file exists before returning it.
 -- Where Windows cannot watch the folders, as on some network drives, only the Rescan Audio Folders button lists them again.
 -- A missing or empty folder resolves to nil here, which is the fallback-to-native-music signal the caller needs.
+-- Every listing is passed on to the Library.on_listed listeners, which is how the loudness measurements learn of changed files.
 
 local Library = {}
 
@@ -46,6 +47,8 @@ local lists = {} -- context_name -> file paths, each starting with the context f
 local last_picked = {} -- context_name -> the file path most recently returned.
 local reported_missing = {} -- file_path -> true once a missing file has been logged.
 local unplayable = {} -- file_path -> true once Windows could not open the file.
+local stamps = {} -- file_path -> its size and write time at the last listing.
+local listed_listeners = {}
 
 -- file_path -> seconds, or false when the file could not be measured.
 local durations = {}
@@ -60,9 +63,12 @@ end
 local function list_folder(context_name)
 	local file_paths = {}
 
-	for _, name in ipairs(AudioFolders.list(AUDIO_ROOT .. "/" .. context_name) or {}) do
+	local names, name_stamps = AudioFolders.list(AUDIO_ROOT .. "/" .. context_name)
+
+	for _, name in ipairs(names or {}) do
 		local file_path = context_name .. "/" .. name
 		file_paths[#file_paths + 1] = file_path
+		stamps[file_path] = name_stamps and name_stamps[name] or ""
 
 		if durations[file_path] == nil then
 			measure_queue[#measure_queue + 1] = file_path
@@ -83,12 +89,24 @@ local function describe_counts()
 end
 
 local function scan_folders(what)
+	stamps = {}
 	for _, context_name in ipairs(CONTEXTS) do
 		lists[context_name] = list_folder(context_name)
 	end
 
 	reported_missing = {}
 	diagnostic_log(string.format("[library] %s: %s", what, describe_counts()))
+
+	local entries = {}
+	for _, context_name in ipairs(CONTEXTS) do
+		for _, file_path in ipairs(lists[context_name]) do
+			entries[#entries + 1] = { file_path = file_path, stamp = stamps[file_path] }
+		end
+	end
+
+	for _, listener in ipairs(listed_listeners) do
+		listener(entries)
+	end
 end
 
 local function measure_next_duration()
@@ -166,6 +184,12 @@ local function follow_changes(dt)
 			rescan_requested = true
 		end
 	end
+end
+
+-- Registers a function to call after every listing, with every listed file as { file_path, stamp } in context order.
+-- The stamp changes whenever the file's size or write time does.
+function Library.on_listed(listener)
+	listed_listeners[#listed_listeners + 1] = listener
 end
 
 -- Asks for every folder to be listed again on the next update.

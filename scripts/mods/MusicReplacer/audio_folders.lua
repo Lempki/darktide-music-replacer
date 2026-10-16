@@ -34,6 +34,7 @@ local function is_directory(attributes)
 end
 
 -- The audio files directly inside `folder`, a UTF-8 path, sorted by name. Nil when the folder does not exist.
+-- The second value maps each name to a stamp of its size and write time, which changes whenever the file does.
 function AudioFolders.list(folder)
 	local ffi = NativeFfi.ffi
 	local kernel32 = NativeFfi.kernel32()
@@ -45,12 +46,15 @@ function AudioFolders.list(folder)
 	end
 
 	local names = {}
+	local stamps = {}
 	repeat
 		if not is_directory(data.dwFileAttributes) then
 			local name = NativeFfi.utf8(data.cFileName)
 			local extension = name:match("%.([^.]+)$")
 			if extension and EXTENSIONS[extension:lower()] then
 				names[#names + 1] = name
+				local write_time = data.ftLastWriteTime
+				stamps[name] = string.format("%.0f:%.0f:%.0f", data.nFileSizeHigh * 4294967296 + data.nFileSizeLow, write_time.high, write_time.low)
 			end
 		end
 	until kernel32.MusicReplacer_FindNextFileW(find, data) == 0
@@ -58,7 +62,7 @@ function AudioFolders.list(folder)
 	kernel32.MusicReplacer_FindClose(find)
 	table.sort(names)
 
-	return names
+	return names, stamps
 end
 
 -- True when `path` is an existing file.

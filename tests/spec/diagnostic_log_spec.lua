@@ -126,5 +126,12 @@ describe("diagnostic_log.lua", function()
 		DiagnosticLog.write("[startup] version 1")
 
 		assert_equal(next(fs.files), nil)
+		assert_equal(DiagnosticLog.folder(), nil)
+	end)
+
+	it("names its folder for the mod's other files", function()
+		local DiagnosticLog = load_log(new_file_system(), false)
+
+		assert_equal(DiagnosticLog.folder(), "C:/AppData/Fatshark/Darktide/MusicReplacer")
 	end)
 end)

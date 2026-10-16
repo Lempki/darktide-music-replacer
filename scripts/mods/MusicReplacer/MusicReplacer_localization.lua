@@ -79,6 +79,14 @@ local strings = {
 		en = "How loud your songs play, on top of the game's master and music volume.\n\n" ..
 			"At " .. highlight("100%%") .. " they play as loud as the files themselves. The game's own music is not affected.",
 	},
+	normalize_loudness = {
+		en = "Even Out Loudness",
+	},
+	normalize_loudness_tooltip = {
+		en = "Plays every song at about the same loudness, without changing your files.\n\n" ..
+			"Each song is measured once in the background and remembered. " ..
+			"A song not measured yet plays at its own level, and a quiet song is only raised as far as it can go without distorting.",
+	},
 	menu_volume = {
 		en = "Menu Volume",
 	},

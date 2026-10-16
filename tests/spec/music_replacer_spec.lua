@@ -272,6 +272,38 @@ describe("MusicReplacer.lua volume", function()
 	end)
 end)
 
+describe("MusicReplacer.lua evening out loudness", function()
+	it("measures in the background only while the mod is on, starting with the context playing now", function()
+		local harness = in_hub()
+		assert_equal(harness.loudness.preferred_contexts[#harness.loudness.preferred_contexts], "hub")
+
+		local updates = #harness.loudness.preferred_contexts
+		harness.mod.on_disabled(false)
+		harness:wait(1)
+		assert_equal(#harness.loudness.preferred_contexts, updates)
+	end)
+
+	it("turns evening out on and off with its setting, applying it to the songs playing now", function()
+		local harness = in_hub()
+		assert_equal(harness.loudness.enabled, false)
+
+		harness:set_setting("normalize_loudness", true)
+
+		assert_equal(harness.loudness.enabled, true)
+		assert_equal(harness.client.levels_refreshed, 1)
+		assert_equal(harness:logged("[loudness] evening out turned on"), true)
+	end)
+
+	it("logs each song's loudness with its playback line while evening out is on", function()
+		local harness = MainHarness.new({ files = TWO_HUB_SONGS, settings = { normalize_loudness = true } })
+		harness.loudness.levels["hub/a.mp3"] = 0.5
+		harness:cold_start_to_hub()
+		harness:settle()
+
+		assert_equal(harness:logged("[playback] hub: playing hub/a.mp3 (duration=200, level 0.50)"), true)
+	end)
+end)
+
 describe("MusicReplacer.lua Play to End", function()
 	-- Returns a harness whose boss song plays, with the boss set to Play to End.
 	local function during_boss()

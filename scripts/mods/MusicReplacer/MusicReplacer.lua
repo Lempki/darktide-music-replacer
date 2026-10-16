@@ -14,6 +14,8 @@ local AudioFolders = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/aud
 local XAudio = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/xaudio")
 local Player = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/player")
 local AudioClient = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/audio_client")
+local LoudnessMeter = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/loudness_meter")
+local Loudness = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/loudness")
 local DiagnosticLog = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/diagnostic_log")
 
 DiagnosticLog.init(mod)
@@ -163,10 +165,11 @@ local function play_context(context_name, is_new_context)
 
 	Suppression.engage(context_name)
 
-	log(string.format("[playback] %s: %s %s%s (duration=%s%s)",
+	local loudness = Loudness.describe(file_path)
+	log(string.format("[playback] %s: %s %s%s (duration=%s%s%s)",
 		context_name, start_position and "resuming" or "playing", file_path,
 		start_position and string.format(" at %.1fs", start_position) or "",
-		tostring(duration), is_only_file and ", looping" or ""))
+		tostring(duration), is_only_file and ", looping" or "", loudness and (", " .. loudness) or ""))
 
 	playing_track = { context_name = context_name, file_path = file_path, duration = duration, is_only_file = is_only_file }
 
@@ -311,7 +314,18 @@ mod.on_all_mods_loaded = function()
 	Library.init(log, AudioFolders)
 	XAudio.init(NativeFfi)
 	Player.init(NativeFfi, MediaDecoder, XAudio)
-	AudioClient.init(log, { player = Player, disk_path = Library.disk_path })
+	Loudness.init({
+		log = log,
+		detail = log_detail,
+		media_decoder = MediaDecoder,
+		native_ffi = NativeFfi,
+		loudness_meter = LoudnessMeter,
+		disk_path = Library.disk_path,
+		folder = DiagnosticLog.folder(),
+	})
+	Loudness.set_enabled(mod:get("normalize_loudness"))
+	Library.on_listed(Loudness.set_files)
+	AudioClient.init(log, { player = Player, disk_path = Library.disk_path, level_of = Loudness.level })
 	AudioClient.set_volume(custom_volume())
 
 	-- A mod can only install one hook per method on itself.
@@ -380,6 +394,10 @@ mod.on_setting_changed = function(setting_id)
 		Context.refresh(mod)
 	elseif setting_id == "custom_music_volume" then
 		AudioClient.set_volume(custom_volume())
+	elseif setting_id == "normalize_loudness" then
+		Loudness.set_enabled(mod:get("normalize_loudness"))
+		AudioClient.refresh_levels()
+		log(string.format("[loudness] evening out turned %s", mod:get("normalize_loudness") and "on" or "off"))
 	elseif setting_id == "resume_songs" and not mod:get("resume_songs") then
 		ResumePoints.forget_all()
 	elseif enabled and current_context and setting_id == "source_" .. current_context then
@@ -418,6 +436,10 @@ mod.update = function(dt)
 		end
 	end
 
+	if enabled then
+		Loudness.update(current_context)
+	end
+
 	AudioClient.set_menu_volume(menu_volume())
 	AudioClient.update(dt)
 
@@ -449,6 +471,7 @@ end
 mod.on_unload = function(exit_game)
 	Context.shutdown(mod)
 	Library.shutdown()
+	Loudness.shutdown()
 	AudioClient.shutdown()
 	MediaDecoder.shutdown()
 

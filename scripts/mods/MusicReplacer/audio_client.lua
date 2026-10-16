@@ -2,6 +2,7 @@
 -- A switch is a true crossfade: the outgoing song fades out while the incoming one fades in.
 -- The volume sliders set every stream's gain directly, up or down, so no slider change restarts a song.
 -- The Custom Music Volume setting and an open menu scale that gain too, the menu with a short fade.
+-- Each song also has its own level, from evening out its loudness, which it keeps from its start.
 -- A file that cannot be opened behaves like a track that ended at once, so MusicReplacer.lua's quick-end guard handles it.
 -- When the audio device is lost and XAudio2 cannot follow, the engine is rebuilt and the song resumes where it was.
 --
@@ -38,10 +39,11 @@ local STATS_LOG_SECONDS = 300
 
 local Player = nil
 local disk_path = function(file_path) return file_path end
+local level_of = function() return 1 end
 local log_fn = function() end
 
-local current = nil -- Fields: stream, file_path, loop, duration, on_finished, elapsed, end_fading.
-local outgoing = {} -- { stream, file_path, loop, parked_elapsed } for songs fading out or parked, after a switch or a stop.
+local current = nil -- Fields: stream, file_path, loop, level, duration, on_finished, elapsed, end_fading.
+local outgoing = {} -- { stream, file_path, loop, level, parked_elapsed } for songs fading out or parked, after a switch or a stop.
 local finished_elapsed = 0 -- The last finished track's elapsed time, which on_finished reads through elapsed().
 local gain = 1
 local current_master_slider = nil
@@ -60,10 +62,12 @@ local used = false -- Set by the first play, so the stats only show once music h
 
 -- `options.player` is an initialized player.lua.
 -- `options.disk_path(file_path)` turns a library path into a path on disk.
+-- `options.level_of(file_path)` gives a song's own volume scale, 1 by default.
 function AudioClient.init(log, options)
 	log_fn = log or log_fn
 	Player = options.player
 	disk_path = options.disk_path or disk_path
+	level_of = options.level_of or level_of
 end
 
 function AudioClient.available()
@@ -112,10 +116,10 @@ local function apply_gain()
 	gain = current_gain()
 
 	if current and current.stream then
-		current.stream:set_gain(gain)
+		current.stream:set_gain(gain * current.level)
 	end
 	for _, entry in ipairs(outgoing) do
-		entry.stream:set_gain(gain)
+		entry.stream:set_gain(gain * entry.level)
 	end
 end
 
@@ -144,6 +148,17 @@ function AudioClient.set_volume(scale)
 	end
 end
 
+-- Asks every song for its own level again, as when evening out is turned on or off, and applies it at once.
+function AudioClient.refresh_levels()
+	if current then
+		current.level = level_of(current.file_path)
+	end
+	for _, entry in ipairs(outgoing) do
+		entry.level = level_of(entry.file_path)
+	end
+	apply_gain()
+end
+
 -- Sets the level to fade to while a menu is open, or 1 while none is. Call every tick.
 function AudioClient.set_menu_volume(target)
 	if target ~= menu_target then
@@ -154,7 +169,7 @@ end
 
 local function fade_out(entry, seconds)
 	entry.stream:fade_to(0, seconds)
-	outgoing[#outgoing + 1] = { stream = entry.stream, file_path = entry.file_path, loop = entry.loop, parked_elapsed = nil }
+	outgoing[#outgoing + 1] = { stream = entry.stream, file_path = entry.file_path, loop = entry.loop, level = entry.level, parked_elapsed = nil }
 end
 
 -- Frees the oldest parked songs beyond MAX_PARKED. The list is in the order the songs faded out.
@@ -257,6 +272,7 @@ function AudioClient.play(file_path, opts)
 	finished_elapsed = 0
 	current_master_slider, current_music_slider = read_sliders()
 	gain = current_gain()
+	local level = level_of(file_path)
 
 	local loop = opts.loop == true
 	local stream, err
@@ -264,14 +280,14 @@ function AudioClient.play(file_path, opts)
 	if revived then
 		stream = revived
 		stream:resume()
-		stream:set_gain(gain)
+		stream:set_gain(gain * level)
 		stream:fade_to(1, opts.fade_in and CROSSFADE_SECONDS or 0)
 		log_fn(string.format("[player] continuing %s from %.1fs, where it faded out", file_path, stream:position()))
 	else
 		local open_opts = {
 			start_position = opts.start_position,
 			loop = loop,
-			gain = gain,
+			gain = gain * level,
 			fade = opts.fade_in and 0 or 1,
 		}
 		local refused_voice
@@ -306,6 +322,7 @@ function AudioClient.play(file_path, opts)
 		stream = stream,
 		file_path = file_path,
 		loop = loop,
+		level = level,
 		duration = opts.duration_seconds,
 		on_finished = opts.on_finished,
 		elapsed = 0,

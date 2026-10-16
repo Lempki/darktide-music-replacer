@@ -89,6 +89,7 @@ Meat Grinder offers Custom, Game's Own, and Silence, and defaults to Silence. Th
 | Setting | Default | What it does |
 |---|---|---|
 | Custom Music Volume | 100% | How loud your songs play, on top of the game's master and music volume sliders. At 100% they play as loud as the files themselves. The game's own music is not affected. |
+| Even Out Loudness | Off | Plays every song at about the same loudness, without changing your files. The mod measures each song once in the background and remembers it, see How it plays below. A song not measured yet plays at its own level, and a song that starts playing keeps its level until it starts again. |
 | Menu Volume | 50% | How loud your songs play while a menu is open, as a share of the Custom Music Volume. The menus are the ones the game itself reports to its audio: the Esc menu and its settings, the inventory, the mission board, vendors, the store, and character appearance. The music fades down over half a second and back up once the menu closes. Set it to 100% to keep full volume in menus. |
 
 ### Boss Music
@@ -121,6 +122,8 @@ Music Replacer decodes your files with Media Foundation, Windows' own audio deco
 * XAudio2 follows a change of the default audio device by itself. If the device is lost in a way it cannot follow, the mod rebuilds the engine and continues the song where it was. After three rebuilds in a row fail, it gives up for the session and the game's own music plays.
 * While Windows has no audio output at all, for example right after the only headset is unplugged, the game's own music takes over and the mod tries again every five seconds. Custom music comes back once the output does.
 * The music plays inside the game's own process, so it stops with the game, including after a crash.
+* With Even Out Loudness on, the mod measures each song's loudness the way streaming services do, in LUFS, following ITU-R BS.1770. Every song then plays at -14 LUFS, the level most of them use. A quiet song is only raised until its loudest sample reaches full scale, so it never distorts.
+* Measuring decodes the whole song, about a millisecond of work per frame, starting with the folder of the music playing now. The log says how long it took once every song is measured. The results go to `loudness.txt` beside `diagnostic.log`, so each song is measured once, and again only after its file changes. Deleting `loudness.txt` measures every song again.
 
 ## Limitations
 
@@ -166,7 +169,7 @@ The mod always logs the important events, such as which music plays and why, and
 * [x] Custom music for Mortis Trials, with separate folders for its waves and the breaks between them.
 * [x] Picking up added, removed, and replaced audio files by itself while the game runs.
 * [x] A short log of the important events written by default, with the previous session's log kept beside it as `diagnostic-prev.log`, so either can be attached to a bug report. Detailed Logging adds the noisy lines on top.
-* [ ] Volume: lowering custom music while the pause menu is open, as the game does with its own music, and optional loudness normalization, so quiet and loud files play at a similar level without changing the files.
+* [x] Volume: lowering custom music while a menu is open, as the game does with its own music, a volume for custom music, and evening out loudness, so quiet and loud files play at a similar level without changing the files.
 * [ ] Custom music for loading screens.
 * [ ] Optional subfolders named after what the game reports, which override a context's folder: per kind of mission event, such as `escape_event`, per kind of monstrosity, such as `chaos_spawn`, and per game mode or mission type, such as Havoc and Expeditions.
 
@@ -219,7 +222,9 @@ darktide-music-replacer/
 │   ├── library.lua                      # Keeps each context's file list and picks a file for a context.
 │   ├── audio_folders.lua                # Lists, checks, and creates the audio folders through Windows, and measures durations.
 │   ├── resume_points.lua                # Remembers where interrupted songs stopped, until the next loading screen.
-│   ├── audio_client.lua                 # Plays the music: crossfades, end fades, sliders, parked songs, and recovery.
+│   ├── audio_client.lua                 # Plays the music: crossfades, end fades, volumes, parked songs, and recovery.
+│   ├── loudness.lua                     # Measures every song's loudness in the background and keeps the results in loudness.txt.
+│   ├── loudness_meter.lua               # Measures loudness in LUFS following ITU-R BS.1770.
 │   ├── player.lua                       # Streams one song through media_decoder.lua and xaudio.lua from a fixed buffer pool.
 │   ├── media_decoder.lua                # Decodes audio files to PCM with Windows Media Foundation.
 │   ├── xaudio.lua                       # Plays PCM through XAudio2 voices with live volume control.
@@ -237,7 +242,7 @@ darktide-music-replacer/
 │   ├── helpers/
 │   │   ├── context_harness.lua          # Replays the game's real state sequences through context.lua.
 │   │   ├── fake_engine.lua              # Fakes the game and DMF globals so the mod's modules run outside the game.
-│   │   └── main_harness.lua             # Runs MusicReplacer.lua with stand-ins for the library and the audio client.
+│   │   └── main_harness.lua             # Runs MusicReplacer.lua with stand-ins for the library, the audio client, and the loudness measurements.
 │   └── spec/                            # Specs, one *_spec.lua file per subject.
 └── tools/
     ├── build.ps1                        # Builds the zip and optionally deploys straight into the installed mod folder.

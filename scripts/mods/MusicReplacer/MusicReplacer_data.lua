@@ -85,6 +85,12 @@ return {
 						unit_text = "percent_unit",
 					},
 					{
+						setting_id = "normalize_loudness",
+						type = "checkbox",
+						tooltip = "normalize_loudness_tooltip",
+						default_value = false,
+					},
+					{
 						setting_id = "menu_volume",
 						type = "numeric",
 						tooltip = "menu_volume_tooltip",

@@ -38,6 +38,22 @@ local function ensure_directory(path)
 	end
 end
 
+local folder = nil
+local folder_attempted = false
+
+-- The folder that holds the mod's own files, or nil when the user's folder cannot be found.
+local function data_folder()
+	if not folder_attempted then
+		folder_attempted = true
+		local base = appdata_root()
+		if base then
+			folder = base .. "/" .. LOG_DIR_NAME
+			ensure_directory(folder)
+		end
+	end
+	return folder
+end
+
 local function get_log_file()
 	if log_file then
 		return log_file
@@ -52,13 +68,10 @@ local function get_log_file()
 		return nil
 	end
 
-	local base = appdata_root()
-	if not base then
+	local dir = data_folder()
+	if not dir then
 		return nil
 	end
-
-	local dir = base .. "/" .. LOG_DIR_NAME
-	ensure_directory(dir)
 
 	local path = dir .. "/" .. LOG_FILE_NAME
 	local file_mode = "a"
@@ -119,6 +132,11 @@ function DiagnosticLog.detail(line)
 	if mod:get("diagnostic_mode") then
 		write_line(line)
 	end
+end
+
+-- The folder in %APPDATA% that holds this log, also used for the mod's other files, or nil when it cannot be found.
+function DiagnosticLog.folder()
+	return data_folder()
 end
 
 -- Call from the main mod file's mod.on_unload.

@@ -1,5 +1,5 @@
 -- Loads MusicReplacer.lua, the main file, with its real context, suppression, and resume logic.
--- Everything underneath is a stand-in: the library, the audio client, the log, and the Windows modules.
+-- Everything underneath is a stand-in: the library, the audio client, the loudness measurements, the log, and the Windows modules.
 -- It borrows context_harness.lua's sequences, so the specs set the music states in the game's real order.
 -- Time only passes through wait() and tick(), which call the mod's own update.
 
@@ -13,6 +13,7 @@ MainHarness.__index = MainHarness
 local DEFAULT_SETTINGS = {
 	resume_songs = true,
 	custom_music_volume = 100,
+	normalize_loudness = false,
 	menu_volume = 50,
 	captain_boss_music = false,
 	daemonhost_boss_music = false,
@@ -25,11 +26,12 @@ local DEFAULT_SETTINGS = {
 -- A stand-in for library.lua over `files`, which maps a context to a list of { name, duration }.
 -- Picks go through each folder in order, so the specs know which file comes next.
 local function new_library(files)
-	local library = { files = files, rescan_requested = false }
+	local library = { files = files, rescan_requested = false, listed_listeners = {} }
 	local last_index = {}
 
 	function library.init() end
 	function library.shutdown() end
+	function library.on_listed(listener) library.listed_listeners[#library.listed_listeners + 1] = listener end
 	function library.request_rescan() library.rescan_requested = true end
 	function library.disk_path(file_path) return file_path end
 
@@ -75,6 +77,7 @@ local function new_audio_client()
 	function client.shutdown() client.shut_down = true end
 	function client.set_volume(scale) client.volume = scale end
 	function client.set_menu_volume(target) client.menu_volume = target end
+	function client.refresh_levels() client.levels_refreshed = (client.levels_refreshed or 0) + 1 end
 
 	-- The real module reads these as functions, so they are looked up on the module table, not as fields.
 	local module = setmetatable({}, { __index = client })
@@ -107,6 +110,30 @@ local function new_audio_client()
 	return client
 end
 
+-- A stand-in for loudness.lua. `levels` maps a file path to the level it plays at once measured.
+local function new_loudness()
+	local loudness = { enabled = false, levels = {}, preferred_contexts = {}, shut_down = false }
+
+	function loudness.init() end
+	function loudness.set_enabled(on) loudness.enabled = on == true end
+	function loudness.set_files() end
+	function loudness.update(preferred_context) loudness.preferred_contexts[#loudness.preferred_contexts + 1] = tostring(preferred_context) end
+	function loudness.shutdown() loudness.shut_down = true end
+
+	function loudness.level(file_path)
+		return loudness.enabled and loudness.levels[file_path] or 1
+	end
+
+	function loudness.describe(file_path)
+		if not loudness.enabled then
+			return nil
+		end
+		return loudness.levels[file_path] and string.format("level %.2f", loudness.levels[file_path]) or "loudness not measured yet"
+	end
+
+	return loudness
+end
+
 -- Options:
 -- * `files`: each context's files for the library stand-in, as { name, duration } lists.
 -- * `settings`: overrides of the mod's default settings.
@@ -124,6 +151,7 @@ function MainHarness.new(options)
 
 	local library = new_library(options.files or {})
 	local client = new_audio_client()
+	local loudness = new_loudness()
 	local lines = {}
 	local noop = function() end
 
@@ -133,11 +161,14 @@ function MainHarness.new(options)
 		modules = {
 			library = library,
 			audio_client = client.module,
+			loudness = loudness,
+			loudness_meter = {},
 			diagnostic_log = {
 				init = noop,
 				close = noop,
 				write = function(line) lines[#lines + 1] = line end,
 				detail = function(line) lines[#lines + 1] = line end,
+				folder = function() return "C:/AppData/Fatshark/Darktide/MusicReplacer" end,
 			},
 			native_ffi = {},
 			media_decoder = { init = noop, shutdown = noop },
@@ -147,7 +178,7 @@ function MainHarness.new(options)
 		},
 	})
 
-	local harness = setmetatable({ engine = engine, mod = engine.mod, library = library, client = client, lines = lines, settings = settings }, MainHarness)
+	local harness = setmetatable({ engine = engine, mod = engine.mod, library = library, client = client, loudness = loudness, lines = lines, settings = settings }, MainHarness)
 
 	engine:load("MusicReplacer")
 	if options.turned_off then

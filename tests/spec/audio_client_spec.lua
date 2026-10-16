@@ -41,7 +41,8 @@ local function new_stream(path, opts)
 end
 
 -- Returns a loaded audio_client.lua, the fake player, the streams it opened, the fake sliders, and the logged lines.
-local function load_client()
+-- `levels` maps a file path to its own level, which is 1 for any other.
+local function load_client(levels)
 	local sliders = { option_master_slider = 80, options_music_slider = 50 }
 	local engine = FakeEngine.new({ user_settings = sliders })
 	local AudioClient = engine:load("audio_client")
@@ -85,6 +86,7 @@ local function load_client()
 	AudioClient.init(function(line) lines[#lines + 1] = line end, {
 		player = player,
 		disk_path = function(file_path) return "audio/" .. file_path end,
+		level_of = function(file_path) return levels and levels[file_path] or 1 end,
 	})
 
 	return AudioClient, player, streams, sliders, lines
@@ -604,6 +606,35 @@ describe("audio_client.lua volume", function()
 		AudioClient.update(0.25)
 
 		assert_deep_equal(streams[1].gains, { 1, 0.75, 0.5, 0.75, 1 })
+	end)
+
+	it("opens each song at its own level, and keeps it through slider changes", function()
+		local levels = { ["hub/a.mp3"] = 0.5 }
+		local AudioClient, _, streams, sliders = load_client(levels)
+		sliders.option_master_slider = 100
+		sliders.options_music_slider = 100
+		AudioClient.play("hub/a.mp3", { fade_in = true })
+		AudioClient.play("hub/b.mp3", { fade_in = true })
+
+		sliders.options_music_slider = 50
+		AudioClient.update(0.1)
+
+		assert_deep_equal(streams[1].gains, { 0.5, 0.25 })
+		assert_deep_equal(streams[2].gains, { 1, 0.5 })
+	end)
+
+	it("keeps a song's level from its start until the levels are refreshed", function()
+		local levels = {}
+		local AudioClient, _, streams, sliders = load_client(levels)
+		sliders.option_master_slider = 100
+		sliders.options_music_slider = 100
+		AudioClient.play("hub/a.mp3", { fade_in = true })
+
+		levels["hub/a.mp3"] = 0.5
+		AudioClient.set_volume(0.5)
+		AudioClient.refresh_levels()
+
+		assert_deep_equal(streams[1].gains, { 1, 0.5, 0.25 })
 	end)
 
 	it("opens a song during a menu at the menu volume", function()

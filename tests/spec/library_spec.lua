@@ -11,9 +11,18 @@ local function new_audio_folders(disk, lengths, missing, broken)
 	local folders = { created = {}, measured = {}, missing = missing or {}, broken = broken or {}, changes = false, closed = false }
 
 	function folders.available() return true end
+	-- Each file's stamp is its name and how many times the folder was listed, as if every file changed between listings.
+	folders.listings = 0
 	function folders.list(folder)
 		local names = disk[folder:sub(#ROOT + 2)]
-		return names and { unpack(names) } or nil
+		if not names then
+			return nil
+		end
+		local stamps = {}
+		for _, name in ipairs(names) do
+			stamps[name] = name .. "@" .. folders.listings
+		end
+		return { unpack(names) }, stamps
 	end
 	function folders.exists(path)
 		return not folders.missing[path:sub(#ROOT + 2)]
@@ -72,6 +81,25 @@ describe("library.lua listing", function()
 		assert_equal(Library.pick_file("hub"), "hub/a.mp3")
 		assert_equal(lines[1]:find("[library] listed the audio folders: hub=1 ", 1, true) ~= nil, true, lines[1])
 		assert_equal(lines[1]:find("mission_boss=2", 1, true) ~= nil, true, lines[1])
+	end)
+
+	it("passes every listing on, with each file's stamp, in context order", function()
+		local engine = FakeEngine.new()
+		local Library = engine:load("library")
+		local folders = new_audio_folders({ hub = { "a.mp3" }, mission_boss = { "b.mp3" } }, {})
+		local listings = {}
+		Library.on_listed(function(entries) listings[#listings + 1] = entries end)
+		Library.init(nil, folders)
+
+		Library.update(0.016)
+		folders.listings = 1
+		Library.request_rescan()
+		Library.update(0.016)
+
+		assert_deep_equal(listings, {
+			{ { file_path = "hub/a.mp3", stamp = "a.mp3@0" }, { file_path = "mission_boss/b.mp3", stamp = "b.mp3@0" } },
+			{ { file_path = "hub/a.mp3", stamp = "a.mp3@1" }, { file_path = "mission_boss/b.mp3", stamp = "b.mp3@1" } },
+		})
 	end)
 
 	it("lists nothing before the first update", function()
