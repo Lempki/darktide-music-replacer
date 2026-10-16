@@ -13,15 +13,33 @@ local MediaDecoder = dofile(modules .. "media_decoder.lua")
 local XAudio = dofile(modules .. "xaudio.lua")
 local Player = dofile(modules .. "player.lua")
 
-local file_a, file_b = arg[1], arg[2]
-local silent = arg[3] == "--silent"
+io.stdout:setvbuf("no")
+assert(NativeFfi.load(), NativeFfi.error())
+
+-- LuaJIT's arg holds the command line in the system code page, which garbles file names in other scripts.
+-- The wide command line keeps every name intact. Its first two entries are luajit itself and this script.
+NativeFfi.define([[
+const uint16_t *MusicReplacer_DemoGetCommandLineW(void) __asm__("GetCommandLineW");
+uint16_t **MusicReplacer_DemoCommandLineToArgvW(const uint16_t *line, int32_t *count) __asm__("CommandLineToArgvW");
+void *MusicReplacer_DemoLocalFree(void *memory) __asm__("LocalFree");
+]])
+local shell32 = ffi.load("shell32")
+local args = {}
+do
+	local count = ffi.new("int32_t[1]")
+	local argv = shell32.MusicReplacer_DemoCommandLineToArgvW(NativeFfi.kernel32().MusicReplacer_DemoGetCommandLineW(), count)
+	for index = 2, count[0] - 1 do
+		args[#args + 1] = NativeFfi.utf8(argv[index])
+	end
+	NativeFfi.kernel32().MusicReplacer_DemoLocalFree(argv)
+end
+
+local file_a, file_b = args[1], args[2]
+local silent = args[3] == "--silent"
 assert(file_a and file_b, "usage: luajit tools/player_demo.lua <file A> <file B> [--silent]")
 
 local GAIN = silent and 0 or 0.25
 local FRAME_MS = 16
-
-io.stdout:setvbuf("no")
-assert(NativeFfi.load(), NativeFfi.error())
 MediaDecoder.init(NativeFfi)
 XAudio.init(NativeFfi)
 Player.init(NativeFfi, MediaDecoder, XAudio)
@@ -92,4 +110,5 @@ end
 
 b:destroy()
 XAudio.shutdown()
+MediaDecoder.shutdown()
 print(string.format("done, pools %d KB", Player.pool_bytes() / 1024))
