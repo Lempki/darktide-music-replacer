@@ -1,6 +1,6 @@
 -- The mod options, grouped and ordered by how often players need them.
 -- Their songs come first, then what plays where and how loud, then fine timing, and troubleshooting last.
--- Every setting names its tooltip, since DMF only formats named tooltips, which turns "%%" in them into "%".
+-- Every setting names its tooltip: DMF formats named strings, turning "%%" into "%", but shows an implicit description's "%%" as it is.
 
 -- What a context plays. The default keeps the mod's plain behavior: custom songs where there are files, the game's music elsewhere.
 local function source_widget(context_name)

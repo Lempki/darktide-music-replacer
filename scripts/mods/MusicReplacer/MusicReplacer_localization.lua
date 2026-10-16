@@ -68,8 +68,9 @@ local strings = {
 	volume = {
 		en = "Volume",
 	},
+	-- DMF formats every string, so this shows as a single percent sign.
 	percent_unit = {
-		en = "%",
+		en = "%%",
 	},
 	custom_music_volume = {
 		en = "Custom Music Volume",
