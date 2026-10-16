@@ -144,17 +144,12 @@ Reset Log on Launch clears `diagnostic.log` every time the game starts, so copy 
 * [x] Songs continuing from where they left off: explore and combat whenever they come back, and a horde, boss fight, or event after an interruption while it is still going.
 * [x] Playback inside the game through Windows' own decoder and audio engine, with no other mods or programs needed.
 * [x] Custom music for Mortis Trials, with separate folders for its waves and the breaks between them.
-* [ ] A setting per context to choose custom music, the game's own music, or silence, without moving files around.
-* [ ] More Meat Grinder options, such as choosing which contexts play there.
-* [ ] An optional periodic rescan of the audio folders, on top of the rescan button.
-* [ ] Lowering custom music while the pause menu is open, as the game does with its own music.
-* [ ] Optional loudness normalization, so quiet and loud files play at a similar level without changing the files. It would have a setting to turn it on and a target level.
-* [ ] "Let the current track finish" toggle, with a per-category override. For example, a boss track could play out even after the boss dies.
-* [ ] Different music per mission type or game mode, such as Operations, Havoc, and Expeditions.
-* [ ] Separate folders per kind of mission event, so for example a scripted boss fight and a holdout can have different music.
-* [ ] Separate boss folders per kind of monstrosity, so each one can have its own boss music.
+* [ ] A short log of the important events written by default, with the previous session's log kept beside it as `diagnostic-prev.log`, so either can be attached to a bug report. Diagnostic Logging adds the detailed lines on top.
+* [ ] Picking up added or removed audio files by itself, without pressing Rescan Audio Folders.
+* [ ] Options per context: whether it plays custom music, the game's own music, or silence, and whether a song plays to its end after the context is over, such as a boss song after the boss dies. Meat Grinder becomes one more context with these options.
+* [ ] Volume: lowering custom music while the pause menu is open, as the game does with its own music, and optional loudness normalization, so quiet and loud files play at a similar level without changing the files.
 * [ ] Custom music for loading screens.
-* [ ] A short log of the important events written by default, with the previous session's log kept beside it as `diagnostic-prev.log`, so either can be attached to a bug report. Diagnostic Logging would add the detailed lines on top, as it does now.
+* [ ] Optional subfolders named after what the game reports, which override a context's folder: per kind of mission event, such as `escape_event`, per kind of monstrosity, such as `chaos_spawn`, and per game mode or mission type, such as Havoc and Expeditions.
 
 ## Development
 
