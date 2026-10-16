@@ -9,6 +9,7 @@ local CDEF = [[
 typedef struct { uint16_t vt; uint16_t reserved1; uint16_t reserved2; uint16_t reserved3; int64_t value; int64_t padding; } MusicReplacer_PROPVARIANT;
 
 int32_t MusicReplacer_MFStartup(uint32_t version, uint32_t flags) __asm__("MFStartup");
+int32_t MusicReplacer_MFShutdown(void) __asm__("MFShutdown");
 int32_t MusicReplacer_MFCreateMediaType(void **media_type) __asm__("MFCreateMediaType");
 int32_t MusicReplacer_MFCreateWaveFormatExFromMFMediaType(void *media_type, MusicReplacer_WAVEFORMATEX **format, uint32_t *size,
 	uint32_t flags) __asm__("MFCreateWaveFormatExFromMFMediaType");
@@ -104,6 +105,15 @@ function MediaDecoder.available()
 	end
 
 	return true
+end
+
+-- Call from mod.on_unload, after every decoder is closed. It pairs the MFStartup in MediaDecoder.available().
+-- Otherwise a mod reload leaves Media Foundation's work threads running in a DLL the old module's handle may unload.
+function MediaDecoder.shutdown()
+	if mfreadwrite then
+		mfplat.MusicReplacer_MFShutdown()
+		mfreadwrite = nil
+	end
 end
 
 function MediaDecoder.error()

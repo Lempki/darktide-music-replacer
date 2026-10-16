@@ -18,6 +18,9 @@ local mod = nil -- Set by DiagnosticLog.init, needed for the mod options and err
 local log_file = nil
 local log_file_attempted = false
 
+-- DMF keeps a persistent table through a mod reload, so a reload does not count as a new launch and wipe the log.
+local launch_state = {}
+
 local function appdata_root()
 	if not _os then
 		return nil
@@ -87,11 +90,12 @@ local function get_log_file()
 	-- This only runs once per session (see log_file_attempted above).
 	-- So the setting resets the file once, at the first write, and not on every write() call.
 	local file_mode = "a"
-	if mod:get("reset_log_on_launch") then
+	if mod:get("reset_log_on_launch") and not launch_state.log_reset then
 		file_mode = "w"
 	else
 		trim_log_file(path)
 	end
+	launch_state.log_reset = true
 
 	local file, err = _io.open(path, file_mode)
 	if not file then
@@ -106,6 +110,7 @@ end
 -- Call once from the main mod file's top level.
 function DiagnosticLog.init(mod_instance)
 	mod = mod_instance
+	launch_state = mod:persistent_table("diagnostic_log")
 end
 
 function DiagnosticLog.write(line)

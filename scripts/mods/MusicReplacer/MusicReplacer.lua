@@ -365,6 +365,7 @@ end
 mod.on_unload = function(exit_game)
 	Context.shutdown(mod)
 	AudioClient.shutdown()
+	MediaDecoder.shutdown()
 
 	-- A reload hands the music back to the game, or a silenced zone or game state stays silent until the game changes it.
 	-- The reloaded mod reads the game's states again on its first tick.
