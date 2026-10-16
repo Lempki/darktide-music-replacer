@@ -87,7 +87,31 @@ foreach ($context in $AudioContexts) {
 }
 
 # Wrapper dir matters: MusicReplacer.mod's declared paths and io_dofile calls are resolved as mods\<path>, so the archive needs MusicReplacer\ as the first segment, not the files loose at the root.
-Compress-Archive -Path $StageMod -DestinationPath $ZipPath -Force
+# Compress-Archive in Windows PowerShell 5.1 writes "\" into entry names, which Linux and Steam Deck tools extract as literal file names.
+# So the archive is written entry by entry, with the "/" separators the zip format requires, and the empty audio folders as folder entries.
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+if (Test-Path -LiteralPath $ZipPath) {
+    Remove-Item -LiteralPath $ZipPath -Force
+}
+
+$zip = [System.IO.Compression.ZipFile]::Open($ZipPath, [System.IO.Compression.ZipArchiveMode]::Create)
+try {
+    [void]$zip.CreateEntry("$ModName/")
+    foreach ($item in Get-ChildItem -LiteralPath $StageMod -Recurse | Sort-Object FullName) {
+        $entryName = "$ModName/" + $item.FullName.Substring($StageMod.Length).TrimStart('\').Replace('\', '/')
+        if ($item.PSIsContainer) {
+            [void]$zip.CreateEntry("$entryName/")
+        }
+        else {
+            [void][System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $item.FullName, $entryName, [System.IO.Compression.CompressionLevel]::Optimal)
+        }
+    }
+}
+finally {
+    $zip.Dispose()
+}
 
 $zipInfo = Get-Item -LiteralPath $ZipPath
 Write-Host ""
@@ -95,17 +119,25 @@ Write-Host ("Built {0} ({1:N1} KB)" -f $zipInfo.FullName, ($zipInfo.Length / 1KB
 Write-Host ("Build stamp: {0}" -f $BuildStamp)
 Write-Host ""
 
-Add-Type -AssemblyName System.IO.Compression.FileSystem
+# Reads the archive back, so a layout that would install wrongly fails the build instead of reaching players.
+$badEntries = @()
 $archive = [System.IO.Compression.ZipFile]::OpenRead($ZipPath)
 try {
     foreach ($entry in $archive.Entries) {
         Write-Host ("  {0,8}  {1}" -f $entry.Length, $entry.FullName)
+        if ($entry.FullName.Contains('\') -or -not $entry.FullName.StartsWith("$ModName/")) {
+            $badEntries += $entry.FullName
+        }
     }
 }
 finally {
     $archive.Dispose()
 }
 Write-Host ""
+
+if ($badEntries.Count -gt 0) {
+    throw ("The archive has entries outside $ModName/ or with backslashes in their names: $($badEntries -join ', ')")
+}
 
 if (-not $Deploy) {
     Write-Host "Install in Vortex from the ZIP above, or re-run with -Deploy to copy into the game directly."
