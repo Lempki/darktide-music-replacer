@@ -266,9 +266,9 @@ describe("audio_client.lua", function()
 
 	it("treats a file it cannot open as a track that ended at once", function()
 		local AudioClient, player, _, _, lines = load_client()
-		player.refuse["audio/hub/a.ogg"] = "unsupported format"
+		player.refuse["audio/hub/broken.mp3"] = "unsupported format"
 		local finished_after = nil
-		AudioClient.play("hub/a.ogg", {
+		AudioClient.play("hub/broken.mp3", {
 			fade_in = true,
 			on_finished = function(failed) finished_after = failed and AudioClient.elapsed() end,
 		})
@@ -276,7 +276,7 @@ describe("audio_client.lua", function()
 		AudioClient.update(0.1)
 
 		assert_equal(finished_after, 0.1)
-		assert_equal(lines[1], "[player] hub/a.ogg could not be played: unsupported format")
+		assert_equal(lines[1], "[player] hub/broken.mp3 could not be played: unsupported format")
 	end)
 
 	it("fades out quickly on stop", function()
