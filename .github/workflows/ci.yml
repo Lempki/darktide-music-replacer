@@ -1,0 +1,17 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    uses: Lempki/dev-standards/.github/workflows/lua-ci.yml@v0.4.0
+    with:
+      test-command: luajit tests/run.lua

@@ -1,0 +1,5 @@
+# Settings for the dev-standards hooks. This repository has no pyproject.toml, so they live here.
+
+[sync]
+# The ruff baseline is for Python, and this repository is Lua.
+skip = [".ruff-base.toml"]

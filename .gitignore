@@ -1,3 +1,22 @@
+# >>> dev-standards managed block. Change it in dev-standards.
+.env
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+.claude/settings.local.json
+# <<< dev-standards managed block.
+
 # Packaged output, rebuilt from source by tools/build.ps1.
 /dist/
 
