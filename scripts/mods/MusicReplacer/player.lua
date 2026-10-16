@@ -20,6 +20,7 @@ local MediaDecoder = nil
 local XAudio = nil
 local pool_bytes = 0
 local slowest_fill_ms = 0
+local last_open_ms = 0
 
 local function clock()
 	return _os and _os.clock and _os.clock() or 0
@@ -70,6 +71,12 @@ function Player.slowest_fill_ms()
 	return slowest_fill_ms
 end
 
+-- How long the last Player.open() took in milliseconds, for logging.
+-- Opening runs on the game's thread, so a slow drive or a large file can stall a frame.
+function Player.last_open_ms()
+	return last_open_ms
+end
+
 local Stream = {}
 Stream.__index = Stream
 
@@ -90,7 +97,7 @@ local function fill(self, max_fills)
 	local started = clock()
 	local fills = 0
 
-	while fills < max_fills and not self.finishing and not self.failed do
+	while fills < max_fills and not self.finishing and not self.failed and not self.file_failed do
 		-- A slot is free once the buffer last written to it has played, which holds while the queue is not full.
 		if self.voice:queued() >= SLOT_COUNT then
 			break
@@ -101,9 +108,18 @@ local function fill(self, max_fills)
 
 		if self.loop and self.decoder:at_end() then
 			-- Gapless: the rest of this buffer continues from the file's start.
-			self.decoder:seek(0)
+			if not self.decoder:seek(0) then
+				self.file_failed = "it could not go back to its start to loop"
+				break
+			end
 			if bytes < self.slot_bytes then
 				bytes = bytes + self.decoder:read_into(slot + bytes, self.slot_bytes - bytes)
+			end
+
+			-- A whole pass with nothing to queue means the file decodes to no audio, which would loop here forever in silence.
+			if bytes == 0 then
+				self.file_failed = "it decodes to no audio"
+				break
 			end
 		end
 
@@ -129,13 +145,7 @@ local function fill(self, max_fills)
 	slowest_fill_ms = math.max(slowest_fill_ms, (clock() - started) * 1000)
 end
 
--- Opens `path` and starts it playing.
--- Returns the stream, or nil, why, and whether XAudio2 refused the voice, which a dead engine also does.
--- opts.start_position starts partway in, in seconds. opts.loop repeats the file without a gap.
--- opts.gain and opts.fade set the starting levels, 1 by default.
-function Player.open(path, opts)
-	opts = opts or {}
-
+local function open_stream(path, opts)
 	local decoder, err = MediaDecoder.open(path)
 	if not decoder then
 		return nil, err
@@ -191,6 +201,17 @@ function Player.open(path, opts)
 	voice:start()
 
 	return self
+end
+
+-- Opens `path` and starts it playing.
+-- Returns the stream, or nil, why, and whether XAudio2 refused the voice, which a dead engine also does.
+-- opts.start_position starts partway in, in seconds. opts.loop repeats the file without a gap.
+-- opts.gain and opts.fade set the starting levels, 1 by default.
+function Player.open(path, opts)
+	local started = clock()
+	local stream, err, refused_voice = open_stream(path, opts or {})
+	last_open_ms = (clock() - started) * 1000
+	return stream, err, refused_voice
 end
 
 -- Sets the gain at once, for slider changes.
@@ -250,9 +271,15 @@ function Stream:ended()
 	return self.finishing and self.voice:queued() == 0
 end
 
--- Why the stream stopped working, or nil.
+-- Why the stream stopped working, or nil. The engine has failed, so recovering means rebuilding it.
 function Stream:failure()
 	return self.failed
+end
+
+-- Why the file itself stopped playing, such as a looping file that decodes to no audio, or nil.
+-- The engine is fine, so this counts as a file that could not be played.
+function Stream:file_failure()
+	return self.file_failed
 end
 
 -- Call every tick: moves the fade, refills the queue, and watches for a lost device.

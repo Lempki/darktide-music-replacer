@@ -17,6 +17,12 @@ local STOP_FADE_SECONDS = 0.5
 -- How long a faded-out song stays parked. Each holds about 0.7 MB, and most returns, like combat after a lull, come sooner.
 local PARK_SECONDS = 60
 
+-- Parked songs beyond this are freed, oldest first. Each also keeps its file open.
+local MAX_PARKED = 4
+
+-- Opening a file slower than this is logged, since it stalls the game's thread for that long.
+local SLOW_OPEN_MS = 100
+
 -- Recoveries in a row before giving up for the session. Playing well for HEALTHY_SECONDS resets the count.
 local MAX_RECOVERIES = 3
 local HEALTHY_SECONDS = 30
@@ -31,7 +37,7 @@ local disk_path = function(file_path) return file_path end
 local log_fn = function() end
 
 local current = nil -- { stream, file_path, loop, duration, on_finished, elapsed, end_fading }
-local outgoing = {} -- { stream, file_path, parked_elapsed } for songs fading out or parked, after a switch or a stop.
+local outgoing = {} -- { stream, file_path, loop, parked_elapsed } for songs fading out or parked, after a switch or a stop.
 local finished_elapsed = 0 -- The last finished track's elapsed time, which on_finished reads through elapsed().
 local gain = 1
 local current_master_slider = nil
@@ -94,7 +100,22 @@ end
 
 local function fade_out(entry, seconds)
 	entry.stream:fade_to(0, seconds)
-	outgoing[#outgoing + 1] = { stream = entry.stream, file_path = entry.file_path, parked_elapsed = nil }
+	outgoing[#outgoing + 1] = { stream = entry.stream, file_path = entry.file_path, loop = entry.loop, parked_elapsed = nil }
+end
+
+-- Frees the oldest parked songs beyond MAX_PARKED. The list is in the order the songs faded out.
+local function free_extra_parked()
+	local parked = 0
+	for index = #outgoing, 1, -1 do
+		local entry = outgoing[index]
+		if entry.parked_elapsed then
+			parked = parked + 1
+			if parked > MAX_PARKED then
+				entry.stream:destroy()
+				table.remove(outgoing, index)
+			end
+		end
+	end
 end
 
 local function destroy_all()
@@ -128,7 +149,7 @@ end
 -- True while a song is fading out, which shows the engine still plays.
 local function has_live_stream()
 	for _, entry in ipairs(outgoing) do
-		if not entry.parked_elapsed and not entry.stream:failure() then
+		if not entry.parked_elapsed and not entry.stream:failure() and not entry.stream:file_failure() then
 			return true
 		end
 	end
@@ -136,9 +157,11 @@ local function has_live_stream()
 end
 
 -- Takes the fading or parked stream of `file_path` out of the outgoing list, or returns nil.
-local function take_outgoing(file_path)
+-- A stream that loops is only taken back to loop again, since one that does not loop must end for the next pick to follow.
+local function take_outgoing(file_path, loop)
 	for index, entry in ipairs(outgoing) do
-		if entry.file_path == file_path and not entry.stream:ended() and not entry.stream:failure() then
+		local stream = entry.stream
+		if entry.file_path == file_path and entry.loop == loop and not stream:ended() and not stream:failure() and not stream:file_failure() then
 			table.remove(outgoing, index)
 			return entry.stream
 		end
@@ -166,7 +189,7 @@ function AudioClient.play(file_path, opts)
 	opts = opts or {}
 
 	-- Only a resume continues a parked song. A fresh pick of the same file starts it over, as the resume rules want.
-	local revived = opts.start_position and take_outgoing(file_path)
+	local revived = opts.start_position and take_outgoing(file_path, opts.loop == true)
 
 	if current and current.stream then
 		if opts.fade_in then
@@ -199,6 +222,10 @@ function AudioClient.play(file_path, opts)
 		}
 		local refused_voice
 		stream, err, refused_voice = Player.open(disk_path(file_path), open_opts)
+
+		if Player.last_open_ms() >= SLOW_OPEN_MS then
+			log_fn(string.format("[timing] opening %s took %d ms", file_path, Player.last_open_ms()))
+		end
 
 		-- A dead engine refuses every voice, and so can one file's format.
 		-- With no song fading out to show the engine still plays, it is rebuilt and the file gets one more try.
@@ -243,10 +270,10 @@ function AudioClient.stop()
 	finished_elapsed = 0
 end
 
--- Calls on_finished with true when the file could not be played at all.
-local function finish()
+-- Calls on_finished with true when the file could not be played at all, or `file_failed` says it stopped for its own reasons.
+local function finish(file_failed)
 	local on_finished = current.on_finished
-	local failed = current.stream == nil
+	local failed = file_failed == true or current.stream == nil
 	finished_elapsed = current.elapsed
 	if current.stream then
 		current.stream:destroy()
@@ -297,6 +324,12 @@ local function update_current(dt)
 
 	if stream:failure() then
 		recover(stream:failure())
+		return
+	end
+
+	if stream:file_failure() then
+		log_fn(string.format("[player] %s could not be played: %s", current.file_path, stream:file_failure()))
+		finish(true)
 		return
 	end
 
@@ -387,7 +420,7 @@ function AudioClient.update(dt)
 			entry.parked_elapsed = entry.parked_elapsed + dt
 		end
 
-		if stream:ended() or stream:failure() or (entry.parked_elapsed and entry.parked_elapsed >= PARK_SECONDS) then
+		if stream:ended() or stream:failure() or stream:file_failure() or (entry.parked_elapsed and entry.parked_elapsed >= PARK_SECONDS) then
 			stream:destroy()
 			table.remove(outgoing, index)
 		elseif not entry.parked_elapsed and not stream:fading() then
@@ -395,6 +428,8 @@ function AudioClient.update(dt)
 			entry.parked_elapsed = 0
 		end
 	end
+
+	free_extra_parked()
 end
 
 -- Call from mod.on_unload. Stops everything at once and releases XAudio2.

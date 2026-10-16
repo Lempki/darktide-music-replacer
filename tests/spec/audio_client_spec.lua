@@ -34,6 +34,7 @@ local function new_stream(path, opts)
 	function stream.position(self) return self.current_position end
 	function stream.ended(self) return self.is_ended end
 	function stream.failure(self) return self.failed end
+	function stream.file_failure(self) return self.file_failed end
 	function stream.destroy(self) self.destroyed = true end
 
 	return stream
@@ -78,6 +79,7 @@ local function load_client()
 		player.engine_failure_reason = nil
 	end
 	function player.pool_bytes() return 0 end
+	function player.last_open_ms() return player.open_ms or 0 end
 	function player.slowest_fill_ms() return 0 end
 
 	AudioClient.init(function(line) lines[#lines + 1] = line end, {
@@ -140,6 +142,57 @@ describe("audio_client.lua", function()
 		assert_deep_equal(streams[2].fades[#streams[2].fades], { 0, 2 })
 		assert_equal(AudioClient.position(), 95)
 		assert_equal(lines[#lines], "[player] continuing mission_explore/a.mp3 from 95.0s, where it faded out")
+	end)
+
+	it("does not take back a parked song whose loop setting differs, and opens it afresh instead", function()
+		local AudioClient, _, streams = load_client()
+		AudioClient.play("mission_explore/a.mp3", { fade_in = true, loop = true })
+		AudioClient.play("mission_combat/b.mp3", { fade_in = true })
+		AudioClient.update(2.1)
+
+		AudioClient.play("mission_explore/a.mp3", { fade_in = true, start_position = 40, duration_seconds = 200 })
+
+		assert_equal(#streams, 3)
+		assert_equal(streams[3].opts.loop, false)
+		assert_equal(streams[3].opts.start_position, 40)
+	end)
+
+	it("keeps at most 4 parked songs, freeing the oldest first", function()
+		local AudioClient, _, streams = load_client()
+
+		for index = 1, 7 do
+			AudioClient.play("mission_explore/" .. index .. ".mp3", { fade_in = true })
+			AudioClient.update(2.1)
+		end
+
+		local destroyed = {}
+		for index, stream in ipairs(streams) do
+			destroyed[index] = stream.destroyed
+		end
+		assert_deep_equal(destroyed, { true, true, false, false, false, false, false })
+	end)
+
+	it("treats a song that stops for its own reasons as a file that could not be played, without rebuilding", function()
+		local AudioClient, player, streams, _, lines = load_client()
+		local failed_after = nil
+		AudioClient.play("hub/silent.mp3", { loop = true, on_finished = function(failed) failed_after = failed end })
+		streams[1].file_failed = "it decodes to no audio"
+
+		AudioClient.update(0.1)
+
+		assert_equal(failed_after, true)
+		assert_equal(player.resets, 0)
+		assert_equal(streams[1].destroyed, true)
+		assert_equal(lines[#lines], "[player] hub/silent.mp3 could not be played: it decodes to no audio")
+	end)
+
+	it("logs a slow file open, since it stalls the game's thread", function()
+		local AudioClient, player, _, _, lines = load_client()
+		player.open_ms = 250
+
+		AudioClient.play("hub/a.mp3", { fade_in = true })
+
+		assert_equal(lines[1], "[timing] opening hub/a.mp3 took 250 ms")
 	end)
 
 	it("takes back a song still fading out, fading it up from where it is", function()

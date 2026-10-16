@@ -25,6 +25,9 @@ local function new_decoder(seconds)
 	function decoder.at_end(self) return self.remaining == 0 end
 	function decoder.seek(self, position)
 		self.seeks[#self.seeks + 1] = position
+		if self.refuse_seek then
+			return false
+		end
 		self.remaining = (self.duration - position) * BYTES_PER_SECOND
 		return true
 	end
@@ -134,6 +137,42 @@ describe("player.lua", function()
 
 		assert_equal(voice.submitted[16].data, POOL + 15 * SLOT_BYTES)
 		assert_equal(voice.submitted[17].data, POOL)
+	end)
+
+	it("stops a looping file that decodes to no audio, as the file's own failure, instead of seeking forever", function()
+		local Player, decoder, voice = load_player(0)
+		local stream = Player.open("silent.mp3", { loop = true })
+
+		assert_equal(stream:file_failure(), "it decodes to no audio")
+		assert_equal(stream:failure(), nil)
+		assert_equal(#voice.submitted, 0)
+
+		stream:update(0.016)
+		assert_equal(#decoder.seeks, 1)
+	end)
+
+	it("stops a looping file that cannot go back to its start, as the file's own failure", function()
+		local Player, decoder = load_player(0.5)
+		decoder.refuse_seek = true
+		local stream = Player.open("a.mp3", { loop = true })
+
+		stream:update(0.016)
+
+		assert_equal(stream:file_failure(), "it could not go back to its start to loop")
+		assert_equal(stream:failure(), nil)
+	end)
+
+	it("keeps looping a file shorter than one buffer", function()
+		local Player, decoder, voice = load_player(0.1)
+		local stream = Player.open("short.mp3", { loop = true })
+
+		for _ = 1, 10 do
+			voice:play(2)
+			stream:update(0.016)
+		end
+
+		assert_equal(stream:file_failure(), nil)
+		assert_equal(#decoder.seeks > 5, true)
 	end)
 
 	it("marks the file's last buffer, and ends once it has played", function()

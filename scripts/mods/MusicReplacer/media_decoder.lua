@@ -23,6 +23,7 @@ local FIRST_AUDIO_STREAM = 0xFFFFFFFD
 local ALL_STREAMS = 0xFFFFFFFE
 local MEDIA_SOURCE = 0xFFFFFFFF
 local END_OF_STREAM_FLAG = 0x2
+local MEDIA_TYPE_CHANGED_FLAG = 0x20
 local VT_I8 = 20
 local HUNDRED_NANOSECONDS = 10000000
 
@@ -245,7 +246,18 @@ function Decoder:read_into(target, capacity)
 			self.source_ended = true
 		end
 
+		-- A file whose format changes partway, such as an mp3 that mixes sample rates, would play the rest at the wrong speed.
+		-- Its voice keeps the format it was created with, so the file ends here instead, and the changed sample is dropped.
 		local sample = self.out[0]
+		if math.floor(self.flags[0] / MEDIA_TYPE_CHANGED_FLAG) % 2 == 1 then
+			self.source_ended = true
+			self.format_changed = true
+			if sample ~= nil then
+				NativeFfi.release(sample)
+				sample = nil
+			end
+		end
+
 		if sample ~= nil then
 			if NativeFfi.succeeded(call(sample, CONVERT_TO_CONTIGUOUS_BUFFER, self.out)) then
 				local buffer = self.out[0]
@@ -280,6 +292,11 @@ function Decoder:seek(seconds)
 	local position = ffi.new("MusicReplacer_PROPVARIANT")
 	position.vt = VT_I8
 	position.value = math.floor(seconds * HUNDRED_NANOSECONDS)
+
+	-- After a format change the file plays no further, not even from its start, since the voice cannot follow.
+	if self.format_changed then
+		return false
+	end
 
 	local ok = NativeFfi.succeeded(call(self.reader, SET_CURRENT_POSITION, guids.null, position))
 	if ok then
