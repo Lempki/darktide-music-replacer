@@ -116,6 +116,7 @@ Loading, Preparation, and Meat Grinder offer Custom, Game's Own, and Silence, an
 | Setting | Default | What it does |
 |---|---|---|
 | Detailed Logging | Off | Adds the game's raw music states, the silencing of its music, and its sound events to `diagnostic.log`. The important events are always logged. See Troubleshooting below. |
+| Debug Overlay | Off | Shows the current context and what it plays, the song with its time, and the volume factors in a top corner of the screen. It shows on every screen, loading screens and the preparation screen included, and shows holds and changes that are still settling, which helps when checking which music a moment counts as. Overlay Corner, shown while it is on, picks the top left or the top right. Custom HUD cannot move it, since it is not part of the HUD. |
 
 ## How it plays
 
@@ -234,6 +235,8 @@ darktide-music-replacer/
 │   ├── xaudio.lua                       # Plays PCM through XAudio2 voices with live volume control.
 │   ├── native_ffi.lua                   # Shared ffi plumbing for Windows APIs: GUIDs, COM calls and setup, UTF-16 strings, heap memory, files.
 │   ├── diagnostic_log.lua               # Writes diagnostic.log, keeping the previous session's, with detailed lines on request.
+│   ├── debug_overlay.lua                # Builds the debug overlay's text and adds its element to the game's always-visible UI.
+│   ├── debug_overlay_element.lua        # The debug overlay's on-screen element.
 │   ├── event_probe.lua                  # Logging-only probe that records Wwise event names.
 │   ├── mission_probe.lua                # Logging-only probe that records the current mission's name and type.
 │   ├── MusicReplacer_data.lua           # DMF mod-options widgets.

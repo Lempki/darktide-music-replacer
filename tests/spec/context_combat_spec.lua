@@ -38,6 +38,22 @@ describe("context.lua combat", function()
 		assert_deep_equal(harness.changes, { "mission_combat", "mission_explore" })
 	end)
 
+	it("reports the combat hold and its seconds left while it keeps mission_combat", function()
+		local harness = in_mission(8)
+		harness:state("music_combat", "normal")
+		assert_equal(harness.Context.hold(), nil)
+
+		harness:state("music_combat", "None")
+		harness:wait(3)
+
+		local hold, seconds = harness.Context.hold()
+		assert_equal(hold, "combat")
+		assert_equal(math.abs(seconds - 5) < 0.15, true)
+
+		harness:wait(5.2)
+		assert_equal(harness.Context.hold(), nil)
+	end)
+
 	it("does not drain the hold while combat is still going", function()
 		local harness = in_mission(8)
 

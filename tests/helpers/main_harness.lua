@@ -1,5 +1,5 @@
 -- Loads MusicReplacer.lua, the main file, with its real context, suppression, and resume logic.
--- Everything underneath is a stand-in: the library, the audio client, the loudness measurements, the log, and the Windows modules.
+-- Everything underneath is a stand-in: the library, audio client, loudness, debug overlay, log, and Windows modules.
 -- It borrows context_harness.lua's sequences, so the specs set the music states in the game's real order.
 -- Time only passes through wait() and tick(), which call the mod's own update.
 
@@ -106,6 +106,14 @@ local function new_audio_client()
 		client.played_to_end = client.current and client.current.file_path
 	end
 
+	function module.duration()
+		return client.current and client.current.opts.duration_seconds
+	end
+
+	function module.levels()
+		return client.volume or 1, client.menu_volume or 1, 1
+	end
+
 	client.module = module
 	return client
 end
@@ -134,6 +142,18 @@ local function new_loudness()
 	return loudness
 end
 
+-- A stand-in for debug_overlay.lua that keeps what the main file gives it, so a spec can read the overlay's snapshot.
+local function new_overlay()
+	local overlay = { enabled = false, corner = nil, options = nil }
+
+	function overlay.init(_, options) overlay.options = options end
+	function overlay.set_enabled(on, corner) overlay.enabled, overlay.corner = on, corner end
+	function overlay.update() end
+	function overlay.shutdown() end
+
+	return overlay
+end
+
 -- Options:
 -- * `files`: each context's files for the library stand-in, as { name, duration } lists.
 -- * `settings`: overrides of the mod's default settings.
@@ -152,6 +172,7 @@ function MainHarness.new(options)
 	local library = new_library(options.files or {})
 	local client = new_audio_client()
 	local loudness = new_loudness()
+	local overlay = new_overlay()
 	local lines = {}
 	local noop = function() end
 
@@ -162,6 +183,7 @@ function MainHarness.new(options)
 			library = library,
 			audio_client = client.module,
 			loudness = loudness,
+			debug_overlay = overlay,
 			loudness_meter = {},
 			diagnostic_log = {
 				init = noop,
@@ -178,7 +200,8 @@ function MainHarness.new(options)
 		},
 	})
 
-	local harness = setmetatable({ engine = engine, mod = engine.mod, library = library, client = client, loudness = loudness, lines = lines, settings = settings }, MainHarness)
+	local harness = setmetatable({ engine = engine, mod = engine.mod, library = library, client = client, loudness = loudness, overlay = overlay,
+		lines = lines, settings = settings }, MainHarness)
 
 	engine:load("MusicReplacer")
 	if options.turned_off then

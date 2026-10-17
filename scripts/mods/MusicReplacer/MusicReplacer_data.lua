@@ -170,6 +170,24 @@ return {
 						tooltip = "diagnostic_mode_tooltip",
 						default_value = false,
 					},
+					{
+						setting_id = "debug_overlay",
+						type = "checkbox",
+						tooltip = "debug_overlay_tooltip",
+						default_value = false,
+						sub_widgets = {
+							{
+								setting_id = "debug_overlay_corner",
+								type = "dropdown",
+								tooltip = "debug_overlay_corner_tooltip",
+								default_value = "top_left",
+								options = {
+									{ text = "debug_overlay_top_left", value = "top_left" },
+									{ text = "debug_overlay_top_right", value = "top_right" },
+								},
+							},
+						},
+					},
 				},
 			},
 		},

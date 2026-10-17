@@ -96,6 +96,7 @@ local EVENT_HOLD_SECONDS_DEFAULT = 5
 local combat_hold_remaining = 0 -- Seconds left before mission_combat may fall back to mission_explore.
 local horde_hold_remaining = 0 -- Seconds left before mission_horde may fall back to the plain combat state.
 local event_hold_remaining = 0 -- Seconds left before mission_event may fall back to the states below it.
+local active_hold = nil -- "combat", "horde", or "event" while the resolved context comes from that hold, else nil.
 
 local MISSION_OUTCOME_CONTEXTS = { victory = "mission_victory", defeat = "mission_defeat" }
 
@@ -240,6 +241,8 @@ local function is_zoneless_mission()
 end
 
 local function resolve(mod)
+	active_hold = nil
+
 	-- Cutscenes get no custom music, whatever zone or outcome is still set.
 	if music_game_state == "cinematic" then
 		return nil
@@ -294,6 +297,7 @@ local function resolve(mod)
 
 	if event_hold_remaining > 0 then
 		diagnostic_log(string.format("[hold] event quiet, holding mission_event for %.1fs more", event_hold_remaining))
+		active_hold = "event"
 		return "mission_event"
 	end
 
@@ -313,6 +317,7 @@ local function resolve(mod)
 
 	if horde_hold_remaining > 0 then
 		diagnostic_log(string.format("[hold] horde quiet, holding mission_horde for %.1fs more", horde_hold_remaining))
+		active_hold = "horde"
 		return "mission_horde"
 	end
 
@@ -323,6 +328,7 @@ local function resolve(mod)
 
 	if combat_hold_remaining > 0 then
 		diagnostic_log(string.format("[hold] combat quiet, holding mission_combat for %.1fs more", combat_hold_remaining))
+		active_hold = "combat"
 		return "mission_combat"
 	end
 
@@ -367,6 +373,20 @@ end
 
 function Context.current()
 	return resolved_context, current_boss_breed()
+end
+
+local HOLD_REMAINING = {
+	combat = function() return combat_hold_remaining end,
+	horde = function() return horde_hold_remaining end,
+	event = function() return event_hold_remaining end,
+}
+
+-- The hold that keeps the current context, "combat", "horde", or "event", and its seconds left, or nil.
+function Context.hold()
+	if not active_hold then
+		return nil
+	end
+	return active_hold, HOLD_REMAINING[active_hold]()
 end
 
 -- True while the game shows a menu, such as the Esc menu, the inventory, the mission board, or a vendor.

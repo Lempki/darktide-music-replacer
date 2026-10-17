@@ -173,6 +173,26 @@ local strings = {
 	diagnostic_mode = {
 		en = "Detailed Logging",
 	},
+	debug_overlay = {
+		en = "Debug Overlay",
+	},
+	debug_overlay_tooltip = {
+		en = "Shows the current context, the song playing, and its volume in a corner of the screen, on every screen, loading screens included.\n\n" ..
+			"Meant for checking what the mod does, such as which context a moment counts as.",
+	},
+	debug_overlay_corner = {
+		en = "Overlay Corner",
+	},
+	debug_overlay_corner_tooltip = {
+		en = "Where the debug overlay sits.\n\n" ..
+			highlight("Top Left") .. " stays clear of the mission objectives, which sit at the top right.",
+	},
+	debug_overlay_top_left = {
+		en = "Top Left",
+	},
+	debug_overlay_top_right = {
+		en = "Top Right",
+	},
 	diagnostic_mode_tooltip = {
 		en = "Adds the game's raw music states, the silencing of its music, and its sound events to " .. highlight("diagnostic.log") .. ".\n\n" ..
 			"The important events are always logged, which is enough for most bug reports. " ..

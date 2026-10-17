@@ -99,6 +99,16 @@ function AudioClient.is_playing()
 	return current ~= nil
 end
 
+-- The current song's length in seconds, from its decoder or the library, or nil.
+function AudioClient.duration()
+	return current and ((current.stream and current.stream.duration) or current.duration) or nil
+end
+
+-- The Custom Music Volume, the menu lowering where its fade is now, and the current song's own level, as linear scales.
+function AudioClient.levels()
+	return volume, menu_level, current and current.level or 1
+end
+
 local function read_sliders()
 	local master = Application.user_setting("sound_settings", "option_master_slider") or 100
 	local music = Application.user_setting("sound_settings", "options_music_slider") or 100

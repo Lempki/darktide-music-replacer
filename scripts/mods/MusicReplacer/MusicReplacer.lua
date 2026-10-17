@@ -17,6 +17,7 @@ local AudioClient = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/audi
 local LoudnessMeter = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/loudness_meter")
 local Loudness = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/loudness")
 local DiagnosticLog = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/diagnostic_log")
+local DebugOverlay = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/debug_overlay")
 
 DiagnosticLog.init(mod)
 local log = DiagnosticLog.write
@@ -59,6 +60,11 @@ local playing_track = nil -- Fields: context_name, file_path, duration, is_only_
 -- The context whose song plays on to its end after the music moved to a less important context, or nil.
 -- Its setting is "Custom (Play to End)". The current context's own music starts once that song ends.
 local finishing_context = nil
+
+-- What the current context plays, for the debug overlay: a choice's name, or why the game's music plays.
+local context_status = "game's music"
+
+local SOURCE_NAMES = { custom = "Custom", custom_play_to_end = "Custom (Play to End)", game = "Game's Own", silence = "Silence" }
 
 -- What a context plays, from its setting: "custom", "custom_play_to_end", "game", or "silence".
 local function source_of(context_name)
@@ -128,6 +134,7 @@ local function play_context(context_name, is_new_context)
 	finishing_context = nil
 
 	if not context_name then
+		context_status = "game's music"
 		AudioClient.stop()
 		Suppression.release()
 		return
@@ -135,6 +142,7 @@ local function play_context(context_name, is_new_context)
 
 	-- Meat Grinder only resolves to its own context for these two, since "custom" plays the mission contexts there.
 	local source = source_of(context_name)
+	context_status = SOURCE_NAMES[source] or source
 
 	if source == "game" then
 		AudioClient.stop()
@@ -151,6 +159,7 @@ local function play_context(context_name, is_new_context)
 	end
 
 	if gave_up[context_name] then
+		context_status = "game's music, its songs would not play"
 		AudioClient.stop()
 		Suppression.release()
 		log(string.format("[playback] %s: its tracks would not play earlier, using native music", context_name))
@@ -159,6 +168,7 @@ local function play_context(context_name, is_new_context)
 
 	-- Playback that could not start, or gave up after repeated audio device failures, leaves the native music alone.
 	if not AudioClient.available() then
+		context_status = "game's music, no audio output"
 		AudioClient.stop()
 		Suppression.release()
 		return
@@ -169,6 +179,7 @@ local function play_context(context_name, is_new_context)
 	if not file_path then
 		-- No replacement is available: no folder, an empty folder, or a scan that has not finished.
 		-- Native music is left alone.
+		context_status = "game's music, no songs"
 		AudioClient.stop()
 		Suppression.release()
 		log(string.format("[playback] %s: no file available, using native music", context_name))
@@ -216,6 +227,7 @@ local function play_context(context_name, is_new_context)
 
 				if quick_ends[context_name] >= MAX_QUICK_ENDS then
 					gave_up[context_name] = true
+					context_status = "game's music, its songs would not play"
 					log(string.format("[playback] %s: %d tracks in a row ended within %ds, using native music until the game restarts or the folders are rescanned",
 						context_name, MAX_QUICK_ENDS, QUICK_END_SECONDS))
 					AudioClient.stop()
@@ -315,6 +327,52 @@ end)
 -- Wiring
 -- ###########################################################################
 
+-- The state the debug overlay shows. Kept to plain values, so building it never changes what plays.
+local function overlay_snapshot()
+	if not enabled then
+		return { turned_off = true }
+	end
+
+	local hold, hold_seconds = Context.hold()
+	local volume, menu_level, song_level = AudioClient.levels()
+	local song = AudioClient.is_playing() and playing_track and playing_track.file_path or nil
+
+	local pending_seconds = nil
+	if has_pending_change then
+		local debounce_seconds = pending_context == "loading" and LOADING_DEBOUNCE_SECONDS or DEBOUNCE_SECONDS
+		pending_seconds = math.max(0, math.min(debounce_seconds - debounce_elapsed, MAX_DEBOUNCE_SECONDS - pending_elapsed))
+	end
+
+	return {
+		context = current_context,
+		status = context_status,
+		hold = hold,
+		hold_seconds = hold_seconds,
+		pending = has_pending_change and (pending_context or "none") or nil,
+		pending_seconds = pending_seconds,
+		finishing = finishing_context,
+		song = song and song:match("[^/]+$"),
+		position = AudioClient.position(),
+		duration = AudioClient.duration(),
+		volume = volume,
+		menu_level = menu_level,
+		song_level = song_level,
+		evening_out = mod:get("normalize_loudness") == true,
+	}
+end
+
+-- The overlay's element uses the game's UI classes, so it is only loaded once the overlay is first shown.
+local OverlayElement = nil
+
+local function create_overlay_element(constant_elements, draw_layer)
+	OverlayElement = OverlayElement or mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/debug_overlay_element")(DebugOverlay)
+	return OverlayElement:new(constant_elements, draw_layer)
+end
+
+local function apply_overlay_settings()
+	DebugOverlay.set_enabled(mod:get("debug_overlay") == true, mod:get("debug_overlay_corner"))
+end
+
 -- Raw state transitions, suppression, and sound events are detailed lines. The rest of the log is the important events.
 Suppression.init(log_detail)
 EventProbe.init(log_detail)
@@ -343,6 +401,8 @@ mod.on_all_mods_loaded = function()
 	Library.on_listed(Loudness.set_files)
 	AudioClient.init(log, { player = Player, disk_path = Library.disk_path, level_of = Loudness.level })
 	AudioClient.set_volume(custom_volume())
+	DebugOverlay.init(log, { snapshot = overlay_snapshot, create_element = create_overlay_element })
+	apply_overlay_settings()
 
 	-- A mod can only install one hook per method on itself.
 	-- So Suppression and EventProbe cannot each hook WwiseWorld.trigger_resource_event on their own.
@@ -408,6 +468,8 @@ end
 mod.on_setting_changed = function(setting_id)
 	if setting_id == "source_meat_grinder" or setting_id == "daemonhost_boss_music" or setting_id == "captain_boss_music" then
 		Context.refresh(mod)
+	elseif setting_id == "debug_overlay" or setting_id == "debug_overlay_corner" then
+		apply_overlay_settings()
 	elseif setting_id == "custom_music_volume" then
 		AudioClient.set_volume(custom_volume())
 	elseif setting_id == "normalize_loudness" then
@@ -473,6 +535,7 @@ mod.update = function(dt)
 	end
 
 	MissionProbe.update()
+	DebugOverlay.update()
 
 	if enabled and has_pending_change then
 		debounce_elapsed = debounce_elapsed + dt
@@ -489,6 +552,7 @@ mod.on_unload = function(exit_game)
 	Context.shutdown(mod)
 	Library.shutdown()
 	Loudness.shutdown()
+	DebugOverlay.shutdown()
 	AudioClient.shutdown()
 	MediaDecoder.shutdown()
 

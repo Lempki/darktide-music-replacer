@@ -392,6 +392,56 @@ describe("MusicReplacer.lua loading", function()
 	end)
 end)
 
+describe("MusicReplacer.lua debug overlay", function()
+	it("follows its settings", function()
+		local harness = in_hub()
+		assert_equal(harness.overlay.enabled, false)
+
+		harness:set_setting("debug_overlay_corner", "top_right")
+		harness:set_setting("debug_overlay", true)
+
+		assert_equal(harness.overlay.enabled, true)
+		assert_equal(harness.overlay.corner, "top_right")
+	end)
+
+	it("reports the context, its choice, and the song playing", function()
+		local harness = in_hub()
+		harness.client.position = 12
+
+		local snapshot = harness.overlay.options.snapshot()
+
+		assert_equal(snapshot.context, "hub")
+		assert_equal(snapshot.status, "Custom")
+		assert_equal(snapshot.song, "a.mp3")
+		assert_equal(snapshot.position, 12)
+		assert_equal(snapshot.duration, 200)
+		assert_equal(snapshot.pending, nil)
+	end)
+
+	it("reports why the game's music plays, and a change that is still settling", function()
+		local harness = in_hub({ hub = {} })
+
+		local snapshot = harness.overlay.options.snapshot()
+		assert_equal(snapshot.status, "game's music, no songs")
+		assert_equal(snapshot.song, nil)
+
+		harness:state("music_game_state", "mission_board")
+		harness:state("music_zone", "None")
+		harness:tick(0.2)
+
+		snapshot = harness.overlay.options.snapshot()
+		assert_equal(snapshot.pending, "none")
+		assert_equal(math.abs(snapshot.pending_seconds - 0.4) < 1e-9, true)
+	end)
+
+	it("reports that the mod is turned off", function()
+		local harness = in_hub()
+		harness.mod.on_disabled(false)
+
+		assert_deep_equal(harness.overlay.options.snapshot(), { turned_off = true })
+	end)
+end)
+
 describe("MusicReplacer.lua Play to End", function()
 	-- Returns a harness whose boss song plays, with the boss set to Play to End.
 	local function during_boss()
