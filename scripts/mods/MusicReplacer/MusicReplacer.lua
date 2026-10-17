@@ -70,8 +70,20 @@ local function custom_volume()
 	return (mod:get("custom_music_volume") or 100) / 100
 end
 
-local function menu_volume()
-	return Context.menu_open() and (mod:get("menu_volume") or 50) / 100 or 1
+-- Moving from one menu to another, such as from a vendor back to the Esc menu, reports no menu for a moment.
+-- So the music stays lowered until no menu has been open for this long.
+local MENU_CLOSED_SECONDS = 0.5
+
+local menu_closed_elapsed = MENU_CLOSED_SECONDS
+
+local function menu_volume(dt)
+	if Context.menu_open() then
+		menu_closed_elapsed = 0
+	else
+		menu_closed_elapsed = menu_closed_elapsed + dt
+	end
+
+	return menu_closed_elapsed < MENU_CLOSED_SECONDS and (mod:get("menu_volume") or 50) / 100 or 1
 end
 
 local function remember_playing_track(next_context_name)
@@ -440,7 +452,7 @@ mod.update = function(dt)
 		Loudness.update(current_context)
 	end
 
-	AudioClient.set_menu_volume(menu_volume())
+	AudioClient.set_menu_volume(menu_volume(dt))
 	AudioClient.update(dt)
 
 	-- Playback that stops working hands the music back to the game at once, not at the next context change.

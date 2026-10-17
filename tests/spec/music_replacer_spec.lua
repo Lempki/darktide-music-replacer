@@ -267,8 +267,22 @@ describe("MusicReplacer.lua volume", function()
 		assert_equal(harness.client.menu_volume, 0.4)
 
 		harness:state("options", "None")
-		harness:tick(0.1)
+		harness:wait(0.6)
 		assert_equal(harness.client.menu_volume, 1)
+	end)
+
+	it("keeps the music lowered while moving from one menu to another", function()
+		local harness = in_hub(nil, { settings = { menu_volume = 40 } })
+		harness:state("options", "vendor_menu")
+		harness:tick(0.1)
+
+		harness:state("options", "None")
+		harness:wait(0.3)
+		assert_equal(harness.client.menu_volume, 0.4)
+
+		harness:state("options", "ingame_menu")
+		harness:wait(1)
+		assert_equal(harness.client.menu_volume, 0.4)
 	end)
 end)
 

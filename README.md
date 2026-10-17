@@ -90,7 +90,7 @@ Meat Grinder offers Custom, Game's Own, and Silence, and defaults to Silence. Th
 |---|---|---|
 | Custom Music Volume | 100% | How loud your songs play, on top of the game's master and music volume sliders. At 100% they play as loud as the files themselves. The game's own music is not affected. |
 | Even Out Loudness | Off | Plays every song at about the same loudness, without changing your files. The mod measures each song once in the background and remembers it, see How it plays below. A song not measured yet plays at its own level, and a song that starts playing keeps its level until it starts again. |
-| Menu Volume | 50% | How loud your songs play while a menu is open, as a share of the Custom Music Volume. The menus are the ones the game itself reports to its audio: the Esc menu and its settings, the inventory, the mission board, vendors, the store, and character appearance. The music fades down over half a second and back up once the menu closes. Set it to 100% to keep full volume in menus. |
+| Menu Volume | 50% | How loud your songs play while a menu is open, as a share of the Custom Music Volume. The menus are the ones the game itself reports to its audio: the Esc menu and its settings, the inventory, the mission board, vendors, the store, and character appearance. The music fades down over half a second, and back up half a second after the last menu closes, so moving between menus does not raise it. Set it to 100% to keep full volume in menus. |
 
 ### Boss Music
 
