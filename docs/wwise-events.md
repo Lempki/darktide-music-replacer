@@ -35,7 +35,8 @@ The mod lowers custom music to the Menu Volume setting while it is anything but 
 
 One more group, `expeditions_intensity`, is set by the same game logic as `music_combat`, and carries the same values in every mission and in Expeditions.
 The game's source also has Expedition-only values for both groups, `no_combat`, `low_combat`, `med_combat`, `high_combat`, `safe_room`, and `extraction`, used while an Expedition's heat system is active.
-They have not shown up in a log yet, so the mod does not act on them, but logs both groups' changes as `[raw]` lines.
+They have not shown up in a log yet, so the mod does not act on them.
+`music_combat` is always logged, while `expeditions_intensity` only shows up as a `[raw]` line when it moves to or from one of these values.
 
 ### Events
 

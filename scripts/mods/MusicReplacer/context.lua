@@ -113,13 +113,22 @@ local OPT_IN_BOSS_SETTINGS = {
 local LAST_MAN_STANDING = "last_man_standing"
 
 -- Music-related state groups that do not decide a context yet, logged only so their transitions show up in diagnostic.log.
--- In Expeditions, the game sets expeditions_intensity, and music_combat too, to its own values, such as "no_combat" or "safe_room".
 local LOGGED_ONLY_STATE_GROUPS = {
 	music_objective_progression = true,
 	event_intensity = true,
 	event_category = true,
 	circumstance = true,
-	expeditions_intensity = true,
+}
+
+-- expeditions_intensity copies music_combat everywhere, so it is only logged on the values it has of its own.
+-- The game sets them, in music_combat too, while an Expedition's heat system is active.
+local EXPEDITION_ONLY_COMBAT_STATES = {
+	no_combat = true,
+	low_combat = true,
+	med_combat = true,
+	high_combat = true,
+	safe_room = true,
+	extraction = true,
 }
 
 -- Game states in which the player is in the hub or a mission, rather than on a loading screen, a briefing or a menu.
@@ -445,7 +454,9 @@ function Context.init(mod, log)
 			menu_state = new_state
 			return
 		else
-			if LOGGED_ONLY_STATE_GROUPS[group_name] then
+			local expedition_only = group_name == "expeditions_intensity"
+				and (EXPEDITION_ONLY_COMBAT_STATES[new_state] or EXPEDITION_ONLY_COMBAT_STATES[current])
+			if LOGGED_ONLY_STATE_GROUPS[group_name] or expedition_only then
 				diagnostic_log(describe_transition(group_name, current, new_state))
 			end
 
