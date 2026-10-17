@@ -25,11 +25,12 @@ These lines are always logged, so every bug report says which mission it came fr
 | `fm_cargo`, `fm_resurgence`, `lm_rails`, `km_enforcer`, `km_station`, `cm_raid`, `hm_cartel` | Ordinary missions. `mission_type` was `raid` for `fm_cargo` and `lm_rails`, `strike` for `fm_resurgence`, `assassination` for `km_enforcer` and `km_station`, `disruption` for `cm_raid`, and `espionage` for `hm_cartel`. |
 | `psykhanium` | Mortis Trials. `mission_type` is `horde`, and `game_mode_name` is `survival`. Its `music_zone` is `horde_mode` from the briefing until after the win. Waves set `music_objective` to `horde_mode_wave`, objective rounds to `horde_mode_objective`, the last wave to `horde_mode_wave_last`, and the win to `horde_mode_win`, with `None` between them. The mod recognizes Mortis Trials by its zone. |
 | `km_enforcer_twins` | Orthus Offensive, the Karnak Twins mission. `mission_type` is `assassination`, and its zone is `zone_twins`, its own. Each fight with the Twins sets `music_objective` to `twins_event`, and the final fight with both of them to `kill_event_2`, so all of them resolve as events. A short cutscene before the final fight resolves no context. |
+| `exp_wastes` | Expeditions. `mission_type` is `expeditions`, `game_mode_name` is `expedition`, and its zone is `expeditions`. Its combat, horde, and boss states are the same as in an ordinary mission, so the mission contexts play there as usual. The game's own music for an Expedition sets no `music_objective`. |
 | `op_train`, `op_no_mans_land` | Operations, Rolling Steel and No Man's Land. `mission_type` is `operations`, which the mod uses to treat the whole mission as one event. |
 
 Whether the free Psykhanium also runs in `tg_shooting_range` is not known. If it does, the Meat Grinder choice in Music per Context covers it too.
 
-Havoc and Expeditions have not been checked yet.
+Havoc has not been checked yet.
 
 ## Moving between the hub, missions, and menus
 

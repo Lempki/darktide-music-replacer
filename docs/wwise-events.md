@@ -18,7 +18,7 @@ Four groups matter for music:
 | Group | Values seen so far |
 |---|---|
 | `music_combat` | `None`, `normal`, `horde_low`, `horde_high`, `boss` |
-| `music_zone` | `hub`, `None`, `zone_1` to `zone_6`, `zone_8`, `zone_2_depths`, `zone_twins`, `operations`, `horde_mode` |
+| `music_zone` | `hub`, `None`, `zone_1` to `zone_6`, `zone_8`, `zone_2_depths`, `zone_twins`, `operations`, `horde_mode`, `expeditions` |
 | `music_game_state` | `title`, `main_menu`, `loading`, `mission`, `mission_board`, `mission_ready`, `loadout`, `mission_briefing`, `mission_intro`, `victory`, `defeat`, `game_score_win`, `game_score_lose`, `cinematic`, `None` |
 | `music_objective` | `None`, `last_man_standing`, `kill_event`, `kill_event_2`, `kill_event_3`, `twins_event`, `fortification_event`, `hacking_event`, `scanning_event`, `escape_event`, `gauntlet_event`, `operation_stage_1`, `operation_2_stage_1` to `_4`, `progression_stage_1` to `_4`, `progression2_stage_1` to `_4`, and in Mortis Trials `horde_mode_wave`, `horde_mode_objective`, `horde_mode_wave_last`, `horde_mode_win` |
 
@@ -33,9 +33,9 @@ One more group, `options`, says which kind of menu is open.
 It is `ingame_menu` in the Esc menu and its settings, the inventory, and the mission board, `vendor_menu` at vendors, `appearance_menu` in character appearance, `credit_store_menu` in the store, and `None` with no menu open.
 The mod lowers custom music to the Menu Volume setting while it is anything but `None`, and logs its changes as `[raw] options` lines.
 
-Expeditions have combat music of their own.
-According to the game's source, an Expedition sets both `music_combat` and a group of its own, `expeditions_intensity`, to `no_combat`, `low_combat`, `med_combat`, `high_combat`, `safe_room`, or `extraction` instead of the values above.
-The mod does not act on these values yet, but logs both groups' changes as `[raw]` lines.
+One more group, `expeditions_intensity`, is set by the same game logic as `music_combat`, and carries the same values in every mission and in Expeditions.
+The game's source also has Expedition-only values for both groups, `no_combat`, `low_combat`, `med_combat`, `high_combat`, `safe_room`, and `extraction`, used while an Expedition's heat system is active.
+They have not shown up in a log yet, so the mod does not act on them, but logs both groups' changes as `[raw]` lines.
 
 ### Events
 
