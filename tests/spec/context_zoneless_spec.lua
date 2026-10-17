@@ -13,7 +13,7 @@ local function in_zoneless_mission()
 end
 
 describe("context.lua zoneless missions", function()
-	it("resolves no context through the briefing and the intro", function()
+	it("stays on loading through the briefing, and resolves no context during the intro", function()
 		local harness = Harness.new()
 		harness:cold_start_to_hub()
 		harness:leave_hub()
@@ -23,7 +23,7 @@ describe("context.lua zoneless missions", function()
 		harness:mission("zoneless_mission")
 		harness:state("music_game_state", "mission_intro")
 
-		assert_deep_equal(harness.changes, {})
+		assert_deep_equal(harness.changes, { "nil" })
 	end)
 
 	it("resolves mission_explore once the game state returns to mission", function()
@@ -72,7 +72,7 @@ describe("context.lua zoneless missions", function()
 		harness:state("music_game_state", "loading")
 		harness:arrive_in_hub()
 
-		assert_deep_equal(harness.changes, { "nil", "hub" })
+		assert_deep_equal(harness.changes, { "nil", "loading", "hub" })
 	end)
 
 	-- A zoneless mission's victory has no zone change to end it.
@@ -83,6 +83,6 @@ describe("context.lua zoneless missions", function()
 		harness:end_with_victory(nil)
 		harness:arrive_in_hub()
 
-		assert_deep_equal(harness.changes, { "mission_victory", "nil", "hub" })
+		assert_deep_equal(harness.changes, { "mission_victory", "loading", "hub" })
 	end)
 end)

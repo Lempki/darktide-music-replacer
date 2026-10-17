@@ -112,8 +112,8 @@ function Suppression.set_zone(should_suppress)
 	end
 end
 
--- Forces music_game_state to "None" so the game's own victory and defeat music stops.
--- The game sets this state repeatedly through a mission's end, so it is forced again after every real transition while on.
+-- Forces music_game_state to "None" so the game's own victory, defeat, and loading music stops.
+-- The game sets this state repeatedly around a mission's start and end, so it is forced again after every real transition while on.
 function Suppression.set_game_state(should_suppress)
 	set_reforced_group("music_game_state", should_suppress)
 end
@@ -184,12 +184,12 @@ end
 
 -- Turns on the levers for a context that has a custom track available, or that is set to silence.
 -- Combat and event suppression apply to every context.
--- The hub, the victory and defeat contexts, and the last stand, event and Mortis Trials wave contexts each need one more.
+-- The hub, the victory, defeat and loading contexts, and the last stand, event and Mortis Trials wave contexts each need one more.
 function Suppression.engage(context_name)
 	Suppression.set_combat(true)
 	Suppression.set_events(true)
 	Suppression.set_zone(context_name == "hub")
-	Suppression.set_game_state(context_name == "mission_victory" or context_name == "mission_defeat")
+	Suppression.set_game_state(context_name == "mission_victory" or context_name == "mission_defeat" or context_name == "loading")
 	Suppression.set_objective(context_name == "mission_last_stand" or context_name == "mission_event" or context_name == "mortis_trials_wave")
 end
 

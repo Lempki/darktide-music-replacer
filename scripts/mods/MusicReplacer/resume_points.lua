@@ -76,7 +76,8 @@ end
 
 -- Call on every context change, before take(), to forget the sequences that the new context ends.
 function ResumePoints.enter(context_name)
-	if context_name ~= nil then
+	-- The loading context is part of the loading screen, not the next level.
+	if context_name ~= nil and context_name ~= "loading" then
 		is_loading = false
 	end
 

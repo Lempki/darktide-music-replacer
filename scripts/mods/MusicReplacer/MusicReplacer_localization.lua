@@ -56,6 +56,15 @@ local strings = {
 	source_silence = {
 		en = "Silence",
 	},
+	source_loading = {
+		en = "Loading",
+	},
+	source_loading_tooltip = {
+		en = "What plays on loading screens, and from leaving the hub until the mission's intro, through the team lineup and the briefing.\n\n" ..
+			highlight("Custom") .. " plays your songs from its folder, or the game's music while the folder is empty. " ..
+			highlight("Game's Own") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing. " ..
+			"The intro itself keeps the game's music.",
+	},
 	source_meat_grinder = {
 		en = "Meat Grinder",
 	},

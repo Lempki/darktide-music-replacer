@@ -19,7 +19,7 @@ describe("context.lua Meat Grinder", function()
 	it("resolves meat_grinder when set to silence, once the visit starts", function()
 		local harness = in_meat_grinder("silence")
 
-		assert_deep_equal(harness.changes, { "hub", "nil", "meat_grinder" })
+		assert_deep_equal(harness.changes, { "loading", "hub", "nil", "loading", "meat_grinder" })
 	end)
 
 	it("resolves meat_grinder when set to the game's own music", function()
@@ -66,6 +66,6 @@ describe("context.lua Meat Grinder", function()
 		harness:mission(nil)
 		harness:arrive_in_hub()
 
-		assert_deep_equal(harness.changes, { "nil", "hub" })
+		assert_deep_equal(harness.changes, { "loading", "hub" })
 	end)
 end)

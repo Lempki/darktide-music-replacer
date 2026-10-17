@@ -131,10 +131,10 @@ function Harness:leave_hub()
 	self:mission(nil)
 end
 
--- Loadout, briefing, intro, then the mission itself.
+-- Loadout and briefing, up to the moment the intro starts.
 -- A zone, when given, arrives during the briefing together with the mission name.
 -- A zoneless mission gets its name during the briefing and keeps the zone at "None".
-function Harness:enter_mission(name, zone)
+function Harness:enter_mission_until_intro(name, zone)
 	self:wait(1)
 	self:state("music_game_state", "loadout")
 	self:wait(50)
@@ -146,6 +146,11 @@ function Harness:enter_mission(name, zone)
 	end
 	self:mission(name)
 	self:wait(7)
+end
+
+-- Loadout, briefing, intro, then the mission itself.
+function Harness:enter_mission(name, zone)
+	self:enter_mission_until_intro(name, zone)
 	self:state("music_game_state", "mission_intro")
 	self:wait(5)
 	self:state("music_game_state", "mission")

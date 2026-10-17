@@ -234,7 +234,7 @@ end)
 
 describe("context.lua bosses outside missions", function()
 	-- Meat Grinder's boss dummies leave the boss music state set after leaving, until the next mission's intro ends.
-	it("resolves no context on the loading screen after Meat Grinder, with the boss music state stuck", function()
+	it("resolves loading, not a boss, on the loading screen after Meat Grinder, with the boss music state stuck", function()
 		local harness = Harness.new({ source_meat_grinder = "silence" })
 		local boss = harness:new_boss("chaos_ogryn_houndmaster")
 		harness:cold_start_to_hub()
@@ -249,10 +249,10 @@ describe("context.lua bosses outside missions", function()
 		harness:state("music_game_state", "loading")
 		harness:mission(nil)
 
-		assert_equal(harness:current(), nil)
+		assert_equal(harness:current(), "loading")
 
 		harness:arrive_in_hub()
 
-		assert_deep_equal(harness.changes, { "nil", "hub" })
+		assert_deep_equal(harness.changes, { "loading", "hub" })
 	end)
 end)

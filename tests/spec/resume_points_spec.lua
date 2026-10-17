@@ -147,6 +147,17 @@ describe("resume_points.lua", function()
 		assert_equal(ResumePoints.take("mission_explore"), nil)
 	end)
 
+	-- The loading context lasts from leaving the hub until the intro, so a song from the old level can still stop during it.
+	it("keeps nothing during the loading context, which belongs to the loading screen", function()
+		local ResumePoints = load_resume_points()
+
+		ResumePoints.on_state_change("music_game_state", "loading")
+		ResumePoints.enter("loading")
+
+		assert_equal(ResumePoints.remember("mission_explore", "mission_explore/a.mp3", 30, 200, false, "loading"), nil)
+		assert_equal(ResumePoints.take("mission_explore"), nil)
+	end)
+
 	it("keeps its points through a mid-mission cutscene and other state groups", function()
 		local ResumePoints = load_resume_points()
 		ResumePoints.remember("mission_explore", "mission_explore/a.mp3", 30, 200, false)

@@ -25,7 +25,9 @@
 --	  Once that hold runs out, the plain combat state decides, with no combat hold added on top.
 --	* No context resolves while `music_game_state == "cinematic"`, so custom music stays off during cutscenes.
 --	* The hub and mission contexts only resolve while the game state is in the world: "mission", "mission_board" or "mission_ready".
---	  Loading screens, the loadout, the briefing, the intro and menus resolve no context, even once the zone has arrived.
+--	  Loading screens, the team lineup ("loadout") and the briefing resolve "loading" instead, even once the zone has arrived.
+--	  So one song can play from leaving the hub until the mission's intro, which resolves no context and keeps the game's stinger.
+--	  Menus such as character select resolve no context either.
 --	  The game sends the hub zone about 10 seconds before the loading screen ends, and a mission zone partway through the briefing.
 --	* Meat Grinder has no `wwise_state`, so it is recognized by its mission name instead.
 --	  It resolves to "meat_grinder", whose own setting picks silence or the game's music there.
@@ -120,6 +122,9 @@ local LOGGED_ONLY_STATE_GROUPS = {
 
 -- Game states in which the player is in the hub or a mission, rather than on a loading screen, a briefing or a menu.
 local IN_WORLD_GAME_STATES = { mission = true, mission_board = true, mission_ready = true }
+
+-- Game states of a loading screen, and of the team lineup and the briefing between leaving the hub and the drop.
+local LOADING_GAME_STATES = { loading = true, mission_loading = true, loadout = true, loadout_ready = true, mission_briefing = true }
 
 -- Mission name of the training area where Meat Grinder runs.
 -- Its template has no wwise_state, so music_zone reads "None" there.
@@ -227,6 +232,11 @@ local function resolve(mod)
 	-- Victory and defeat are checked before the boss signals, since a wipe can leave a boss encounter open.
 	if mission_outcome then
 		return MISSION_OUTCOME_CONTEXTS[mission_outcome]
+	end
+
+	-- A loading screen clears the outcome, so the loading screen after a mission's end gets here too.
+	if LOADING_GAME_STATES[music_game_state] then
+		return "loading"
 	end
 
 	if not IN_WORLD_GAME_STATES[music_game_state] then

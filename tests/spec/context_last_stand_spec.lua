@@ -71,7 +71,7 @@ describe("context.lua last stand", function()
 
 		harness:end_with_defeat()
 
-		assert_deep_equal(harness.changes, { "mission_last_stand", "mission_defeat", "nil" })
+		assert_deep_equal(harness.changes, { "mission_last_stand", "mission_defeat", "loading" })
 	end)
 
 	it("gives way to mission_victory", function()

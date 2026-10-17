@@ -3,6 +3,22 @@
 -- Every setting names its tooltip: DMF formats named strings, turning "%%" into "%", but shows an implicit description's "%%" as it is.
 
 -- What a context plays. The default keeps the mod's plain behavior: custom songs where there are files, the game's music elsewhere.
+-- Contexts without Play to End. No music follows a loading screen's song for it to finish into.
+-- Meat Grinder's Custom plays the mission contexts instead.
+local function plain_source_widget(context_name, default_value)
+	return {
+		setting_id = "source_" .. context_name,
+		type = "dropdown",
+		tooltip = "source_" .. context_name .. "_tooltip",
+		default_value = default_value,
+		options = {
+			{ text = "source_custom", value = "custom" },
+			{ text = "source_game", value = "game" },
+			{ text = "source_silence", value = "silence" },
+		},
+	}
+end
+
 local function source_widget(context_name)
 	return {
 		setting_id = "source_" .. context_name,
@@ -48,6 +64,7 @@ return {
 				type = "group",
 				sub_widgets = {
 					source_widget("hub"),
+					plain_source_widget("loading", "custom"),
 					source_widget("mission_explore"),
 					source_widget("mission_combat"),
 					source_widget("mission_horde"),
@@ -58,17 +75,7 @@ return {
 					source_widget("mission_defeat"),
 					source_widget("mortis_trials_wave"),
 					source_widget("mortis_trials_break"),
-					{
-						setting_id = "source_meat_grinder",
-						type = "dropdown",
-						tooltip = "source_meat_grinder_tooltip",
-						default_value = "silence",
-						options = {
-							{ text = "source_custom", value = "custom" },
-							{ text = "source_game", value = "game" },
-							{ text = "source_silence", value = "silence" },
-						},
-					},
+					plain_source_widget("meat_grinder", "silence"),
 				},
 			},
 			{

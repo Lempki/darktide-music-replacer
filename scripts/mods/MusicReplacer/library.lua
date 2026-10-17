@@ -15,6 +15,7 @@ local Library = {}
 -- Keep in sync with $AudioContexts in tools/build.ps1.
 local CONTEXTS = {
 	"hub",
+	"loading",
 	"mission_explore",
 	"mission_combat",
 	"mission_horde",

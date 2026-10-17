@@ -46,8 +46,10 @@ describe("context.lua", function()
 		engine:set_state("music_game_state", "loading")
 
 		assert_deep_equal(changes, {
-			{ "nil", "hub" },
+			{ "nil", "loading" },
+			{ "loading", "hub" },
 			{ "hub", "nil" },
+			{ "nil", "loading" },
 		})
 	end)
 
