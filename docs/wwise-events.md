@@ -20,7 +20,7 @@ Four groups matter for music:
 | `music_combat` | `None`, `normal`, `horde_low`, `horde_high`, `boss` |
 | `music_zone` | `hub`, `None`, `zone_1` to `zone_6`, `zone_8`, `zone_2_depths`, `zone_twins`, `operations`, `horde_mode`, `expeditions` |
 | `music_game_state` | `title`, `main_menu`, `loading`, `mission`, `mission_board`, `mission_ready`, `loadout`, `mission_briefing`, `mission_intro`, `victory`, `defeat`, `game_score_win`, `game_score_lose`, `cinematic`, `None` |
-| `music_objective` | `None`, `last_man_standing`, `kill_event`, `kill_event_2`, `kill_event_3`, `twins_event`, `fortification_event`, `hacking_event`, `scanning_event`, `escape_event`, `gauntlet_event`, `operation_stage_1`, `operation_2_stage_1` to `_4`, `progression_stage_1` to `_4`, `progression2_stage_1` to `_4`, and in Mortis Trials `horde_mode_wave`, `horde_mode_objective`, `horde_mode_wave_last`, `horde_mode_win` |
+| `music_objective` | `None`, `last_man_standing`, `kill_event`, `kill_event_2`, `kill_event_3`, `twins_event`, `fortification_event`, `hacking_event`, `scanning_event`, `collect_event`, `demolition_event`, `escape_event`, `gauntlet_event`, `operation_stage_1`, `operation_2_stage_1` to `_4`, `progression_stage_1` to `_4`, `progression2_stage_1` to `_4`, and in Mortis Trials `horde_mode_wave`, `horde_mode_objective`, `horde_mode_wave_last`, `horde_mode_win` |
 
 Wwise reports "no value" as the word `None`.
 
