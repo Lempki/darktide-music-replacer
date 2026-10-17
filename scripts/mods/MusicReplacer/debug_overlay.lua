@@ -30,6 +30,11 @@ local VISIBILITY_GROUPS = {
 -- Song names are cut to this many characters, so the overlay keeps its size.
 local MAX_SONG_CHARACTERS = 48
 
+-- The game's text markup. Labels are dimmed, so the values stand out, and the line about timing is amber, so it stands out from the rest.
+local LABEL_COLOR = "{#color(150,150,150)}"
+local TIMING_COLOR = "{#color(255,190,90)}"
+local RESET = "{#reset()}"
+
 local snapshot_fn = function() return nil end
 local create_element = nil
 local log_fn = function() end
@@ -54,46 +59,65 @@ local function shorten(name)
 	return name:sub(1, MAX_SONG_CHARACTERS - 3) .. "..."
 end
 
--- The overlay's text for a snapshot from MusicReplacer.lua. Pure, so the specs can check it.
+-- The overlay's lines for a snapshot from MusicReplacer.lua, each { label, value }, and timing = true on the line about timing.
 -- Its fields are turned_off, context, status, pending, pending_seconds, hold, hold_seconds, and finishing.
 -- The song's are song, position, and duration, and the volume's are volume, menu_level, song_level, and evening_out.
-function DebugOverlay.text(snapshot)
+function DebugOverlay.lines(snapshot)
 	if not snapshot then
-		return "Music Replacer: starting"
+		return { { "Music Replacer", "starting" } }
 	end
 
 	if snapshot.turned_off then
-		return "Music Replacer is turned off"
+		return { { "Music Replacer", "turned off" } }
 	end
 
-	local context_line = "Context: " .. tostring(snapshot.context or "none") .. ", " .. tostring(snapshot.status)
+	local lines = { { "Context", tostring(snapshot.context or "none") .. " (" .. tostring(snapshot.status) .. ")" } }
+
+	-- Holds, changes that are still settling, and songs playing to their end explain why the music has not changed yet.
+	local timing = {}
 	if snapshot.hold then
-		context_line = context_line .. string.format(", %s hold %.1fs", snapshot.hold, snapshot.hold_seconds or 0)
+		timing[#timing + 1] = string.format("%s hold %.1fs", snapshot.hold, snapshot.hold_seconds or 0)
 	end
 	if snapshot.pending then
-		context_line = context_line .. string.format(", %s in %.1fs", snapshot.pending, snapshot.pending_seconds or 0)
+		timing[#timing + 1] = string.format("%s in %.1fs", snapshot.pending, snapshot.pending_seconds or 0)
+	end
+	if snapshot.finishing then
+		timing[#timing + 1] = snapshot.finishing .. " song playing to its end"
+	end
+	if #timing > 0 then
+		lines[#lines + 1] = { "Waiting", table.concat(timing, ", "), timing = true }
 	end
 
-	local song_line
 	if snapshot.song then
-		song_line = "Song: " .. shorten(snapshot.song) .. "  " .. minutes(snapshot.position) .. " / " .. (snapshot.duration and minutes(snapshot.duration) or "?")
-		if snapshot.finishing then
-			song_line = song_line .. ", " .. snapshot.finishing .. " song playing to its end"
-		end
+		lines[#lines + 1] = { "Song", shorten(snapshot.song) .. "  " .. minutes(snapshot.position) .. " / " .. (snapshot.duration and minutes(snapshot.duration) or "?") }
 	else
-		song_line = "Song: none"
+		lines[#lines + 1] = { "Song", "none" }
 	end
 
-	local volume_line = string.format("Volume: custom %d%%, menu %d%%, %s",
+	lines[#lines + 1] = { "Volume", string.format("custom %d%%, menu %d%%, %s",
 		math.floor((snapshot.volume or 1) * 100 + 0.5), math.floor((snapshot.menu_level or 1) * 100 + 0.5),
-		snapshot.evening_out and string.format("song %+.1f dB", decibels(snapshot.song_level or 1)) or "song as recorded")
+		snapshot.evening_out and string.format("song %+.1f dB", decibels(snapshot.song_level or 1)) or "song as recorded") }
 
-	return context_line .. "\n" .. song_line .. "\n" .. volume_line
+	return lines
 end
 
--- The current text, for the element to draw.
+-- The overlay's text, one line per row. With `colored`, in the game's text markup.
+function DebugOverlay.text(snapshot, colored)
+	local rows = {}
+	for index, line in ipairs(DebugOverlay.lines(snapshot)) do
+		if colored then
+			local value_color = line.timing and TIMING_COLOR or RESET
+			rows[index] = LABEL_COLOR .. line[1] .. ": " .. value_color .. line[2] .. RESET
+		else
+			rows[index] = line[1] .. ": " .. line[2]
+		end
+	end
+	return table.concat(rows, "\n")
+end
+
+-- The current text, colored, for the element to draw.
 function DebugOverlay.current_text()
-	local ok, text = pcall(function() return DebugOverlay.text(snapshot_fn()) end)
+	local ok, text = pcall(DebugOverlay.text, snapshot_fn(), true)
 	return ok and text or ("Music Replacer: " .. tostring(text))
 end
 
