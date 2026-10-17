@@ -25,7 +25,7 @@ The mission line names a mission by its code. These are the in-game names of the
 | `cm_habs` | Hab Dreyko | `investigation` | `zone_1` |
 | `dm_rise` | Ascension Riser 31 | `strike` | `zone_1` |
 | `km_station` | Chasm Station HL-16-11 | `assassination` | `zone_1` |
-| `lm_rails` | Not known yet | `raid` | `zone_1` |
+| `lm_rails` | Chasm Logistratum | `raid` | `zone_1` |
 | `dm_stockpile` | Silo Cluster 18-66/a | `strike` | `zone_2` |
 | `hm_cartel` | Vigil Station Oblivium | `espionage` | `zone_2` |
 | `km_enforcer` | Magistrati Oubliette TM8-707 | `assassination` | `zone_2` |
@@ -33,7 +33,7 @@ The mission line names a mission by its code. These are the in-game names of the
 | `spillway` | Spillway | `assassination` | `zone_2_depths` |
 | `dm_forge` | Smelter Complex HL-17-36 | `repair` | `zone_3` |
 | `fm_cargo` | Consignment Yard HL-17-36 | `raid` | `zone_3` |
-| `lm_cooling` | Not known yet | `repair` | `zone_3` |
+| `lm_cooling` | Power Matrix HL-17-36 | `repair` | `zone_3` |
 | `dm_propaganda` | Relay Station TRS-150 | `disruption` | `zone_4` |
 | `hm_strain` | Refinery Delta-17 | `disruption` | `zone_4` |
 | `lm_scavenge` | Excise Vault Spireside-13 | `investigation` | `zone_4` |
