@@ -62,7 +62,7 @@ The mission line names a mission by its code. These are the in-game names of the
 
 Whether the free Psykhanium also runs in `tg_shooting_range` is not known. If it does, the Meat Grinder choice in Music per Context covers it too.
 
-Havoc has not been checked yet.
+Havoc plays the ordinary missions and reports nothing of its own to the music: the mission line, the zone, and every music state are the same as in an ordinary run, and `circumstance` stays `None`. So the mod treats a Havoc run like any mission, and its log cannot tell the two apart.
 
 ## Moving between the hub, missions, and menus
 
