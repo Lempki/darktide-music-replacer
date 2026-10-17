@@ -8,13 +8,17 @@ end
 -- Each tooltip says what its setting does, then gives the notes that matter in a second paragraph.
 -- The README keeps the full explanations.
 
+-- Every context's dropdown ends with what an empty folder plays, since that is the question players ask most.
+local EMPTY_FOLDER_NOTE = "\n\nAn empty folder plays the game's own music, except with " .. highlight("Silence") .. "."
+
 -- Every context's dropdown offers the same choices, so their tooltips share the explanation.
 local function source_tooltip(when)
 	return "What plays " .. when .. ".\n\n" ..
-		highlight("Custom") .. " plays your songs from its folder, or the game's music while the folder is empty. " ..
+		highlight("Custom") .. " plays your songs from its folder. " ..
 		highlight("Custom (Play to End)") .. " also lets a song finish after the music moves to something less important, " ..
 		"such as from a boss back to exploring. " ..
-		highlight("Game's Own") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing."
+		highlight("Game's Own") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing." ..
+		EMPTY_FOLDER_NOTE
 end
 
 local strings = {
@@ -61,9 +65,10 @@ local strings = {
 	},
 	source_loading_tooltip = {
 		en = "What plays on loading screens, and from leaving the hub until the mission's intro, through the team lineup and the briefing.\n\n" ..
-			highlight("Custom") .. " plays your songs from its folder, or the game's music while the folder is empty. " ..
+			highlight("Custom") .. " plays your songs from its folder. " ..
 			highlight("Game's Own") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing. " ..
-			"The intro itself keeps the game's music.",
+			"The intro itself keeps the game's music." ..
+			EMPTY_FOLDER_NOTE,
 	},
 	source_meat_grinder = {
 		en = "Meat Grinder",
@@ -71,7 +76,8 @@ local strings = {
 	source_meat_grinder_tooltip = {
 		en = "What plays in the Meat Grinder training area.\n\n" ..
 			highlight("Custom") .. " plays your explore and combat songs, which is a quick way to test them. " ..
-			highlight("Game's Own") .. " plays the game's combat music, and " .. highlight("Silence") .. " keeps the area quiet.",
+			highlight("Game's Own") .. " plays the game's combat music, and " .. highlight("Silence") .. " keeps the area quiet.\n\n" ..
+			"With " .. highlight("Custom") .. ", empty explore and combat folders play the game's own music.",
 	},
 
 	volume = {
