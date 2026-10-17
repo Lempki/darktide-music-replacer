@@ -16,17 +16,49 @@ The part after the bar lists every field of the template that holds plain text, 
 The template's `wwise_state` field is what the game reports as `music_zone`.
 These lines are always logged, so every bug report says which mission it came from.
 
-## Missions seen so far
+## Missions
+
+The mission line names a mission by its code. These are the in-game names of the ordinary missions, which Havoc plays too, by area.
+
+| Code | In-game name | `mission_type` | `music_zone` |
+|---|---|---|---|
+| `cm_habs` | Hab Dreyko | `investigation` | `zone_1` |
+| `dm_rise` | Ascension Riser 31 | `strike` | `zone_1` |
+| `km_station` | Chasm Station HL-16-11 | `assassination` | `zone_1` |
+| `lm_rails` | Not known yet | `raid` | `zone_1` |
+| `dm_stockpile` | Silo Cluster 18-66/a | `strike` | `zone_2` |
+| `hm_cartel` | Vigil Station Oblivium | `espionage` | `zone_2` |
+| `km_enforcer` | Magistrati Oubliette TM8-707 | `assassination` | `zone_2` |
+| `km_enforcer_twins` | The Orthus Offensive | `assassination` | `zone_twins` |
+| `spillway` | Spillway | `assassination` | `zone_2_depths` |
+| `dm_forge` | Smelter Complex HL-17-36 | `repair` | `zone_3` |
+| `fm_cargo` | Consignment Yard HL-17-36 | `raid` | `zone_3` |
+| `lm_cooling` | Not known yet | `repair` | `zone_3` |
+| `dm_propaganda` | Relay Station TRS-150 | `disruption` | `zone_4` |
+| `hm_strain` | Refinery Delta-17 | `disruption` | `zone_4` |
+| `lm_scavenge` | Excise Vault Spireside-13 | `investigation` | `zone_4` |
+| `cm_archives` | Archivum Sycorax | `espionage` | `zone_5` |
+| `fm_resurgence` | Enclavum Baross | `strike` | `zone_5` |
+| `hm_complex` | Comms-Plex 154/2f | `espionage` | `zone_5` |
+| `cm_raid` | Warren 6-19 | `disruption` | `zone_6` |
+| `fm_armoury` | Mercantile HL-70-04 | `raid` | `zone_6` |
+| `km_heresy` | Dark Communion | `investigation` | `zone_6` |
+| `core_research` | Clandestium Gloriana | `repair` | `zone_8` |
+| `op_train` | Rolling Steel | `operations` | none |
+| `op_no_mans_land` | No Man's Land | `operations` | `operations` |
+
+`hm_strain`'s name is inferred, since it is the only disruption mission left for it.
+
+## Missions and modes with notes
 
 | Mission | Notes |
 |---|---|
 | `hub_ship` | The hub, the Mourningstar. `wwise_state` is `hub`. |
 | `tg_shooting_range` | The training area that Meat Grinder runs in. Its template has `game_mode_name = "shooting_range"`, `mechanism_name = "onboarding"`, and no `wwise_state`, which is why `music_zone` reads `None` there. The mod tells Meat Grinder apart from a mission by this name. |
-| `fm_cargo`, `fm_resurgence`, `lm_rails`, `km_enforcer`, `km_station`, `cm_raid`, `hm_cartel`, `dm_rise`, `cm_archives` | Ordinary missions. `mission_type` was `raid` for `fm_cargo` and `lm_rails`, `strike` for `fm_resurgence` and `dm_rise`, `assassination` for `km_enforcer` and `km_station`, `disruption` for `cm_raid`, and `espionage` for `hm_cartel` and `cm_archives`. `dm_rise` is Ascension Riser, and `cm_archives` is Archivum Sycorax. |
 | `psykhanium` | Mortis Trials. `mission_type` is `horde`, and `game_mode_name` is `survival`. Its `music_zone` is `horde_mode` from the briefing until after the win. Waves set `music_objective` to `horde_mode_wave`, objective rounds to `horde_mode_objective`, the last wave to `horde_mode_wave_last`, and the win to `horde_mode_win`, with `None` between them. The mod recognizes Mortis Trials by its zone. |
-| `km_enforcer_twins` | Orthus Offensive, the Karnak Twins mission. `mission_type` is `assassination`, and its zone is `zone_twins`, its own. Each fight with the Twins sets `music_objective` to `twins_event`, and the final fight with both of them to `kill_event_2`, so all of them resolve as events. A short cutscene before the final fight resolves no context. |
+| `km_enforcer_twins` | The Orthus Offensive, the Karnak Twins mission, with a zone of its own. Each fight with the Twins sets `music_objective` to `twins_event`, and the final fight with both of them to `kill_event_2`, so all of them resolve as events. A short cutscene before the final fight resolves no context. |
 | `exp_wastes` | Expeditions. `mission_type` is `expeditions`, `game_mode_name` is `expedition`, and its zone is `expeditions`. Its combat, horde, and boss states are the same as in an ordinary mission, so the mission contexts play there as usual. The game's own music for an Expedition sets no `music_objective`. |
-| `op_train`, `op_no_mans_land` | Operations, Rolling Steel and No Man's Land. `mission_type` is `operations`, which the mod uses to treat the whole mission as one event. |
+| `op_train`, `op_no_mans_land` | Operations. Their `mission_type` is `operations`, which the mod uses to treat the whole mission as one event. |
 
 Whether the free Psykhanium also runs in `tg_shooting_range` is not known. If it does, the Meat Grinder choice in Music per Context covers it too.
 
