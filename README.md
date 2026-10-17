@@ -116,7 +116,7 @@ Loading, Preparation, and Meat Grinder offer Custom, Game's Own, and Silence, an
 | Setting | Default | What it does |
 |---|---|---|
 | Detailed Logging | Off | Adds the game's raw music states, the silencing of its music, and its sound events to `diagnostic.log`. The important events are always logged. See Troubleshooting below. |
-| Debug Overlay | Off | Shows the current context and what it plays, the song with its time, and the volume factors in a top corner of the screen. It shows on every screen, loading screens and the preparation screen included, and shows holds and changes that are still settling, which helps when checking which music a moment counts as. Overlay Corner, shown while it is on, picks the top left or the top right. Custom HUD cannot move it, since it is not part of the HUD. |
+| Debug Overlay | Off | Shows the current context and what it plays, the song with its time, and the volume factors in a top corner of the screen. It shows on every screen, loading screens and the preparation screen included, and shows holds and changes that are still settling, which helps when checking which music a moment counts as. Overlay Corner and Overlay Size, shown while it is on, pick the top left or the top right and scale it from 50% to 200% away from its corner. Custom HUD cannot move it, since it is not part of the HUD. |
 
 ## How it plays
 

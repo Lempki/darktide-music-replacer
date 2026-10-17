@@ -48,7 +48,7 @@ local function load_overlay(constant_elements, failing)
 			end
 			local element = { __class_name = CLASS_NAME, parent = parent, draw_layer = draw_layer, corners = {} }
 			function element:destroy(renderer) self.destroyed_with = renderer end
-			function element:set_corner(corner) self.corners[#self.corners + 1] = corner end
+			function element:set_layout(corner, scale) self.corners[#self.corners + 1] = corner .. "@" .. scale end
 			made[#made + 1] = element
 			return element
 		end,
@@ -154,15 +154,16 @@ describe("debug_overlay.lua element", function()
 		assert_equal(made[1].destroyed_with, "renderer")
 	end)
 
-	it("moves its element to a new corner without making a new one", function()
+	it("moves and sizes its element without making a new one", function()
 		local DebugOverlay, made = load_overlay(new_constant_elements())
-		DebugOverlay.set_enabled(true, "top_left")
+		DebugOverlay.set_enabled(true, "top_left", 1)
 
-		DebugOverlay.set_enabled(true, "top_right")
+		DebugOverlay.set_enabled(true, "top_right", 1.5)
 
 		assert_equal(#made, 1)
-		assert_deep_equal(made[1].corners, { "top_right" })
+		assert_deep_equal(made[1].corners, { "top_right@1.5" })
 		assert_equal(DebugOverlay.corner(), "top_right")
+		assert_equal(DebugOverlay.scale(), 1.5)
 	end)
 
 	it("adds its element again when the game builds a new UI", function()

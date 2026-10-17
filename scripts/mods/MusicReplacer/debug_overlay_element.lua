@@ -8,12 +8,17 @@ local UIRenderer = require("scripts/managers/ui/ui_renderer")
 local UIWidget = require("scripts/managers/ui/ui_widget")
 local UIWorkspaceSettings = require("scripts/settings/ui/ui_workspace_settings")
 
--- Large enough for any text the overlay shows. The backdrop and the text are sized and placed inside it.
-local AREA_SIZE = { 1200, 400 }
+-- Large enough for any text the overlay shows at its largest size. The backdrop and the text are sized and placed inside it.
+local AREA_SIZE = { 2400, 800 }
+
+-- The distance from the screen's corner stays the same at every size, so the overlay grows away from its corner.
 local MARGIN = 20
+
+-- These scale with the Overlay Size setting.
+local FONT_SIZE = 16
 local PADDING = 10
 
--- The share of the backdrop that is solid, and how far the fade reaches past the text.
+-- The share of the backdrop that is solid, and how far the fade reaches past the text, before scaling.
 local SOLID_SHARE = 0.55
 local FADE_PAST_TEXT = 120
 
@@ -70,7 +75,7 @@ local definitions = {
 				style_id = "text",
 				style = {
 					font_type = "proxima_nova_bold",
-					font_size = 16,
+					font_size = FONT_SIZE,
 					line_spacing = 1.1,
 					drop_shadow = true,
 					text_color = { 255, 235, 235, 235 },
@@ -93,23 +98,28 @@ return function(DebugOverlay)
 	function Element:init(parent, draw_layer, start_scale)
 		Element.super.init(self, parent, draw_layer, start_scale, definitions)
 		self._refresh_in = 0
-		self:set_corner(DebugOverlay.corner())
+		self:set_layout(DebugOverlay.corner(), DebugOverlay.scale())
 	end
 
-	-- "top_left" or "top_right". On the right, everything is mirrored, so the fade runs toward the screen's middle.
-	function Element:set_corner(corner)
+	-- `corner` is "top_left" or "top_right", and `scale` sizes the text, the padding, and the fade.
+	-- On the right, everything is mirrored, so the fade runs toward the screen's middle.
+	function Element:set_layout(corner, scale)
 		local right = corner == "top_right"
 		local side = right and "right" or "left"
 		local style = self._widgets_by_name.overlay.style
+		local padding = PADDING * scale
 
 		self._right = right
+		self._scale = scale
 		self:set_scenegraph_position("overlay", right and -MARGIN or MARGIN, MARGIN, nil, side, "top")
 		style.solid.horizontal_alignment = side
 		style.fade.horizontal_alignment = side
 		style.fade.uvs = right and FADE_LEFT_UVS or FADE_RIGHT_UVS
+		style.text.font_size = FONT_SIZE * scale
 		style.text.horizontal_alignment = side
 		style.text.text_horizontal_alignment = side
-		style.text.offset[1] = right and -PADDING or PADDING
+		style.text.offset[1] = right and -padding or padding
+		style.text.offset[2] = padding
 		self._refresh_in = 0
 	end
 
@@ -119,10 +129,11 @@ return function(DebugOverlay)
 		local text = self._widgets_by_name.overlay.content.text
 		local text_width, text_height = UIRenderer.styled_text_size(ui_renderer, text, style.text, style.text.size)
 
-		local height = text_height + 2 * PADDING
-		local width = text_width + 2 * PADDING
+		local padding = PADDING * self._scale
+		local height = text_height + 2 * padding
+		local width = text_width + 2 * padding
 		local solid_width = math.floor(width * SOLID_SHARE)
-		local fade_width = width - solid_width + FADE_PAST_TEXT
+		local fade_width = width - solid_width + FADE_PAST_TEXT * self._scale
 
 		style.solid.size[1] = solid_width
 		style.solid.size[2] = height

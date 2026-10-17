@@ -187,6 +187,13 @@ local strings = {
 		en = "Where the debug overlay sits.\n\n" ..
 			highlight("Top Left") .. " stays clear of the mission objectives, which sit at the top right.",
 	},
+	debug_overlay_scale = {
+		en = "Overlay Size",
+	},
+	debug_overlay_scale_tooltip = {
+		en = "How big the debug overlay is. It grows and shrinks away from its corner.\n\n" ..
+			highlight("100%%") .. " is its normal size.",
+	},
 	debug_overlay_top_left = {
 		en = "Top Left",
 	},

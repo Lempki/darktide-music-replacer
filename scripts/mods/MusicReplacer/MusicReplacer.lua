@@ -370,7 +370,7 @@ local function create_overlay_element(constant_elements, draw_layer)
 end
 
 local function apply_overlay_settings()
-	DebugOverlay.set_enabled(mod:get("debug_overlay") == true, mod:get("debug_overlay_corner"))
+	DebugOverlay.set_enabled(mod:get("debug_overlay") == true, mod:get("debug_overlay_corner"), (mod:get("debug_overlay_scale") or 100) / 100)
 end
 
 -- Raw state transitions, suppression, and sound events are detailed lines. The rest of the log is the important events.
@@ -468,7 +468,7 @@ end
 mod.on_setting_changed = function(setting_id)
 	if setting_id == "source_meat_grinder" or setting_id == "daemonhost_boss_music" or setting_id == "captain_boss_music" then
 		Context.refresh(mod)
-	elseif setting_id == "debug_overlay" or setting_id == "debug_overlay_corner" then
+	elseif setting_id == "debug_overlay" or setting_id == "debug_overlay_corner" or setting_id == "debug_overlay_scale" then
 		apply_overlay_settings()
 	elseif setting_id == "custom_music_volume" then
 		AudioClient.set_volume(custom_volume())

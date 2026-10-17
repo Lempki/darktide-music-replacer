@@ -40,6 +40,7 @@ local create_element = nil
 local log_fn = function() end
 local enabled = false
 local corner = "top_left"
+local scale = 1 -- The Overlay Size setting, as a factor.
 local installed_into = nil -- The constant UI the element was added to, or nil.
 local install_failed = false
 
@@ -48,8 +49,8 @@ local function minutes(seconds)
 	return string.format("%d:%02d", math.floor(seconds / 60), seconds % 60)
 end
 
-local function decibels(scale)
-	return scale > 0 and 20 * math.log10(scale) or -math.huge
+local function decibels(level)
+	return level > 0 and 20 * math.log10(level) or -math.huge
 end
 
 local function shorten(name)
@@ -123,6 +124,10 @@ end
 
 function DebugOverlay.corner()
 	return corner
+end
+
+function DebugOverlay.scale()
+	return scale
 end
 
 -- `options.snapshot()` returns the state to show, and `options.create_element(constant_elements, draw_layer)` makes the element.
@@ -207,10 +212,11 @@ function DebugOverlay.update()
 	end
 end
 
--- Turns the overlay on or off, and moves it to `new_corner`, "top_left" or "top_right".
-function DebugOverlay.set_enabled(on, new_corner)
+-- Turns the overlay on or off, moves it to `new_corner`, "top_left" or "top_right", and sizes it by `new_scale`, 1 by default.
+function DebugOverlay.set_enabled(on, new_corner, new_scale)
 	enabled = on == true
 	corner = new_corner or corner
+	scale = new_scale or scale
 
 	if not enabled then
 		remove()
@@ -218,8 +224,8 @@ function DebugOverlay.set_enabled(on, new_corner)
 	end
 
 	local element = installed_into and installed_into._elements and installed_into._elements[CLASS_NAME]
-	if element and element.set_corner then
-		element:set_corner(corner)
+	if element and element.set_layout then
+		element:set_layout(corner, scale)
 	end
 
 	DebugOverlay.update()

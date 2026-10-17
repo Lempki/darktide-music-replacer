@@ -147,7 +147,7 @@ local function new_overlay()
 	local overlay = { enabled = false, corner = nil, options = nil }
 
 	function overlay.init(_, options) overlay.options = options end
-	function overlay.set_enabled(on, corner) overlay.enabled, overlay.corner = on, corner end
+	function overlay.set_enabled(on, corner, scale) overlay.enabled, overlay.corner, overlay.scale = on, corner, scale end
 	function overlay.update() end
 	function overlay.shutdown() end
 

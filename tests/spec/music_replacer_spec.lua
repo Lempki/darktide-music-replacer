@@ -398,10 +398,12 @@ describe("MusicReplacer.lua debug overlay", function()
 		assert_equal(harness.overlay.enabled, false)
 
 		harness:set_setting("debug_overlay_corner", "top_right")
+		harness:set_setting("debug_overlay_scale", 150)
 		harness:set_setting("debug_overlay", true)
 
 		assert_equal(harness.overlay.enabled, true)
 		assert_equal(harness.overlay.corner, "top_right")
+		assert_equal(harness.overlay.scale, 1.5)
 	end)
 
 	it("reports the context, its choice, and the song playing", function()
