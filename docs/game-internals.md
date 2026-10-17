@@ -22,7 +22,7 @@ These lines are always logged, so every bug report says which mission it came fr
 |---|---|
 | `hub_ship` | The hub, the Mourningstar. `wwise_state` is `hub`. |
 | `tg_shooting_range` | The training area that Meat Grinder runs in. Its template has `game_mode_name = "shooting_range"`, `mechanism_name = "onboarding"`, and no `wwise_state`, which is why `music_zone` reads `None` there. The mod tells Meat Grinder apart from a mission by this name. |
-| `fm_cargo`, `fm_resurgence`, `lm_rails`, `km_enforcer`, `km_station`, `cm_raid` | Ordinary missions. `mission_type` was `raid` for `fm_cargo` and `lm_rails`, `strike` for `fm_resurgence`, `assassination` for `km_enforcer` and `km_station`, and `disruption` for `cm_raid`. |
+| `fm_cargo`, `fm_resurgence`, `lm_rails`, `km_enforcer`, `km_station`, `cm_raid`, `hm_cartel` | Ordinary missions. `mission_type` was `raid` for `fm_cargo` and `lm_rails`, `strike` for `fm_resurgence`, `assassination` for `km_enforcer` and `km_station`, `disruption` for `cm_raid`, and `espionage` for `hm_cartel`. |
 | `psykhanium` | Mortis Trials. `mission_type` is `horde`, and `game_mode_name` is `survival`. Its `music_zone` is `horde_mode` from the briefing until after the win. Waves set `music_objective` to `horde_mode_wave`, objective rounds to `horde_mode_objective`, the last wave to `horde_mode_wave_last`, and the win to `horde_mode_win`, with `None` between them. The mod recognizes Mortis Trials by its zone. |
 | `op_train`, `op_no_mans_land` | Operations, Rolling Steel and No Man's Land. `mission_type` is `operations`, which the mod uses to treat the whole mission as one event. |
 
