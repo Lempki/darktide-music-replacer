@@ -322,21 +322,51 @@ describe("MusicReplacer.lua loading", function()
 	local FILES = {
 		hub = { { name = "h.mp3", duration = 300 } },
 		loading = { { name = "l1.mp3", duration = 300 }, { name = "l2.mp3", duration = 300 } },
+		mission_preparation = { { name = "p.mp3", duration = 300 } },
 		mission_explore = { { name = "x.mp3", duration = 300 } },
 	}
 
-	it("plays one loading song from leaving the hub until the intro, then the game's stinger, then explore", function()
-		local harness = MainHarness.new({ files = FILES })
+	-- Returns a harness that has settled in the hub, after the first loading screen played l1.mp3.
+	local function in_hub_with(files)
+		local harness = MainHarness.new({ files = files })
 		harness:cold_start_to_hub()
 		harness:settle()
+		return harness
+	end
+
+	it("carries the hub song straight into the preparation song past the short loading screen before it", function()
+		local harness = in_hub_with(FILES)
 		local plays = #harness.client.plays
 
 		harness:leave_hub()
-		harness:enter_mission_until_intro("lm_cooling", "zone_3")
+		harness:wait(2)
+		harness:state("music_game_state", "loadout")
+		harness:settle()
 
 		assert_equal(#harness.client.plays, plays + 1)
-		assert_equal(harness:last_play().file_path, "loading/l2.mp3")
+		assert_equal(harness:playing(), "mission_preparation/p.mp3")
 		assert_equal(harness.engine:wwise_state("music_game_state"), "None")
+	end)
+
+	it("continues a loading song the preparation screen interrupted in the briefing, then plays the game's stinger, then explore", function()
+		local harness = in_hub_with(FILES)
+		harness:leave_hub()
+		harness:wait(5)
+		assert_equal(harness:playing(), "loading/l2.mp3")
+		harness.client.position = 42
+
+		harness:state("music_game_state", "loadout")
+		harness:settle()
+		assert_equal(harness:playing(), "mission_preparation/p.mp3")
+
+		harness:state("music_game_state", "loading")
+		harness:state("music_game_state", "mission_briefing")
+		harness:state("music_zone", "zone_3")
+		harness:mission("lm_cooling")
+		harness:wait(3.1)
+
+		assert_equal(harness:playing(), "loading/l2.mp3")
+		assert_equal(harness:last_play().opts.start_position, 42)
 
 		harness:state("music_game_state", "mission_intro")
 		harness:settle()
@@ -351,12 +381,10 @@ describe("MusicReplacer.lua loading", function()
 	end)
 
 	it("leaves loading screens to the game's own music while the loading folder is empty", function()
-		local harness = MainHarness.new({ files = { hub = FILES.hub } })
-		harness:cold_start_to_hub()
-		harness:settle()
+		local harness = in_hub_with({ hub = FILES.hub })
 
 		harness:leave_hub()
-		harness:settle()
+		harness:wait(3.1)
 
 		assert_equal(harness:playing(), nil)
 		assert_equal(harness.engine:wwise_state("music_game_state"), "loading")

@@ -93,7 +93,7 @@ describe("context.lua areas", function()
 		assert_deep_equal(harness.changes, { "nil" })
 	end)
 
-	it("stays on loading through the team lineup and the briefing, as one context", function()
+	it("resolves mission_preparation on the mission preparation screen, and loading again for the briefing", function()
 		local harness = Harness.new()
 		harness:cold_start_to_hub()
 		harness:leave_hub()
@@ -101,12 +101,15 @@ describe("context.lua areas", function()
 
 		harness:state("music_game_state", "loadout")
 		harness:wait(50)
+
+		assert_equal(harness:current(), "mission_preparation")
+
 		harness:state("music_game_state", "loading")
 		harness:state("music_game_state", "mission_briefing")
 		harness:wait(30)
 
 		assert_equal(harness:current(), "loading")
-		assert_deep_equal(harness.changes, {})
+		assert_deep_equal(harness.changes, { "mission_preparation", "loading" })
 	end)
 
 	-- The game sends a mission's zone partway through the briefing.
@@ -131,7 +134,7 @@ describe("context.lua areas", function()
 
 		harness:state("music_game_state", "mission")
 
-		assert_deep_equal(harness.changes, { "nil", "mission_combat" })
+		assert_deep_equal(harness.changes, { "mission_preparation", "loading", "nil", "mission_combat" })
 	end)
 
 	it("treats the zone \"None\" like no zone at all", function()

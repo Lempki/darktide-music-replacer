@@ -158,6 +158,31 @@ describe("resume_points.lua", function()
 		assert_equal(ResumePoints.take("mission_explore"), nil)
 	end)
 
+	it("keeps a loading song that the preparation screen interrupts through the loading state of the briefing", function()
+		local ResumePoints = load_resume_points()
+		ResumePoints.on_state_change("music_game_state", "loading")
+		ResumePoints.enter("loading")
+
+		assert_equal(ResumePoints.remember("loading", "loading/a.mp3", 30, 200, false, "mission_preparation"), 30)
+
+		ResumePoints.enter("mission_preparation")
+		ResumePoints.on_state_change("music_game_state", "loading")
+		ResumePoints.enter("loading")
+
+		assert_deep_equal({ ResumePoints.take("loading") }, { "loading/a.mp3", 30 })
+	end)
+
+	it("keeps no loading song for anything but the preparation screen, or with Resume Songs off", function()
+		local ResumePoints = load_resume_points()
+		assert_equal(ResumePoints.remember("loading", "loading/a.mp3", 30, 200, false, "hub"), nil)
+		ResumePoints.remember("loading", "loading/a.mp3", 30, 200, false, "mission_preparation")
+		ResumePoints.enter(nil)
+		assert_equal(ResumePoints.take("loading"), nil)
+
+		local off = load_resume_points({ resume_songs = false })
+		assert_equal(off.remember("loading", "loading/a.mp3", 30, 200, false, "mission_preparation"), nil)
+	end)
+
 	it("keeps its points through a mid-mission cutscene and other state groups", function()
 		local ResumePoints = load_resume_points()
 		ResumePoints.remember("mission_explore", "mission_explore/a.mp3", 30, 200, false)

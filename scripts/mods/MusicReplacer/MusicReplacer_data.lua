@@ -65,6 +65,7 @@ return {
 				sub_widgets = {
 					source_widget("hub"),
 					plain_source_widget("loading", "custom"),
+					plain_source_widget("mission_preparation", "custom"),
 					source_widget("mission_explore"),
 					source_widget("mission_combat"),
 					source_widget("mission_horde"),

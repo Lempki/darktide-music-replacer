@@ -184,12 +184,13 @@ end
 
 -- Turns on the levers for a context that has a custom track available, or that is set to silence.
 -- Combat and event suppression apply to every context.
--- The hub, the victory, defeat and loading contexts, and the last stand, event and Mortis Trials wave contexts each need one more.
+-- The hub, the victory, defeat, loading and preparation contexts, and the last stand, event and Mortis Trials wave contexts need one more.
 function Suppression.engage(context_name)
 	Suppression.set_combat(true)
 	Suppression.set_events(true)
 	Suppression.set_zone(context_name == "hub")
-	Suppression.set_game_state(context_name == "mission_victory" or context_name == "mission_defeat" or context_name == "loading")
+	Suppression.set_game_state(context_name == "mission_victory" or context_name == "mission_defeat"
+		or context_name == "loading" or context_name == "mission_preparation")
 	Suppression.set_objective(context_name == "mission_last_stand" or context_name == "mission_event" or context_name == "mortis_trials_wave")
 end
 

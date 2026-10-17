@@ -1,6 +1,7 @@
 -- Remembers where a context's song stopped, so the song continues when that context returns.
 -- A new song is picked only once one ends on its own.
 -- Every loading screen forgets everything, so each mission and hub visit starts with fresh picks.
+-- The one exception is a loading song that the mission preparation screen interrupts, which continues in the briefing after it.
 
 local ResumePoints = {}
 
@@ -52,6 +53,9 @@ local MIN_REMAINING_SECONDS = 10
 
 local mod = nil
 local points = {} -- context_name -> a table with file_path and position.
+
+-- The loading song the mission preparation screen interrupted, kept apart from `points`, since loading screens clear those.
+local loading_point = nil
 local is_loading = false
 
 function ResumePoints.init(dmf_mod)
@@ -72,13 +76,19 @@ end
 
 function ResumePoints.forget_all()
 	points = {}
+	loading_point = nil
 end
 
 -- Call on every context change, before take(), to forget the sequences that the new context ends.
 function ResumePoints.enter(context_name)
-	-- The loading context is part of the loading screen, not the next level.
-	if context_name ~= nil and context_name ~= "loading" then
+	-- The loading and preparation contexts are part of the loading screen, not the next level.
+	if context_name ~= nil and context_name ~= "loading" and context_name ~= "mission_preparation" then
 		is_loading = false
+	end
+
+	-- Only the briefing after the preparation screen continues the loading song.
+	if context_name ~= "loading" and context_name ~= "mission_preparation" then
+		loading_point = nil
 	end
 
 	for sequence_name in pairs(SEQUENCES) do
@@ -93,8 +103,38 @@ end
 -- `duration` may be nil. With it, a single file's loop is wrapped back into the file, and a song near its end is not kept.
 -- The context change into a loading screen can come after the loading state itself.
 -- So nothing is kept from a loading screen until the next level's first context.
+-- The position to keep: a single file's loop wraps back into the file, and nil when the song is too close to its end.
+local function kept_position(position, duration, is_only_file)
+	if duration and duration > 0 then
+		if is_only_file then
+			position = position % duration
+		end
+
+		if position > duration - MIN_REMAINING_SECONDS then
+			return nil
+		end
+	end
+
+	return position
+end
+
 function ResumePoints.remember(context_name, file_path, position, duration, is_only_file, next_context_name)
-	if is_loading or not RESUMABLE_CONTEXTS[context_name] or not (mod and mod:get("resume_songs")) then
+	if not (mod and mod:get("resume_songs")) then
+		return nil
+	end
+
+	if context_name == "loading" then
+		loading_point = nil
+		if next_context_name ~= "mission_preparation" then
+			return nil
+		end
+
+		position = kept_position(position, duration, is_only_file)
+		loading_point = position and { file_path = file_path, position = position }
+		return position
+	end
+
+	if is_loading or not RESUMABLE_CONTEXTS[context_name] then
 		return nil
 	end
 
@@ -105,14 +145,9 @@ function ResumePoints.remember(context_name, file_path, position, duration, is_o
 
 	points[context_name] = nil
 
-	if duration and duration > 0 then
-		if is_only_file then
-			position = position % duration
-		end
-
-		if position > duration - MIN_REMAINING_SECONDS then
-			return nil
-		end
+	position = kept_position(position, duration, is_only_file)
+	if not position then
+		return nil
 	end
 
 	points[context_name] = { file_path = file_path, position = position }
@@ -124,6 +159,11 @@ end
 function ResumePoints.take(context_name)
 	local point = points[context_name]
 	points[context_name] = nil
+
+	if context_name == "loading" then
+		point = loading_point
+		loading_point = nil
+	end
 
 	if not point then
 		return nil

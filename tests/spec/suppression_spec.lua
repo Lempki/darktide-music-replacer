@@ -171,7 +171,16 @@ describe("suppression.lua victory and defeat", function()
 end)
 
 describe("suppression.lua loading", function()
-	it("forces the game state to None for loading, through the team lineup and the briefing, and restores it on release", function()
+	it("forces the game state to None for the mission preparation screen", function()
+		local engine, Suppression = load_suppression()
+		engine:set_state("music_game_state", "loadout")
+
+		Suppression.engage("mission_preparation")
+
+		assert_equal(engine:wwise_state("music_game_state"), "None")
+	end)
+
+	it("forces the game state to None for loading, through the briefing, and restores it on release", function()
 		local engine, Suppression = load_suppression()
 		engine:set_state("music_game_state", "loading")
 
@@ -179,7 +188,7 @@ describe("suppression.lua loading", function()
 
 		assert_equal(engine:wwise_state("music_game_state"), "None")
 
-		for _, state in ipairs({ "loadout", "loading", "mission_briefing" }) do
+		for _, state in ipairs({ "loading", "mission_briefing" }) do
 			engine:set_state("music_game_state", state)
 
 			assert_equal(engine:wwise_state("music_game_state"), "None", state)

@@ -16,6 +16,7 @@ local Library = {}
 local CONTEXTS = {
 	"hub",
 	"loading",
+	"mission_preparation",
 	"mission_explore",
 	"mission_combat",
 	"mission_horde",

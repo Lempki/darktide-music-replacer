@@ -64,10 +64,19 @@ local strings = {
 		en = "Loading",
 	},
 	source_loading_tooltip = {
-		en = "What plays on loading screens, and from leaving the hub until the mission's intro, through the team lineup and the briefing.\n\n" ..
+		en = "What plays on loading screens and in the briefing before a mission.\n\n" ..
 			highlight("Custom") .. " plays your songs from its folder. " ..
 			highlight("Game's Own") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing. " ..
-			"The intro itself keeps the game's music." ..
+			"The intro itself keeps the game's music, and a loading song interrupted by the preparation screen continues in the briefing." ..
+			EMPTY_FOLDER_NOTE,
+	},
+	source_mission_preparation = {
+		en = "Preparation",
+	},
+	source_mission_preparation_tooltip = {
+		en = "What plays on the mission preparation screen, where the party stands together before a mission and can still change loadouts.\n\n" ..
+			highlight("Custom") .. " plays your songs from its folder. " ..
+			highlight("Game's Own") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing." ..
 			EMPTY_FOLDER_NOTE,
 	},
 	source_meat_grinder = {

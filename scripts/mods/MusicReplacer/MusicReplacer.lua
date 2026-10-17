@@ -238,6 +238,10 @@ local DEBOUNCE_SECONDS = 0.6
 -- A pending change commits after this long anyway.
 local MAX_DEBOUNCE_SECONDS = 3
 
+-- Leaving the hub for a mission reports a loading screen for about 2 seconds before the mission preparation screen.
+-- So a change to "loading" waits this long, and the hub song carries straight on into the preparation screen's song.
+local LOADING_DEBOUNCE_SECONDS = 3
+
 local pending_context = nil
 local debounce_elapsed = 0
 local pending_elapsed = 0
@@ -474,7 +478,8 @@ mod.update = function(dt)
 		debounce_elapsed = debounce_elapsed + dt
 		pending_elapsed = pending_elapsed + dt
 
-		if debounce_elapsed >= DEBOUNCE_SECONDS or pending_elapsed >= MAX_DEBOUNCE_SECONDS then
+		local debounce_seconds = pending_context == "loading" and LOADING_DEBOUNCE_SECONDS or DEBOUNCE_SECONDS
+		if debounce_elapsed >= debounce_seconds or pending_elapsed >= MAX_DEBOUNCE_SECONDS then
 			commit_pending_context()
 		end
 	end
