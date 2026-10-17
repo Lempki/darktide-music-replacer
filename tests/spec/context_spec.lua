@@ -74,10 +74,14 @@ describe("context.lua state logging", function()
 		engine:set_state("music_objective", "end_event")
 		engine:set_state("music_objective", "last_man_standing")
 		engine:set_state("player_state", "knocked_down")
+		engine:set_state("circumstance", "darkness_01")
+		engine:set_state("expeditions_intensity", "safe_room")
 
 		assert_deep_equal(lines, {
 			"[raw] music_objective: None -> end_event",
 			"[raw] music_objective: end_event -> last_man_standing",
+			"[raw] circumstance: None -> darkness_01",
+			"[raw] expeditions_intensity: None -> safe_room",
 		})
 		assert_equal((Context.current()), nil)
 	end)

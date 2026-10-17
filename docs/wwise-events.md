@@ -33,6 +33,10 @@ One more group, `options`, says which kind of menu is open.
 It is `ingame_menu` in the Esc menu and its settings, the inventory, and the mission board, `vendor_menu` at vendors, `appearance_menu` in character appearance, `credit_store_menu` in the store, and `None` with no menu open.
 The mod lowers custom music to the Menu Volume setting while it is anything but `None`, and logs its changes as `[raw] options` lines.
 
+Expeditions have combat music of their own.
+According to the game's source, an Expedition sets both `music_combat` and a group of its own, `expeditions_intensity`, to `no_combat`, `low_combat`, `med_combat`, `high_combat`, `safe_room`, or `extraction` instead of the values above.
+The mod does not act on these values yet, but logs both groups' changes as `[raw]` lines.
+
 ### Events
 
 Wwise events start sounds, and a few of them are music.

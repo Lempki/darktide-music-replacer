@@ -113,11 +113,13 @@ local OPT_IN_BOSS_SETTINGS = {
 local LAST_MAN_STANDING = "last_man_standing"
 
 -- Music-related state groups that do not decide a context yet, logged only so their transitions show up in diagnostic.log.
+-- In Expeditions, the game sets expeditions_intensity, and music_combat too, to its own values, such as "no_combat" or "safe_room".
 local LOGGED_ONLY_STATE_GROUPS = {
 	music_objective_progression = true,
 	event_intensity = true,
 	event_category = true,
 	circumstance = true,
+	expeditions_intensity = true,
 }
 
 -- Game states in which the player is in the hub or a mission, rather than on a loading screen, a briefing or a menu.
