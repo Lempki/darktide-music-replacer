@@ -24,6 +24,19 @@ local function new_audio_folders(disk, lengths, missing, broken)
 		end
 		return { unpack(names) }, stamps
 	end
+	-- An override folder is a key with a slash, such as "mission_boss/chaos_spawn", listed under its context.
+	function folders.subfolders(folder)
+		local context_name = folder:sub(#ROOT + 2)
+		local names = {}
+		for key in pairs(disk) do
+			local name = key:match("^" .. context_name .. "/(.+)$")
+			if name then
+				names[#names + 1] = name
+			end
+		end
+		table.sort(names)
+		return names
+	end
 	function folders.exists(path)
 		return not folders.missing[path:sub(#ROOT + 2)]
 	end

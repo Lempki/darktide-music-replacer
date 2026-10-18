@@ -23,7 +23,8 @@ local DEFAULT_SETTINGS = {
 	event_hold_seconds = 5,
 }
 
--- A stand-in for library.lua over `files`, which maps a context to a list of { name, duration }.
+-- A stand-in for library.lua over `files`, which maps a folder key to a list of { name, duration }.
+-- A folder key is a context, or an override folder inside it, such as "mission_boss/chaos_spawn".
 -- Picks go through each folder in order, so the specs know which file comes next.
 local function new_library(files)
 	local library = { files = files, rescan_requested = false, listed_listeners = {} }
@@ -33,6 +34,7 @@ local function new_library(files)
 	function library.shutdown() end
 	function library.on_listed(listener) library.listed_listeners[#library.listed_listeners + 1] = listener end
 	function library.request_rescan() library.rescan_requested = true end
+	function library.has_files(folder_key) return library.files[folder_key] ~= nil and #library.files[folder_key] > 0 end
 	function library.disk_path(file_path) return file_path end
 
 	function library.update()

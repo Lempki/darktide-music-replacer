@@ -65,6 +65,33 @@ function AudioFolders.list(folder)
 	return names, stamps
 end
 
+-- The names of the folders directly inside `folder`, a UTF-8 path, sorted. Nil when the folder does not exist.
+function AudioFolders.subfolders(folder)
+	local ffi = NativeFfi.ffi
+	local kernel32 = NativeFfi.kernel32()
+	local data = ffi.new("MusicReplacer_WIN32_FIND_DATAW")
+	local find = kernel32.MusicReplacer_FindFirstFileW(NativeFfi.wide(folder .. "/*"), data)
+
+	if tonumber(ffi.cast("intptr_t", find)) == INVALID_HANDLE then
+		return nil
+	end
+
+	local names = {}
+	repeat
+		if is_directory(data.dwFileAttributes) then
+			local name = NativeFfi.utf8(data.cFileName)
+			if name ~= "." and name ~= ".." then
+				names[#names + 1] = name
+			end
+		end
+	until kernel32.MusicReplacer_FindNextFileW(find, data) == 0
+
+	kernel32.MusicReplacer_FindClose(find)
+	table.sort(names)
+
+	return names
+end
+
 -- True when `path` is an existing file.
 function AudioFolders.exists(path)
 	local attributes = NativeFfi.kernel32().MusicReplacer_GetFileAttributesW(NativeFfi.wide(path))

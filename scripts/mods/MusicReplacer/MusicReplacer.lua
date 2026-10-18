@@ -61,6 +61,14 @@ local playing_track = nil -- Fields: context_name, file_path, duration, is_only_
 -- Its setting is "Custom (Play to End)". The current context's own music starts once that song ends.
 local finishing_context = nil
 
+-- The folder the current context's songs come from: its own, or an override folder inside it, such as "mission_boss/chaos_spawn".
+-- Nil while the context plays no custom music by its setting, so no override is looked for.
+local current_folder = nil
+
+-- How often to check whether another override folder applies, such as once the game names the boss.
+local OVERRIDE_CHECK_SECONDS = 0.5
+local override_check_elapsed = 0
+
 -- What the current context plays, for the debug overlay: a choice's name, or why the game's music plays.
 local context_status = "game's music"
 
@@ -108,19 +116,31 @@ end
 
 -- The context's remembered song if it still has that file, else a new pick from Library.pick_file().
 -- Returns file_path, duration, is_only_file, and the start position of a resumed song.
-local function choose_file(context_name, is_new_context)
+-- The folder `context_name` plays from: the first of its override folders that has songs, else its own.
+local function folder_for(context_name)
+	for _, key in ipairs(Context.override_keys(context_name)) do
+		local folder = context_name .. "/" .. key:lower()
+		if Library.has_files(folder) then
+			return folder
+		end
+	end
+	return context_name
+end
+
+-- A song is resumed only from the folder it played from, so a resume point from another folder gives way to a new pick.
+local function choose_file(context_name, folder, is_new_context)
 	if is_new_context then
 		local resume_path, position = ResumePoints.take(context_name)
 
 		if resume_path then
-			local file_path, duration, is_only_file = Library.find_file(context_name, resume_path)
+			local file_path, duration, is_only_file = Library.find_file(folder, resume_path)
 			if file_path then
 				return file_path, duration, is_only_file, position
 			end
 		end
 	end
 
-	return Library.pick_file(context_name)
+	return Library.pick_file(folder)
 end
 
 -- is_new_context separates a real context change from advancing within the same context.
@@ -132,6 +152,7 @@ local function play_context(context_name, is_new_context)
 	end
 
 	finishing_context = nil
+	current_folder = nil
 
 	if not context_name then
 		context_status = "game's music"
@@ -174,7 +195,10 @@ local function play_context(context_name, is_new_context)
 		return
 	end
 
-	local file_path, duration, is_only_file, start_position = choose_file(context_name, is_new_context)
+	local folder = folder_for(context_name)
+	current_folder = folder
+
+	local file_path, duration, is_only_file, start_position = choose_file(context_name, folder, is_new_context)
 
 	if not file_path then
 		-- No replacement is available: no folder, an empty folder, or a scan that has not finished.
@@ -349,6 +373,8 @@ local function overlay_snapshot()
 		hold = hold,
 		hold_seconds = hold_seconds,
 		pending = has_pending_change and (pending_context or "none") or nil,
+		folder = current_folder,
+		overrides = current_context and table.concat(Context.override_keys(current_context), ", ") or nil,
 		pending_seconds = pending_seconds,
 		finishing = finishing_context,
 		song = song and song:match("[^/]+$"),
@@ -531,6 +557,19 @@ mod.update = function(dt)
 		playback_lost = false
 		if enabled then
 			play_context(current_context, true)
+		end
+	end
+
+	-- An override folder can start to apply while the context stays the same, as when the game names a boss after its music started.
+	override_check_elapsed = override_check_elapsed + dt
+	if override_check_elapsed >= OVERRIDE_CHECK_SECONDS then
+		override_check_elapsed = 0
+		if enabled and current_folder and not has_pending_change and not finishing_context then
+			local folder = folder_for(current_context)
+			if folder ~= current_folder then
+				log(string.format("[playback] %s: switching from the %s folder to the %s folder", current_context, current_folder, folder))
+				play_context(current_context, true)
+			end
 		end
 	end
 

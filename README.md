@@ -40,7 +40,7 @@ Install this mod like any other Darktide mod, then drop your own audio files int
     mortis_trials_break\
 ```
 
-All thirteen folders already exist after install. Put audio files directly inside whichever ones you want music for. Files in subfolders inside them are not read.
+All thirteen folders already exist after install. Put audio files directly inside whichever ones you want music for. Folders inside them are override folders, described below.
 
 Supported formats are `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, and `.wma`. Other files, such as `.ogg` and `.opus`, are ignored, so convert those to a supported format first. File names in any language work.
 
@@ -61,6 +61,17 @@ Supported formats are `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, and `.wma`. Other
 | `mortis_trials_break` | In Mortis Trials, between waves. |
 
 No custom music plays during cutscenes. The game's own music takes over there.
+
+### Override folders
+
+A context folder can hold folders of its own, named after what the game reports, which take over from it while they apply. For example, songs in `mission_boss\chaos_spawn\` play while a Chaos Spawn is the boss, and songs in `mission_explore\havoc\` play while exploring in Havoc. When several apply, the first one in this order that has songs wins:
+
+1. In `mission_event`, the kind of event, as the game names its event music: for example `escape_event`, `fortification_event`, `twins_event`, or an Operation's `operation_stage_1`. [docs/wwise-events.md](docs/wwise-events.md) lists the kinds seen so far.
+2. In `mission_boss`, the kind of boss: for example `chaos_spawn`, `chaos_beast_of_nurgle`, `chaos_plague_ogryn`, or `chaos_ogryn_houndmaster`, and with their settings on, `renegade_twin_captain` or `chaos_daemonhost`.
+3. In any context, the mission's code: for example `spillway` or `km_enforcer_twins`. [docs/game-internals.md](docs/game-internals.md) lists every mission's code with its in-game name.
+4. In any context, the game mode: `havoc` or `expeditions`.
+
+An override folder with no songs is skipped, so the context's own folder, or the game's music, plays as before. The mod does not create these folders, so make the ones you want. Their names ignore case, and folders inside an override folder are not read. The music switches as soon as another override applies, for example when the game names a boss a few seconds after the boss music started, or when an event moves on to its escape. With Debug Overlay on, its Folder line shows the folder playing now and the override names the moment looks for.
 
 Your audio survives reinstalling or updating the mod through Vortex. Vortex only removes files it deployed itself, and `audio\` is never part of the mod archive. It does not survive the mod folder being renamed, so move `audio\` across by hand if that ever happens.
 
@@ -116,7 +127,7 @@ Loading, Preparation, and Meat Grinder offer Custom, Game's Own, and Silence, an
 | Setting | Default | What it does |
 |---|---|---|
 | Detailed Logging | Off | Adds the game's raw music states, the silencing of its music, and its sound events to `diagnostic.log`. The important events are always logged. See Troubleshooting below. |
-| Debug Overlay | Off | Shows the current context and what it plays, the song with its time, and the volume factors in a top corner of the screen. It shows on every screen, loading screens and the preparation screen included, and shows holds and changes that are still settling, which helps when checking which music a moment counts as. Overlay Corner and Overlay Size, shown while it is on, pick the top left or the top right and scale it from 50% to 200% away from its corner. Custom HUD cannot move it, since it is not part of the HUD. |
+| Debug Overlay | Off | Shows the current context and what it plays, the song with its time, and the volume factors in a top corner of the screen. It shows on every screen, loading screens and the preparation screen included, and shows holds and changes that are still settling, which helps when checking which music a moment counts as. Its Folder line names the override folders the moment looks for. Overlay Corner and Overlay Size, shown while it is on, pick the top left or the top right and scale it from 50% to 200% away from its corner. Custom HUD cannot move it, since it is not part of the HUD. |
 
 ## How it plays
 
@@ -176,7 +187,7 @@ The mod always logs the important events, such as which music plays and why, and
 * [x] A short log of the important events written by default, with the previous session's log kept beside it as `diagnostic-prev.log`, so either can be attached to a bug report. Detailed Logging adds the noisy lines on top.
 * [x] Volume: lowering custom music while a menu is open, as the game does with its own music, a volume for custom music, and evening out loudness, so quiet and loud files play at a similar level without changing the files.
 * [x] Custom music for loading screens, the briefing, and the mission preparation screen.
-* [ ] Optional subfolders named after what the game reports, which override a context's folder: per kind of mission event, such as `escape_event`, per kind of monstrosity, such as `chaos_spawn`, and per game mode or mission type, such as Havoc and Expeditions.
+* [x] Optional override folders named after what the game reports, inside a context's folder: per kind of mission event, such as `escape_event`, per kind of boss, such as `chaos_spawn`, per mission, and per game mode, Havoc and Expeditions.
 
 ## Development
 

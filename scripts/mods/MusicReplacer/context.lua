@@ -55,6 +55,10 @@
 --	* Victory and defeat resolve to their own contexts, from their state until the next level starts.
 --	  The game state returns to "mission" in between, so the outcome is tracked in `mission_outcome`.
 --	  A loading screen or a real zone clears it, since a story mission's cutscene can skip the loading screen.
+--	* Context.override_keys() names the override folders a context may use, most specific first.
+--	  An event's kind is its `music_objective` value, kept through its hold, and a boss's kind is its breed.
+--	  The mission is its code, and the game mode is "havoc" or "expeditions".
+--	  Havoc is told apart by its Havoc data in the difficulty manager, since it changes no music state.
 --	* Every menu screen sets the `options` group, for example to "ingame_menu" in the Esc menu or "vendor_menu" at a vendor.
 --	  It decides no context. It only tells MusicReplacer.lua that a menu is open, so the music can be lowered.
 
@@ -74,6 +78,8 @@ local menu_state = nil -- Current value of the "options" state group, which name
 local mission_name = nil -- Name of the current mission, or nil while none is loaded.
 local mission_is_hub = false -- True while the loaded mission's template is the hub.
 local mission_is_operation = false -- True while the loaded mission is an Operation.
+local mission_mode = nil -- "havoc" or "expeditions" while one runs, else nil.
+local event_kind = nil -- The music_objective value of the event playing now, kept through its hold, or nil.
 local mission_outcome = nil -- "victory" or "defeat" from that game state until the next level starts, else nil.
 local open_bosses = {} -- Boss unit -> { breed = name, order = n } for every open encounter window.
 local boss_open_count = 0 -- Increases with every newly opened window, so the latest one can be found.
@@ -208,26 +214,43 @@ local function is_combat_active()
 	return wwise_combat_state == "normal" or wwise_combat_state == "horde_low" or wwise_combat_state == "horde_high"
 end
 
--- Returns the current mission's name, whether its template is the hub, and whether it is an Operation.
--- Returns nil, false, false before a level has loaded.
+-- "havoc" during a Havoc run, "expeditions" during an Expedition, else nil.
+local function read_mode(template)
+	if template and template.game_mode_name == "expedition" then
+		return "expeditions"
+	end
+
+	local difficulty = Managers.state.difficulty
+	if difficulty and difficulty.get_parsed_havoc_data then
+		local ok, havoc_data = pcall(difficulty.get_parsed_havoc_data, difficulty)
+		if ok and havoc_data then
+			return "havoc"
+		end
+	end
+
+	return nil
+end
+
+-- Returns the current mission's name, whether its template is the hub, whether it is an Operation, and its game mode.
+-- Returns nil, false, false, nil before a level has loaded.
 local function read_mission()
 	local game_state = Managers and Managers.state
 	local mission_manager = game_state and game_state.mission
 
 	if not mission_manager then
-		return nil, false, false
+		return nil, false, false, nil
 	end
 
 	local ok, name = pcall(mission_manager.mission_name, mission_manager)
 
 	if not ok or not name then
-		return nil, false, false
+		return nil, false, false, nil
 	end
 
 	local template_ok, template = pcall(mission_manager.mission, mission_manager)
-	local has_template = template_ok and type(template) == "table"
+	template = template_ok and type(template) == "table" and template or nil
 
-	return name, has_template and template.is_hub == true, has_template and template.mission_type == "operations"
+	return name, template ~= nil and template.is_hub == true, template ~= nil and template.mission_type == "operations", read_mode(template)
 end
 
 -- Wwise reports "None" as a string, not as nil.
@@ -338,6 +361,10 @@ end
 local function recompute(mod)
 	local new_context = resolve(mod)
 
+	if new_context ~= "mission_event" then
+		event_kind = nil
+	end
+
 	if new_context == resolved_context then
 		return
 	end
@@ -387,6 +414,27 @@ function Context.hold()
 		return nil
 	end
 	return active_hold, HOLD_REMAINING[active_hold]()
+end
+
+-- The override folder names `context_name` may use right now, most specific first.
+-- They are the event's or the boss's kind, then the mission's code, then the game mode.
+-- MusicReplacer.lua plays the first one that has songs.
+function Context.override_keys(context_name)
+	local keys = {}
+
+	if context_name == "mission_event" and event_kind then
+		keys[#keys + 1] = event_kind
+	elseif context_name == "mission_boss" then
+		keys[#keys + 1] = current_boss_breed()
+	end
+
+	if mission_name and not mission_is_hub then
+		keys[#keys + 1] = mission_name
+	end
+
+	keys[#keys + 1] = mission_mode
+
+	return keys
 end
 
 -- True while the game shows a menu, such as the Esc menu, the inventory, the mission board, or a vendor.
@@ -478,6 +526,9 @@ function Context.init(mod, log)
 		elseif group_name == "music_objective" then
 			diagnostic_log(describe_transition(group_name, current, new_state))
 			music_objective = new_state
+			if new_state ~= "None" and new_state ~= LAST_MAN_STANDING then
+				event_kind = new_state
+			end
 		elseif group_name == "options" then
 			diagnostic_log(describe_transition(group_name, current, new_state))
 			menu_state = new_state
@@ -537,7 +588,12 @@ end
 -- Call from the main mod file's mod.update.
 -- Managers.event does not exist at mod-load time, so the boss callbacks are registered on the first tick where it does.
 function Context.update(mod, dt)
-	local current_mission_name, current_mission_is_hub, current_mission_is_operation = read_mission()
+	local current_mission_name, current_mission_is_hub, current_mission_is_operation, current_mode = read_mission()
+
+	if current_mode ~= mission_mode then
+		diagnostic_log(string.format("[mission] game mode: %s", tostring(current_mode or "ordinary")))
+		mission_mode = current_mode
+	end
 
 	if current_mission_name ~= mission_name or current_mission_is_hub ~= mission_is_hub
 		or current_mission_is_operation ~= mission_is_operation then

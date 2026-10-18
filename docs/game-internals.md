@@ -62,7 +62,7 @@ The mission line names a mission by its code. These are the in-game names of the
 
 Whether the free Psykhanium also runs in `tg_shooting_range` is not known. If it does, the Meat Grinder choice in Music per Context covers it too.
 
-Havoc plays the ordinary missions and reports nothing of its own to the music: the mission line, the zone, and every music state are the same as in an ordinary run, and `circumstance` stays `None`. So the mod treats a Havoc run like any mission, and its log cannot tell the two apart.
+Havoc plays the ordinary missions and reports nothing of its own to the music: the mission line, the zone, and every music state are the same as in an ordinary run, and `circumstance` stays `None`. The game keeps Havoc's own data in its difficulty manager, which is how the mod tells a Havoc run apart for the `havoc` override folders. With Detailed Logging on, the log says `[mission] game mode: havoc` once a Havoc run starts, `[mission] game mode: expeditions` in an Expedition, and `[mission] game mode: ordinary` after either.
 
 ## Moving between the hub, missions, and menus
 

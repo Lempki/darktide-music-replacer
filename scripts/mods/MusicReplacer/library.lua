@@ -1,5 +1,7 @@
 -- Keeps one file list per music context, listed through audio_folders.lua.
 -- Each context is a single-level subfolder of this mod's "audio/" directory, for example ".../mods/MusicReplacer/audio/hub/".
+-- A context folder can hold override folders one level further down, such as "mission_boss/chaos_spawn/".
+-- Their lists are kept under that key, in lowercase, since the names match what the game reports and Windows ignores case.
 --
 -- The folders are listed on the first update, again when a rescan is requested, and again once files change on disk.
 -- Windows reports a change for every step of a copy, so a change only lists the folders once the changes have stopped for a moment.
@@ -45,7 +47,8 @@ local QUIET_SECONDS = 3
 
 local watcher = nil
 local quiet_seconds = nil -- Seconds since the last change Windows reported, or nil while none waits for a listing.
-local lists = {} -- context_name -> file paths, each starting with the context folder name.
+local lists = {} -- folder key, a context name or "context/override", -> file paths, each starting with that key.
+local override_folders = {} -- context_name -> its override folder keys, sorted.
 local last_picked = {} -- context_name -> the file path most recently returned.
 local reported_missing = {} -- file_path -> true once a missing file has been logged.
 local unplayable = {} -- file_path -> true once Windows could not open the file.
@@ -62,13 +65,13 @@ local function clock()
 	return _os and _os.clock and _os.clock() or 0
 end
 
-local function list_folder(context_name)
+local function list_folder(folder_key)
 	local file_paths = {}
 
-	local names, name_stamps = AudioFolders.list(AUDIO_ROOT .. "/" .. context_name)
+	local names, name_stamps = AudioFolders.list(AUDIO_ROOT .. "/" .. folder_key)
 
 	for _, name in ipairs(names or {}) do
-		local file_path = context_name .. "/" .. name
+		local file_path = folder_key .. "/" .. name
 		file_paths[#file_paths + 1] = file_path
 		stamps[file_path] = name_stamps and name_stamps[name] or ""
 
@@ -80,11 +83,23 @@ local function list_folder(context_name)
 	return file_paths
 end
 
+-- Every folder key in listing order: each context, then its override folders.
+local function each_folder_key()
+	local keys = {}
+	for _, context_name in ipairs(CONTEXTS) do
+		keys[#keys + 1] = context_name
+		for _, key in ipairs(override_folders[context_name] or {}) do
+			keys[#keys + 1] = key
+		end
+	end
+	return keys
+end
+
 local function describe_counts()
 	local parts = {}
 
-	for _, context_name in ipairs(CONTEXTS) do
-		parts[#parts + 1] = string.format("%s=%d", context_name, #lists[context_name])
+	for _, key in ipairs(each_folder_key()) do
+		parts[#parts + 1] = string.format("%s=%d", key, #lists[key])
 	end
 
 	return table.concat(parts, " ")
@@ -92,16 +107,29 @@ end
 
 local function scan_folders(what)
 	stamps = {}
+	lists = {}
+	override_folders = {}
+
 	for _, context_name in ipairs(CONTEXTS) do
 		lists[context_name] = list_folder(context_name)
+
+		local keys = {}
+		for _, name in ipairs(AudioFolders.subfolders(AUDIO_ROOT .. "/" .. context_name) or {}) do
+			local key = context_name .. "/" .. name:lower()
+			if not lists[key] then
+				keys[#keys + 1] = key
+				lists[key] = list_folder(key)
+			end
+		end
+		override_folders[context_name] = keys
 	end
 
 	reported_missing = {}
 	diagnostic_log(string.format("[library] %s: %s", what, describe_counts()))
 
 	local entries = {}
-	for _, context_name in ipairs(CONTEXTS) do
-		for _, file_path in ipairs(lists[context_name]) do
+	for _, key in ipairs(each_folder_key()) do
+		for _, file_path in ipairs(lists[key]) do
 			entries[#entries + 1] = { file_path = file_path, stamp = stamps[file_path] }
 		end
 	end
@@ -236,6 +264,17 @@ function Library.update(dt)
 
 	scan_folders("listed the audio folders again")
 	return true
+end
+
+-- True when the folder of `folder_key`, a context or "context/override", has a listed file that Windows can play.
+-- It only reads the listing, so it is cheap enough to ask often.
+function Library.has_files(folder_key)
+	for _, file_path in ipairs(lists[folder_key] or {}) do
+		if not unplayable[file_path] then
+			return true
+		end
+	end
+	return false
 end
 
 -- The context's listed entries that still exist on disk, or nil when there are none.

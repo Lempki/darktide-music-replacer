@@ -444,6 +444,77 @@ describe("MusicReplacer.lua debug overlay", function()
 	end)
 end)
 
+describe("MusicReplacer.lua override folders", function()
+	-- Returns a harness that has settled into lm_cooling's explore music, with `files` in the library.
+	local function in_cooling(files, settings)
+		local harness = MainHarness.new({ files = files, settings = settings })
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness:enter_mission("lm_cooling", "zone_3")
+		harness:settle()
+		return harness
+	end
+
+	it("plays the mission's override folder over the context's own", function()
+		local harness = in_cooling({
+			mission_explore = { { name = "x.mp3", duration = 300 } },
+			["mission_explore/lm_cooling"] = { { name = "cooling.mp3", duration = 300 } },
+		})
+
+		assert_equal(harness:playing(), "mission_explore/lm_cooling/cooling.mp3")
+	end)
+
+	it("plays the context's own folder while no override folder has songs", function()
+		local harness = in_cooling({
+			mission_explore = { { name = "x.mp3", duration = 300 } },
+			["mission_explore/fm_cargo"] = { { name = "cargo.mp3", duration = 300 } },
+		})
+
+		assert_equal(harness:playing(), "mission_explore/x.mp3")
+	end)
+
+	it("switches to the boss's folder once the game names the boss, after its music already started", function()
+		local harness = in_cooling({
+			mission_boss = { { name = "b.mp3", duration = 300 } },
+			["mission_boss/chaos_spawn"] = { { name = "spawn.mp3", duration = 300 } },
+		})
+		harness:state("music_combat", "boss")
+		harness:settle()
+		assert_equal(harness:playing(), "mission_boss/b.mp3")
+
+		harness:boss_start(harness:new_boss("chaos_spawn"))
+		harness:wait(0.6)
+
+		assert_equal(harness:playing(), "mission_boss/chaos_spawn/spawn.mp3")
+		assert_equal(harness:logged("[playback] mission_boss: switching from the mission_boss folder to the mission_boss/chaos_spawn folder"), true)
+	end)
+
+	it("plays an event kind's folder even while the event's own folder is empty", function()
+		local harness = in_cooling({
+			["mission_event/escape_event"] = { { name = "escape.mp3", duration = 300 } },
+		})
+
+		harness:state("music_objective", "kill_event")
+		harness:settle()
+		assert_equal(harness:playing(), nil)
+
+		harness:state("music_objective", "escape_event")
+		harness:wait(0.6)
+		assert_equal(harness:playing(), "mission_event/escape_event/escape.mp3")
+	end)
+
+	it("looks for no override while a context is set to the game's own music", function()
+		local harness = in_cooling({
+			["mission_boss/chaos_spawn"] = { { name = "spawn.mp3", duration = 300 } },
+		}, { source_mission_boss = "game" })
+		harness:state("music_combat", "boss")
+		harness:boss_start(harness:new_boss("chaos_spawn"))
+		harness:wait(1.2)
+
+		assert_equal(harness:playing(), nil)
+	end)
+end)
+
 describe("MusicReplacer.lua Play to End", function()
 	-- Returns a harness whose boss song plays, with the boss set to Play to End.
 	local function during_boss()

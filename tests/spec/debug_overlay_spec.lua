@@ -61,6 +61,7 @@ local function full_snapshot()
 	return {
 		context = "mission_combat",
 		status = "Custom",
+		folder = "mission_combat",
 		song = "Antagonist - Valfaris.mp3",
 		position = 83.4,
 		duration = 265.6,
@@ -77,6 +78,7 @@ describe("debug_overlay.lua text", function()
 
 		assert_equal(DebugOverlay.text(full_snapshot()),
 			"Context: mission_combat (Custom)\n" ..
+			"Folder: mission_combat\n" ..
 			"Song: Antagonist - Valfaris.mp3  1:23 / 4:25\n" ..
 			"Volume: custom 100%, menu 50%, song -7.9 dB")
 	end)
@@ -92,8 +94,8 @@ describe("debug_overlay.lua text", function()
 
 		local lines = DebugOverlay.lines(snapshot)
 
-		assert_equal(#lines, 4)
-		assert_deep_equal(lines[2], { "Waiting", "combat hold 6.2s, mission_boss in 0.4s, mission_boss song playing to its end", timing = true })
+		assert_equal(#lines, 5)
+		assert_deep_equal(lines[3], { "Waiting", "combat hold 6.2s, mission_boss in 0.4s, mission_boss song playing to its end", timing = true })
 	end)
 
 	it("dims the labels and colors the waiting line in the game's text markup", function()
@@ -108,19 +110,29 @@ describe("debug_overlay.lua text", function()
 		end
 
 		assert_equal(rows[1], "{#color(150,150,150)}Context: {#reset()}mission_combat (Custom){#reset()}")
-		assert_equal(rows[2], "{#color(150,150,150)}Waiting: {#color(255,190,90)}horde hold 2.0s{#reset()}")
+		assert_equal(rows[3], "{#color(150,150,150)}Waiting: {#color(255,190,90)}horde hold 2.0s{#reset()}")
 	end)
 
 	it("shows no song while the game's music plays, songs as recorded while evening out is off, and long names cut short", function()
 		local DebugOverlay = load_overlay(new_constant_elements())
 
 		local game = DebugOverlay.text({ context = "mission_event", status = "game's music, no songs", evening_out = false })
-		assert_equal(game, "Context: mission_event (game's music, no songs)\nSong: none\nVolume: custom 100%, menu 100%, song as recorded")
+		assert_equal(game, "Context: mission_event (game's music, no songs)\nFolder: none\nSong: none\nVolume: custom 100%, menu 100%, song as recorded")
 
 		local snapshot = full_snapshot()
 		snapshot.song = string.rep("a", 60) .. ".mp3"
-		local song_line = DebugOverlay.text(snapshot):match("\n([^\n]+)\n")
+		local song_line = DebugOverlay.text(snapshot):match("(Song: [^\n]+)")
 		assert_equal(song_line, "Song: " .. string.rep("a", 45) .. "...  1:23 / 4:25")
+	end)
+
+	it("names the override folders the context looks for, after the folder it plays from", function()
+		local DebugOverlay = load_overlay(new_constant_elements())
+		local snapshot = full_snapshot()
+		snapshot.context = "mission_boss"
+		snapshot.folder = "mission_boss/chaos_spawn"
+		snapshot.overrides = "chaos_spawn, fm_cargo, havoc"
+
+		assert_deep_equal(DebugOverlay.lines(snapshot)[2], { "Folder", "mission_boss/chaos_spawn, overrides: chaos_spawn, fm_cargo, havoc" })
 	end)
 
 	it("says so while the mod is turned off", function()

@@ -61,7 +61,7 @@ local function shorten(name)
 end
 
 -- The overlay's lines for a snapshot from MusicReplacer.lua, each { label, value }, and timing = true on the line about timing.
--- Its fields are turned_off, context, status, pending, pending_seconds, hold, hold_seconds, and finishing.
+-- Its fields are turned_off, context, status, folder, overrides, pending, pending_seconds, hold, hold_seconds, and finishing.
 -- The song's are song, position, and duration, and the volume's are volume, menu_level, song_level, and evening_out.
 function DebugOverlay.lines(snapshot)
 	if not snapshot then
@@ -73,6 +73,15 @@ function DebugOverlay.lines(snapshot)
 	end
 
 	local lines = { { "Context", tostring(snapshot.context or "none") .. " (" .. tostring(snapshot.status) .. ")" } }
+
+	-- The override names the context looks for, so a player can see which folder to make.
+	if snapshot.context then
+		local folder = snapshot.folder or "none"
+		if snapshot.overrides and snapshot.overrides ~= "" then
+			folder = folder .. ", overrides: " .. snapshot.overrides
+		end
+		lines[#lines + 1] = { "Folder", folder }
+	end
 
 	-- Holds, changes that are still settling, and songs playing to their end explain why the music has not changed yet.
 	local timing = {}
