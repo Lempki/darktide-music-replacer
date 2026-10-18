@@ -637,9 +637,10 @@ function Context.update(mod, dt)
 	end
 
 	-- A hold only counts down once its state is inactive.
-	-- resolve() refreshes it to its full value on every active tick, so it must not also drain while its state is active.
+	-- resolve() sets it to its full length whenever it runs while the state is active, so it must not also drain then.
+	-- Each hold is capped by its setting on every tick, so a lowered setting also shortens a hold that is already running.
 	if event_hold_remaining > 0 and not is_event_active() then
-		event_hold_remaining = math.max(event_hold_remaining - dt, 0)
+		event_hold_remaining = math.max(math.min(event_hold_remaining, event_hold_seconds(mod)) - dt, 0)
 
 		if event_hold_remaining == 0 then
 			recompute(mod)
@@ -647,7 +648,7 @@ function Context.update(mod, dt)
 	end
 
 	if horde_hold_remaining > 0 and not is_horde_active() then
-		horde_hold_remaining = math.max(horde_hold_remaining - dt, 0)
+		horde_hold_remaining = math.max(math.min(horde_hold_remaining, horde_hold_seconds(mod)) - dt, 0)
 
 		if horde_hold_remaining == 0 then
 			recompute(mod)
@@ -655,7 +656,7 @@ function Context.update(mod, dt)
 	end
 
 	if combat_hold_remaining > 0 and not is_combat_active() then
-		combat_hold_remaining = math.max(combat_hold_remaining - dt, 0)
+		combat_hold_remaining = math.max(math.min(combat_hold_remaining, combat_hold_seconds(mod)) - dt, 0)
 
 		if combat_hold_remaining == 0 then
 			recompute(mod)

@@ -38,6 +38,26 @@ describe("context.lua combat", function()
 		assert_deep_equal(harness.changes, { "mission_combat", "mission_explore" })
 	end)
 
+	it("shortens a running hold at once when its setting is lowered, and ends it when set to 0", function()
+		local harness = in_mission(30)
+		harness:state("music_combat", "normal")
+		harness:state("music_combat", "None")
+		harness:wait(1)
+
+		-- Written straight into the settings, as the mod options do, with no refresh, since the hold settings ask for none.
+		harness.settings.combat_hold_seconds = 2
+		harness:wait(1.9)
+		assert_equal(harness:current(), "mission_combat")
+		harness:wait(0.2)
+		assert_equal(harness:current(), "mission_explore")
+
+		harness:state("music_combat", "normal")
+		harness:state("music_combat", "None")
+		harness.settings.combat_hold_seconds = 0
+		harness:wait(0.1)
+		assert_equal(harness:current(), "mission_explore")
+	end)
+
 	it("reports the combat hold and its seconds left while it keeps mission_combat", function()
 		local harness = in_mission(8)
 		harness:state("music_combat", "normal")

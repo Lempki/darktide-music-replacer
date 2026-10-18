@@ -120,6 +120,20 @@ describe("context.lua mission events", function()
 		assert_equal(harness:current(), "mission_explore")
 	end)
 
+	it("shortens a running event hold at once when its setting is lowered", function()
+		local harness = in_mission("zone_3")
+		harness:set_setting("event_hold_seconds", 30)
+		harness:state("music_objective", "fortification_event")
+		harness:state("music_objective", "None")
+		harness:wait(1)
+
+		-- Written straight into the settings, as the mod options do, with no refresh, since the hold settings ask for none.
+		harness.settings.event_hold_seconds = 0
+		harness:wait(0.1)
+
+		assert_equal(harness:current(), "mission_explore")
+	end)
+
 	it("lets a last stand take over during the hold, and still ends the event once the hold runs out", function()
 		local harness = in_mission("zone_3")
 		harness:state("music_objective", "fortification_event")

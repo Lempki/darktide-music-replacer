@@ -33,6 +33,19 @@ describe("context.lua hordes", function()
 		assert_deep_equal(harness.changes, { "mission_combat", "mission_horde" })
 	end)
 
+	it("shortens a running horde hold at once when its setting is lowered", function()
+		local harness = in_mission(30)
+		harness:state("music_combat", "horde_high")
+		harness:state("music_combat", "None")
+		harness:wait(1)
+
+		-- Written straight into the settings, as the mod options do, with no refresh, since the hold settings ask for none.
+		harness.settings.horde_hold_seconds = 0
+		harness:wait(0.1)
+
+		assert_equal(harness:current(), "mission_explore")
+	end)
+
 	-- A horde often drops out for a second or two and returns.
 	it("keeps mission_horde through a short drop out of the horde state", function()
 		local harness = in_mission(3)
