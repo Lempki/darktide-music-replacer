@@ -16,6 +16,28 @@ The part after the bar lists every field of the template that holds plain text, 
 The template's `wwise_state` field is what the game reports as `music_zone`.
 These lines are always logged, so every bug report says which mission it came from.
 
+## Zones
+
+`music_zone` names the area a mission takes place in, with its own music in the game.
+
+| `music_zone` | Area |
+|---|---|
+| `prologue` | Tancred Bastion, the prologue |
+| `hub` | The Mourningstar |
+| `zone_1` | Transit Hub HL-16-11, "Chasm Terminus" |
+| `zone_2` | Habzone HL-18-66, "The Torrent" |
+| `zone_2_depths` | Spillway's area |
+| `zone_twins` | The Torrent, for The Orthus Offensive |
+| `zone_3` | Manufactory HL-17-36, "Metalfab 36" |
+| `zone_4` | Freight Port HL-32-2, "Hourglass" |
+| `zone_5` | Habzone HL-19-24, "Throneside" |
+| `zone_6` | Habzone HL-70-04, "The Carnival" |
+| `zone_7` | Unknown area |
+| `zone_8` | Inter-Zone Void Sector Omega-12 |
+| `operations` | Operations, except for Rolling Steel |
+| `horde_mode` | Mortis Trials |
+| `expeditions` | Expeditions |
+
 ## Missions
 
 The mission line names a mission by its code. These are the in-game names of the ordinary missions, which Havoc plays too, by area.
