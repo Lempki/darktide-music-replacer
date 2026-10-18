@@ -67,6 +67,7 @@
 local Context = {}
 
 local WwiseGameSyncManager = require("scripts/managers/wwise_game_sync/wwise_game_sync_manager")
+local WwiseStateGroupCombat = require("scripts/managers/wwise_game_sync/wwise_state_groups/wwise_state_group_combat")
 
 -- ###########################################################################
 -- State
@@ -588,6 +589,13 @@ end
 -- That is much more output than Context.on_change, so it is meant for diagnosing state issues.
 function Context.init(mod, log)
 	diagnostic_log = log or diagnostic_log
+
+	-- The game's combat group decides only once per launch whether it runs an Expedition, on the first mission it sees.
+	-- So after an Expedition, every later mission kept reporting Expedition states, with no horde or boss, until the game restarted.
+	-- Clearing that decision as each mission ends makes the next mission decide again, which fixes the game's own music too.
+	mod:hook_safe(WwiseStateGroupCombat, "on_gameplay_shutdown", function(self)
+		self._is_expedition_init = nil
+	end)
 
 	mod:hook(WwiseGameSyncManager, "_set_state", function(func, self, group_name, new_state)
 		local current = self._wwise_state_group_states and self._wwise_state_group_states[group_name]

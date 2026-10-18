@@ -46,6 +46,16 @@ describe("context.lua", function()
 		})
 	end)
 
+	it("lets the game's combat group decide again at each mission's end whether it runs an Expedition", function()
+		load_context()
+		local Group = require("scripts/managers/wwise_game_sync/wwise_state_groups/wwise_state_group_combat")
+		local group = { _is_expedition_init = true, _is_expedition = true }
+
+		Group.on_gameplay_shutdown(group)
+
+		assert_equal(group._is_expedition_init, nil)
+	end)
+
 	it("resolves no context before any music state is set", function()
 		local _, Context = load_context()
 

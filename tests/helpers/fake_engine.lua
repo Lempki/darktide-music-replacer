@@ -7,6 +7,7 @@ FakeEngine.__index = FakeEngine
 
 local MOD_NAME = "MusicReplacer"
 local WWISE_GAME_SYNC_MANAGER = "scripts/managers/wwise_game_sync/wwise_game_sync_manager"
+local WWISE_STATE_GROUP_COMBAT = "scripts/managers/wwise_game_sync/wwise_state_groups/wwise_state_group_combat"
 
 -- Every Wwise state group starts at this value in the game.
 local DEFAULT_GROUP_STATE = "None"
@@ -49,6 +50,15 @@ local function new_mod(engine)
 			return handler(original, ...)
 		end
 		engine.hooks[#engine.hooks + 1] = { object = object, method = method }
+	end
+
+	-- Like DMF's, a safe hook runs after the original with the same arguments, and cannot change what the original returns.
+	function mod:hook_safe(object, method, handler)
+		self:hook(object, method, function(original, ...)
+			local results = { original(...) }
+			handler(...)
+			return unpack(results)
+		end)
 	end
 
 	function mod:get(setting_id)
@@ -179,6 +189,9 @@ function FakeEngine.new(options)
 	Mods = { lua = options.lua or {} }
 
 	package.loaded[WWISE_GAME_SYNC_MANAGER] = new_wwise_game_sync_manager(engine)
+
+	-- The game's combat state group class, with the one method the mod hooks.
+	package.loaded[WWISE_STATE_GROUP_COMBAT] = { on_gameplay_shutdown = function() end }
 
 	return engine
 end
