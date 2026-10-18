@@ -97,6 +97,7 @@ local definitions = {
 
 -- `DebugOverlay` is the loaded debug_overlay.lua. Returns the element class.
 return function(DebugOverlay)
+	-- After a mod reload, class() hands back the class from the first load, and the methods below replace its old ones.
 	local Element = class("ConstantElementMusicReplacerOverlay", "ConstantElementBase")
 
 	function Element:init(parent, draw_layer, start_scale)

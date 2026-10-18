@@ -557,18 +557,27 @@ mod.update = function(dt)
 	end
 end
 
+-- Each shutdown step runs on its own, so one that fails cannot leave the others undone.
+-- Otherwise songs could play on through a reload, the overlay stay on screen, or the game's music stay silenced.
+local function shut_down(name, step, ...)
+	local ok, err = pcall(step, ...)
+	if not ok then
+		log(string.format("[mod] shutting down %s failed: %s", name, tostring(err)))
+	end
+end
+
 mod.on_unload = function(exit_game)
-	Context.shutdown(mod)
-	Library.shutdown()
-	Loudness.shutdown()
-	DebugOverlay.shutdown()
-	AudioClient.shutdown()
-	MediaDecoder.shutdown()
+	shut_down("the context", Context.shutdown, mod)
+	shut_down("the library", Library.shutdown)
+	shut_down("the loudness measuring", Loudness.shutdown)
+	shut_down("the overlay", DebugOverlay.shutdown)
+	shut_down("the audio", AudioClient.shutdown)
+	shut_down("the decoder", MediaDecoder.shutdown)
 
 	-- A reload hands the music back to the game, or a silenced zone or game state stays silent until the game changes it.
 	-- The reloaded mod reads the game's states again on its first tick.
 	if not exit_game then
-		Suppression.release()
+		shut_down("the silencing", Suppression.release)
 	end
 
 	DiagnosticLog.close()

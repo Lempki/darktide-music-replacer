@@ -632,6 +632,18 @@ describe("MusicReplacer.lua turned off and on", function()
 		assert_equal(harness:last_play(), nil)
 	end)
 
+	it("finishes every other shutdown step on a reload when one of them fails, and logs it", function()
+		local harness = in_hub()
+		harness.library.shutdown = function() error("the folder watcher would not close", 0) end
+
+		harness.mod.on_unload(false)
+
+		assert_equal(harness.client.shut_down, true)
+		assert_equal(harness.loudness.shut_down, true)
+		assert_equal(harness.engine:wwise_state("music_zone"), "hub")
+		assert_equal(harness:logged("[mod] shutting down the library failed: the folder watcher would not close"), true)
+	end)
+
 	it("hands the music back to the game on a mod reload, but leaves it on game exit", function()
 		local harness = in_hub()
 		harness.mod.on_unload(false)
