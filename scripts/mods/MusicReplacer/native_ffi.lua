@@ -57,6 +57,7 @@ int32_t MusicReplacer_FindNextFileW(void *find, MusicReplacer_WIN32_FIND_DATAW *
 int32_t MusicReplacer_FindClose(void *find) __asm__("FindClose");
 uint32_t MusicReplacer_GetFileAttributesW(const uint16_t *path) __asm__("GetFileAttributesW");
 int32_t MusicReplacer_CreateDirectoryW(const uint16_t *path, void *security) __asm__("CreateDirectoryW");
+int32_t MusicReplacer_CreateDirectoryA(const char *path, void *security) __asm__("CreateDirectoryA");
 void *MusicReplacer_FindFirstChangeNotificationW(const uint16_t *path, int32_t watch_subtree, uint32_t filter) __asm__("FindFirstChangeNotificationW");
 int32_t MusicReplacer_FindNextChangeNotification(void *handle) __asm__("FindNextChangeNotification");
 int32_t MusicReplacer_FindCloseChangeNotification(void *handle) __asm__("FindCloseChangeNotification");
@@ -241,6 +242,19 @@ function NativeFfi.utf8(wide)
 	local buffer = ffi.new("char[?]", length)
 	kernel32.MusicReplacer_WideCharToMultiByte(CP_UTF8, 0, wide, -1, buffer, length, nil, nil)
 	return ffi.string(buffer, length - 1)
+end
+
+-- Creates the folder `path` and any missing folders above it, without starting cmd.exe as os.execute("mkdir") would.
+-- `path` is in Windows' legacy code page, the one os.getenv returns and Lua's io library opens, so both agree on the folder.
+-- A folder that already exists fails to be created, which is fine, since opening a file in it is the real check.
+function NativeFfi.create_directories(path)
+	local prefix = nil
+	for part in path:gsub("/", "\\"):gmatch("[^\\]+") do
+		prefix = prefix and (prefix .. "\\" .. part) or part
+		if not prefix:find(":$") then
+			kernel32.MusicReplacer_CreateDirectoryA(prefix, nil)
+		end
+	end
 end
 
 return NativeFfi

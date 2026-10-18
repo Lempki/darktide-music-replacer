@@ -31,10 +31,12 @@ local function appdata_root()
 	return _os.getenv("APPDATA") or _os.getenv("XDG_DATA_HOME")
 end
 
+local NativeFfi = nil -- Set by DiagnosticLog.init, for creating the folder.
+
 local function ensure_directory(path)
 	-- Best effort, since io.open below is the real success check.
-	if _os and _os.execute then
-		pcall(_os.execute, 'mkdir "' .. path:gsub("/", "\\") .. '" >nul 2>nul')
+	if NativeFfi and NativeFfi.load() then
+		pcall(NativeFfi.create_directories, path)
 	end
 end
 
@@ -116,9 +118,10 @@ local function write_line(line)
 	file:flush()
 end
 
--- Call once from the main mod file's top level.
-function DiagnosticLog.init(mod_instance)
+-- Call once from the main mod file's top level. `native_ffi` is a loaded native_ffi.lua, which creates the folder.
+function DiagnosticLog.init(mod_instance, native_ffi)
 	mod = mod_instance
+	NativeFfi = native_ffi
 	launch_state = mod:persistent_table("diagnostic_log")
 end
 

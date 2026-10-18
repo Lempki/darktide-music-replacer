@@ -19,7 +19,7 @@ local Loudness = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/loudnes
 local DiagnosticLog = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/diagnostic_log")
 local DebugOverlay = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/debug_overlay")
 
-DiagnosticLog.init(mod)
+DiagnosticLog.init(mod, NativeFfi)
 local log = DiagnosticLog.write
 local log_detail = DiagnosticLog.detail
 

@@ -28,7 +28,8 @@ local function new_file_system(files)
 	fs.os = {
 		getenv = function(name) return name == "APPDATA" and "C:/AppData" or nil end,
 		date = function() return "2000-01-01 00:00:00" end,
-		execute = function() end,
+		-- Starting cmd.exe from the game would block its thread, so the folder must come from native_ffi.lua instead.
+		execute = function() error("os.execute must not be called", 2) end,
 		remove = function(path) fs.files[path] = nil end,
 		rename = function(from, to)
 			if fs.files[from] == nil then
@@ -45,11 +46,17 @@ end
 
 -- Returns a loaded diagnostic_log.lua over `fs`, with the detailed lines on or off, and its engine.
 -- Passing the engine of an earlier load keeps its persistent tables, as a mod reload does.
+-- The folders it asks native_ffi.lua to create are recorded in `fs.created`.
 local function load_log(fs, detailed, engine)
 	engine = engine or FakeEngine.new({ lua = { io = fs.io, os = fs.os } })
 	engine.settings.diagnostic_mode = detailed
 	local DiagnosticLog = engine:load("diagnostic_log")
-	DiagnosticLog.init(engine.mod)
+	fs.created = {}
+	local native_ffi = {
+		load = function() return true end,
+		create_directories = function(path) fs.created[#fs.created + 1] = path end,
+	}
+	DiagnosticLog.init(engine.mod, native_ffi)
 	return DiagnosticLog, engine
 end
 
@@ -126,6 +133,15 @@ describe("diagnostic_log.lua", function()
 		DiagnosticLog.write("[context] nil -> hub")
 
 		assert_deep_equal(engine.messages, { { level = "error", text = "Music Replacer could not open diagnostic.log: disk 100% full" } })
+	end)
+
+	it("creates its folder through Windows instead of starting cmd.exe", function()
+		local fs = new_file_system()
+		local DiagnosticLog = load_log(fs, false)
+
+		DiagnosticLog.write("[context] nil -> hub")
+
+		assert_deep_equal(fs.created, { "C:/AppData/Fatshark/Darktide/MusicReplacer" })
 	end)
 
 	it("writes nothing when it cannot find the user's folder", function()

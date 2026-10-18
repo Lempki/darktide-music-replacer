@@ -147,6 +147,7 @@ Music Replacer decodes your files with Media Foundation, Windows' own audio deco
 * The mod notices audio files added, removed, or replaced while the game runs, and lists the folders again 3 seconds after the changes stop. A song that is playing keeps playing, and a context that had no files starts its new song right away. On a drive where Windows cannot report changes, such as some network drives, press Rescan Audio Folders instead.
 * A file Windows cannot decode is skipped once the mod has measured it, shortly after launch, and the log names it. If one is picked before then and fails three times in a row, that context uses the game's own music until the game restarts or the audio folders are listed again.
 * Music Replacer only affects your own game. Squadmates hear the game's own music regardless.
+* If your Windows user name has letters outside the language Windows uses for older programs, such as Japanese letters on an English Windows, the mod cannot write `diagnostic.log` or `loudness.txt`. Your music still plays, and Even Out Loudness measures your songs again at every launch.
 * The mission intro, the main menu, and cutscenes play the game's own music.
 
 ## Troubleshooting
