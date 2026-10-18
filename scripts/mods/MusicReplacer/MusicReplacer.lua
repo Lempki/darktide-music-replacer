@@ -60,7 +60,12 @@ local gave_up = {} -- folder -> true once that folder stopped retrying.
 local emptied = {}
 
 -- The custom track AudioClient was last asked to play, so a context change can remember where it stopped.
-local playing_track = nil -- Fields: context_name, file_path, duration, is_only_file.
+local playing_track = nil -- Fields: context_name, file_path, duration, is_only_file, and position, its last known position.
+
+-- The song that was playing when playback stopped working, as when the only headset is unplugged: context_name, file_path, position.
+-- It continues where it was once playback works again, if its context is still the one playing.
+local lost_track = nil
+local was_playing = false -- Whether a custom song played on the last tick, so a song that had already stopped is never taken as lost.
 
 -- The folder the current context's songs come from: its own, or an override folder inside it, such as "mission_boss/chaos_spawn".
 -- Nil while the context plays no custom music by its setting, so no override is looked for.
@@ -196,6 +201,13 @@ local function play_context(context_name, is_new_context)
 		resume_path, resume_position = ResumePoints.take(context_name)
 	end
 
+	if lost_track then
+		if lost_track.context_name == context_name then
+			resume_path, resume_position = lost_track.file_path, lost_track.position
+		end
+		lost_track = nil
+	end
+
 	-- The first folder with a song to play wins, so an override folder whose files are gone gives way to the next.
 	local folder, file_path, duration, is_only_file, start_position
 	for _, candidate in ipairs(folders_for(context_name)) do
@@ -308,17 +320,31 @@ local pending_context = nil
 local debounce_elapsed = 0
 local pending_elapsed = 0
 local has_pending_change = false
+local replay_requested = false -- True when the current context should play again once the pending change commits.
 
 local function commit_pending_context()
 	has_pending_change = false
+	local replay = replay_requested
+	replay_requested = false
 
-	if pending_context == current_context then
+	if pending_context == current_context and not replay then
 		-- A flicker round-tripped back to what is already playing, so there is nothing to do.
 		return
 	end
 
 	current_context = pending_context
 	play_context(pending_context, true) -- true marks a real context change.
+end
+
+-- Plays the current context again, as after a rescan or a changed setting.
+-- While a change is still settling, that waits for its commit, which plays anyway, so the music does not crossfade twice.
+local function replay_current_context()
+	if has_pending_change then
+		replay_requested = true
+		return
+	end
+
+	play_context(current_context, true)
 end
 
 Context.on_change(function(new_context, old_context, boss_breed)
@@ -470,6 +496,7 @@ mod.on_disabled = function(initial_call)
 	-- A song that is turned off mid-mission continues from there if the mod is turned on again before the next loading screen.
 	remember_playing_track(nil)
 	has_pending_change = false
+	replay_requested = false
 	current_context = nil
 	playing_track = nil
 	AudioClient.stop()
@@ -512,7 +539,7 @@ mod.on_setting_changed = function(setting_id)
 		-- The context playing now follows its new setting at once. A custom song that is already playing keeps playing.
 		local source = source_of(current_context)
 		if source == "game" or source == "silence" or not AudioClient.is_playing() then
-			play_context(current_context, true)
+			replay_current_context()
 		end
 	end
 end
@@ -543,7 +570,7 @@ mod.update = function(dt)
 		-- A context that played native music for lack of files starts its new track now, not at its next change.
 		-- A custom track that is playing keeps playing, and the next pick uses the new list.
 		if enabled and not AudioClient.is_playing() then
-			play_context(current_context, true)
+			replay_current_context()
 		end
 	end
 
@@ -554,18 +581,27 @@ mod.update = function(dt)
 	AudioClient.set_menu_volume(menu_volume(dt))
 	AudioClient.update(dt)
 
+	-- Kept on every tick, since the song is already gone by the time playback is found to have stopped.
+	if playing_track and AudioClient.is_playing() then
+		playing_track.position = AudioClient.position()
+	end
+
 	-- Playback that stops working hands the music back to the game at once, not at the next context change.
 	-- Playback that works again, such as once a headset is plugged back in, takes over again at once too.
 	local available = AudioClient.available()
 	if not playback_lost and not available then
 		playback_lost = true
+		if was_playing and playing_track and playing_track.position then
+			lost_track = { context_name = playing_track.context_name, file_path = playing_track.file_path, position = playing_track.position }
+		end
 		Suppression.release()
 	elseif playback_lost and available then
 		playback_lost = false
 		if enabled then
-			play_context(current_context, true)
+			replay_current_context()
 		end
 	end
+	was_playing = AudioClient.is_playing()
 
 	-- An override folder can start to apply while the context stays the same, as when the game names a boss after its music started.
 	override_check_elapsed = override_check_elapsed + dt

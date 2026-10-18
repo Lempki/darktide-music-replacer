@@ -633,6 +633,63 @@ describe("MusicReplacer.lua when playback stops working", function()
 		assert_equal(harness:playing() ~= nil, true)
 		assert_equal(harness.engine:wwise_state("music_zone"), "None")
 	end)
+
+	it("continues the song where it was once playback works again", function()
+		local harness = in_hub()
+		local song = harness:playing()
+		harness.client.position = 64
+		harness:tick(0.1)
+
+		-- Losing the output takes the song with it.
+		harness.client.available = false
+		harness.client.current = nil
+		harness:tick(0.1)
+		harness.client.available = true
+		harness:tick(0.1)
+
+		assert_equal(harness:playing(), song)
+		assert_equal(harness:last_play().opts.start_position, 64)
+	end)
+
+	it("starts a new song once playback works again when none was playing as it stopped", function()
+		local harness = in_hub()
+		harness:set_setting("source_hub", "game")
+		harness:tick(0.1)
+
+		harness.client.available = false
+		harness:tick(0.1)
+		harness.client.available = true
+		harness:set_setting("source_hub", "custom")
+		harness:tick(0.1)
+
+		assert_equal(harness:last_play().opts.start_position, nil)
+	end)
+end)
+
+describe("MusicReplacer.lua during a change that is still settling", function()
+	it("waits for the change to commit before following a changed setting, so the music switches once", function()
+		local harness = in_mission({ combat_hold_seconds = 0 })
+		local stops = harness.client.stops
+		harness:state("music_combat", "normal")
+
+		harness:set_setting("source_mission_explore", "game")
+		assert_equal(harness.client.stops, stops)
+
+		harness:wait(0.7)
+		assert_equal(harness:playing():find("^mission_combat/") ~= nil, true)
+	end)
+
+	it("still follows the changed setting when the change settles back on the same context", function()
+		local harness = in_mission({ combat_hold_seconds = 0 })
+		harness:state("music_combat", "normal")
+		harness:state("music_combat", "None")
+
+		harness:set_setting("source_mission_explore", "game")
+		harness:wait(0.7)
+
+		assert_equal(harness:playing(), nil)
+		assert_equal(harness:logged("[playback] mission_explore: set to the game's own music"), true)
+	end)
 end)
 
 describe("MusicReplacer.lua turned off and on", function()
