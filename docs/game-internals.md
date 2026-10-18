@@ -47,8 +47,6 @@ The mission line names a mission by its code. These are the in-game names of the
 | `op_train` | Rolling Steel | `operations` | none |
 | `op_no_mans_land` | No Man's Land | `operations` | `operations` |
 
-`hm_strain`'s name is inferred, since it is the only disruption mission left for it.
-
 ## Missions and modes with notes
 
 | Mission | Notes |
