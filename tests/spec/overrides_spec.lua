@@ -46,6 +46,18 @@ describe("context.lua override names", function()
 		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "mission_event"), { "fm_cargo" })
 	end)
 
+	it("keeps the event's kind through a cutscene in the middle of the event", function()
+		local harness = in_mission()
+		harness:state("music_objective", "fortification_event")
+
+		harness:state("music_game_state", "cinematic")
+		assert_equal(harness:current(), nil)
+		harness:state("music_game_state", "mission")
+
+		assert_equal(harness:current(), "mission_event")
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "mission_event"), { "fortification_event", "fm_cargo" })
+	end)
+
 	it("offers the boss's kind once the game names it", function()
 		local harness = in_mission()
 		harness:state("music_combat", "boss")

@@ -384,7 +384,9 @@ end
 local function recompute(mod)
 	local new_context = resolve(mod)
 
-	if new_context ~= "mission_event" then
+	-- An event's kind lasts until the event and its hold are over, so a cutscene in the middle of it keeps it for its return.
+	-- The game does not set music_objective again after such an interruption, so the kind would not come back on its own.
+	if not is_event_active() and event_hold_remaining == 0 then
 		event_kind = nil
 	end
 
@@ -519,10 +521,12 @@ local function track_transition(mod, group_name, current, new_state)
 		music_game_state = new_state
 
 		-- A loading screen that ends in "mission" has reached its level, such as when joining a mission in progress.
+		-- Catching up inside a level ends the trip too, since its arrival may have passed while the mod was off.
 		-- The mission board comes before every "mission_ready", so a ready that was taken back does not linger.
+		local arrived = new_state == "mission" and (current == "loading" or current == "mission")
 		if new_state == "mission_ready" or new_state == "loadout" or new_state == "mission_briefing" then
 			heading_to_mission = true
-		elseif new_state == "mission_board" or ARRIVAL_GAME_STATES[new_state] or (new_state == "mission" and current == "loading") then
+		elseif new_state == "mission_board" or ARRIVAL_GAME_STATES[new_state] or arrived then
 			heading_to_mission = false
 		end
 

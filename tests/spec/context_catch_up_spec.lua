@@ -28,6 +28,31 @@ local function load_partway(states, mission_name, settings)
 	return engine, Context, changes, lines
 end
 
+describe("context.lua catching up after being turned off", function()
+	it("counts a trip into a mission as over when it catches up inside the mission", function()
+		local Harness = require("tests.helpers.context_harness")
+		local harness = Harness.new()
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+
+		-- Turned off on the way in, so the hook sees none of the trip.
+		for _, step in ipairs({ { "music_game_state", "loadout" }, { "music_game_state", "mission_briefing" },
+			{ "music_zone", "zone_3" }, { "music_game_state", "mission_intro" }, { "music_game_state", "mission" } }) do
+			harness.engine:set_state_unseen(step[1], step[2])
+		end
+		harness:mission("lm_cooling")
+
+		harness.Context.relearn()
+		harness.engine:reassert_states(GROUPS)
+		assert_equal(harness:current(), "mission_explore")
+
+		harness:state("music_zone", "None")
+		harness:state("music_game_state", "loading")
+
+		assert_equal(harness:current(), "loading")
+	end)
+end)
+
 describe("context.lua catching up", function()
 	it("resolves nothing until the game's next tick, then the hub, when loaded in the hub", function()
 		local engine, Context, changes = load_partway({ music_game_state = "mission", music_zone = "hub" }, "hub_ship")
