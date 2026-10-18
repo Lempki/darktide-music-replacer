@@ -124,6 +124,33 @@ describe("debug_overlay.lua text", function()
 		assert_equal(song_line, "Song: " .. string.rep("a", 45) .. "...  1:23 / 4:25")
 	end)
 
+	it("cuts a long name in another script between its characters, not inside one", function()
+		local DebugOverlay = load_overlay(new_constant_elements())
+		local snapshot = full_snapshot()
+		local kana = "\227\129\130" -- One Japanese character, three bytes in UTF-8.
+
+		snapshot.song = string.rep(kana, 60) .. ".mp3"
+		local song_line = DebugOverlay.text(snapshot):match("(Song: [^\n]+)")
+		assert_equal(song_line, "Song: " .. string.rep(kana, 45) .. "...  1:23 / 4:25")
+
+		snapshot.song = string.rep(kana, 48)
+		song_line = DebugOverlay.text(snapshot):match("(Song: [^\n]+)")
+		assert_equal(song_line, "Song: " .. string.rep(kana, 48) .. "  1:23 / 4:25")
+	end)
+
+	it("shows markup in a song or folder name as plain text", function()
+		local DebugOverlay = load_overlay(new_constant_elements())
+		local snapshot = full_snapshot()
+		snapshot.song = "red {#color(255,0,0)}.mp3"
+		snapshot.folder = "mission_combat/{#reset()}"
+
+		local text = DebugOverlay.text(snapshot, true)
+
+		assert_equal(text:find("{#color(255,0,0)}", 1, true), nil)
+		assert_equal(text:find("red { #color(255,0,0)}.mp3", 1, true) ~= nil, true)
+		assert_equal(text:find("mission_combat/{ #reset()}", 1, true) ~= nil, true)
+	end)
+
 	it("names the override folders the context looks for, after the folder it plays from", function()
 		local DebugOverlay = load_overlay(new_constant_elements())
 		local snapshot = full_snapshot()
@@ -187,6 +214,24 @@ describe("debug_overlay.lua element", function()
 		DebugOverlay.update()
 
 		assert_equal(first._elements[CLASS_NAME], nil)
+		assert_equal(second._elements[CLASS_NAME], made[2])
+	end)
+
+	it("adds its element to a new UI without touching the one the game tore down", function()
+		local first = new_constant_elements()
+		local DebugOverlay, made, _, ui = load_overlay(first)
+		DebugOverlay.set_enabled(true, "top_left")
+
+		-- The game's teardown destroys every element, then drops its element list.
+		made[1]:destroy("renderer")
+		made[1].destroyed_with = nil
+		first._elements_array = nil
+
+		local second = new_constant_elements()
+		ui.current = second
+		DebugOverlay.update()
+
+		assert_equal(made[1].destroyed_with, nil)
 		assert_equal(second._elements[CLASS_NAME], made[2])
 	end)
 

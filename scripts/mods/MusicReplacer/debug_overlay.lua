@@ -53,11 +53,28 @@ local function decibels(level)
 	return level > 0 and 20 * math.log10(level) or -math.huge
 end
 
+-- Cuts on a character boundary, since a name in another script uses several bytes per character and half a character garbles the text.
 local function shorten(name)
-	if #name <= MAX_SONG_CHARACTERS then
-		return name
+	local characters = 0
+	local cut = nil
+	for index = 1, #name do
+		-- Each UTF-8 character starts with a byte outside 0x80 to 0xBF.
+		local byte = name:byte(index)
+		if byte < 0x80 or byte >= 0xC0 then
+			characters = characters + 1
+			if characters == MAX_SONG_CHARACTERS - 2 then
+				cut = index - 1
+			elseif characters > MAX_SONG_CHARACTERS then
+				return name:sub(1, cut) .. "..."
+			end
+		end
 	end
-	return name:sub(1, MAX_SONG_CHARACTERS - 3) .. "..."
+	return name
+end
+
+-- File and folder names are the player's own text, and "{#" starts a tag in the game's markup, so it is broken up.
+local function plain(text)
+	return (text:gsub("{#", "{ #"))
 end
 
 -- The overlay's lines for a snapshot from MusicReplacer.lua, each { label, value }, and timing = true on the line about timing.
@@ -114,7 +131,7 @@ function DebugOverlay.text(snapshot, colored)
 	for index, line in ipairs(DebugOverlay.lines(snapshot)) do
 		if colored then
 			local value_color = line.timing and TIMING_COLOR or RESET
-			rows[index] = LABEL_COLOR .. line[1] .. ": " .. value_color .. line[2] .. RESET
+			rows[index] = LABEL_COLOR .. line[1] .. ": " .. value_color .. plain(line[2]) .. RESET
 		else
 			rows[index] = line[1] .. ": " .. line[2]
 		end
@@ -146,7 +163,10 @@ end
 local function remove()
 	local constant_elements = installed_into
 	installed_into = nil
-	if not constant_elements then
+
+	-- The game destroys every element of a constant UI it tears down, ours included, and then drops its element list.
+	-- So a torn-down UI has nothing left to remove, and destroying the element again would act on a dead object.
+	if not constant_elements or not constant_elements._elements_array then
 		return
 	end
 

@@ -147,7 +147,9 @@ return function(DebugOverlay)
 		if self._refresh_in <= 0 then
 			self._refresh_in = REFRESH_SECONDS
 			self._widgets_by_name.overlay.content.text = DebugOverlay.current_text()
-			self:_fit_backdrop(ui_renderer)
+
+			-- This runs inside the game's own UI update, so a failure here only leaves the backdrop at its last size.
+			pcall(self._fit_backdrop, self, ui_renderer)
 		end
 
 		Element.super.update(self, dt, t, ui_renderer, render_settings, input_service)
