@@ -23,8 +23,12 @@ local MFSTARTUP_LITE = 1 -- Local files only, no network sources.
 local FIRST_AUDIO_STREAM = 0xFFFFFFFD
 local ALL_STREAMS = 0xFFFFFFFE
 local MEDIA_SOURCE = 0xFFFFFFFF
+local ERROR_FLAG = 0x1
 local END_OF_STREAM_FLAG = 0x2
 local MEDIA_TYPE_CHANGED_FLAG = 0x20
+
+-- Reads in a row that bring no sample before the file counts as ended. Real files bring one with nearly every read.
+local MAX_EMPTY_READS = 100
 local VT_I8 = 20
 local HUNDRED_NANOSECONDS = 10000000
 
@@ -123,27 +127,10 @@ end
 local Decoder = {}
 Decoder.__index = Decoder
 
--- Asks the reader for 16-bit PCM from the first audio stream, then reads back the exact format it chose.
-local function configure_pcm(reader)
+-- Reads back the exact format the reader decodes to now, as a plain 16-bit PCM format, or nil and why.
+local function read_format(reader)
 	local out = ffi.new("void *[1]")
 	local succeeded = NativeFfi.succeeded
-
-	call(reader, SET_STREAM_SELECTION, ALL_STREAMS, 0)
-	call(reader, SET_STREAM_SELECTION, FIRST_AUDIO_STREAM, 1)
-
-	if not succeeded(mfplat.MusicReplacer_MFCreateMediaType(out)) then
-		return nil, "creating a media type failed"
-	end
-	local wanted = out[0]
-	call(wanted, SET_GUID, guids.major_type, guids.audio)
-	call(wanted, SET_GUID, guids.subtype, guids.pcm)
-	call(wanted, SET_UINT32, guids.bits_per_sample, 16)
-	local hresult = call(reader, SET_CURRENT_MEDIA_TYPE, FIRST_AUDIO_STREAM, nil, wanted)
-	NativeFfi.release(wanted)
-
-	if not succeeded(hresult) then
-		return nil, "the file has no audio stream Windows can decode to PCM (" .. NativeFfi.hex(hresult) .. ")"
-	end
 
 	if not succeeded(call(reader, GET_CURRENT_MEDIA_TYPE, FIRST_AUDIO_STREAM, out)) then
 		return nil, "reading the decoded format failed"
@@ -151,7 +138,7 @@ local function configure_pcm(reader)
 	local actual = out[0]
 	local format_out = ffi.new("MusicReplacer_WAVEFORMATEX *[1]")
 	local size = ffi.new("uint32_t[1]")
-	hresult = mfplat.MusicReplacer_MFCreateWaveFormatExFromMFMediaType(actual, format_out, size, 0)
+	local hresult = mfplat.MusicReplacer_MFCreateWaveFormatExFromMFMediaType(actual, format_out, size, 0)
 	NativeFfi.release(actual)
 
 	if not succeeded(hresult) then
@@ -170,6 +157,30 @@ local function configure_pcm(reader)
 	NativeFfi.ole32().MusicReplacer_CoTaskMemFree(format_out[0])
 
 	return format
+end
+
+-- Asks the reader for 16-bit PCM from the first audio stream, then reads back the exact format it chose.
+local function configure_pcm(reader)
+	local out = ffi.new("void *[1]")
+
+	call(reader, SET_STREAM_SELECTION, ALL_STREAMS, 0)
+	call(reader, SET_STREAM_SELECTION, FIRST_AUDIO_STREAM, 1)
+
+	if not NativeFfi.succeeded(mfplat.MusicReplacer_MFCreateMediaType(out)) then
+		return nil, "creating a media type failed"
+	end
+	local wanted = out[0]
+	call(wanted, SET_GUID, guids.major_type, guids.audio)
+	call(wanted, SET_GUID, guids.subtype, guids.pcm)
+	call(wanted, SET_UINT32, guids.bits_per_sample, 16)
+	local hresult = call(reader, SET_CURRENT_MEDIA_TYPE, FIRST_AUDIO_STREAM, nil, wanted)
+	NativeFfi.release(wanted)
+
+	if not NativeFfi.succeeded(hresult) then
+		return nil, "the file has no audio stream Windows can decode to PCM (" .. NativeFfi.hex(hresult) .. ")"
+	end
+
+	return read_format(reader)
 end
 
 local function read_duration(reader)
@@ -199,11 +210,13 @@ function MediaDecoder.open(path)
 		return nil, err
 	end
 
-	return setmetatable({
+	local decoder = setmetatable({
 		reader = reader,
 		format = format,
 		duration = read_duration(reader),
 		source_ended = false,
+		format_changed = false,
+		empty_reads = 0,
 		-- The part of a decoded chunk that did not fit the caller's buffer, on the Windows heap.
 		carry = nil,
 		carry_capacity = 0,
@@ -217,6 +230,9 @@ function MediaDecoder.open(path)
 		data = ffi.new("uint8_t *[1]"),
 		length = ffi.new("uint32_t[1]"),
 	}, Decoder)
+
+	decoder:prime()
+	return decoder
 end
 
 -- Keeps the bytes of a decoded chunk that did not fit, growing the carry buffer when a chunk is larger than any before.
@@ -236,6 +252,101 @@ local function keep_rest(self, source, bytes)
 	self.carry_bytes = bytes
 end
 
+local function has_flag(flags, flag)
+	return math.floor(flags / flag) % 2 == 1
+end
+
+-- Whether to follow a format change the reader reports, which also updates the format before any audio has been handed out.
+-- An AAC file at 24 kHz or less is first reported at twice its rate, and a mono one as stereo, in case it is HE-AAC.
+-- Its real format comes with its first sample, so a change at that point is the file's true format.
+-- Later, only a change that keeps the channels and the rate is followed, since a voice keeps the format it was created with.
+local function follows_format_change(self)
+	local format = read_format(self.reader)
+	if not format then
+		return false
+	end
+
+	if self.priming then
+		self.format = format
+		return true
+	end
+
+	return format.nChannels == self.format.nChannels and format.nSamplesPerSec == self.format.nSamplesPerSec
+end
+
+-- Reads the next sample and handles what the reader reports with it. Returns the sample, which the caller releases, or nil.
+local function next_sample(self)
+	self.out[0] = nil
+	local hresult = call(self.reader, READ_SAMPLE, FIRST_AUDIO_STREAM, 0, self.stream_index, self.flags, self.timestamp, self.out)
+	local flags = self.flags[0]
+	if not NativeFfi.succeeded(hresult) or has_flag(flags, END_OF_STREAM_FLAG) or has_flag(flags, ERROR_FLAG) then
+		self.source_ended = true
+	end
+
+	-- A file whose format really changes partway, such as an mp3 that mixes sample rates, would play the rest at the wrong speed.
+	-- So the file ends there instead, and the changed sample is dropped.
+	local sample = self.out[0]
+	if has_flag(flags, MEDIA_TYPE_CHANGED_FLAG) and not follows_format_change(self) then
+		self.source_ended = true
+		self.format_changed = true
+		if sample ~= nil then
+			NativeFfi.release(sample)
+			sample = nil
+		end
+	end
+
+	-- A reader that keeps answering with no sample and no end, as a broken file can, would otherwise spin the game's thread.
+	if sample == nil then
+		self.empty_reads = self.empty_reads + 1
+		if self.empty_reads >= MAX_EMPTY_READS then
+			self.source_ended = true
+		end
+	else
+		self.empty_reads = 0
+	end
+
+	return sample
+end
+
+-- Copies up to `room` bytes of `sample` to `target`, keeps the rest for the next read, and releases the sample.
+-- Returns how many bytes it copied.
+local function take_sample(self, sample, target, room)
+	local count = 0
+
+	if NativeFfi.succeeded(call(sample, CONVERT_TO_CONTIGUOUS_BUFFER, self.out)) then
+		local buffer = self.out[0]
+		if NativeFfi.succeeded(call(buffer, LOCK, self.data, nil, self.length)) then
+			local length = self.length[0]
+			count = math.min(length, room)
+			if count > 0 then
+				ffi.copy(target, self.data[0], count)
+			end
+
+			if length > count then
+				keep_rest(self, self.data[0] + count, length - count)
+			end
+
+			call(buffer, UNLOCK)
+		end
+		NativeFfi.release(buffer)
+	end
+	NativeFfi.release(sample)
+
+	return count
+end
+
+-- Reads the first sample ahead and keeps it for the first read, so `format` is already the one the file plays in.
+-- Called once by MediaDecoder.open.
+function Decoder:prime()
+	self.priming = true
+	local sample = next_sample(self)
+	self.priming = false
+
+	if sample ~= nil then
+		take_sample(self, sample, nil, 0)
+	end
+end
+
 -- Fills `target`, a byte pointer with room for `capacity` bytes, and returns how many bytes it wrote.
 -- It writes fewer only at the end of the file. Keep `capacity` a multiple of the format's block size.
 function Decoder:read_into(target, capacity)
@@ -250,42 +361,9 @@ function Decoder:read_into(target, capacity)
 	end
 
 	while written < capacity and not self.source_ended and self.reader ~= nil do
-		self.out[0] = nil
-		local hresult = call(self.reader, READ_SAMPLE, FIRST_AUDIO_STREAM, 0, self.stream_index, self.flags, self.timestamp, self.out)
-		if not NativeFfi.succeeded(hresult) or math.floor(self.flags[0] / END_OF_STREAM_FLAG) % 2 == 1 then
-			self.source_ended = true
-		end
-
-		-- A file whose format changes partway, such as an mp3 that mixes sample rates, would play the rest at the wrong speed.
-		-- Its voice keeps the format it was created with, so the file ends here instead, and the changed sample is dropped.
-		local sample = self.out[0]
-		if math.floor(self.flags[0] / MEDIA_TYPE_CHANGED_FLAG) % 2 == 1 then
-			self.source_ended = true
-			self.format_changed = true
-			if sample ~= nil then
-				NativeFfi.release(sample)
-				sample = nil
-			end
-		end
-
+		local sample = next_sample(self)
 		if sample ~= nil then
-			if NativeFfi.succeeded(call(sample, CONVERT_TO_CONTIGUOUS_BUFFER, self.out)) then
-				local buffer = self.out[0]
-				if NativeFfi.succeeded(call(buffer, LOCK, self.data, nil, self.length)) then
-					local length = self.length[0]
-					local count = math.min(length, capacity - written)
-					ffi.copy(target + written, self.data[0], count)
-					written = written + count
-
-					if length > count then
-						keep_rest(self, self.data[0] + count, length - count)
-					end
-
-					call(buffer, UNLOCK)
-				end
-				NativeFfi.release(buffer)
-			end
-			NativeFfi.release(sample)
+			written = written + take_sample(self, sample, target + written, capacity - written)
 		end
 	end
 
@@ -313,6 +391,7 @@ function Decoder:seek(seconds)
 	if ok then
 		self.source_ended = false
 		self.carry_bytes = 0
+		self.empty_reads = 0
 	end
 	return ok
 end
