@@ -51,6 +51,12 @@ describe("context.lua Meat Grinder", function()
 		assert_equal(harness:current(), "mission_combat")
 	end)
 
+	it("resolves the mission contexts for a setting value it does not know, as for custom", function()
+		local harness = in_meat_grinder("custom_play_to_end")
+
+		assert_equal(harness:current(), "mission_explore")
+	end)
+
 	it("re-resolves at once when the setting changes during a visit", function()
 		local harness = in_meat_grinder("silence")
 		harness:clear_changes()

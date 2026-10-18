@@ -247,6 +247,23 @@ describe("MusicReplacer.lua music per context", function()
 		assert_equal(harness:playing() ~= nil, true)
 		assert_equal(harness.engine:wwise_state("music_zone"), "None")
 	end)
+
+	it("follows a Meat Grinder change between Silence and Game's Own at once, during the visit", function()
+		local harness = MainHarness.new({ settings = { source_meat_grinder = "silence" }, files = {} })
+		harness:cold_start_to_hub()
+		harness:state("music_zone", "None")
+		harness:state("music_game_state", "loading")
+		harness:mission(nil)
+		harness:wait(3)
+		harness:mission("tg_shooting_range")
+		harness:state("music_game_state", "mission")
+		harness:settle()
+		assert_equal(harness:logged("[playback] meat_grinder: set to silence"), true)
+
+		harness:set_setting("source_meat_grinder", "game")
+
+		assert_equal(harness:logged("[playback] meat_grinder: set to the game's own music"), true)
+	end)
 end)
 
 describe("MusicReplacer.lua volume", function()

@@ -304,7 +304,9 @@ local function resolve(mod)
 		return nil
 	end
 
-	if mission_name == MEAT_GRINDER_MISSION and mod:get("source_meat_grinder") ~= "custom" then
+	-- An unknown stored value plays as "custom", the same as in MusicReplacer.lua's source_of.
+	local meat_grinder_source = mission_name == MEAT_GRINDER_MISSION and mod:get("source_meat_grinder")
+	if meat_grinder_source == "game" or meat_grinder_source == "silence" then
 		return "meat_grinder"
 	end
 

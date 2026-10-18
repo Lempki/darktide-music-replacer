@@ -449,6 +449,11 @@ end
 mod.on_setting_changed = function(setting_id)
 	if setting_id == "source_meat_grinder" or setting_id == "daemonhost_boss_music" or setting_id == "captain_boss_music" then
 		Context.refresh(mod)
+
+		-- Game's Own and Silence both resolve meat_grinder, so switching between them changes no context and needs a replay here.
+		if enabled and setting_id == "source_meat_grinder" and current_context == "meat_grinder" and Context.current() == "meat_grinder" then
+			play_context(current_context, true)
+		end
 	elseif setting_id == "debug_overlay" or setting_id == "debug_overlay_corner" or setting_id == "debug_overlay_scale" then
 		apply_overlay_settings()
 	elseif setting_id == "custom_music_volume" then
