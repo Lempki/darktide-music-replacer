@@ -86,7 +86,7 @@ local function get_log_file()
 
 	local file, err = _io.open(path, file_mode)
 	if not file then
-		mod:error("[MusicReplacer] could not open log file: " .. tostring(err))
+		mod:error("Music Replacer could not open diagnostic.log: %s", tostring(err))
 		return nil
 	end
 

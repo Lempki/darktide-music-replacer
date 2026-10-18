@@ -152,7 +152,7 @@ Music Replacer decodes your files with Media Foundation, Windows' own audio deco
 ## Troubleshooting
 
 * **No custom music anywhere.** Check that `MusicReplacer` is listed below `dmf` in `mod_load_order.txt`, that Music Replacer appears in the mod options and is turned on, and that your files sit directly inside the audio folders in a supported format.
-* **The chat shows "Windows audio playback could not start".** The mod could not start Windows' audio decoder or audio engine, so the game's own music plays as usual. The message ends with the reason. On a Windows "N" edition, install the Media Feature Pack. If Windows had no audio output at that moment, the mod keeps trying and starts once there is one.
+* **The chat shows "Music Replacer could not start Windows audio playback".** The mod could not start Windows' audio decoder or audio engine, so the game's own music plays as usual. The message ends with the reason. On a Windows "N" edition, install the Media Feature Pack. If Windows had no audio output at that moment, the mod keeps trying and starts once there is one.
 * **One file never plays.** Windows cannot decode it. Convert it to another supported format. The mod picks up the new file by itself.
 
 To report a problem, attach these two files:

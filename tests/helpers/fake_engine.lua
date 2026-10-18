@@ -80,9 +80,11 @@ local function new_mod(engine)
 		return dofile(file)
 	end
 
+	-- Like DMF, formats the message with its arguments, and replaces a message that fails to format with the formatting error.
 	for _, level in ipairs({ "echo", "info", "warning", "error" }) do
-		mod[level] = function(_, message)
-			engine.messages[#engine.messages + 1] = { level = level, text = message }
+		mod[level] = function(_, message, ...)
+			local ok, text = pcall(string.format, tostring(message), ...)
+			engine.messages[#engine.messages + 1] = { level = level, text = ok and text or "(logging) string.format: " .. text }
 		end
 	end
 

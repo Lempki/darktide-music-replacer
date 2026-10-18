@@ -410,7 +410,7 @@ mod.on_all_mods_loaded = function()
 	if playback_lost then
 		local reason = tostring(AudioClient.error())
 		log("[player] unavailable: " .. reason)
-		mod:error("[MusicReplacer] Windows audio playback could not start, so the game's own music plays as usual: %s", reason)
+		mod:error("Music Replacer could not start Windows audio playback, so the game's music plays as usual: %s", reason)
 	end
 
 	-- The context may have resolved before Library and AudioClient were ready.

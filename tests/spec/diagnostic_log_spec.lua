@@ -118,6 +118,16 @@ describe("diagnostic_log.lua", function()
 		assert_equal(stops, 1)
 	end)
 
+	it("reports a log file it cannot open, with the reason intact", function()
+		local fs = new_file_system()
+		fs.io.open = function() return nil, "disk 100% full" end
+		local DiagnosticLog, engine = load_log(fs, false)
+
+		DiagnosticLog.write("[context] nil -> hub")
+
+		assert_deep_equal(engine.messages, { { level = "error", text = "Music Replacer could not open diagnostic.log: disk 100% full" } })
+	end)
+
 	it("writes nothing when it cannot find the user's folder", function()
 		local fs = new_file_system()
 		fs.os.getenv = function() return nil end

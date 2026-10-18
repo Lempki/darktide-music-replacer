@@ -392,7 +392,7 @@ local function recompute(mod)
 	for _, listener in ipairs(change_listeners) do
 		local ok, err = pcall(listener, resolved_context, old_context, current_boss_breed())
 		if not ok then
-			mod:error("[MusicReplacer] context change listener failed: " .. tostring(err))
+			mod:error("Music Replacer could not switch the music for a change in the game: %s", tostring(err))
 		end
 	end
 end
@@ -557,7 +557,7 @@ local function track_transition(mod, group_name, current, new_state)
 	for _, listener in ipairs(state_listeners) do
 		local ok, err = pcall(listener, group_name, new_state)
 		if not ok then
-			mod:error("[MusicReplacer] state change listener failed: " .. tostring(err))
+			mod:error("Music Replacer could not follow a change of the game's music state: %s", tostring(err))
 		end
 	end
 

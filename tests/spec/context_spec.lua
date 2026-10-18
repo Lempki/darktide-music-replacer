@@ -33,6 +33,19 @@ describe("context.lua", function()
 		assert_equal(engine:wwise_state("music_zone"), "hub")
 	end)
 
+	it("reports a failing listener with its error text intact, even with a percent sign in it", function()
+		local engine, Context = load_context()
+		Context.on_change(function() error("disk at 100% full", 0) end)
+		Context.on_state_change(function() error("volume at 50% now", 0) end)
+
+		engine:set_state("music_game_state", "loading")
+
+		assert_deep_equal(engine.messages, {
+			{ level = "error", text = "Music Replacer could not follow a change of the game's music state: volume at 50% now" },
+			{ level = "error", text = "Music Replacer could not switch the music for a change in the game: disk at 100% full" },
+		})
+	end)
+
 	it("resolves no context before any music state is set", function()
 		local _, Context = load_context()
 
