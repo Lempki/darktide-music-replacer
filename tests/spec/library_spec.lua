@@ -250,6 +250,33 @@ describe("library.lua watching the folders", function()
 		assert_equal(lines[#lines]:find("[library] listed the audio folders again", 1, true) ~= nil, true, lines[#lines])
 	end)
 
+	it("measures only the new and changed files when the watcher lists the folders again", function()
+		local disk = { hub = { "a.mp3", "b.mp3" } }
+		local Library, folders = listed_library(disk, { ["hub/a.mp3"] = 100, ["hub/b.mp3"] = 200, ["hub/c.mp3"] = 300 })
+		Library.update(0.016)
+		Library.update(0.016)
+		assert_deep_equal(folders.measured, { "hub/a.mp3", "hub/b.mp3" })
+
+		-- b.mp3 is replaced, which changes its stamp, and c.mp3 is added.
+		disk.hub = { "a.mp3", "b.mp3", "c.mp3" }
+		local list = folders.list
+		function folders.list(folder)
+			local names, stamps = list(folder)
+			if stamps and stamps["b.mp3"] then
+				stamps["b.mp3"] = "replaced"
+			end
+			return names, stamps
+		end
+		folders.changes = true
+		Library.update(0.016)
+		Library.update(3.1)
+		Library.update(0.016)
+		Library.update(0.016)
+
+		assert_deep_equal(folders.measured, { "hub/a.mp3", "hub/b.mp3", "hub/b.mp3", "hub/c.mp3" })
+		assert_equal(select(2, Library.find_file("hub", "hub/a.mp3")), 100)
+	end)
+
 	it("does not list the folders again while nothing changes", function()
 		local Library = listed_library({ hub = { "a.mp3" } })
 

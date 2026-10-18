@@ -180,6 +180,57 @@ describe("loudness.lua measuring", function()
 end)
 
 describe("loudness.lua cache", function()
+	-- Counts how often loudness.txt is written, which rewrites the whole file each time.
+	local function count_writes(test)
+		local open = test.fs.io.open
+		test.writes = 0
+		test.fs.io.open = function(path, mode)
+			if mode == "w" then
+				test.writes = test.writes + 1
+			end
+			return open(path, mode)
+		end
+	end
+
+	local function hub_songs(count)
+		local songs, listed = {}, {}
+		for index = 1, count do
+			songs["audio/hub/" .. index .. ".mp3"] = 10
+			listed[#listed + 1] = { "hub/" .. index .. ".mp3" }
+		end
+		return songs, listed
+	end
+
+	it("writes loudness.txt every 10 songs and once measuring is done, instead of after every song", function()
+		local songs, listed = hub_songs(12)
+		local Loudness, test = load_loudness(songs)
+		count_writes(test)
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries(listed))
+
+		measure_all(Loudness, "hub", 200)
+
+		assert_equal(#test.details, 12)
+		assert_equal(test.writes, 2)
+	end)
+
+	it("writes the songs measured since the last write when it unloads", function()
+		local songs, listed = hub_songs(3)
+		local Loudness, test = load_loudness(songs)
+		count_writes(test)
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries(listed))
+		while #test.details < 1 do
+			Loudness.update("hub")
+		end
+		assert_equal(test.writes, 0)
+
+		Loudness.shutdown()
+
+		assert_equal(test.writes, 1)
+		assert_equal(test.fs.files[CACHE]:find("hub/1.mp3", 1, true) ~= nil, true)
+	end)
+
 	it("keeps the results in loudness.txt, so the next launch measures nothing again", function()
 		local Loudness, test = load_loudness({ ["audio/hub/a.mp3"] = 12, ["audio/hub/b.mp3"] = 0 })
 		Loudness.set_enabled(true)

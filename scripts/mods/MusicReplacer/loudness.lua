@@ -45,6 +45,11 @@ local failed = {} -- file_path -> the stamp it could not be opened at, so it is 
 local pending = {} -- Files still to measure, in listing order.
 local active = nil -- The song being measured: file_path, stamp, decoder, meter, buffer, samples, capacity, block_align.
 local measured_count = 0 -- Songs measured since the last summary line.
+local unsaved_count = 0 -- Songs measured since loudness.txt was last written.
+
+-- Writing loudness.txt rewrites the whole file on the game's thread, so a first measuring of a large library writes it in batches.
+-- It is also written once measuring is done, and on unload, so little is measured twice after a crash.
+local SAVE_EVERY_SONGS = 10
 local measured_ms = 0
 
 -- Wall time in seconds, or nil where there is no clock, which measures one chunk per update.
@@ -135,8 +140,13 @@ local function finish_active()
 
 	measured_count = measured_count + 1
 	measured_ms = measured_ms + active.ms
+	unsaved_count = unsaved_count + 1
 	stop_active()
-	save_cache()
+
+	if unsaved_count >= SAVE_EVERY_SONGS or #pending == 0 then
+		unsaved_count = 0
+		save_cache()
+	end
 
 	if #pending == 0 then
 		log_fn(string.format("[loudness] measured %d song(s), %.1f s of measuring spread over the updates", measured_count, measured_ms / 1000))
@@ -305,6 +315,11 @@ end
 -- Call from the main mod file's mod.on_unload.
 function Loudness.shutdown()
 	stop_active()
+
+	if unsaved_count > 0 then
+		unsaved_count = 0
+		save_cache()
+	end
 end
 
 return Loudness

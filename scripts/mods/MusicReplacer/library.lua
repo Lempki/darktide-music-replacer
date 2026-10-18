@@ -42,6 +42,7 @@ local diagnostic_log = function() end -- No-op unless a real logger is passed to
 local AudioFolders = nil
 local waiting_to_scan = false
 local rescan_requested = false
+local full_rescan_requested = false -- Set by the Rescan Audio Folders button, which measures every file again.
 
 -- A file still being copied would be measured half-written and skipped as unplayable, so a change waits for this much quiet.
 local QUIET_SECONDS = 3
@@ -54,6 +55,7 @@ local last_picked = {} -- context_name -> the file path most recently returned.
 local reported_missing = {} -- file_path -> true once a missing file has been logged.
 local unplayable = {} -- file_path -> true once Windows could not open the file.
 local stamps = {} -- file_path -> its size and write time at the last listing.
+local previous_stamps = {} -- The stamps of the listing before, so an unchanged file keeps what was measured of it.
 local listed_listeners = {}
 
 -- file_path -> seconds, or false when the file could not be measured.
@@ -75,6 +77,12 @@ local function list_folder(folder_key)
 		local file_path = folder_key .. "/" .. name
 		file_paths[#file_paths + 1] = file_path
 		stamps[file_path] = name_stamps and name_stamps[name] or ""
+
+		-- A new or changed file is measured again. An empty stamp says nothing about a change, so it counts as changed.
+		if stamps[file_path] == "" or stamps[file_path] ~= previous_stamps[file_path] then
+			durations[file_path] = nil
+			unplayable[file_path] = nil
+		end
 
 		if durations[file_path] == nil then
 			measure_queue[#measure_queue + 1] = file_path
@@ -107,6 +115,7 @@ local function describe_counts()
 end
 
 local function scan_folders(what)
+	previous_stamps = stamps
 	stamps = {}
 	lists = {}
 	override_folders = {}
@@ -123,6 +132,14 @@ local function scan_folders(what)
 			end
 		end
 		override_folders[context_name] = keys
+	end
+
+	-- A file that is no longer listed has nothing left to keep.
+	for file_path in pairs(durations) do
+		if not stamps[file_path] then
+			durations[file_path] = nil
+			unplayable[file_path] = nil
+		end
 	end
 
 	reported_missing = {}
@@ -223,10 +240,12 @@ function Library.on_listed(listener)
 	listed_listeners[#listed_listeners + 1] = listener
 end
 
--- Asks for every folder to be listed again on the next update.
+-- Asks for every folder to be listed again on the next update, and every file to be measured again.
+-- The button is how a player asks to retry a file that would not play, so it does not keep what was measured before.
 function Library.request_rescan()
 	if AudioFolders then
 		rescan_requested = true
+		full_rescan_requested = true
 	end
 end
 
@@ -256,9 +275,12 @@ function Library.update(dt)
 
 	rescan_requested = false
 
-	-- A file replaced under the same name gets measured again.
-	durations = {}
-	unplayable = {}
+	-- A rescan the watcher started only measures the new and changed files, which their stamps show.
+	if full_rescan_requested then
+		full_rescan_requested = false
+		durations = {}
+		unplayable = {}
+	end
 	measure_queue = {}
 	measure_index = 1
 	measure_seconds = 0
