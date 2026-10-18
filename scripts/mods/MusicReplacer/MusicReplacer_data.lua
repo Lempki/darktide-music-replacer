@@ -2,32 +2,15 @@
 -- Their songs come first, then what plays where and how loud, then fine timing, and troubleshooting last.
 -- Every setting names its tooltip: DMF formats named strings, turning "%%" into "%", but shows an implicit description's "%%" as it is.
 
--- What a context plays. The default keeps the mod's plain behavior: custom songs where there are files, the game's music elsewhere.
--- Contexts without Play to End. No music follows a loading screen's song for it to finish into.
--- Meat Grinder's Custom plays the mission contexts instead.
-local function plain_source_widget(context_name, default_value)
+-- What a context plays. Custom keeps the mod's plain behavior: custom songs where there are files, the game's music elsewhere.
+local function source_widget(context_name, default_value)
 	return {
 		setting_id = "source_" .. context_name,
 		type = "dropdown",
 		tooltip = "source_" .. context_name .. "_tooltip",
-		default_value = default_value,
+		default_value = default_value or "custom",
 		options = {
 			{ text = "source_custom", value = "custom" },
-			{ text = "source_game", value = "game" },
-			{ text = "source_silence", value = "silence" },
-		},
-	}
-end
-
-local function source_widget(context_name)
-	return {
-		setting_id = "source_" .. context_name,
-		type = "dropdown",
-		tooltip = "source_" .. context_name .. "_tooltip",
-		default_value = "custom",
-		options = {
-			{ text = "source_custom", value = "custom" },
-			{ text = "source_custom_play_to_end", value = "custom_play_to_end" },
 			{ text = "source_game", value = "game" },
 			{ text = "source_silence", value = "silence" },
 		},
@@ -64,8 +47,8 @@ return {
 				type = "group",
 				sub_widgets = {
 					source_widget("hub"),
-					plain_source_widget("loading", "custom"),
-					plain_source_widget("mission_preparation", "custom"),
+					source_widget("loading"),
+					source_widget("mission_preparation"),
 					source_widget("mission_explore"),
 					source_widget("mission_combat"),
 					source_widget("mission_horde"),
@@ -76,7 +59,7 @@ return {
 					source_widget("mission_defeat"),
 					source_widget("mortis_trials_wave"),
 					source_widget("mortis_trials_break"),
-					plain_source_widget("meat_grinder", "silence"),
+					source_widget("meat_grinder", "silence"),
 				},
 			},
 			{

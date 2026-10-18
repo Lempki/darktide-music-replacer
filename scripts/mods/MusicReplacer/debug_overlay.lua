@@ -61,7 +61,7 @@ local function shorten(name)
 end
 
 -- The overlay's lines for a snapshot from MusicReplacer.lua, each { label, value }, and timing = true on the line about timing.
--- Its fields are turned_off, context, status, folder, overrides, pending, pending_seconds, hold, hold_seconds, and finishing.
+-- Its fields are turned_off, context, status, folder, overrides, pending, pending_seconds, hold, and hold_seconds.
 -- The song's are song, position, and duration, and the volume's are volume, menu_level, song_level, and evening_out.
 function DebugOverlay.lines(snapshot)
 	if not snapshot then
@@ -83,16 +83,13 @@ function DebugOverlay.lines(snapshot)
 		lines[#lines + 1] = { "Folder", folder }
 	end
 
-	-- Holds, changes that are still settling, and songs playing to their end explain why the music has not changed yet.
+	-- Holds and changes that are still settling explain why the music has not changed yet.
 	local timing = {}
 	if snapshot.hold then
 		timing[#timing + 1] = string.format("%s hold %.1fs", snapshot.hold, snapshot.hold_seconds or 0)
 	end
 	if snapshot.pending then
 		timing[#timing + 1] = string.format("%s in %.1fs", snapshot.pending, snapshot.pending_seconds or 0)
-	end
-	if snapshot.finishing then
-		timing[#timing + 1] = snapshot.finishing .. " song playing to its end"
 	end
 	if #timing > 0 then
 		lines[#lines + 1] = { "Waiting", table.concat(timing, ", "), timing = true }

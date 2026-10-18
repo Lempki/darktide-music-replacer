@@ -10,7 +10,7 @@ This is Music Replacer, a mod for Warhammer 40,000: Darktide that replaces the g
 * Switching between songs is a true crossfade: the outgoing song fades out while the incoming one fades in.
 * Explore and combat songs, and Mortis Trials wave and break songs, continue from where they stopped when the music switches back to them, instead of restarting. Horde, boss, and event songs continue too after higher-priority music interrupts them, such as a boss during a horde or a last stand during an event, as long as that horde, fight, or event is still going.
 * Follows the in-game master and music volume sliders at once, in both directions, without restarting the song.
-* Lets you pick, per context, your songs, the game's own music, or silence, and lets a song play to its end, such as a boss song after the boss dies.
+* Lets you pick, per context, your songs, the game's own music, or silence.
 * Keeps the Meat Grinder training area silent unless you pick music there, which doubles as a quick way to test your files.
 * Native music is silenced only once a replacement track is available, so a context with no files behaves exactly like an unmodified game.
 
@@ -93,11 +93,10 @@ One dropdown per context: Hub, Loading, Preparation, Explore, Combat, Horde, Bos
 | Choice | What plays |
 |---|---|
 | Custom | Your songs from the context's folder, or the game's own music while the folder is empty. This is the default for every context except Meat Grinder. |
-| Custom (Play to End) | The same, and a song also plays to its end after the music moves to a less important context, such as from a boss back to exploring. The next context's music starts once the song ends. Anything more important, the mission's end, and a loading screen still cut the song short. If the context comes back before the song ends, the song simply goes on. |
 | Game's Own | The game's own music, even with songs in the folder, so you can turn one context off without moving files. |
 | Silence | Nothing. The game's own music is silenced too. |
 
-Loading, Preparation, and Meat Grinder offer Custom, Game's Own, and Silence, and Meat Grinder defaults to Silence. There, Custom plays your explore and combat songs, which is a quick way to test them, and Game's Own plays the game's combat music. A changed choice applies at once, also to the context playing now.
+Meat Grinder defaults to Silence. There, Custom plays your explore and combat songs, which is a quick way to test them, and Game's Own plays the game's combat music. A changed choice applies at once, also to the context playing now.
 
 ### Volume
 
@@ -173,7 +172,7 @@ The mod always logs the important events, such as which music plays and why, and
 * [x] Adjustable combat music hold, so a lull in a fight does not drop back to explore music.
 * [x] Opt-in diagnostic-mode setting, off by default.
 * [x] A setting for whether Meat Grinder plays music, off by default.
-* [x] Options per context: custom music, the game's own music, or silence, and letting a song play to its end after its context is over. Meat Grinder is one more context with these options.
+* [x] Options per context: custom music, the game's own music, or silence. Meat Grinder is one more context with these options.
 * [x] Custom music for the last stand, when only one player of the team is still alive.
 * [x] Custom music for mission events, such as holdouts, escapes, and scripted boss fights.
 * [x] A setting for whether angered daemonhosts play boss music, off by default.

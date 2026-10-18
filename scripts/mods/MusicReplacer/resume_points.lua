@@ -41,13 +41,6 @@ local function ends_sequence(context_name, next_context_name)
 	return SEQUENCES[context_name] == true and PRIORITY[next_context_name] ~= nil and PRIORITY[next_context_name] < PRIORITY[context_name]
 end
 
--- True when context_name ranks above other_context_name.
--- A context outside the ranking, such as the hub or a loading screen, ranks with nothing.
-function ResumePoints.outranks(context_name, other_context_name)
-	local rank, other_rank = PRIORITY[context_name], PRIORITY[other_context_name]
-	return rank ~= nil and other_rank ~= nil and rank > other_rank
-end
-
 -- Resuming this close to the end would play a few seconds and then switch songs anyway.
 local MIN_REMAINING_SECONDS = 10
 

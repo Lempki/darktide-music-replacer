@@ -83,19 +83,18 @@ describe("debug_overlay.lua text", function()
 			"Volume: custom 100%, menu 50%, song -7.9 dB")
 	end)
 
-	it("adds a line of its own for the hold, the pending change, and a song playing to its end", function()
+	it("adds a line of its own for the hold and the pending change", function()
 		local DebugOverlay = load_overlay(new_constant_elements())
 		local snapshot = full_snapshot()
 		snapshot.hold = "combat"
 		snapshot.hold_seconds = 6.24
 		snapshot.pending = "mission_boss"
 		snapshot.pending_seconds = 0.4
-		snapshot.finishing = "mission_boss"
 
 		local lines = DebugOverlay.lines(snapshot)
 
 		assert_equal(#lines, 5)
-		assert_deep_equal(lines[3], { "Waiting", "combat hold 6.2s, mission_boss in 0.4s, mission_boss song playing to its end", timing = true })
+		assert_deep_equal(lines[3], { "Waiting", "combat hold 6.2s, mission_boss in 0.4s", timing = true })
 	end)
 
 	it("dims the labels and colors the waiting line in the game's text markup", function()

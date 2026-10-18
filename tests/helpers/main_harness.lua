@@ -104,10 +104,6 @@ local function new_audio_client()
 		client.stops = client.stops + 1
 	end
 
-	function module.play_to_end()
-		client.played_to_end = client.current and client.current.file_path
-	end
-
 	function module.duration()
 		return client.current and client.current.opts.duration_seconds
 	end

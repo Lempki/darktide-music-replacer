@@ -15,8 +15,6 @@ local EMPTY_FOLDER_NOTE = "\n\nAn empty folder plays the game's own music, excep
 local function source_tooltip(when)
 	return "What plays " .. when .. ".\n\n" ..
 		highlight("Custom") .. " plays your songs from its folder. " ..
-		highlight("Custom (Play to End)") .. " also lets a song finish after the music moves to something less important, " ..
-		"such as from a boss back to exploring. " ..
 		highlight("Game's Own") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing." ..
 		EMPTY_FOLDER_NOTE
 end
@@ -50,9 +48,6 @@ local strings = {
 	},
 	source_custom = {
 		en = "Custom",
-	},
-	source_custom_play_to_end = {
-		en = "Custom (Play to End)",
 	},
 	source_game = {
 		en = "Game's Own",

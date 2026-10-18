@@ -57,10 +57,6 @@ local gave_up = {} -- context_name -> true once that context stopped retrying.
 -- The custom track AudioClient was last asked to play, so a context change can remember where it stopped.
 local playing_track = nil -- Fields: context_name, file_path, duration, is_only_file.
 
--- The context whose song plays on to its end after the music moved to a less important context, or nil.
--- Its setting is "Custom (Play to End)". The current context's own music starts once that song ends.
-local finishing_context = nil
-
 -- The folder the current context's songs come from: its own, or an override folder inside it, such as "mission_boss/chaos_spawn".
 -- Nil while the context plays no custom music by its setting, so no override is looked for.
 local current_folder = nil
@@ -72,11 +68,13 @@ local override_check_elapsed = 0
 -- What the current context plays, for the debug overlay: a choice's name, or why the game's music plays.
 local context_status = "game's music"
 
-local SOURCE_NAMES = { custom = "Custom", custom_play_to_end = "Custom (Play to End)", game = "Game's Own", silence = "Silence" }
+local SOURCE_NAMES = { custom = "Custom", game = "Game's Own", silence = "Silence" }
 
--- What a context plays, from its setting: "custom", "custom_play_to_end", "game", or "silence".
+-- What a context plays, from its setting: "custom", "game", or "silence".
+-- Earlier versions also offered "custom_play_to_end", which plays as "custom" now.
 local function source_of(context_name)
-	return mod:get("source_" .. context_name) or "custom"
+	local source = mod:get("source_" .. context_name)
+	return SOURCE_NAMES[source] and source or "custom"
 end
 
 -- The volume settings are percentages of the music's normal level.
@@ -101,8 +99,7 @@ local function menu_volume(dt)
 end
 
 local function remember_playing_track(next_context_name)
-	-- A song playing to its end belongs to a context that is over, so there is nothing to come back to.
-	if not playing_track or playing_track.context_name == next_context_name or not AudioClient.is_playing() or finishing_context then
+	if not playing_track or playing_track.context_name == next_context_name or not AudioClient.is_playing() then
 		return
 	end
 
@@ -151,7 +148,6 @@ local function play_context(context_name, is_new_context)
 		ResumePoints.enter(context_name)
 	end
 
-	finishing_context = nil
 	current_folder = nil
 
 	if not context_name then
@@ -227,13 +223,6 @@ local function play_context(context_name, is_new_context)
 		loop = is_only_file,
 		start_position = start_position,
 		on_finished = function(failed)
-			-- A song that played to its end makes way for the music of the context the game is in now.
-			if finishing_context == context_name then
-				log(string.format("[playback] %s: its song ended, moving on to %s", context_name, tostring(current_context)))
-				play_context(current_context, true)
-				return
-			end
-
 			-- A loop only gets here if its file could not be played.
 			-- After a context change, whatever triggered it already called play_context for the new context.
 			if current_context ~= context_name then
@@ -283,15 +272,6 @@ local debounce_elapsed = 0
 local pending_elapsed = 0
 local has_pending_change = false
 
--- True when the song playing now belongs to `context_name` and should play to its end before `next_context_name`'s music.
--- That is only when the music drops to a less important context, such as from a boss back to exploring.
-local function plays_to_end(context_name, next_context_name)
-	return context_name ~= nil and source_of(context_name) == "custom_play_to_end"
-		and playing_track ~= nil and playing_track.context_name == context_name
-		and AudioClient.is_playing()
-		and ResumePoints.outranks(context_name, next_context_name)
-end
-
 local function commit_pending_context()
 	has_pending_change = false
 
@@ -300,31 +280,7 @@ local function commit_pending_context()
 		return
 	end
 
-	local previous_context = current_context
 	current_context = pending_context
-
-	if finishing_context then
-		if pending_context == finishing_context then
-			-- Its context came back before the song ended, so the song simply goes on as that context's music.
-			finishing_context = nil
-			log(string.format("[playback] %s: back before its song ended, so the song goes on", pending_context))
-			return
-		end
-
-		-- The song goes on only through contexts that its own context outranks.
-		-- Anything else cuts it short: something more important, the mission's end, or a loading screen.
-		if ResumePoints.outranks(finishing_context, pending_context) then
-			ResumePoints.enter(pending_context)
-			return
-		end
-	elseif plays_to_end(previous_context, pending_context) then
-		finishing_context = previous_context
-		ResumePoints.enter(pending_context)
-		AudioClient.play_to_end()
-		log(string.format("[playback] %s: playing its song to the end before %s", previous_context, tostring(pending_context)))
-		return
-	end
-
 	play_context(pending_context, true) -- true marks a real context change.
 end
 
@@ -376,7 +332,6 @@ local function overlay_snapshot()
 		folder = current_folder,
 		overrides = current_context and table.concat(Context.override_keys(current_context), ", ") or nil,
 		pending_seconds = pending_seconds,
-		finishing = finishing_context,
 		song = song and song:match("[^/]+$"),
 		position = AudioClient.position(),
 		duration = AudioClient.duration(),
@@ -470,7 +425,6 @@ mod.on_disabled = function(initial_call)
 
 	-- A song that is turned off mid-mission continues from there if the mod is turned on again before the next loading screen.
 	remember_playing_track(nil)
-	finishing_context = nil
 	has_pending_change = false
 	current_context = nil
 	playing_track = nil
@@ -564,7 +518,7 @@ mod.update = function(dt)
 	override_check_elapsed = override_check_elapsed + dt
 	if override_check_elapsed >= OVERRIDE_CHECK_SECONDS then
 		override_check_elapsed = 0
-		if enabled and current_folder and not has_pending_change and not finishing_context then
+		if enabled and current_folder and not has_pending_change then
 			local folder = folder_for(current_context)
 			if folder ~= current_folder then
 				log(string.format("[playback] %s: switching from the %s folder to the %s folder", current_context, current_folder, folder))
