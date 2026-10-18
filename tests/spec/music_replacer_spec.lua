@@ -128,6 +128,17 @@ describe("MusicReplacer.lua songs that end", function()
 		assert_equal(harness:logged("using native music until the game restarts or the folders are rescanned"), true)
 	end)
 
+	it("does not count a short song that played through, by its decoder's length while the library has none", function()
+		local harness = in_hub({ hub = { { name = "short.mp3" }, { name = "other.mp3" } } })
+
+		for _ = 1, 3 do
+			harness:finish_song(2, false, 2)
+		end
+
+		assert_equal(#harness.client.plays, 4)
+		assert_equal(harness:playing() ~= nil, true)
+	end)
+
 	it("tries a context again after a rescan, once it gave up", function()
 		local harness = in_hub()
 		for _ = 1, 3 do
@@ -540,6 +551,47 @@ describe("MusicReplacer.lua override folders", function()
 
 		assert_equal(harness:playing(), "mission_boss/chaos_spawn/spawn.mp3")
 		assert_equal(harness:logged("[playback] mission_boss: switching from the mission_boss folder to the mission_boss/chaos_spawn folder"), true)
+	end)
+
+	it("falls back to the context's own folder once an override folder's songs would not play", function()
+		local harness = in_cooling({
+			mission_boss = { { name = "b.mp3", duration = 300 } },
+			["mission_boss/chaos_spawn"] = { { name = "spawn.mp3", duration = 300 }, { name = "spawn2.mp3", duration = 300 } },
+		})
+		harness:state("music_combat", "boss")
+		harness:settle()
+		harness:boss_start(harness:new_boss("chaos_spawn"))
+		harness:wait(0.6)
+		assert_equal(harness:playing(), "mission_boss/chaos_spawn/spawn.mp3")
+
+		for _ = 1, 3 do
+			harness:finish_song(0, true)
+		end
+
+		assert_equal(harness:playing(), "mission_boss/b.mp3")
+		assert_equal(harness:logged("from the mission_boss/chaos_spawn folder ended within 3s, trying the next folder"), true)
+
+		harness:wait(1)
+		assert_equal(harness:playing(), "mission_boss/b.mp3")
+	end)
+
+	it("plays the context's own folder when an override folder's files are gone from disk, without switching back", function()
+		local harness = MainHarness.new({ files = {
+			mission_explore = { { name = "x.mp3", duration = 300 } },
+			["mission_explore/lm_cooling"] = { { name = "cooling.mp3", duration = 300 } },
+		} })
+		harness.library.gone["mission_explore/lm_cooling"] = true
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness:enter_mission("lm_cooling", "zone_3")
+		harness:settle()
+		local plays = #harness.client.plays
+
+		harness:wait(2)
+
+		assert_equal(harness:playing(), "mission_explore/x.mp3")
+		assert_equal(#harness.client.plays, plays)
+		assert_equal(harness:logged("[playback] mission_explore: the mission_explore/lm_cooling folder has no songs left, trying the next folder"), true)
 	end)
 
 	it("plays an event kind's folder even while the event's own folder is empty", function()

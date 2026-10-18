@@ -46,6 +46,7 @@ local log_fn = function() end
 local current = nil -- Fields: stream, file_path, loop, level, duration, on_finished, elapsed, end_fading.
 local outgoing = {} -- { stream, file_path, loop, level, parked_elapsed } for songs fading out or parked, after a switch or a stop.
 local finished_elapsed = 0 -- The last finished track's elapsed time, which on_finished reads through elapsed().
+local finished_duration = nil -- The last finished track's length, which on_finished reads through duration().
 local gain = 1
 local current_master_slider = nil
 local current_music_slider = nil
@@ -110,9 +111,17 @@ function AudioClient.is_playing()
 	return current ~= nil
 end
 
+local function duration_of(entry)
+	return (entry.stream and entry.stream.duration) or entry.duration
+end
+
 -- The current song's length in seconds, from its decoder or the library, or nil.
+-- After a track ends, its length until the next play or stop.
 function AudioClient.duration()
-	return current and ((current.stream and current.stream.duration) or current.duration) or nil
+	if current then
+		return duration_of(current)
+	end
+	return finished_duration
 end
 
 -- The Custom Music Volume, the menu lowering where its fade is now, and the current song's own level, as linear scales.
@@ -292,6 +301,7 @@ function AudioClient.play(file_path, opts)
 
 	used = true
 	finished_elapsed = 0
+	finished_duration = nil
 	current_master_slider, current_music_slider = read_sliders()
 	gain = current_gain()
 	local level = level_of(file_path)
@@ -361,6 +371,7 @@ function AudioClient.stop()
 	end
 	current = nil
 	finished_elapsed = 0
+	finished_duration = nil
 end
 
 -- Calls on_finished with true when the file could not be played at all, or `file_failed` says it stopped for its own reasons.
@@ -368,6 +379,7 @@ local function finish(file_failed)
 	local on_finished = current.on_finished
 	local failed = file_failed == true or current.stream == nil
 	finished_elapsed = current.elapsed
+	finished_duration = duration_of(current)
 	if current.stream then
 		current.stream:destroy()
 	end

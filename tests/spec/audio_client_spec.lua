@@ -331,6 +331,21 @@ describe("audio_client.lua", function()
 		assert_deep_equal(streams[1].fades, { { 0, 1.5 } })
 	end)
 
+	it("still reports a song's length from its decoder once it ended, until the next play", function()
+		local AudioClient, _, streams = load_client()
+		local length_at_end = nil
+		AudioClient.play("hub/a.mp3", { on_finished = function() length_at_end = AudioClient.duration() end })
+
+		streams[1].is_ended = true
+		AudioClient.update(0.1)
+
+		assert_equal(length_at_end, 200)
+		AudioClient.play("hub/b.mp3", {})
+		assert_equal(AudioClient.duration(), 200)
+		AudioClient.stop()
+		assert_equal(AudioClient.duration(), nil)
+	end)
+
 	it("treats a file it cannot open as a track that ended at once", function()
 		local AudioClient, player, _, _, lines = load_client()
 		player.refuse["audio/hub/broken.mp3"] = "unsupported format"

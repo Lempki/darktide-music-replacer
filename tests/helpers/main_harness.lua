@@ -27,7 +27,8 @@ local DEFAULT_SETTINGS = {
 -- A folder key is a context, or an override folder inside it, such as "mission_boss/chaos_spawn".
 -- Picks go through each folder in order, so the specs know which file comes next.
 local function new_library(files)
-	local library = { files = files, rescan_requested = false, listed_listeners = {} }
+	-- `gone` marks a folder whose files the listing still has, but which are no longer on disk, so nothing can be picked.
+	local library = { files = files, rescan_requested = false, listed_listeners = {}, gone = {} }
 	local last_index = {}
 
 	function library.init() end
@@ -45,7 +46,7 @@ local function new_library(files)
 
 	function library.pick_file(context_name)
 		local list = library.files[context_name]
-		if not list or #list == 0 then
+		if not list or #list == 0 or library.gone[context_name] then
 			return nil
 		end
 
@@ -106,7 +107,10 @@ local function new_audio_client()
 	end
 
 	function module.duration()
-		return client.current and client.current.opts.duration_seconds
+		if not client.current then
+			return client.finished_duration
+		end
+		return client.current.opts.duration_seconds
 	end
 
 	function module.levels()
@@ -235,10 +239,12 @@ function MainHarness:playing()
 end
 
 -- Ends the current song the way audio_client.lua does, after `seconds` of playing, as a file that could not play when `failed`.
-function MainHarness:finish_song(seconds, failed)
+-- `length`, if given, is the length the decoder found, which AudioClient.duration() reports once the song has ended.
+function MainHarness:finish_song(seconds, failed, length)
 	local current = self.client.current
 	self.client.current = nil
 	self.client.elapsed = seconds
+	self.client.finished_duration = length
 	current.opts.on_finished(failed == true)
 end
 

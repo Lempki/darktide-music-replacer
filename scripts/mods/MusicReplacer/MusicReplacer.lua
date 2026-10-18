@@ -47,12 +47,17 @@ local enabled = true
 local playback_lost = true
 
 -- A track that ends within QUICK_END_SECONDS of starting did not really play, for example because Windows could not decode the file.
--- After MAX_QUICK_ENDS in a row for one context, that context stops retrying and uses native music for the rest of the session.
+-- After MAX_QUICK_ENDS in a row from one folder, that folder stops retrying until the folders are listed again.
+-- An override folder then gives way to the next folder, and a context's own folder to native music.
 local QUICK_END_SECONDS = 3
 local MAX_QUICK_ENDS = 3
 
-local quick_ends = {} -- context_name -> consecutive tracks that ended right after starting.
-local gave_up = {} -- context_name -> true once that context stopped retrying.
+local quick_ends = {} -- folder -> consecutive tracks from it that ended right after starting.
+local gave_up = {} -- folder -> true once that folder stopped retrying.
+
+-- folder -> true for an override folder the library listed songs for, but that had none left to pick, as after files were deleted.
+-- It is skipped until the folders are listed again, so the override check does not keep switching back to it.
+local emptied = {}
 
 -- The custom track AudioClient was last asked to play, so a context change can remember where it stopped.
 local playing_track = nil -- Fields: context_name, file_path, duration, is_only_file.
@@ -111,29 +116,32 @@ local function remember_playing_track(next_context_name)
 	end
 end
 
--- The context's remembered song if it still has that file, else a new pick from Library.pick_file().
--- Returns file_path, duration, is_only_file, and the start position of a resumed song.
--- The folder `context_name` plays from: the first of its override folders that has songs, else its own.
-local function folder_for(context_name)
+-- The folders `context_name` can play from, in order: its override folders that have songs, then its own.
+local function folders_for(context_name)
+	local folders = {}
 	for _, key in ipairs(Context.override_keys(context_name)) do
 		local folder = context_name .. "/" .. key:lower()
-		if Library.has_files(folder) then
-			return folder
+		if not gave_up[folder] and not emptied[folder] and Library.has_files(folder) then
+			folders[#folders + 1] = folder
 		end
 	end
-	return context_name
+	folders[#folders + 1] = context_name
+	return folders
 end
 
--- A song is resumed only from the folder it played from, so a resume point from another folder gives way to a new pick.
-local function choose_file(context_name, folder, is_new_context)
-	if is_new_context then
-		local resume_path, position = ResumePoints.take(context_name)
+-- The folder `context_name` plays from: the first of its override folders that has songs, else its own.
+local function folder_for(context_name)
+	return folders_for(context_name)[1]
+end
 
-		if resume_path then
-			local file_path, duration, is_only_file = Library.find_file(folder, resume_path)
-			if file_path then
-				return file_path, duration, is_only_file, position
-			end
+-- The remembered song if `folder` still has that file, else a new pick from Library.pick_file().
+-- Returns file_path, duration, is_only_file, and the start position of a resumed song.
+-- A song is resumed only from the folder it played from, so a resume point from another folder gives way to a new pick.
+local function choose_file(folder, resume_path, resume_position)
+	if resume_path then
+		local file_path, duration, is_only_file = Library.find_file(folder, resume_path)
+		if file_path then
+			return file_path, duration, is_only_file, resume_position
 		end
 	end
 
@@ -175,14 +183,6 @@ local function play_context(context_name, is_new_context)
 		return
 	end
 
-	if gave_up[context_name] then
-		context_status = "game's music, its songs would not play"
-		AudioClient.stop()
-		Suppression.release()
-		log(string.format("[playback] %s: its tracks would not play earlier, using native music", context_name))
-		return
-	end
-
 	-- Playback that could not start, or gave up after repeated audio device failures, leaves the native music alone.
 	if not AudioClient.available() then
 		context_status = "game's music, no audio output"
@@ -191,10 +191,37 @@ local function play_context(context_name, is_new_context)
 		return
 	end
 
-	local folder = folder_for(context_name)
+	local resume_path, resume_position = nil, nil
+	if is_new_context then
+		resume_path, resume_position = ResumePoints.take(context_name)
+	end
+
+	-- The first folder with a song to play wins, so an override folder whose files are gone gives way to the next.
+	local folder, file_path, duration, is_only_file, start_position
+	for _, candidate in ipairs(folders_for(context_name)) do
+		folder = candidate
+		if gave_up[folder] then
+			break
+		end
+
+		file_path, duration, is_only_file, start_position = choose_file(folder, resume_path, resume_position)
+		if file_path or folder == context_name then
+			break
+		end
+
+		emptied[folder] = true
+		log(string.format("[playback] %s: the %s folder has no songs left, trying the next folder", context_name, folder))
+	end
 	current_folder = folder
 
-	local file_path, duration, is_only_file, start_position = choose_file(context_name, folder, is_new_context)
+	-- Only the context's own folder gets here, since an override folder that gave up is left out.
+	if gave_up[folder] then
+		context_status = "game's music, its songs would not play"
+		AudioClient.stop()
+		Suppression.release()
+		log(string.format("[playback] %s: its tracks would not play earlier, using native music", context_name))
+		return
+	end
 
 	if not file_path then
 		-- No replacement is available: no folder, an empty folder, or a scan that has not finished.
@@ -232,23 +259,32 @@ local function play_context(context_name, is_new_context)
 			-- A file that could not be played always counts.
 			-- Otherwise a track counts when it ended within QUICK_END_SECONDS and before half its length.
 			-- So a short file that plays through does not count.
-			-- Without a known duration, ending within QUICK_END_SECONDS is enough, so files that end at once cannot reopen every frame.
+			-- A file the library has not measured yet has its decoder's length instead.
+			-- Without either, ending within QUICK_END_SECONDS is enough, so files that end at once cannot reopen every frame.
 			local elapsed = AudioClient.elapsed()
-			local quick = failed or (elapsed < QUICK_END_SECONDS and (not duration or elapsed < duration / 2))
+			local length = duration or AudioClient.duration()
+			local quick = failed or (elapsed < QUICK_END_SECONDS and (not length or elapsed < length / 2))
 			if quick then
-				quick_ends[context_name] = (quick_ends[context_name] or 0) + 1
+				quick_ends[folder] = (quick_ends[folder] or 0) + 1
 
-				if quick_ends[context_name] >= MAX_QUICK_ENDS then
-					gave_up[context_name] = true
-					context_status = "game's music, its songs would not play"
-					log(string.format("[playback] %s: %d tracks in a row ended within %ds, using native music until the game restarts or the folders are rescanned",
-						context_name, MAX_QUICK_ENDS, QUICK_END_SECONDS))
-					AudioClient.stop()
-					Suppression.release()
-					return
+				if quick_ends[folder] >= MAX_QUICK_ENDS then
+					gave_up[folder] = true
+
+					-- An override folder gives way to the next folder, which play_context picks below.
+					if folder ~= context_name then
+						log(string.format("[playback] %s: %d tracks in a row from the %s folder ended within %ds, trying the next folder until the folders are rescanned",
+							context_name, MAX_QUICK_ENDS, folder, QUICK_END_SECONDS))
+					else
+						context_status = "game's music, its songs would not play"
+						log(string.format("[playback] %s: %d tracks in a row ended within %ds, using native music until the game restarts or the folders are rescanned",
+							context_name, MAX_QUICK_ENDS, QUICK_END_SECONDS))
+						AudioClient.stop()
+						Suppression.release()
+						return
+					end
 				end
 			else
-				quick_ends[context_name] = 0
+				quick_ends[folder] = 0
 			end
 
 			play_context(context_name, false)
@@ -502,6 +538,7 @@ mod.update = function(dt)
 		-- A replaced file deserves another try, so contexts that gave up retry after a rescan.
 		quick_ends = {}
 		gave_up = {}
+		emptied = {}
 
 		-- A context that played native music for lack of files starts its new track now, not at its next change.
 		-- A custom track that is playing keeps playing, and the next pick uses the new list.
