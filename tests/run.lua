@@ -1,12 +1,10 @@
 -- A minimal spec runner, so the tests need nothing but LuaJIT.
 -- Usage: luajit tests/run.lua [spec files...]
 -- With no arguments it runs every *_spec.lua under tests/spec.
--- Exits with 1 when any spec fails.
+-- Exits with 1 when any spec fails, or when it finds no spec to run.
 
-local REPO_ROOT = (arg[0]:gsub("[/\\]?tests[/\\]run%.lua$", ""))
-if REPO_ROOT == "" then
-	REPO_ROOT = "."
-end
+-- The repository root is the folder above this script's own, wherever it is run from.
+local REPO_ROOT = (arg[0]:match("^(.*)[/\\][^/\\]*$") or ".") .. "/.."
 
 package.path = REPO_ROOT .. "/?.lua;" .. package.path
 
@@ -128,5 +126,11 @@ for _, file in ipairs(spec_files) do
 end
 
 print(string.format("\n%d spec file(s), %d test(s), %d failure(s)", #spec_files, test_count, failures))
+
+-- Finding nothing means the search went wrong, which must not pass as a green run.
+if test_count == 0 then
+	print("No specs were found to run.")
+	os.exit(1)
+end
 
 os.exit(failures == 0 and 0 or 1)

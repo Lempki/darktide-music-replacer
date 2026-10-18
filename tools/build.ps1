@@ -27,6 +27,8 @@ $RepoRoot = Split-Path -Parent $PSScriptRoot
 if (-not $OutDir) {
     $OutDir = Join-Path $RepoRoot 'dist'
 }
+# The archive's entry names are cut from full staging paths, so a relative -OutDir must become a full path first.
+$OutDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutDir)
 
 $StageRoot = Join-Path $OutDir 'stage'
 $StageMod  = Join-Path $StageRoot $ModName
@@ -47,14 +49,39 @@ if (Test-Path -LiteralPath $StageRoot) {
 }
 New-Item -ItemType Directory -Path $StageMod -Force | Out-Null
 
-foreach ($item in $SourceItems) {
-    Copy-Item -LiteralPath (Join-Path $RepoRoot $item) -Destination $StageMod -Recurse -Force
+Copy-Item -LiteralPath (Join-Path $RepoRoot "$ModName.mod") -Destination $StageMod -Force
+Copy-Item -LiteralPath (Join-Path $RepoRoot 'info.json') -Destination $StageMod -Force
+
+# The Lua files git tracks, or would track, so a backup or scratch file left in scripts\ never ships.
+# Untracked ones still ship, so a new module can be tested before it is committed, and each is named here.
+$hasGit = [bool](Get-Command git -ErrorAction SilentlyContinue)
+if ($hasGit) {
+    $scriptFiles = @(& git -C $RepoRoot ls-files --cached --others --exclude-standard -- 'scripts/*.lua' | Where-Object { $_ })
+    $untracked = @(& git -C $RepoRoot ls-files --others --exclude-standard -- 'scripts/*.lua' | Where-Object { $_ })
+    if ($LASTEXITCODE -ne 0 -or $scriptFiles.Count -eq 0) {
+        throw 'git could not list the files under scripts\. Run this script from a full checkout.'
+    }
+    foreach ($file in $untracked) {
+        Write-Warning "Packaging $file, which git does not track yet."
+    }
+}
+else {
+    Write-Warning 'git was not found, so every .lua file under scripts\ is packaged, tracked or not.'
+    $scriptFiles = @(Get-ChildItem -LiteralPath (Join-Path $RepoRoot 'scripts') -Recurse -File -Filter '*.lua' |
+        ForEach-Object { $_.FullName.Substring($RepoRoot.Length).TrimStart('\') })
+}
+foreach ($file in $scriptFiles) {
+    $destination = Join-Path $StageMod $file
+    New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $RepoRoot $file) -Destination $destination -Force
 }
 
 # The commit and build time, with -dirty when the packaged files differ from that commit.
 function Get-BuildStamp {
+    # Git can write warnings to stderr, such as about line endings, which must not turn into a stop under the script's preference.
+    $ErrorActionPreference = 'Continue'
     $commit = 'unknown commit'
-    if (Get-Command git -ErrorAction SilentlyContinue) {
+    if ($hasGit) {
         try {
             $hash = & git -C $RepoRoot rev-parse --short HEAD 2>$null
             if ($LASTEXITCODE -eq 0 -and $hash) {
@@ -77,7 +104,13 @@ function Get-BuildStamp {
 $BuildStamp = Get-BuildStamp
 $StagedInfo = Join-Path $StageMod 'info.json'
 $infoText = [System.IO.File]::ReadAllText($StagedInfo)
+if ((ConvertFrom-Json $infoText).PSObject.Properties.Name -contains 'build') {
+    throw 'info.json already has a "build" key, which the build writes itself. Remove it from the source file.'
+}
 $infoText = ([regex]'\{').Replace($infoText, "{`n  `"build`": `"$BuildStamp`",", 1)
+if ((ConvertFrom-Json $infoText).build -ne $BuildStamp) {
+    throw 'The stamped info.json does not read back as JSON with its build stamp.'
+}
 [System.IO.File]::WriteAllText($StagedInfo, $infoText, (New-Object System.Text.UTF8Encoding $false)) # UTF-8 without a BOM, like the source file.
 
 # Empty folders so a fresh install is ready to receive files immediately, without waiting for the mod to create them on its first launch.
@@ -120,12 +153,17 @@ Write-Host ("Build stamp: {0}" -f $BuildStamp)
 Write-Host ""
 
 # Reads the archive back, so a layout that would install wrongly fails the build instead of reaching players.
+# Every entry sits in MusicReplacer/, as the mod file, info.json, a script, or an audio folder, and the files the mod cannot load without are there.
+$allowedEntry = "^$ModName/($ModName\.mod|info\.json|scripts/.*|audio/.*)?$"
+$requiredEntries = @("$ModName/$ModName.mod", "$ModName/info.json", "$ModName/scripts/mods/$ModName/$ModName.lua")
 $badEntries = @()
+$entryNames = @()
 $archive = [System.IO.Compression.ZipFile]::OpenRead($ZipPath)
 try {
     foreach ($entry in $archive.Entries) {
         Write-Host ("  {0,8}  {1}" -f $entry.Length, $entry.FullName)
-        if ($entry.FullName.Contains('\') -or -not $entry.FullName.StartsWith("$ModName/")) {
+        $entryNames += $entry.FullName
+        if ($entry.FullName.Contains('\') -or $entry.FullName -notmatch $allowedEntry) {
             $badEntries += $entry.FullName
         }
     }
@@ -136,7 +174,11 @@ finally {
 Write-Host ""
 
 if ($badEntries.Count -gt 0) {
-    throw ("The archive has entries outside $ModName/ or with backslashes in their names: $($badEntries -join ', ')")
+    throw ("The archive has entries outside the mod's layout or with backslashes in their names: $($badEntries -join ', ')")
+}
+$missingEntries = @($requiredEntries | Where-Object { $entryNames -notcontains $_ })
+if ($missingEntries.Count -gt 0) {
+    throw ("The archive is missing: $($missingEntries -join ', ')")
 }
 
 if (-not $Deploy) {
