@@ -139,7 +139,7 @@ Music Replacer decodes your files with Media Foundation, Windows' own audio deco
 * XAudio2 follows a change of the default audio device by itself. If the device is lost in a way it cannot follow, the mod rebuilds the engine and continues the song where it was. After three rebuilds in a row fail, it gives up for the session and the game's own music plays.
 * While Windows has no audio output at all, for example right after the only headset is unplugged, the game's own music takes over and the mod tries again every five seconds. Custom music comes back once the output does.
 * The music plays inside the game's own process, so it stops with the game, including after a crash.
-* With Even Out Loudness on, the mod measures each song's loudness the way streaming services do, in LUFS, following ITU-R BS.1770. Every song then plays at -14 LUFS, the level most of them use. A quiet song is only raised until its loudest sample reaches full scale, so it never distorts.
+* With Even Out Loudness on, the mod measures each song's loudness the way streaming services do, in LUFS, following ITU-R BS.1770. Every song then plays at -14 LUFS, the level most of them use. A quiet song is only raised until its loudest sample reaches full scale, so it never distorts, and by at most 12 dB, since raising a very quiet recording further mostly raises its hiss.
 * Measuring decodes the whole song, about a millisecond of work per frame, starting with the folder of the music playing now. The log says how long it took once every song is measured. The results go to `loudness.txt` beside `diagnostic.log`, so each song is measured once, and again only after its file changes. Deleting `loudness.txt` measures every song again.
 
 ## Limitations

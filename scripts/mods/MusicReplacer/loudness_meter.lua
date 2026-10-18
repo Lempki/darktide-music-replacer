@@ -12,8 +12,16 @@ local PARTS_PER_BLOCK = 4
 local ABSOLUTE_GATE_LUFS = -70
 local RELATIVE_GATE_LU = -10
 
--- Channel weights in WAVE order: left, right, center, LFE, then the surrounds. The LFE channel does not count.
-local CHANNEL_WEIGHTS = { 1, 1, 1, 0, 1.41, 1.41 }
+-- Each channel's weight by channel count, in the WAVE order that XAudio2 also plays them in. The LFE channel does not count.
+-- XAudio2 plays a mono song at full level on both speakers, so it counts twice, as it sounds.
+-- The surrounds beside the listener weigh 1.41 and the ones behind 1, as BS.1770 sets them.
+local CHANNEL_WEIGHTS = {
+	[1] = { 2 },
+	[4] = { 1, 1, 1.41, 1.41 }, -- Quad: front left and right, back left and right.
+	[5] = { 1, 1, 1, 1.41, 1.41 }, -- 5.0: front left, right, and center, then the surrounds.
+	[6] = { 1, 1, 1, 0, 1.41, 1.41 }, -- 5.1: front left, right, and center, LFE, then the surrounds.
+	[8] = { 1, 1, 1, 0, 1, 1, 1.41, 1.41 }, -- 7.1: as 5.1 with the back pair, then the side pair.
+}
 
 local function lufs_of(power)
 	return -0.691 + 10 * math.log10(power)
@@ -66,8 +74,9 @@ function LoudnessMeter.new(sample_rate, channels)
 		peak_sample = 0,
 	}, LoudnessMeter)
 
+	local weights = CHANNEL_WEIGHTS[channels] or {}
 	for channel = 1, channels do
-		self.weights[channel] = CHANNEL_WEIGHTS[channel] or 1
+		self.weights[channel] = weights[channel] or 1
 		self.shelf_1[channel] = 0
 		self.shelf_2[channel] = 0
 		self.high_pass_1[channel] = 0
@@ -173,8 +182,9 @@ end
 
 -- The volume scale that brings a song at `loudness` LUFS to `target` LUFS.
 -- A quiet song is only raised until its highest sample reaches full scale, since anything above would clip.
+-- It is also raised by at most `max_boost_db`, since raising a very quiet recording that far mostly raises its hiss.
 -- A song with no measurable loudness keeps its own level.
-function LoudnessMeter.level(loudness, peak, target)
+function LoudnessMeter.level(loudness, peak, target, max_boost_db)
 	if not loudness then
 		return 1
 	end
@@ -182,6 +192,9 @@ function LoudnessMeter.level(loudness, peak, target)
 	local level = 10 ^ ((target - loudness) / 20)
 	if peak and peak > 0 and level * peak > 1 then
 		level = 1 / peak
+	end
+	if max_boost_db then
+		level = math.min(level, 10 ^ (max_boost_db / 20))
 	end
 
 	return level

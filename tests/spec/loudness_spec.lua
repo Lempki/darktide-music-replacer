@@ -43,7 +43,14 @@ local function new_file_system(files)
 end
 
 -- Returns a loaded loudness.lua and a test context: `songs` maps a disk path to its length in frames, or to false when it cannot open.
+-- loudness.txt's current first line, which every cache below gets unless it brings a first line of its own.
+local CACHE_HEADER = "# Music Replacer's loudness measurements, format 2: file size and write time, LUFS, peak, file. "
+	.. "Deleting it measures every song again.\n"
+
 local function load_loudness(songs, cache_text)
+	if cache_text and cache_text:sub(1, 1) ~= "#" then
+		cache_text = CACHE_HEADER .. cache_text
+	end
 	local fs = new_file_system({ [CACHE] = cache_text })
 	local engine = FakeEngine.new({ lua = { io = fs.io, os = fs.os } })
 	local Loudness = engine:load("loudness")
@@ -207,6 +214,68 @@ describe("loudness.lua cache", function()
 		assert_equal(test.fs.files[CACHE]:find("hub/b.mp3", 1, true), nil)
 	end)
 
+	it("measures a song again when its line in loudness.txt is broken or out of range", function()
+		local cache = table.concat({
+			"1\t-12.00\t0.50000\thub/good.mp3",
+			"1\tsilent\t0.00000\thub/silent.mp3",
+			"1\tinf\t0.50000\thub/infinite.mp3",
+			"1\t1e999\t0.50000\thub/huge.mp3",
+			"1\tnan\t0.50000\thub/nan.mp3",
+			"1\t-300.00\t0.50000\thub/quiet.mp3",
+			"1\t-12.00\t0.00000\thub/no_peak.mp3",
+			"1\t-12.00\t2.00000\thub/over_peak.mp3",
+			"1\tloud\t0.50000\thub/garbage.mp3",
+			"1\t-12.00",
+		}, "\n")
+		local songs = {}
+		local listed = {}
+		for _, name in ipairs({ "good", "silent", "infinite", "huge", "nan", "quiet", "no_peak", "over_peak", "garbage" }) do
+			songs["audio/hub/" .. name .. ".mp3"] = 10
+			listed[#listed + 1] = { "hub/" .. name .. ".mp3" }
+		end
+		local Loudness, test = load_loudness(songs, cache)
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries(listed))
+
+		measure_all(Loudness, "hub")
+
+		table.sort(test.opened)
+		assert_deep_equal(test.opened, {
+			"audio/hub/garbage.mp3", "audio/hub/huge.mp3", "audio/hub/infinite.mp3", "audio/hub/nan.mp3",
+			"audio/hub/no_peak.mp3", "audio/hub/over_peak.mp3", "audio/hub/quiet.mp3",
+		})
+		assert_equal(Loudness.describe("hub/good.mp3"), "-12.0 LUFS, -2.0 dB")
+		assert_equal(Loudness.describe("hub/silent.mp3"), "no measurable loudness")
+	end)
+
+	it("measures every song again when loudness.txt comes from an older way of measuring", function()
+		local cache = "# Music Replacer's loudness measurements: file size and write time, LUFS, peak, file.\n"
+			.. "1\t-12.00\t0.50000\thub/a.mp3\n"
+		local Loudness, test = load_loudness({ ["audio/hub/a.mp3"] = 10 }, cache)
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3" } }))
+
+		measure_all(Loudness, "hub")
+
+		assert_deep_equal(test.opened, { "audio/hub/a.mp3" })
+		assert_equal(test.fs.files[CACHE]:sub(1, #CACHE_HEADER), CACHE_HEADER)
+	end)
+
+	it("tries a song it could not open again only once its file changes", function()
+		local Loudness, test = load_loudness({ ["audio/hub/a.mp3"] = false })
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3", "1" } }))
+		measure_all(Loudness, "hub")
+
+		Loudness.set_files(entries({ { "hub/a.mp3", "1" } }))
+		measure_all(Loudness, "hub")
+		assert_equal(#test.opened, 1)
+
+		Loudness.set_files(entries({ { "hub/a.mp3", "2" } }))
+		measure_all(Loudness, "hub")
+		assert_equal(#test.opened, 2)
+	end)
+
 	it("starts a song over when its file changes while it is measured", function()
 		local Loudness, test = load_loudness({ ["audio/hub/a.mp3"] = 100 })
 		Loudness.set_enabled(true)
@@ -236,5 +305,13 @@ describe("loudness.lua levels", function()
 		assert_equal(Loudness.level("hub/b.mp3"), 1)
 		assert_equal(math.abs(Loudness.level("hub/a.mp3") - 10 ^ (6 / 20)) < 1e-9, true)
 		assert_equal(Loudness.describe("hub/a.mp3"), "-20.0 LUFS, +6.0 dB")
+	end)
+
+	it("raises a very quiet song by at most 12 dB", function()
+		local Loudness = load_loudness({}, "1\t-40.00\t0.01000\thub/a.mp3\n")
+		Loudness.set_files(entries({ { "hub/a.mp3" } }))
+		Loudness.set_enabled(true)
+
+		assert_equal(Loudness.describe("hub/a.mp3"), "-40.0 LUFS, +12.0 dB")
 	end)
 end)

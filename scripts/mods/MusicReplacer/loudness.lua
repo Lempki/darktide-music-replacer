@@ -9,12 +9,23 @@ local Loudness = {}
 -- The level most streaming services play music at. Most released music is mastered at or above it.
 local TARGET_LUFS = -14
 
+-- Raising a very quiet recording further mostly raises its hiss, so it plays a little below the others instead.
+local MAX_BOOST_DB = 12
+
+-- What a measured song can read: the meter's absolute gate leaves out anything below, and full-scale audio stays below the top.
+local MIN_LUFS = -70
+local MAX_LUFS = 10
+
 local MEASURE_MS = 1
 
 -- Decoded per read. A short chunk keeps each update close to MEASURE_MS.
 local CHUNK_SECONDS = 0.05
 
 local CACHE_FILE_NAME = "loudness.txt"
+
+-- The cache's first line. Its format number goes up whenever measuring changes, which discards older results.
+local CACHE_HEADER = "# Music Replacer's loudness measurements, format 2: file size and write time, LUFS, peak, file. "
+	.. "Deleting it measures every song again.\n"
 
 local _io = Mods and Mods.lua and Mods.lua.io
 local _os = Mods and Mods.lua and Mods.lua.os
@@ -30,6 +41,7 @@ local cache_path = nil
 local enabled = false
 local results = {} -- file_path -> { stamp, loudness, peak }. loudness is false for a song with no measurable loudness.
 local stamps = {} -- file_path -> its stamp at the last listing.
+local failed = {} -- file_path -> the stamp it could not be opened at, so it is tried again only once the file changes.
 local pending = {} -- Files still to measure, in listing order.
 local active = nil -- The song being measured: file_path, stamp, decoder, meter, buffer, samples, capacity, block_align.
 local measured_count = 0 -- Songs measured since the last summary line.
@@ -53,10 +65,21 @@ local function load_cache()
 	local text = file:read("*a") or ""
 	file:close()
 
+	if text:sub(1, #CACHE_HEADER) ~= CACHE_HEADER then
+		return
+	end
+
 	for line in text:gmatch("[^\r\n]+") do
-		local stamp, loudness, peak, file_path = line:match("^([^\t]*)\t([^\t]+)\t([^\t]+)\t(.+)$")
-		if file_path then
-			results[file_path] = { stamp = stamp, loudness = tonumber(loudness) or false, peak = tonumber(peak) or 0 }
+		local stamp, loudness_text, peak_text, file_path = line:match("^([^\t]*)\t([^\t]+)\t([^\t]+)\t(.+)$")
+		local loudness = loudness_text ~= "silent" and tonumber(loudness_text) or false
+		local peak = tonumber(peak_text)
+
+		-- A line that a crash cut short or a hand edit broke is left out, so its song is measured again.
+		-- The comparisons also reject NaN, and an out-of-range value would otherwise play the song at an absurd level.
+		local usable = peak and peak >= 0 and peak <= 1
+			and (loudness_text == "silent" or (loudness and loudness >= MIN_LUFS and loudness <= MAX_LUFS and peak > 0))
+		if file_path and usable then
+			results[file_path] = { stamp = stamp, loudness = loudness, peak = peak }
 		end
 	end
 end
@@ -80,7 +103,7 @@ local function save_cache()
 	end
 	table.sort(file_paths)
 
-	file:write("# Music Replacer's loudness measurements: file size and write time, LUFS, peak, file. Deleting it measures every song again.\n")
+	file:write(CACHE_HEADER)
 	for _, file_path in ipairs(file_paths) do
 		local result = results[file_path]
 		local loudness = result.loudness and string.format("%.2f", result.loudness) or "silent"
@@ -141,6 +164,7 @@ local function start(file_path)
 	local decoder, err = MediaDecoder.open(disk_path(file_path))
 	if not decoder then
 		detail_fn(string.format("[loudness] %s could not be measured: %s", file_path, tostring(err)))
+		failed[file_path] = stamps[file_path]
 		return
 	end
 
@@ -197,7 +221,7 @@ function Loudness.set_files(entries)
 		stamps[entry.file_path] = entry.stamp
 		local result = results[entry.file_path]
 		local measuring = active and active.file_path == entry.file_path and active.stamp == entry.stamp
-		if not measuring and not (result and result.stamp == entry.stamp) then
+		if not measuring and not (result and result.stamp == entry.stamp) and failed[entry.file_path] ~= entry.stamp then
 			pending[#pending + 1] = entry.file_path
 		end
 	end
@@ -258,7 +282,7 @@ function Loudness.level(file_path)
 		return 1
 	end
 
-	return LoudnessMeter.level(result.loudness or nil, result.peak, TARGET_LUFS)
+	return LoudnessMeter.level(result.loudness or nil, result.peak, TARGET_LUFS, MAX_BOOST_DB)
 end
 
 -- How `file_path`'s level was set, for the log, or nil while evening out is off.

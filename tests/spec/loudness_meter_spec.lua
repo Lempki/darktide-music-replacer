@@ -81,8 +81,14 @@ describe("loudness_meter.lua", function()
 		assert_near(measure({ { -26, 20 }, { -20, 20.1 }, { -26, 20 } }):loudness(), -23, 0.1)
 	end)
 
-	it("measures a mono song as one channel", function()
-		assert_near(measure({ { -23, 20 } }, 48000, 1):loudness(), -26, 0.1)
+	it("measures a mono song as it plays, on both speakers at full level", function()
+		assert_near(measure({ { -23, 20 } }, 48000, 1):loudness(), -23, 0.1)
+	end)
+
+	it("weighs quad and 7.1 by their speakers, with no weight on the LFE channel", function()
+		-- The same sine in every channel adds each channel's weight to the stereo pair's 2.
+		assert_near(measure({ { -23, 20 } }, 48000, 4):loudness(), -23 + 10 * math.log10(4.82 / 2), 0.1)
+		assert_near(measure({ { -23, 20 } }, 48000, 8):loudness(), -23 + 10 * math.log10(7.82 / 2), 0.1)
 	end)
 
 	it("reports no loudness for silence or audio shorter than one block, and the highest sample as the peak", function()
@@ -104,6 +110,13 @@ describe("loudness_meter.lua levels", function()
 		local LoudnessMeter = load_meter()
 
 		assert_near(LoudnessMeter.level(-26, 0.5, -14), 2, 1e-9)
+	end)
+
+	it("raises a quiet song by at most the given boost", function()
+		local LoudnessMeter = load_meter()
+
+		assert_near(LoudnessMeter.level(-40, 0.01, -14, 12), 10 ^ (12 / 20), 1e-9)
+		assert_near(LoudnessMeter.level(-8, 1, -14, 12), 10 ^ (-6 / 20), 1e-9)
 	end)
 
 	it("keeps the level of a song with no measurable loudness", function()
