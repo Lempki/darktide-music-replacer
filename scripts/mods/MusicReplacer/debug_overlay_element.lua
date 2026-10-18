@@ -18,6 +18,10 @@ local MARGIN = 20
 local FONT_SIZE = 16
 local PADDING = 10
 
+-- The font's lines start this share of its size above its capital letters, while the last line ends at its baseline.
+-- So the text moves up by that much, and the capitals and the last baseline sit one padding from the backdrop's edges.
+local LINE_TOP_GAP = 0.22
+
 -- The share of the backdrop that is solid, and how far the fade reaches past the text, before scaling.
 local SOLID_SHARE = 0.55
 local FADE_PAST_TEXT = 120
@@ -119,7 +123,7 @@ return function(DebugOverlay)
 		style.text.horizontal_alignment = side
 		style.text.text_horizontal_alignment = side
 		style.text.offset[1] = right and -padding or padding
-		style.text.offset[2] = padding
+		style.text.offset[2] = padding - FONT_SIZE * scale * LINE_TOP_GAP
 		self._refresh_in = 0
 	end
 
@@ -130,7 +134,7 @@ return function(DebugOverlay)
 		local text_width, text_height = UIRenderer.styled_text_size(ui_renderer, text, style.text, style.text.size)
 
 		local padding = PADDING * self._scale
-		local height = text_height + 2 * padding
+		local height = text_height + 2 * padding - FONT_SIZE * self._scale * LINE_TOP_GAP
 		local width = text_width + 2 * padding
 		local solid_width = math.floor(width * SOLID_SHARE)
 		local fade_width = width - solid_width + FADE_PAST_TEXT * self._scale
