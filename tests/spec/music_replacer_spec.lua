@@ -266,6 +266,29 @@ describe("MusicReplacer.lua music per context", function()
 	end)
 end)
 
+describe("MusicReplacer.lua native music events", function()
+	local EXPLORATION_EVENT = "wwise/events/music/play_exploration_music"
+
+	it("stops a native exploration music event at once while a custom song plays, and returns the game's IDs", function()
+		local harness = in_mission()
+
+		local playing_id, source_id = CLASS.WwiseWorld.trigger_resource_event({}, EXPLORATION_EVENT)
+
+		assert_deep_equal(harness.engine.started_events, { EXPLORATION_EVENT })
+		assert_deep_equal(harness.engine.stopped_events, { playing_id })
+		assert_equal(source_id ~= nil, true)
+	end)
+
+	it("lets the event play while the game's music plays", function()
+		local harness = in_mission({ source_mission_explore = "game" })
+
+		local playing_id = CLASS.WwiseWorld.trigger_resource_event({}, EXPLORATION_EVENT)
+
+		assert_equal(playing_id ~= nil, true)
+		assert_deep_equal(harness.engine.stopped_events, {})
+	end)
+end)
+
 describe("MusicReplacer.lua volume", function()
 	it("sets the Custom Music Volume at startup and follows its changes", function()
 		local harness = in_hub(nil, { settings = { custom_music_volume = 80 } })

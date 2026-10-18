@@ -109,7 +109,7 @@ local function new_event_manager(engine)
 end
 
 -- Options:
--- * `settings`: the values mod:get() returns, by setting id.
+-- * `settings`: the values mod:get() returns, by setting ID.
 -- * `user_settings`: the values Application.user_setting() returns, by name, such as the volume sliders.
 -- * `mods`: other mods get_mod() returns, by name.
 -- * `lua`: the Mods.lua table, for example `{ os = fake_os }`. Empty by default.
@@ -125,6 +125,8 @@ function FakeEngine.new(options)
 		messages = {},
 		event_listeners = {},
 		wwise_calls = {},
+		started_events = {},
+		stopped_events = {},
 		modules = options.modules or {},
 		metadata = options.metadata or {},
 		persistent_tables = {},
@@ -152,11 +154,20 @@ function FakeEngine.new(options)
 		event = new_event_manager(engine),
 	}
 
-	CLASS = {
-		WwiseWorld = {
-			trigger_resource_event = function() end,
-		},
+	-- Like the engine, starting an event returns a playing ID and a source ID.
+	local last_event_id = 0
+	WwiseWorld = {
+		trigger_resource_event = function(_, event_name)
+			last_event_id = last_event_id + 1
+			engine.started_events[#engine.started_events + 1] = event_name
+			return last_event_id, 1000 + last_event_id
+		end,
+		stop_event = function(_, playing_id)
+			engine.stopped_events[#engine.stopped_events + 1] = playing_id
+		end,
 	}
+
+	CLASS = { WwiseWorld = WwiseWorld }
 
 	Application = {
 		user_setting = function(_, name) return engine.user_settings[name] end,

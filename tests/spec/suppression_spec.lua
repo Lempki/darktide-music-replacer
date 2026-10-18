@@ -273,26 +273,26 @@ describe("suppression.lua last stand", function()
 end)
 
 describe("suppression.lua events", function()
-	it("drops the native exploration music event only while engaged", function()
+	it("stops the native exploration music event only while engaged", function()
 		local _, Suppression = load_suppression()
 
-		assert_equal(Suppression.should_drop_event(EXPLORATION_EVENT), false)
+		assert_equal(Suppression.should_stop_event(EXPLORATION_EVENT), false)
 
 		Suppression.engage("mission_explore")
 
-		assert_equal(Suppression.should_drop_event(EXPLORATION_EVENT), true)
+		assert_equal(Suppression.should_stop_event(EXPLORATION_EVENT), true)
 
 		Suppression.release()
 
-		assert_equal(Suppression.should_drop_event(EXPLORATION_EVENT), false)
+		assert_equal(Suppression.should_stop_event(EXPLORATION_EVENT), false)
 	end)
 
 	it("lets every other event through while engaged", function()
 		local _, Suppression = load_suppression()
 		Suppression.engage("mission_explore")
 
-		assert_equal(Suppression.should_drop_event("wwise/events/music/play_music_manager"), false)
-		assert_equal(Suppression.should_drop_event("wwise/events/ui/play_ui_silence"), false)
-		assert_equal(Suppression.should_drop_event(nil), false)
+		assert_equal(Suppression.should_stop_event("wwise/events/music/play_music_manager"), false)
+		assert_equal(Suppression.should_stop_event("wwise/events/ui/play_ui_silence"), false)
+		assert_equal(Suppression.should_stop_event(nil), false)
 	end)
 end)

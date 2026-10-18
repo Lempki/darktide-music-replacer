@@ -125,9 +125,9 @@ function Suppression.set_objective(should_suppress)
 	set_reforced_group("music_objective", should_suppress)
 end
 
--- Drops native music events that match SUPPRESSED_MUSIC_EVENT_PATTERNS instead of letting them play.
+-- Stops native music events that match SUPPRESSED_MUSIC_EVENT_PATTERNS as soon as they start.
 -- Mission event sequences start their own music through events, which the state forcing never reaches.
--- Only the start of an event is dropped, so there is nothing native left to stop later.
+-- Only an event that starts while this is on is stopped, so the game's music is untouched once it is off.
 function Suppression.set_events(should_suppress)
 	events_suppressed = should_suppress
 end
@@ -137,22 +137,22 @@ end
 -- ###########################################################################
 
 -- Call once from the main mod file's top level.
--- `log`, if given, receives a line each time a lever forces, restores or drops something.
+-- `log`, if given, receives a line each time a lever forces, restores or stops something.
 function Suppression.init(log)
 	diagnostic_log = log or diagnostic_log
 end
 
 -- Called for every Wwise event, from the single trigger_resource_event hook in MusicReplacer.lua.
--- Returns true if the caller should drop the event instead of letting it play.
+-- Returns true if the caller should stop the event it just started.
 -- A mod can only install one hook per method on itself, so this does not hook anything on its own.
-function Suppression.should_drop_event(event_name)
+function Suppression.should_stop_event(event_name)
 	if not events_suppressed or type(event_name) ~= "string" then
 		return false
 	end
 
 	for _, pattern in ipairs(SUPPRESSED_MUSIC_EVENT_PATTERNS) do
 		if event_name:find(pattern, 1, true) then
-			diagnostic_log(string.format("[suppress] skipped native music event: %s", event_name))
+			diagnostic_log(string.format("[suppress] stopped native music event: %s", event_name))
 			return true
 		end
 	end

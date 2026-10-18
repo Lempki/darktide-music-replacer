@@ -364,6 +364,16 @@ Context.on_state_change(Suppression.on_state_change)
 Context.on_state_change(ResumePoints.on_state_change)
 Context.init(mod, log_detail)
 
+-- Level flow hands an event's IDs on to later nodes, which pass them to the engine unchecked, so a nil ID can raise an error.
+-- So a native music event Suppression silences still starts, and is stopped at once, which leaves the game valid IDs.
+local function stop_if_suppressed(wwise_world, event_name, playing_id, ...)
+	if playing_id and Suppression.should_stop_event(event_name) then
+		WwiseWorld.stop_event(wwise_world, playing_id)
+	end
+
+	return playing_id, ...
+end
+
 mod.on_all_mods_loaded = function()
 	MediaDecoder.init(NativeFfi)
 	AudioFolders.init(NativeFfi, MediaDecoder)
@@ -389,15 +399,11 @@ mod.on_all_mods_loaded = function()
 	-- A mod can only install one hook per method on itself.
 	-- So Suppression and EventProbe cannot each hook WwiseWorld.trigger_resource_event on their own.
 	-- This one hook serves both instead.
-	-- EventProbe always sees the event first, including one Suppression is about to drop.
+	-- EventProbe always sees the event first, including one Suppression is about to stop.
 	mod:hook(CLASS.WwiseWorld, "trigger_resource_event", function(func, wwise_world, event_name, ...)
 		EventProbe.observe(event_name, select("#", ...))
 
-		if Suppression.should_drop_event(event_name) then
-			return
-		end
-
-		return func(wwise_world, event_name, ...)
+		return stop_if_suppressed(wwise_world, event_name, func(wwise_world, event_name, ...))
 	end)
 
 	playback_lost = not AudioClient.available()

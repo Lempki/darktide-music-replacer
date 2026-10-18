@@ -12,6 +12,27 @@ local function load_context(settings)
 end
 
 describe("context.lua", function()
+	it("hands the game's return values back through its state hook", function()
+		local engine = FakeEngine.new()
+		local Manager = require("scripts/managers/wwise_game_sync/wwise_game_sync_manager")
+		local original = Manager._set_state
+		Manager._set_state = function(...)
+			original(...)
+			return "first", nil, "third"
+		end
+		local Context = engine:load("context")
+		Context.init(engine.mod)
+
+		local results = { n = 0 }
+		local function collect(...)
+			results = { n = select("#", ...), ... }
+		end
+		collect(engine.wwise_game_sync:_set_state("music_zone", "hub"))
+
+		assert_deep_equal(results, { n = 3, "first", nil, "third" })
+		assert_equal(engine:wwise_state("music_zone"), "hub")
+	end)
+
 	it("resolves no context before any music state is set", function()
 		local _, Context = load_context()
 

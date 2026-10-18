@@ -478,6 +478,101 @@ function Context.on_state_change(listener)
 	state_listeners[#state_listeners + 1] = listener
 end
 
+-- Tracks a real transition of a state group, after the game has set it.
+local function track_transition(mod, group_name, current, new_state)
+	learned_groups[group_name] = true
+
+	if group_name == "music_combat" then
+		wwise_combat_state = new_state
+		diagnostic_log(describe_transition(group_name, current, new_state))
+	elseif group_name == "music_zone" then
+		diagnostic_log(describe_transition(group_name, music_zone, new_state))
+
+		-- Catching up after a load or Context.relearn() is not a zone change, so it keeps the outcome and the boss windows.
+		local zone_changed = music_zone ~= nil and new_state ~= music_zone
+		music_zone = new_state
+
+		if zone_changed then
+			-- A real zone means a new level has started, which ends the previous mission's outcome.
+			-- The score screen sets the zone to "None", so that case keeps the outcome.
+			if not has_no_zone() then
+				mission_outcome = nil
+			end
+
+			-- A real zone change clears both boss signals, since either can get stuck on its own.
+			-- The tracked combat state is only this module's copy, so it corrects itself on the next real transition.
+			-- A boss encounter that is still open keeps is_boss_active() true anyway.
+			wwise_combat_state = nil
+			open_bosses = {}
+			combat_hold_remaining = 0 -- A new zone starts fresh, not partway through the last hold.
+			horde_hold_remaining = 0
+			event_hold_remaining = 0
+		end
+	elseif group_name == "music_game_state" then
+		diagnostic_log(describe_transition(group_name, current, new_state))
+		music_game_state = new_state
+
+		-- A loading screen that ends in "mission" has reached its level, such as when joining a mission in progress.
+		-- The mission board comes before every "mission_ready", so a ready that was taken back does not linger.
+		if new_state == "mission_ready" or new_state == "loadout" or new_state == "mission_briefing" then
+			heading_to_mission = true
+		elseif new_state == "mission_board" or ARRIVAL_GAME_STATES[new_state] or (new_state == "mission" and current == "loading") then
+			heading_to_mission = false
+		end
+
+		-- The state returns to "mission" between victory or defeat and the next loading screen.
+		-- So within this group, only a loading screen or a mission intro clears the outcome.
+		if new_state == "victory" or new_state == "game_score_win" then
+			mission_outcome = "victory"
+		elseif new_state == "defeat" or new_state == "game_score_lose" then
+			mission_outcome = "defeat"
+		elseif new_state == "loading" or new_state == "mission_intro" then
+			mission_outcome = nil
+		end
+
+		-- A zoneless mission can follow another level with no zone change, which would otherwise keep a stale window open.
+		if new_state == "loading" then
+			open_bosses = {}
+		end
+	elseif group_name == "music_objective" then
+		diagnostic_log(describe_transition(group_name, current, new_state))
+		music_objective = new_state
+		if new_state ~= "None" and new_state ~= LAST_MAN_STANDING then
+			event_kind = new_state
+		end
+	elseif group_name == "options" then
+		diagnostic_log(describe_transition(group_name, current, new_state))
+		menu_state = new_state
+		return
+	else
+		local expedition_only = group_name == "expeditions_intensity"
+			and (EXPEDITION_ONLY_COMBAT_STATES[new_state] or EXPEDITION_ONLY_COMBAT_STATES[current])
+		if LOGGED_ONLY_STATE_GROUPS[group_name] or expedition_only then
+			diagnostic_log(describe_transition(group_name, current, new_state))
+		end
+
+		return
+	end
+
+	for _, listener in ipairs(state_listeners) do
+		local ok, err = pcall(listener, group_name, new_state)
+		if not ok then
+			mod:error("[MusicReplacer] state change listener failed: " .. tostring(err))
+		end
+	end
+
+	recompute(mod)
+end
+
+-- Hands the game's own return values back through the hook, so the hook stays invisible to the game.
+local function after_set_state(mod, group_name, current, new_state, is_transition, ...)
+	if is_transition then
+		track_transition(mod, group_name, current, new_state)
+	end
+
+	return ...
+end
+
 -- Call once from the main mod file's top level.
 -- `log`, if given, receives a line for every raw state transition and boss event.
 -- That is much more output than Context.on_change, so it is meant for diagnosing state issues.
@@ -488,94 +583,7 @@ function Context.init(mod, log)
 		local current = self._wwise_state_group_states and self._wwise_state_group_states[group_name]
 		local is_transition = current ~= new_state or not learned_groups[group_name]
 
-		func(self, group_name, new_state)
-
-		if not is_transition then
-			return
-		end
-
-		learned_groups[group_name] = true
-
-		if group_name == "music_combat" then
-			wwise_combat_state = new_state
-			diagnostic_log(describe_transition(group_name, current, new_state))
-		elseif group_name == "music_zone" then
-			diagnostic_log(describe_transition(group_name, music_zone, new_state))
-
-			-- Catching up after a load or Context.relearn() is not a zone change, so it keeps the outcome and the boss windows.
-			local zone_changed = music_zone ~= nil and new_state ~= music_zone
-			music_zone = new_state
-
-			if zone_changed then
-				-- A real zone means a new level has started, which ends the previous mission's outcome.
-				-- The score screen sets the zone to "None", so that case keeps the outcome.
-				if not has_no_zone() then
-					mission_outcome = nil
-				end
-
-				-- A real zone change clears both boss signals, since either can get stuck on its own.
-				-- The tracked combat state is only this module's copy, so it corrects itself on the next real transition.
-				-- A boss encounter that is still open keeps is_boss_active() true anyway.
-				wwise_combat_state = nil
-				open_bosses = {}
-				combat_hold_remaining = 0 -- A new zone starts fresh, not partway through the last hold.
-				horde_hold_remaining = 0
-				event_hold_remaining = 0
-			end
-		elseif group_name == "music_game_state" then
-			diagnostic_log(describe_transition(group_name, current, new_state))
-			music_game_state = new_state
-
-			-- A loading screen that ends in "mission" has reached its level, such as when joining a mission in progress.
-			-- The mission board comes before every "mission_ready", so a ready that was taken back does not linger.
-			if new_state == "mission_ready" or new_state == "loadout" or new_state == "mission_briefing" then
-				heading_to_mission = true
-			elseif new_state == "mission_board" or ARRIVAL_GAME_STATES[new_state] or (new_state == "mission" and current == "loading") then
-				heading_to_mission = false
-			end
-
-			-- The state returns to "mission" between victory or defeat and the next loading screen.
-			-- So within this group, only a loading screen or a mission intro clears the outcome.
-			if new_state == "victory" or new_state == "game_score_win" then
-				mission_outcome = "victory"
-			elseif new_state == "defeat" or new_state == "game_score_lose" then
-				mission_outcome = "defeat"
-			elseif new_state == "loading" or new_state == "mission_intro" then
-				mission_outcome = nil
-			end
-
-			-- A zoneless mission can follow another level with no zone change, which would otherwise keep a stale window open.
-			if new_state == "loading" then
-				open_bosses = {}
-			end
-		elseif group_name == "music_objective" then
-			diagnostic_log(describe_transition(group_name, current, new_state))
-			music_objective = new_state
-			if new_state ~= "None" and new_state ~= LAST_MAN_STANDING then
-				event_kind = new_state
-			end
-		elseif group_name == "options" then
-			diagnostic_log(describe_transition(group_name, current, new_state))
-			menu_state = new_state
-			return
-		else
-			local expedition_only = group_name == "expeditions_intensity"
-				and (EXPEDITION_ONLY_COMBAT_STATES[new_state] or EXPEDITION_ONLY_COMBAT_STATES[current])
-			if LOGGED_ONLY_STATE_GROUPS[group_name] or expedition_only then
-				diagnostic_log(describe_transition(group_name, current, new_state))
-			end
-
-			return
-		end
-
-		for _, listener in ipairs(state_listeners) do
-			local ok, err = pcall(listener, group_name, new_state)
-			if not ok then
-				mod:error("[MusicReplacer] state change listener failed: " .. tostring(err))
-			end
-		end
-
-		recompute(mod)
+		return after_set_state(mod, group_name, current, new_state, is_transition, func(self, group_name, new_state))
 	end)
 
 	-- Managers.event:register needs the callback as a string method name, looked up on the registered object.
