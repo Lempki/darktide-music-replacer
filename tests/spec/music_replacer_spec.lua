@@ -584,6 +584,16 @@ describe("MusicReplacer.lua when playback stops working", function()
 end)
 
 describe("MusicReplacer.lua turned off and on", function()
+	it("lets playback try again after giving up when turned back on or when Rescan is pressed", function()
+		local harness = in_hub()
+
+		harness.mod.on_disabled(false)
+		harness.mod.on_enabled(false)
+		harness.mod.rescan_audio()
+
+		assert_equal(harness.client.tries_again, 2)
+	end)
+
 	it("hands the music back to the game at once when turned off, and plays again when turned back on", function()
 		local harness = in_hub()
 

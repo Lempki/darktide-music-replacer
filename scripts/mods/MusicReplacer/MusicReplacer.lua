@@ -449,6 +449,7 @@ mod.on_enabled = function(initial_call)
 
 	-- The hooks missed every state change while the mod was off.
 	Context.relearn()
+	AudioClient.try_again()
 	log("[mod] turned on, catching up with the game's music states")
 end
 
@@ -481,6 +482,8 @@ end
 
 -- Called by the Rescan Audio Folders button in the mod settings.
 mod.rescan_audio = function()
+	-- Pressing it is also the player's way to ask for another try after playback gave up.
+	AudioClient.try_again()
 	Library.request_rescan()
 end
 

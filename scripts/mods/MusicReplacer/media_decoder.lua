@@ -304,7 +304,8 @@ function Decoder:seek(seconds)
 	position.value = math.floor(seconds * HUNDRED_NANOSECONDS)
 
 	-- After a format change the file plays no further, not even from its start, since the voice cannot follow.
-	if self.format_changed then
+	-- A closed decoder has no reader left to call.
+	if self.format_changed or self.reader == nil then
 		return false
 	end
 

@@ -44,14 +44,26 @@ local function new_voice()
 	function voice.samples_played(self) return self.played end
 	function voice.submit(self, data, bytes, last)
 		if self.refuse_submit then
+			self.error = "submitting audio failed with 0x80070057"
 			return false
 		end
 		self.submitted[#self.submitted + 1] = { data = data, bytes = bytes, last = last }
 		self.queue = self.queue + 1
 		return true
 	end
-	function voice.set_volume(self, volume) self.volumes[#self.volumes + 1] = volume end
-	function voice.start(self) self.started = true end
+	function voice.set_volume(self, volume)
+		self.volumes[#self.volumes + 1] = volume
+		return not self.refuse_volume
+	end
+	function voice.start(self)
+		self.started = true
+		return true
+	end
+	function voice.stop(self)
+		self.started = false
+		return true
+	end
+	function voice.failure(self) return self.error end
 	function voice.destroy(self) self.destroyed = true end
 	function voice.play(self, buffers)
 		self.queue = math.max(0, self.queue - buffers)
@@ -63,29 +75,32 @@ end
 
 -- Returns player.lua initialized with fakes, and the fakes: the decoder `seconds` long, the voice, and freed pools.
 -- `voice_error`, if given, makes XAudio2 refuse the voice with that error.
+-- The returned `xaudio` fake takes `engine_failure`, as XAudio2's engine-wide failure, and `format_error`.
 local function load_player(seconds, voice_error)
 	local engine = FakeEngine.new()
 	local Player = engine:load("player")
 	local decoder = new_decoder(seconds)
 	local voice = new_voice()
 	local freed = {}
+	local xaudio = {
+		create_voice = function()
+			if voice_error then
+				return nil, voice_error, true
+			end
+			return voice
+		end,
+		available = function() return true end,
+	}
+	function xaudio.failure() return xaudio.engine_failure end
+	function xaudio.format_error() return xaudio.unplayable end
 
 	Player.init(
 		{ alloc = function() return POOL end, free = function(memory) freed[#freed + 1] = memory end },
 		{ open = function() return decoder end, available = function() return true end, error = function() return nil end },
-		{
-			create_voice = function()
-				if voice_error then
-					return nil, voice_error
-				end
-				return voice
-			end,
-			failure = function() return nil end,
-			available = function() return true end,
-		}
+		xaudio
 	)
 
-	return Player, decoder, voice, freed
+	return Player, decoder, voice, freed, xaudio
 end
 
 describe("player.lua", function()
@@ -248,7 +263,10 @@ describe("player.lua", function()
 		local Player, _, voice = load_player(60)
 		local stream = Player.open("a.mp3")
 		local stops = 0
-		function voice.stop() stops = stops + 1 end
+		function voice.stop()
+			stops = stops + 1
+			return true
+		end
 
 		stream:pause()
 		for _ = 1, 30 do
@@ -283,14 +301,56 @@ describe("player.lua", function()
 		assert_equal(stream:failure(), "the voice stopped playing with audio queued")
 	end)
 
-	it("reports a failure when XAudio2 refuses a buffer", function()
+	it("fails only the song when XAudio2 refuses a buffer while the engine works", function()
 		local Player, _, voice = load_player(60)
 		local stream = Player.open("a.mp3")
 
 		voice.refuse_submit = true
 		stream:update(0.016)
 
-		assert_equal(stream:failure(), "XAudio2 refused a buffer")
+		assert_equal(stream:failure(), nil)
+		assert_equal(stream:file_failure(), "submitting audio failed with 0x80070057")
+	end)
+
+	it("fails only the song when XAudio2 refuses its volume while the engine works", function()
+		local Player, _, voice = load_player(60)
+		local stream = Player.open("a.mp3")
+
+		voice.refuse_volume = true
+		stream:set_gain(0.5)
+
+		assert_equal(stream:failure(), nil)
+		assert_equal(stream:file_failure(), "XAudio2 refused a call")
+	end)
+
+	it("reports the engine's failure when a refused call comes from a failed engine", function()
+		local Player, _, voice, _, xaudio = load_player(60)
+		local stream = Player.open("a.mp3")
+
+		xaudio.engine_failure = "submitting audio failed with 0x88960004"
+		voice.refuse_submit = true
+		stream:update(0.016)
+
+		assert_equal(stream:failure(), "submitting audio failed with 0x88960004")
+	end)
+
+	it("turns down a format XAudio2 can never play before asking for a voice or a pool", function()
+		local Player, decoder, _, _, xaudio = load_player(60)
+		local asked = false
+		xaudio.unplayable = "XAudio2 cannot play 2 channel(s) at 384000 Hz"
+		xaudio.create_voice = function() asked = true end
+
+		assert_deep_equal({ Player.open("a.mp3") }, { nil, "XAudio2 cannot play 2 channel(s) at 384000 Hz" })
+		assert_equal(asked, false)
+		assert_equal(decoder.closed, true)
+		assert_equal(Player.pool_bytes(), 0)
+	end)
+
+	it("does not call a voice refused when the engine itself is unavailable", function()
+		local Player, _, _, _, xaudio = load_player(60)
+		xaudio.create_voice = function() return nil, "creating the output failed", false end
+
+		assert_deep_equal({ Player.open("a.mp3") }, { nil, "creating the output failed", false })
 	end)
 
 	it("wraps a looping stream's position back into the file", function()

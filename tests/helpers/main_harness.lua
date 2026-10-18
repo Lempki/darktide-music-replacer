@@ -80,6 +80,7 @@ local function new_audio_client()
 	function client.set_volume(scale) client.volume = scale end
 	function client.set_menu_volume(target) client.menu_volume = target end
 	function client.refresh_levels() client.levels_refreshed = (client.levels_refreshed or 0) + 1 end
+	function client.try_again() client.tries_again = (client.tries_again or 0) + 1 end
 
 	-- The real module reads these as functions, so they are looked up on the module table, not as fields.
 	local module = setmetatable({}, { __index = client })

@@ -28,7 +28,8 @@ local MAX_PARKED = 4
 -- Opening a file slower than this is logged, since it stalls the game's thread for that long.
 local SLOW_OPEN_MS = 100
 
--- Recoveries in a row before giving up for the session. Playing well for HEALTHY_SECONDS resets the count.
+-- Recoveries in a row before giving up, until the mod is turned on again or the folders are rescanned.
+-- Playing well for HEALTHY_SECONDS resets the count.
 local MAX_RECOVERIES = 3
 local HEALTHY_SECONDS = 30
 
@@ -56,6 +57,7 @@ local recoveries = 0
 local healthy_elapsed = 0
 local retry_elapsed = 0
 local broken = nil -- Why playback gave up for the session, or nil.
+local engine_suspect = nil -- Why a fading song failed while no song played, which the engine may not have reported itself.
 local stats_elapsed = 0
 local longest_gap = 0
 local used = false -- Set by the first play, so the stats only show once music has played.
@@ -78,6 +80,15 @@ end
 -- AudioClient.update() tries again every few seconds, and AudioClient.available() turns true once it works.
 function AudioClient.can_retry()
 	return Player ~= nil and broken == nil and Player.can_retry()
+end
+
+-- Lets playback try again after it gave up for the session, as when the player turns the mod on again or rescans the folders.
+function AudioClient.try_again()
+	if broken then
+		log_fn("[player] trying playback again after giving up")
+	end
+	broken = nil
+	recoveries = 0
 end
 
 -- Why playback is unavailable, or nil.
@@ -210,10 +221,11 @@ local function destroy_all()
 end
 
 -- Destroys every stream and recreates the engine on next use.
--- Returns false once that has happened more than MAX_RECOVERIES times in a row, and playback gives up for the session.
+-- Returns false once that has happened more than MAX_RECOVERIES times in a row, and playback gives up until AudioClient.try_again().
 local function rebuild_engine(reason)
 	destroy_all()
 	Player.reset()
+	engine_suspect = nil
 
 	recoveries = recoveries + 1
 	if recoveries > MAX_RECOVERIES then
@@ -257,7 +269,7 @@ function AudioClient.play(file_path, opts)
 	end
 
 	-- A failure that outlived its stream means the engine stopped working while no song needed it, so it is rebuilt first.
-	local engine_failure = Player.engine_failure()
+	local engine_failure = Player.engine_failure() or engine_suspect
 	if engine_failure then
 		log_fn(string.format("[player] the engine stopped working (%s), rebuilding it", engine_failure))
 		if not rebuild_engine(engine_failure) or not AudioClient.available() then
@@ -492,6 +504,13 @@ function AudioClient.update(dt)
 
 		if entry.parked_elapsed then
 			entry.parked_elapsed = entry.parked_elapsed + dt
+		end
+
+		-- A song that plays on shows the engine works, so a fading song's failure only counts against the engine without one.
+		-- A stall, the usual sign of a lost device, is never reported by the engine itself.
+		local current_plays = current and current.stream and not current.stream:failure()
+		if stream:failure() and not current_plays then
+			engine_suspect = engine_suspect or stream:failure()
 		end
 
 		if stream:ended() or stream:failure() or stream:file_failure() or (entry.parked_elapsed and entry.parked_elapsed >= PARK_SECONDS) then

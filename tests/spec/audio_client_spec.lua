@@ -387,6 +387,38 @@ describe("audio_client.lua", function()
 		assert_equal(lines[#lines]:find("gave up after 3 recoveries", 1, true) ~= nil, true, lines[#lines])
 	end)
 
+	it("plays again after giving up, once asked to try again", function()
+		local AudioClient, _, streams, _, lines = load_client()
+		AudioClient.play("hub/a.mp3", { fade_in = true })
+		for _ = 1, 4 do
+			streams[#streams].failed = "lost"
+			AudioClient.update(0.1)
+		end
+		assert_equal(AudioClient.available(), false)
+
+		AudioClient.try_again()
+
+		assert_equal(AudioClient.available(), true)
+		assert_equal(lines[#lines], "[player] trying playback again after giving up")
+		assert_equal(AudioClient.play("hub/b.mp3", { fade_in = true }), true)
+	end)
+
+	it("rebuilds the engine before the next song when a fading song fails while no song plays", function()
+		local AudioClient, player, streams, _, lines = load_client()
+		AudioClient.play("hub/a.mp3", { fade_in = true })
+		AudioClient.stop()
+
+		streams[1].failed = "the voice stopped playing with audio queued"
+		AudioClient.update(0.1)
+		assert_equal(player.resets, 0)
+
+		AudioClient.play("hub/b.mp3", { fade_in = true })
+
+		assert_equal(player.resets, 1)
+		assert_equal(lines[1], "[player] the engine stopped working (the voice stopped playing with audio queued), rebuilding it")
+		assert_equal(streams[2].path, "audio/hub/b.mp3")
+	end)
+
 	it("tries for an audio output every 5 seconds, without counting it as a recovery, and plays once there is one", function()
 		local AudioClient, player, streams, _, lines = load_client()
 		AudioClient.play("hub/a.mp3", { fade_in = true })

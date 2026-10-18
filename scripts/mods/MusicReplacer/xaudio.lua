@@ -2,7 +2,8 @@
 -- XAudio2 mixes and plays on its own thread, so the game only needs to keep each voice's queue topped up.
 -- No callback is ever registered, since LuaJIT cannot take calls from XAudio2's thread. Voice state is polled instead.
 -- XAudio2 reads a submitted buffer while it plays, so the caller keeps each buffer alive until the voice's queue has moved past it.
--- After a critical error, such as an audio device change it could not follow, every XAudio2 call fails until the engine is recreated.
+-- An error from XAudio2's own family, or a lost audio endpoint, means the engine failed and must be recreated.
+-- Any other error, such as a bad argument, fails only the voice it came from.
 -- Docs: https://learn.microsoft.com/en-us/windows/win32/xaudio2/xaudio2-introduction
 
 local XAudio = {}
@@ -40,6 +41,19 @@ local AUDIO_CATEGORY_GAME_MEDIA = 7
 
 -- XAudio2 holds at most 64 buffers per voice.
 local MAX_QUEUED_BUFFERS = 64
+
+-- The formats XAudio2 can play. A voice for anything else is always refused, whatever state the engine is in.
+local MIN_SAMPLE_RATE = 1000
+local MAX_SAMPLE_RATE = 200000
+local MAX_CHANNELS = 64
+
+-- XAudio2 rejects a volume above this, and a NaN or negative one.
+local MAX_VOLUME = 2 ^ 24
+
+-- The top 16 bits of an error HRESULT from XAudio2 itself, such as XAUDIO2_E_DEVICE_INVALIDATED, or from the audio client.
+-- Both come from the engine or the device, never from one voice's arguments.
+local XAUDIO2_ERROR_PREFIX = 0x8896
+local AUDCLNT_ERROR_PREFIX = 0x8889
 
 -- Signatures with the object pointer first. IXAudio2 starts with IUnknown's three slots, and its voices have no IUnknown.
 local CREATE_SOURCE_VOICE = { 5, "int32_t (*)(void *, void **, const MusicReplacer_WAVEFORMATEX *, uint32_t, float, void *, void *, void *)" }
@@ -140,20 +154,35 @@ function XAudio.failure()
 	return failure
 end
 
+local function is_engine_error(hresult)
+	local prefix = math.floor((hresult < 0 and hresult + 2 ^ 32 or hresult) / 65536)
+	return prefix == XAUDIO2_ERROR_PREFIX or prefix == AUDCLNT_ERROR_PREFIX
+end
+
+-- Why XAudio2 can never play `format`, or nil when it can.
+function XAudio.format_error(format)
+	local channels, rate = format.nChannels, format.nSamplesPerSec
+	if channels < 1 or channels > MAX_CHANNELS or rate < MIN_SAMPLE_RATE or rate > MAX_SAMPLE_RATE then
+		return string.format("XAudio2 cannot play %d channel(s) at %d Hz", channels, rate)
+	end
+	return nil
+end
+
 local Voice = {}
 Voice.__index = Voice
 
--- Creates a stopped voice for PCM in `format`, a MusicReplacer_WAVEFORMATEX. Returns the voice, or nil and why.
--- A refused voice is not recorded as an engine failure, since one file's format, such as a sample rate above 200 kHz, can cause it.
+-- Creates a stopped voice for PCM in `format`, a MusicReplacer_WAVEFORMATEX.
+-- Returns the voice, or nil, why, and true when XAudio2 itself refused the voice, which a failed engine also does.
+-- A refused voice is not recorded as an engine failure, since one file's format can cause it.
 function XAudio.create_voice(format)
 	if not XAudio.available() then
-		return nil, init_error
+		return nil, init_error, false
 	end
 
 	local out = ffi.new("void *[1]")
 	local hresult = call(engine, CREATE_SOURCE_VOICE, out, format, 0, XAUDIO2_DEFAULT_FREQ_RATIO, nil, nil, nil)
 	if not NativeFfi.succeeded(hresult) then
-		return nil, "creating a voice failed with " .. NativeFfi.hex(hresult)
+		return nil, "creating a voice failed with " .. NativeFfi.hex(hresult), true
 	end
 
 	local pointer = out[0]
@@ -179,24 +208,45 @@ local function read_state(self)
 	return self.state
 end
 
+-- Calls one of the voice's methods. A destroyed voice has no native object left, so it is not called at all.
 local function checked_voice(self, what, name, ...)
+	if self.pointer == nil then
+		return false
+	end
+
 	local hresult = self.methods[name](self.pointer, ...)
 	if NativeFfi.succeeded(hresult) then
 		return true
 	end
 
-	failure = failure or string.format("%s failed with %s", what, NativeFfi.hex(hresult))
+	local reason = string.format("%s failed with %s", what, NativeFfi.hex(hresult))
+	if is_engine_error(hresult) then
+		failure = failure or reason
+	else
+		self.error = self.error or reason
+	end
 	return false
+end
+
+-- Why one of this voice's calls failed while the engine works, or nil.
+function Voice:failure()
+	return self.error
 end
 
 -- Buffers submitted and not yet played.
 function Voice:queued()
+	if self.pointer == nil then
+		return 0
+	end
 	return read_state(self).BuffersQueued
 end
 
 -- Samples played since the voice was created, across every buffer.
 -- Read as two halves, since a 64-bit field would come back as a new object on every read.
 function Voice:samples_played()
+	if self.pointer == nil then
+		return 0
+	end
 	local state = read_state(self)
 	return state.SamplesPlayedLow + state.SamplesPlayedHigh * 4294967296
 end
@@ -205,6 +255,7 @@ end
 -- `last` marks the end of the stream. Returns false when the queue is full or XAudio2 refuses the buffer.
 function Voice:submit(data, bytes, last)
 	if self:queued() >= MAX_QUEUED_BUFFERS then
+		self.error = self.error or "the voice's queue is full"
 		return false
 	end
 
@@ -216,17 +267,21 @@ function Voice:submit(data, bytes, last)
 	return checked_voice(self, "submitting audio", "submit_source_buffer", buffer, nil)
 end
 
--- Volume as a linear amplitude scale. 1 plays the audio as decoded, 0 is silent.
+-- Volume as a linear amplitude scale. 1 plays the audio as decoded, 0 is silent. Returns false when XAudio2 refuses it.
 function Voice:set_volume(volume)
-	checked_voice(self, "setting a volume", "set_volume", math.max(0, volume), 0)
+	-- NaN fails every comparison, so it falls to 0 here instead of reaching XAudio2.
+	local safe = volume > 0 and math.min(volume, MAX_VOLUME) or 0
+	return checked_voice(self, "setting a volume", "set_volume", safe, 0)
 end
 
+-- Returns false when XAudio2 refuses it.
 function Voice:start()
-	checked_voice(self, "starting a voice", "start", 0, 0)
+	return checked_voice(self, "starting a voice", "start", 0, 0)
 end
 
+-- Returns false when XAudio2 refuses it.
 function Voice:stop()
-	checked_voice(self, "stopping a voice", "stop", 0, 0)
+	return checked_voice(self, "stopping a voice", "stop", 0, 0)
 end
 
 -- Stops and frees the voice. XAudio2 has finished with every buffer once this returns.

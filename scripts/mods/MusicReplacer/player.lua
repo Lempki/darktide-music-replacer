@@ -88,8 +88,22 @@ local function shaped(from, to, progress)
 	return from + (to - from) * (1 - math.cos(progress * math.pi / 2))
 end
 
+-- Takes the result of a voice call. A failed call fails the stream for an engine failure, and otherwise only this song.
+local function voice_ok(self, ok)
+	if ok then
+		return true
+	end
+
+	if XAudio.failure() then
+		self.failed = self.failed or XAudio.failure()
+	else
+		self.file_failed = self.file_failed or self.voice:failure() or "XAudio2 refused a call"
+	end
+	return false
+end
+
 local function apply_volume(self)
-	self.voice:set_volume(self.gain * self.fade)
+	voice_ok(self, self.voice:set_volume(self.gain * self.fade))
 end
 
 -- Decodes up to `max_fills` buffers into free pool slots and queues them.
@@ -126,8 +140,7 @@ local function fill(self, max_fills)
 		local last = not self.loop and self.decoder:at_end()
 
 		if bytes > 0 then
-			if not self.voice:submit(slot, bytes, last) then
-				self.failed = XAudio.failure() or "XAudio2 refused a buffer"
+			if not voice_ok(self, self.voice:submit(slot, bytes, last)) then
 				break
 			end
 			self.submitted = self.submitted + 1
@@ -157,7 +170,14 @@ local function open_stream(path, opts)
 		return nil, "seeking to " .. start_position .. "s failed"
 	end
 
+	-- Checked before asking for a voice, since XAudio2 refuses such a voice every time, which would look like a failed engine.
 	local format = decoder.format
+	local format_error = XAudio.format_error(format)
+	if format_error then
+		decoder:close()
+		return nil, format_error
+	end
+
 	local slot_bytes = math.floor(CHUNK_SECONDS * format.nAvgBytesPerSec / format.nBlockAlign) * format.nBlockAlign
 	local pool = NativeFfi.alloc(slot_bytes * SLOT_COUNT)
 	if not pool then
@@ -165,12 +185,12 @@ local function open_stream(path, opts)
 		return nil, "allocating the buffer pool failed"
 	end
 
-	local voice
-	voice, err = XAudio.create_voice(format)
+	local voice, refused_voice
+	voice, err, refused_voice = XAudio.create_voice(format)
 	if not voice then
 		NativeFfi.free(pool)
 		decoder:close()
-		return nil, err, true
+		return nil, err, refused_voice
 	end
 
 	pool_bytes = pool_bytes + slot_bytes * SLOT_COUNT
@@ -198,7 +218,7 @@ local function open_stream(path, opts)
 
 	apply_volume(self)
 	fill(self, START_SLOTS)
-	voice:start()
+	voice_ok(self, voice:start())
 
 	return self
 end
@@ -240,14 +260,14 @@ end
 -- Stops playing but keeps the queue and the position, so the song can continue later exactly where it stopped.
 function Stream:pause()
 	if not self.paused then
-		self.voice:stop()
+		voice_ok(self, self.voice:stop())
 		self.paused = true
 	end
 end
 
 function Stream:resume()
 	if self.paused then
-		self.voice:start()
+		voice_ok(self, self.voice:start())
 		self.paused = false
 		self.stalled_seconds = 0
 	end
