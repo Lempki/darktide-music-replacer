@@ -338,6 +338,7 @@ local function overlay_snapshot()
 		duration = AudioClient.duration(),
 		volume = volume,
 		menu_level = menu_level,
+		menu_volume = (mod:get("menu_volume") or 50) / 100,
 		song_level = song_level,
 		evening_out = mod:get("normalize_loudness") == true,
 	}

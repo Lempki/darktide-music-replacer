@@ -53,6 +53,22 @@ local function decibels(level)
 	return level > 0 and 20 * math.log10(level) or -math.huge
 end
 
+local function percent(share)
+	return math.floor(share * 100 + 0.5)
+end
+
+-- The Menu Volume setting, and while the music is lowered for a menu, or fading there or back, how far it is now.
+local function menu_text(setting, level)
+	local text = string.format("menu %d%%", percent(setting))
+	if level >= 1 then
+		return text
+	end
+	if percent(level) == percent(setting) then
+		return text .. " (lowered)"
+	end
+	return text .. string.format(" (now %d%%)", percent(level))
+end
+
 -- Cuts on a character boundary, since a name in another script uses several bytes per character and half a character garbles the text.
 local function shorten(name)
 	local characters = 0
@@ -79,7 +95,8 @@ end
 
 -- The overlay's lines for a snapshot from MusicReplacer.lua, each { label, value }, and timing = true on the line about timing.
 -- Its fields are turned_off, context, status, folder, overrides, pending, pending_seconds, hold, and hold_seconds.
--- The song's are song, position, and duration, and the volume's are volume, menu_level, song_level, and evening_out.
+-- The song's are song, position, and duration, and the volume's are volume, menu_volume, menu_level, song_level, and evening_out.
+-- menu_volume is the Menu Volume setting, and menu_level how far the music is lowered for a menu now, both as scales.
 function DebugOverlay.lines(snapshot)
 	if not snapshot then
 		return { { "Music Replacer", "starting" } }
@@ -118,8 +135,8 @@ function DebugOverlay.lines(snapshot)
 		lines[#lines + 1] = { "Song", "none" }
 	end
 
-	lines[#lines + 1] = { "Volume", string.format("custom %d%%, menu %d%%, %s",
-		math.floor((snapshot.volume or 1) * 100 + 0.5), math.floor((snapshot.menu_level or 1) * 100 + 0.5),
+	lines[#lines + 1] = { "Volume", string.format("custom %d%%, %s, %s",
+		percent(snapshot.volume or 1), menu_text(snapshot.menu_volume or 1, snapshot.menu_level or 1),
 		snapshot.evening_out and string.format("song %+.1f dB", decibels(snapshot.song_level or 1)) or "song as recorded") }
 
 	return lines

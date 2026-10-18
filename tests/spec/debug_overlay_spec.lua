@@ -66,7 +66,8 @@ local function full_snapshot()
 		position = 83.4,
 		duration = 265.6,
 		volume = 1,
-		menu_level = 0.5,
+		menu_volume = 0.5,
+		menu_level = 1,
 		song_level = 10 ^ (-7.9 / 20),
 		evening_out = true,
 	}
@@ -81,6 +82,22 @@ describe("debug_overlay.lua text", function()
 			"Folder: mission_combat\n" ..
 			"Song: Antagonist - Valfaris.mp3  1:23 / 4:25\n" ..
 			"Volume: custom 100%, menu 50%, song -7.9 dB")
+	end)
+
+	it("shows the Menu Volume setting, and how far the music is lowered while a menu is open", function()
+		local DebugOverlay = load_overlay(new_constant_elements())
+		local snapshot = full_snapshot()
+		local function volume_line()
+			return DebugOverlay.text(snapshot):match("Volume: ([^\n]+)")
+		end
+
+		assert_equal(volume_line(), "custom 100%, menu 50%, song -7.9 dB")
+
+		snapshot.menu_level = 0.72
+		assert_equal(volume_line(), "custom 100%, menu 50% (now 72%), song -7.9 dB")
+
+		snapshot.menu_level = 0.5
+		assert_equal(volume_line(), "custom 100%, menu 50% (lowered), song -7.9 dB")
 	end)
 
 	it("adds a line of its own for the hold and the pending change", function()
