@@ -25,7 +25,9 @@
 --	  Once that hold runs out, the plain combat state decides, with no combat hold added on top.
 --	* No context resolves while `music_game_state == "cinematic"`, so custom music stays off during cutscenes.
 --	* The hub and mission contexts only resolve while the game state is in the world: "mission", "mission_board" or "mission_ready".
---	  Loading screens and the briefing resolve "loading" instead, even once the zone has arrived.
+--	  Loading screens and the briefing resolve "loading" or "mission_loading" instead, even once the zone has arrived.
+--	  The briefing, and every loading screen after the mission board's "mission_ready", lead into a mission and resolve "mission_loading".
+--	  A plain loading screen does not say where it leads, so "mission_ready" tells joining a mission apart from leaving one.
 --	  The mission preparation screen, where the party stands together before a mission, resolves "mission_preparation".
 --	  The game reports it as "loadout" in every game mode.
 --	  The mission's intro resolves no context and keeps the game's stinger.
@@ -79,6 +81,7 @@ local mission_name = nil -- Name of the current mission, or nil while none is lo
 local mission_is_hub = false -- True while the loaded mission's template is the hub.
 local mission_is_operation = false -- True while the loaded mission is an Operation.
 local mission_mode = nil -- "havoc" or "expeditions" while one runs, else nil.
+local heading_to_mission = false -- True from the mission board's "mission_ready" until the trip into a mission ends.
 local event_kind = nil -- The music_objective value of the event playing now, kept through its hold, or nil.
 local mission_outcome = nil -- "victory" or "defeat" from that game state until the next level starts, else nil.
 local open_bosses = {} -- Boss unit -> { breed = name, order = n } for every open encounter window.
@@ -145,6 +148,18 @@ local IN_WORLD_GAME_STATES = { mission = true, mission_board = true, mission_rea
 
 -- Game states of a loading screen, and of the briefing before a mission.
 local LOADING_GAME_STATES = { loading = true, mission_loading = true, mission_briefing = true }
+
+-- Game states that end a trip into a mission: the mission's intro, its end, a cutscene, and the main menu.
+local ARRIVAL_GAME_STATES = {
+	mission_intro = true,
+	victory = true,
+	defeat = true,
+	game_score_win = true,
+	game_score_lose = true,
+	cinematic = true,
+	main_menu = true,
+	title = true,
+}
 
 -- Game states of the mission preparation screen.
 local PREPARATION_GAME_STATES = { loadout = true, loadout_ready = true }
@@ -278,7 +293,7 @@ local function resolve(mod)
 
 	-- A loading screen clears the outcome, so the loading screen after a mission's end gets here too.
 	if LOADING_GAME_STATES[music_game_state] then
-		return "loading"
+		return (heading_to_mission or music_game_state == "mission_briefing") and "mission_loading" or "loading"
 	end
 
 	if PREPARATION_GAME_STATES[music_game_state] then
@@ -508,6 +523,14 @@ function Context.init(mod, log)
 		elseif group_name == "music_game_state" then
 			diagnostic_log(describe_transition(group_name, current, new_state))
 			music_game_state = new_state
+
+			-- A loading screen that ends in "mission" has reached its level, such as when joining a mission in progress.
+			-- The mission board comes before every "mission_ready", so a ready that was taken back does not linger.
+			if new_state == "mission_ready" or new_state == "loadout" or new_state == "mission_briefing" then
+				heading_to_mission = true
+			elseif new_state == "mission_board" or ARRIVAL_GAME_STATES[new_state] or (new_state == "mission" and current == "loading") then
+				heading_to_mission = false
+			end
 
 			-- The state returns to "mission" between victory or defeat and the next loading screen.
 			-- So within this group, only a loading screen or a mission intro clears the outcome.

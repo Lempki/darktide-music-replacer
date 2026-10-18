@@ -1,7 +1,7 @@
 -- Remembers where a context's song stopped, so the song continues when that context returns.
 -- A new song is picked only once one ends on its own.
 -- Every loading screen forgets everything, so each mission and hub visit starts with fresh picks.
--- The one exception is a loading song that the mission preparation screen interrupts, which continues in the briefing after it.
+-- The one exception is a mission loading song that the mission preparation screen interrupts, which continues in the briefing after it.
 
 local ResumePoints = {}
 
@@ -47,7 +47,7 @@ local MIN_REMAINING_SECONDS = 10
 local mod = nil
 local points = {} -- context_name -> a table with file_path and position.
 
--- The loading song the mission preparation screen interrupted, kept apart from `points`, since loading screens clear those.
+-- The mission loading song the preparation screen interrupted, kept apart from `points`, since loading screens clear those.
 local loading_point = nil
 local is_loading = false
 
@@ -75,12 +75,12 @@ end
 -- Call on every context change, before take(), to forget the sequences that the new context ends.
 function ResumePoints.enter(context_name)
 	-- The loading and preparation contexts are part of the loading screen, not the next level.
-	if context_name ~= nil and context_name ~= "loading" and context_name ~= "mission_preparation" then
+	if context_name ~= nil and context_name ~= "loading" and context_name ~= "mission_loading" and context_name ~= "mission_preparation" then
 		is_loading = false
 	end
 
-	-- Only the briefing after the preparation screen continues the loading song.
-	if context_name ~= "loading" and context_name ~= "mission_preparation" then
+	-- Only the briefing after the preparation screen continues the mission loading song.
+	if context_name ~= "mission_loading" and context_name ~= "mission_preparation" then
 		loading_point = nil
 	end
 
@@ -116,7 +116,7 @@ function ResumePoints.remember(context_name, file_path, position, duration, is_o
 		return nil
 	end
 
-	if context_name == "loading" then
+	if context_name == "mission_loading" then
 		loading_point = nil
 		if next_context_name ~= "mission_preparation" then
 			return nil
@@ -153,7 +153,7 @@ function ResumePoints.take(context_name)
 	local point = points[context_name]
 	points[context_name] = nil
 
-	if context_name == "loading" then
+	if context_name == "mission_loading" then
 		point = loading_point
 		loading_point = nil
 	end

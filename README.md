@@ -28,6 +28,7 @@ Install this mod like any other Darktide mod, then drop your own audio files int
     hub\
     loading\
     mission_preparation\
+    mission_loading\
     mission_explore\
     mission_combat\
     mission_horde\
@@ -40,15 +41,16 @@ Install this mod like any other Darktide mod, then drop your own audio files int
     mortis_trials_break\
 ```
 
-All thirteen folders already exist after install. Put audio files directly inside whichever ones you want music for. Folders inside them are override folders, described below.
+All fourteen folders already exist after install. Put audio files directly inside whichever ones you want music for. Folders inside them are override folders, described below.
 
 Supported formats are `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, and `.wma`. Other files, such as `.ogg` and `.opus`, are ignored, so convert those to a supported format first. File names in any language work.
 
 | Folder | When it plays |
 |---|---|
 | `hub` | In the Mourningstar. |
-| `loading` | On loading screens and in the briefing before a mission. A loading song that the preparation screen interrupts continues in the briefing, unless Resume Songs is off. The mission's intro itself keeps the game's own music. |
+| `loading` | On loading screens that lead anywhere but into a mission: after starting the game, after a mission, and on the way to Meat Grinder. |
 | `mission_preparation` | On the mission preparation screen, where the party stands together before a mission and can still change loadouts, in every game mode. Joining a mission already in progress skips it. |
+| `mission_loading` | On the loading screens and the briefing on the way into a mission, also when joining a mission already in progress. A song that the preparation screen interrupts continues in the briefing, unless Resume Songs is off. The mission's intro itself keeps the game's own music. For music that differs by game mode, as the game's own does, use override folders such as `mission_loading\havoc\` or `mission_loading\expeditions\`. |
 | `mission_explore` | In a mission, no meaningful threat. |
 | `mission_combat` | In a mission, while enemies are attacking you outside a horde or a boss fight. The game itself plays no music here. |
 | `mission_horde` | In a mission, during a horde. With no files here, the game's own horde music plays, as it does without the mod. |
@@ -84,11 +86,11 @@ These are in the in-game mod options under Music Replacer, in six groups, in the
 | Setting | Default | What it does |
 |---|---|---|
 | Rescan Audio Folders | (button) | Lists the audio folders again at once. The mod already notices added, removed, and replaced files by itself a few seconds after they change, so this is for drives where Windows cannot report changes, such as some network drives. |
-| Resume Songs | On | When explore or combat music, or a Mortis Trials wave or break, comes back, its song continues from where it stopped. A horde, boss, or event song also continues after higher-priority music interrupts it, such as a boss during a horde or a last stand during an event, as long as that horde, fight, or event did not end in between. A new horde, boss fight, or event gets a new pick. A new song is also picked once one ends on its own. Every mission and hub visit starts with fresh songs. A loading song that the mission preparation screen interrupts continues in the briefing after it. |
+| Resume Songs | On | When explore or combat music, or a Mortis Trials wave or break, comes back, its song continues from where it stopped. A horde, boss, or event song also continues after higher-priority music interrupts it, such as a boss during a horde or a last stand during an event, as long as that horde, fight, or event did not end in between. A new horde, boss fight, or event gets a new pick. A new song is also picked once one ends on its own. Every mission and hub visit starts with fresh songs. A mission loading song that the mission preparation screen interrupts continues in the briefing after it. |
 
 ### Music per Context
 
-One dropdown per context: Hub, Loading, Preparation, Explore, Combat, Horde, Boss, Event, Last Stand, Victory, Defeat, Mortis Trials Wave, Mortis Trials Break, and Meat Grinder. Each picks what plays there:
+One dropdown per context: Hub, Loading, Preparation, Mission Loading, Explore, Combat, Horde, Boss, Event, Last Stand, Victory, Defeat, Mortis Trials Wave, Mortis Trials Break, and Meat Grinder. Each picks what plays there:
 
 | Choice | What plays |
 |---|---|
@@ -185,7 +187,7 @@ The mod always logs the important events, such as which music plays and why, and
 * [x] Picking up added, removed, and replaced audio files by itself while the game runs.
 * [x] A short log of the important events written by default, with the previous session's log kept beside it as `diagnostic-prev.log`, so either can be attached to a bug report. Detailed Logging adds the noisy lines on top.
 * [x] Volume: lowering custom music while a menu is open, as the game does with its own music, a volume for custom music, and evening out loudness, so quiet and loud files play at a similar level without changing the files.
-* [x] Custom music for loading screens, the briefing, and the mission preparation screen.
+* [x] Custom music for loading screens, the mission preparation screen, and the loading screens and briefing on the way into a mission.
 * [x] Optional override folders named after what the game reports, inside a context's folder: per kind of mission event, such as `escape_event`, per kind of boss, such as `chaos_spawn`, per mission, and per game mode, Havoc and Expeditions.
 
 ## Development

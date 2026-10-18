@@ -264,8 +264,9 @@ local DEBOUNCE_SECONDS = 0.6
 local MAX_DEBOUNCE_SECONDS = 3
 
 -- Leaving the hub for a mission reports a loading screen for about 2 seconds before the mission preparation screen.
--- So a change to "loading" waits this long, and the hub song carries straight on into the preparation screen's song.
+-- So a change to a loading context waits this long, and the hub song carries straight on into the preparation screen's song.
 local LOADING_DEBOUNCE_SECONDS = 3
+local LOADING_CONTEXTS = { loading = true, mission_loading = true }
 
 local pending_context = nil
 local debounce_elapsed = 0
@@ -319,7 +320,7 @@ local function overlay_snapshot()
 
 	local pending_seconds = nil
 	if has_pending_change then
-		local debounce_seconds = pending_context == "loading" and LOADING_DEBOUNCE_SECONDS or DEBOUNCE_SECONDS
+		local debounce_seconds = LOADING_CONTEXTS[pending_context] and LOADING_DEBOUNCE_SECONDS or DEBOUNCE_SECONDS
 		pending_seconds = math.max(0, math.min(debounce_seconds - debounce_elapsed, MAX_DEBOUNCE_SECONDS - pending_elapsed))
 	end
 
@@ -534,7 +535,7 @@ mod.update = function(dt)
 		debounce_elapsed = debounce_elapsed + dt
 		pending_elapsed = pending_elapsed + dt
 
-		local debounce_seconds = pending_context == "loading" and LOADING_DEBOUNCE_SECONDS or DEBOUNCE_SECONDS
+		local debounce_seconds = LOADING_CONTEXTS[pending_context] and LOADING_DEBOUNCE_SECONDS or DEBOUNCE_SECONDS
 		if debounce_elapsed >= debounce_seconds or pending_elapsed >= MAX_DEBOUNCE_SECONDS then
 			commit_pending_context()
 		end

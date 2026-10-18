@@ -4,11 +4,14 @@ local Harness = require("tests.helpers.context_harness")
 
 -- Returns a harness that has walked from the hub into Meat Grinder.
 -- `source` is the Meat Grinder setting: "custom", "game", or "silence".
+-- The way to Meat Grinder skips the mission board, so its loading screen is a plain one.
 local function in_meat_grinder(source)
 	local harness = Harness.new({ source_meat_grinder = source })
 	harness:cold_start_to_hub()
-	harness:leave_hub()
-	harness:wait(15)
+	harness:state("music_zone", "None")
+	harness:state("music_game_state", "loading")
+	harness:mission(nil)
+	harness:wait(3)
 	harness:mission("tg_shooting_range")
 	harness:state("music_game_state", "mission")
 

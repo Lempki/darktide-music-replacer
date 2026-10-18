@@ -49,6 +49,7 @@ return {
 					source_widget("hub"),
 					source_widget("loading"),
 					source_widget("mission_preparation"),
+					source_widget("mission_loading"),
 					source_widget("mission_explore"),
 					source_widget("mission_combat"),
 					source_widget("mission_horde"),

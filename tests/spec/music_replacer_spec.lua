@@ -321,7 +321,8 @@ end)
 describe("MusicReplacer.lua loading", function()
 	local FILES = {
 		hub = { { name = "h.mp3", duration = 300 } },
-		loading = { { name = "l1.mp3", duration = 300 }, { name = "l2.mp3", duration = 300 } },
+		loading = { { name = "l1.mp3", duration = 300 } },
+		mission_loading = { { name = "m1.mp3", duration = 300 }, { name = "m2.mp3", duration = 300 } },
 		mission_preparation = { { name = "p.mp3", duration = 300 } },
 		mission_explore = { { name = "x.mp3", duration = 300 } },
 	}
@@ -348,11 +349,11 @@ describe("MusicReplacer.lua loading", function()
 		assert_equal(harness.engine:wwise_state("music_game_state"), "None")
 	end)
 
-	it("continues a loading song the preparation screen interrupted in the briefing, then plays the game's stinger, then explore", function()
+	it("continues a mission loading song the preparation screen interrupted in the briefing, then plays the game's stinger, then explore", function()
 		local harness = in_hub_with(FILES)
 		harness:leave_hub()
 		harness:wait(5)
-		assert_equal(harness:playing(), "loading/l2.mp3")
+		assert_equal(harness:playing(), "mission_loading/m1.mp3")
 		harness.client.position = 42
 
 		harness:state("music_game_state", "loadout")
@@ -365,7 +366,7 @@ describe("MusicReplacer.lua loading", function()
 		harness:mission("lm_cooling")
 		harness:wait(3.1)
 
-		assert_equal(harness:playing(), "loading/l2.mp3")
+		assert_equal(harness:playing(), "mission_loading/m1.mp3")
 		assert_equal(harness:last_play().opts.start_position, 42)
 
 		harness:state("music_game_state", "mission_intro")
@@ -388,7 +389,19 @@ describe("MusicReplacer.lua loading", function()
 
 		assert_equal(harness:playing(), nil)
 		assert_equal(harness.engine:wwise_state("music_game_state"), "loading")
-		assert_equal(harness:logged("[playback] loading: no file available, using native music"), true)
+		assert_equal(harness:logged("[playback] mission_loading: no file available, using native music"), true)
+	end)
+
+	it("plays the loading folder, not the mission loading one, on the way back to the hub", function()
+		local harness = in_hub_with(FILES)
+		harness:leave_hub()
+		harness:enter_mission("lm_cooling", "zone_3")
+		harness:settle()
+
+		harness:end_with_victory("zone_3")
+		harness:wait(3.1)
+
+		assert_equal(harness:playing(), "loading/l1.mp3")
 	end)
 end)
 

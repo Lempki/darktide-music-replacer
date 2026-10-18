@@ -59,10 +59,19 @@ local strings = {
 		en = "Loading",
 	},
 	source_loading_tooltip = {
-		en = "What plays on loading screens and in the briefing before a mission.\n\n" ..
+		en = "What plays on loading screens that lead anywhere but into a mission: after starting the game, after a mission, and on the way to Meat Grinder.\n\n" ..
+			highlight("Custom") .. " plays your songs from its folder. " ..
+			highlight("Game's Own") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing." ..
+			EMPTY_FOLDER_NOTE,
+	},
+	source_mission_loading = {
+		en = "Mission Loading",
+	},
+	source_mission_loading_tooltip = {
+		en = "What plays on the loading screens and the briefing on the way into a mission, also when joining a mission in progress.\n\n" ..
 			highlight("Custom") .. " plays your songs from its folder. " ..
 			highlight("Game's Own") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing. " ..
-			"The intro itself keeps the game's music, and a loading song interrupted by the preparation screen continues in the briefing." ..
+			"The intro itself keeps the game's music, and a song interrupted by the preparation screen continues in the briefing." ..
 			EMPTY_FOLDER_NOTE,
 	},
 	source_mission_preparation = {

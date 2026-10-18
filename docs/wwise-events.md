@@ -26,7 +26,7 @@ Wwise reports "no value" as the word `None`.
 
 * `music_combat` is `normal` while enemies are attacking you, and it flips back to `None` every few seconds in a fight. The Combat Music Hold setting bridges those gaps. `horde_low` and `horde_high` mean a horde is on you, and `boss` means a monstrosity is near.
 * `music_zone` names the hub or the mission's area. It arrives before the music can start: the hub zone about 10 seconds before the loading screen ends, and a mission zone partway through the briefing.
-* `music_game_state` says where the player is. The hub and mission music only plays while it is `mission`, `mission_board`, or `mission_ready`. `loading` and `mission_briefing` play the Loading music, `loadout`, the mission preparation screen, plays the Preparation music, and the mission intro keeps the game's own music. `cinematic` means a cutscene, which never gets custom music. After a mission, a story mission can go straight from `game_score_win` to `cinematic`.
+* `music_game_state` says where the player is. The hub and mission music only plays while it is `mission`, `mission_board`, or `mission_ready`. `mission_briefing`, and `loading` on the way into a mission, play the Mission Loading music, any other `loading` plays the Loading music, `loadout`, the mission preparation screen, plays the Preparation music, and the mission intro keeps the game's own music. `cinematic` means a cutscene, which never gets custom music. After a mission, a story mission can go straight from `game_score_win` to `cinematic`.
 * `music_objective` carries the last stand and mission event music. Some events set it to `None` for a few seconds between their stages, which the Event Music Hold setting bridges.
 
 One more group, `options`, says which kind of menu is open.
@@ -58,7 +58,7 @@ Each line below shows up in the log with Detailed Logging on:
 |---|---|
 | `[suppress] forcing music_combat to None while a custom track plays` | The game's combat, horde, and boss music is off. It stays off through every change of `music_combat` until the custom song stops. |
 | `[suppress] forcing music_zone hub -> None` | The game's hub music is off while a custom hub song plays. |
-| `[suppress] forcing music_game_state victory -> None` | The game's victory, defeat, loading, or preparation music is off while a custom song for that context plays. |
+| `[suppress] forcing music_game_state victory -> None` | The game's victory, defeat, loading, mission loading, or preparation music is off while a custom song for that context plays. |
 | `[suppress] forcing music_objective fortification_event -> None` | The game's event, last stand, or Mortis Trials wave music is off while a custom song for that context plays. |
 | `[suppress] skipped native music event: wwise/events/music/play_exploration_music` | The game's exploration music did not start, because a custom song plays. |
 | `[suppress] restoring music_zone to hub` | The custom song stopped, so the game's own state, and with it its music, is back. |
