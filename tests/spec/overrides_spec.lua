@@ -19,41 +19,54 @@ describe("context.lua override names", function()
 	it("offers the mission's code for any mission context, and nothing of the hub", function()
 		local harness = Harness.new()
 		harness:cold_start_to_hub()
-		assert_deep_equal(harness.Context.override_keys("hub"), {})
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "hub"), {})
 
 		harness:leave_hub()
 		harness:enter_mission("fm_cargo", "zone_3")
 
-		assert_deep_equal(harness.Context.override_keys("mission_explore"), { "fm_cargo" })
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "mission_explore"), { "fm_cargo" })
 	end)
 
 	it("offers the event's kind first, keeps it through the event hold, and drops it once the event is over", function()
 		local harness = in_mission()
 
 		harness:state("music_objective", "fortification_event")
-		assert_deep_equal(harness.Context.override_keys("mission_event"), { "fortification_event", "fm_cargo" })
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "mission_event"), { "fortification_event", "fm_cargo" })
 
 		harness:state("music_objective", "None")
 		harness:wait(2)
-		assert_deep_equal(harness.Context.override_keys("mission_event"), { "fortification_event", "fm_cargo" })
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "mission_event"), { "fortification_event", "fm_cargo" })
 
 		harness:state("music_objective", "escape_event")
-		assert_deep_equal(harness.Context.override_keys("mission_event"), { "escape_event", "fm_cargo" })
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "mission_event"), { "escape_event", "fm_cargo" })
 
 		harness:state("music_objective", "None")
 		harness:wait(5.2)
 		assert_equal(harness:current(), "mission_explore")
-		assert_deep_equal(harness.Context.override_keys("mission_event"), { "fm_cargo" })
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "mission_event"), { "fm_cargo" })
 	end)
 
 	it("offers the boss's kind once the game names it", function()
 		local harness = in_mission()
 		harness:state("music_combat", "boss")
-		assert_deep_equal(harness.Context.override_keys("mission_boss"), { "fm_cargo" })
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "mission_boss"), { "fm_cargo" })
 
 		harness:boss_start(harness:new_boss("chaos_spawn"))
 
-		assert_deep_equal(harness.Context.override_keys("mission_boss"), { "chaos_spawn", "fm_cargo" })
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "mission_boss"), { "chaos_spawn", "fm_cargo" })
+	end)
+
+	it("offers a captain's kind during another boss only while captains play boss music", function()
+		local harness = in_mission()
+		harness:state("music_combat", "boss")
+		harness:boss_start(harness:new_boss("chaos_spawn"))
+		harness:boss_start(harness:new_boss("renegade_captain"))
+
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "mission_boss"), { "chaos_spawn", "fm_cargo" })
+
+		harness:set_setting("captain_boss_music", true)
+
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "mission_boss"), { "renegade_captain", "fm_cargo" })
 	end)
 
 	it("offers expeditions during an Expedition, by its game mode", function()
@@ -63,7 +76,7 @@ describe("context.lua override names", function()
 		harness.engine:set_mission("exp_wastes", { game_mode_name = "expedition" })
 		harness:tick(0)
 
-		assert_deep_equal(harness.Context.override_keys("mission_combat"), { "exp_wastes", "expeditions" })
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "mission_combat"), { "exp_wastes", "expeditions" })
 	end)
 
 	it("offers havoc while the game has Havoc data, which is how the game itself tells a Havoc run apart", function()
@@ -73,7 +86,7 @@ describe("context.lua override names", function()
 		rawset(Managers.state, "difficulty", { get_parsed_havoc_data = function() return { rank = 20 } end })
 		harness:enter_mission("fm_cargo", "zone_3")
 
-		assert_deep_equal(harness.Context.override_keys("mission_horde"), { "fm_cargo", "havoc" })
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "mission_horde"), { "fm_cargo", "havoc" })
 	end)
 end)
 

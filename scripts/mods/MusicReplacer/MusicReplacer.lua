@@ -119,7 +119,7 @@ end
 -- The folders `context_name` can play from, in order: its override folders that have songs, then its own.
 local function folders_for(context_name)
 	local folders = {}
-	for _, key in ipairs(Context.override_keys(context_name)) do
+	for _, key in ipairs(Context.override_keys(mod, context_name)) do
 		local folder = context_name .. "/" .. key:lower()
 		if not gave_up[folder] and not emptied[folder] and Library.has_files(folder) then
 			folders[#folders + 1] = folder
@@ -367,7 +367,7 @@ local function overlay_snapshot()
 		hold_seconds = hold_seconds,
 		pending = has_pending_change and (pending_context or "none") or nil,
 		folder = current_folder,
-		overrides = current_context and table.concat(Context.override_keys(current_context), ", ") or nil,
+		overrides = current_context and table.concat(Context.override_keys(mod, current_context), ", ") or nil,
 		pending_seconds = pending_seconds,
 		song = song and song:match("[^/]+$"),
 		position = AudioClient.position(),

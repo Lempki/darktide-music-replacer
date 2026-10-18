@@ -175,15 +175,19 @@ local MORTIS_TRIALS_ZONE = "horde_mode"
 -- Resolution
 -- ###########################################################################
 
+-- True when an open encounter window plays boss music by its breed's setting.
+local function opted_in(mod, boss)
+	local setting_id = OPT_IN_BOSS_SETTINGS[boss.breed]
+	return setting_id ~= nil and mod:get(setting_id) == true
+end
+
 local function is_boss_active(mod)
 	if wwise_combat_state == "boss" then
 		return true
 	end
 
 	for _, boss in pairs(open_bosses) do
-		local setting_id = OPT_IN_BOSS_SETTINGS[boss.breed]
-
-		if setting_id and mod:get(setting_id) then
+		if opted_in(mod, boss) then
 			return true
 		end
 	end
@@ -191,12 +195,14 @@ local function is_boss_active(mod)
 	return false
 end
 
--- Breed name of the most recently opened encounter window, or nil when none is open.
-local function current_boss_breed()
+-- Breed name of the most recently opened encounter window that counts as a boss, or nil when none does.
+-- A captain or daemonhost with its setting off plays no boss music, so it does not name the folder during another boss's fight.
+local function current_boss_breed(mod)
 	local latest = nil
 
 	for _, boss in pairs(open_bosses) do
-		if not latest or boss.order > latest.order then
+		local counts = not OPT_IN_BOSS_SETTINGS[boss.breed] or opted_in(mod, boss)
+		if counts and (not latest or boss.order > latest.order) then
 			latest = boss
 		end
 	end
@@ -390,7 +396,7 @@ local function recompute(mod)
 	resolved_context = new_context
 
 	for _, listener in ipairs(change_listeners) do
-		local ok, err = pcall(listener, resolved_context, old_context, current_boss_breed())
+		local ok, err = pcall(listener, resolved_context, old_context, current_boss_breed(mod))
 		if not ok then
 			mod:error("Music Replacer could not switch the music for a change in the game: %s", tostring(err))
 		end
@@ -416,7 +422,7 @@ function Context.on_change(listener)
 end
 
 function Context.current()
-	return resolved_context, current_boss_breed()
+	return resolved_context
 end
 
 local HOLD_REMAINING = {
@@ -436,13 +442,13 @@ end
 -- The override folder names `context_name` may use right now, most specific first.
 -- They are the event's or the boss's kind, then the mission's code, then the game mode.
 -- MusicReplacer.lua plays the first one that has songs.
-function Context.override_keys(context_name)
+function Context.override_keys(mod, context_name)
 	local keys = {}
 
 	if context_name == "mission_event" and event_kind then
 		keys[#keys + 1] = event_kind
 	elseif context_name == "mission_boss" then
-		keys[#keys + 1] = current_boss_breed()
+		keys[#keys + 1] = current_boss_breed(mod)
 	end
 
 	if mission_name and not mission_is_hub then
