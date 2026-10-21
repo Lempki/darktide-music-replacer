@@ -591,8 +591,8 @@ function Context.init(mod, log)
 	diagnostic_log = log or diagnostic_log
 
 	-- The game's combat group decides only once per launch whether it runs an Expedition, on the first mission it sees.
-	-- So after an Expedition, every later mission kept reporting Expedition states, with no horde or boss, until the game restarted.
-	-- Clearing that decision as each mission ends makes the next mission decide again, which fixes the game's own music too.
+	-- Without this, every mission after an Expedition reports Expedition states to the mod, with no horde or boss, until the game restarts.
+	-- Clearing that decision as each mission ends makes the next mission decide again.
 	mod:hook_safe(WwiseStateGroupCombat, "on_gameplay_shutdown", function(self)
 		self._is_expedition_init = nil
 	end)
