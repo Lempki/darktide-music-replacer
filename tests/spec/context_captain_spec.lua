@@ -24,22 +24,22 @@ describe("context.lua captains", function()
 
 			harness:boss_start(captain)
 
-			assert_equal(harness:current(), "mission_combat", breed)
+			assert_equal(harness:current(), "combat", breed)
 		end
 	end)
 
-	it("resolves mission_boss for every captain from its encounter start to its end with the setting on", function()
+	it("resolves boss for every captain from its encounter start to its end with the setting on", function()
 		for _, breed in ipairs(CAPTAINS) do
 			local harness = in_mission({ captain_boss_music = true })
 			local captain = harness:new_boss(breed)
 
 			harness:boss_start(captain)
 
-			assert_equal(harness:current(), "mission_boss", breed)
+			assert_equal(harness:current(), "boss", breed)
 
 			harness:boss_end(captain)
 
-			assert_equal(harness:current(), "mission_explore", breed)
+			assert_equal(harness:current(), "explore", breed)
 		end
 	end)
 
@@ -51,7 +51,7 @@ describe("context.lua captains", function()
 		harness:state("music_objective", "kill_event")
 		harness:boss_start(captain)
 
-		assert_deep_equal(harness.changes, { "mission_event" })
+		assert_deep_equal(harness.changes, { "event" })
 	end)
 
 	it("re-resolves at once when the setting changes during the encounter", function()
@@ -62,7 +62,7 @@ describe("context.lua captains", function()
 		harness:set_setting("captain_boss_music", true)
 		harness:set_setting("captain_boss_music", false)
 
-		assert_deep_equal(harness.changes, { "mission_boss", "mission_explore" })
+		assert_deep_equal(harness.changes, { "boss", "explore" })
 	end)
 
 	it("does not count Spillway's psyker, which is not a captain", function()
@@ -71,6 +71,6 @@ describe("context.lua captains", function()
 
 		harness:boss_start(wizard)
 
-		assert_equal(harness:current(), "mission_explore")
+		assert_equal(harness:current(), "explore")
 	end)
 end)

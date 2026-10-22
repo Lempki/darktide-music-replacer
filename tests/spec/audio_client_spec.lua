@@ -110,7 +110,7 @@ describe("audio_client.lua", function()
 		local AudioClient, _, streams = load_client()
 		AudioClient.play("hub/a.mp3", { fade_in = true })
 
-		AudioClient.play("mission_combat/b.mp3", { fade_in = true })
+		AudioClient.play("combat/b.mp3", { fade_in = true })
 
 		assert_deep_equal(streams[1].fades[#streams[1].fades], { 0, 2 })
 		assert_deep_equal(streams[2].fades, { { 1, 2 } })
@@ -131,28 +131,28 @@ describe("audio_client.lua", function()
 
 	it("continues a parked song where it faded out when the mod resumes it", function()
 		local AudioClient, _, streams, _, lines = load_client()
-		AudioClient.play("mission_explore/a.mp3", { fade_in = true })
-		AudioClient.play("mission_combat/b.mp3", { fade_in = true })
+		AudioClient.play("explore/a.mp3", { fade_in = true })
+		AudioClient.play("combat/b.mp3", { fade_in = true })
 		AudioClient.update(2.1)
 		streams[1].current_position = 95
 
-		AudioClient.play("mission_explore/a.mp3", { fade_in = true, start_position = 93 })
+		AudioClient.play("explore/a.mp3", { fade_in = true, start_position = 93 })
 
 		assert_equal(#streams, 2)
 		assert_equal(streams[1].paused, false)
 		assert_deep_equal(streams[1].fades[#streams[1].fades], { 1, 2 })
 		assert_deep_equal(streams[2].fades[#streams[2].fades], { 0, 2 })
 		assert_equal(AudioClient.position(), 95)
-		assert_equal(lines[#lines], "[player] continuing mission_explore/a.mp3 from 95.0s, where it faded out")
+		assert_equal(lines[#lines], "[player] continuing explore/a.mp3 from 95.0s, where it faded out")
 	end)
 
 	it("does not take back a parked song whose loop setting differs, and opens it afresh instead", function()
 		local AudioClient, _, streams = load_client()
-		AudioClient.play("mission_explore/a.mp3", { fade_in = true, loop = true })
-		AudioClient.play("mission_combat/b.mp3", { fade_in = true })
+		AudioClient.play("explore/a.mp3", { fade_in = true, loop = true })
+		AudioClient.play("combat/b.mp3", { fade_in = true })
 		AudioClient.update(2.1)
 
-		AudioClient.play("mission_explore/a.mp3", { fade_in = true, start_position = 40, duration_seconds = 200 })
+		AudioClient.play("explore/a.mp3", { fade_in = true, start_position = 40, duration_seconds = 200 })
 
 		assert_equal(#streams, 3)
 		assert_equal(streams[3].opts.loop, false)
@@ -163,7 +163,7 @@ describe("audio_client.lua", function()
 		local AudioClient, _, streams = load_client()
 
 		for index = 1, 7 do
-			AudioClient.play("mission_explore/" .. index .. ".mp3", { fade_in = true })
+			AudioClient.play("explore/" .. index .. ".mp3", { fade_in = true })
 			AudioClient.update(2.1)
 		end
 
@@ -199,11 +199,11 @@ describe("audio_client.lua", function()
 
 	it("takes back a song still fading out, fading it up from where it is", function()
 		local AudioClient, _, streams = load_client()
-		AudioClient.play("mission_explore/a.mp3", { fade_in = true })
-		AudioClient.play("mission_combat/b.mp3", { fade_in = true })
+		AudioClient.play("explore/a.mp3", { fade_in = true })
+		AudioClient.play("combat/b.mp3", { fade_in = true })
 		AudioClient.update(1)
 
-		AudioClient.play("mission_explore/a.mp3", { fade_in = true, start_position = 10 })
+		AudioClient.play("explore/a.mp3", { fade_in = true, start_position = 10 })
 
 		assert_equal(#streams, 2)
 		assert_deep_equal(streams[1].fades[#streams[1].fades], { 1, 2 })
@@ -211,14 +211,14 @@ describe("audio_client.lua", function()
 
 	it("starts a fresh pick of a parked file over, since only a resume continues it", function()
 		local AudioClient, _, streams = load_client()
-		AudioClient.play("mission_horde/a.mp3", { fade_in = true })
-		AudioClient.play("mission_combat/b.mp3", { fade_in = true })
+		AudioClient.play("horde/a.mp3", { fade_in = true })
+		AudioClient.play("combat/b.mp3", { fade_in = true })
 		AudioClient.update(2.1)
 
-		AudioClient.play("mission_horde/a.mp3", { fade_in = true })
+		AudioClient.play("horde/a.mp3", { fade_in = true })
 
 		assert_equal(#streams, 3)
-		assert_equal(streams[3].path, "audio/mission_horde/a.mp3")
+		assert_equal(streams[3].path, "audio/horde/a.mp3")
 		assert_equal(streams[1].paused, true)
 	end)
 
@@ -552,12 +552,12 @@ describe("audio_client.lua", function()
 
 	it("does not take back a parked song that has ended or failed", function()
 		local AudioClient, _, streams = load_client()
-		AudioClient.play("mission_explore/a.mp3", { fade_in = true })
-		AudioClient.play("mission_combat/b.mp3", { fade_in = true })
+		AudioClient.play("explore/a.mp3", { fade_in = true })
+		AudioClient.play("combat/b.mp3", { fade_in = true })
 		AudioClient.update(2.1)
 		streams[1].failed = "lost"
 
-		AudioClient.play("mission_explore/a.mp3", { fade_in = true, start_position = 93 })
+		AudioClient.play("explore/a.mp3", { fade_in = true, start_position = 93 })
 
 		assert_equal(#streams, 3)
 		assert_equal(streams[3].opts.start_position, 93)

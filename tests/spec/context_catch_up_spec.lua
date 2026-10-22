@@ -44,7 +44,7 @@ describe("context.lua catching up after being turned off", function()
 
 		harness.Context.relearn()
 		harness.engine:reassert_states(GROUPS)
-		assert_equal(harness:current(), "mission_explore")
+		assert_equal(harness:current(), "explore")
 
 		harness:state("music_zone", "None")
 		harness:state("music_game_state", "loading")
@@ -82,7 +82,7 @@ describe("context.lua catching up", function()
 
 		engine:reassert_states({ "music_game_state", "music_zone" })
 
-		assert_equal((Context.current()), "mission_victory")
+		assert_equal((Context.current()), "victory")
 	end)
 
 	it("catches up with changes it missed after relearn, as when the mod is turned back on", function()
@@ -99,8 +99,8 @@ describe("context.lua catching up", function()
 		Context.update(engine.mod, 0)
 		engine:reassert_states(GROUPS)
 
-		assert_equal((Context.current()), "mission_explore")
-		assert_equal(changes[#changes], "mission_explore")
+		assert_equal((Context.current()), "explore")
+		assert_equal(changes[#changes], "explore")
 	end)
 
 	it("reports the context again after relearn, even when it has not changed", function()
@@ -130,11 +130,11 @@ describe("context.lua catching up", function()
 		engine:reassert_states(GROUPS)
 		local captain = { extension = { _breed = { name = "renegade_captain" } } }
 		engine:fire_event("boss_encounter_start", captain, captain.extension)
-		assert_equal((Context.current()), "mission_boss")
+		assert_equal((Context.current()), "boss")
 
 		Context.relearn()
 		engine:reassert_states(GROUPS)
 
-		assert_equal((Context.current()), "mission_boss")
+		assert_equal((Context.current()), "boss")
 	end)
 end)

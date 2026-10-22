@@ -42,19 +42,19 @@ describe("context.lua Meat Grinder", function()
 		assert_equal(harness:current(), "meat_grinder")
 	end)
 
-	it("resolves mission_explore and mission_combat when set to custom", function()
+	it("resolves explore and combat when set to custom", function()
 		local harness = in_meat_grinder("custom")
 		harness:clear_changes()
 
 		harness:state("music_combat", "normal")
 
-		assert_equal(harness:current(), "mission_combat")
+		assert_equal(harness:current(), "combat")
 	end)
 
 	it("resolves the mission contexts for a setting value it does not know, as for custom", function()
 		local harness = in_meat_grinder("custom_play_to_end")
 
-		assert_equal(harness:current(), "mission_explore")
+		assert_equal(harness:current(), "explore")
 	end)
 
 	it("re-resolves at once when the setting changes during a visit", function()
@@ -64,7 +64,7 @@ describe("context.lua Meat Grinder", function()
 		harness:set_setting("source_meat_grinder", "custom")
 		harness:set_setting("source_meat_grinder", "silence")
 
-		assert_deep_equal(harness.changes, { "mission_explore", "meat_grinder" })
+		assert_deep_equal(harness.changes, { "explore", "meat_grinder" })
 	end)
 
 	it("resolves hub after leaving", function()

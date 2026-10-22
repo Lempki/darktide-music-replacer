@@ -1,6 +1,6 @@
 -- Keeps one file list per music context, listed through audio_folders.lua.
 -- Each context is a single-level subfolder of this mod's "audio/" directory, for example ".../mods/MusicReplacer/audio/hub/".
--- A context folder can hold override folders one level further down, such as "mission_boss/chaos_spawn/".
+-- A context folder can hold override folders one level further down, such as "boss/chaos_spawn/".
 -- Their lists are kept under that key, in lowercase, since the names match what the game reports and Windows ignores case.
 --
 -- The folders are listed on the first update, again when a rescan is requested, and again once files change on disk.

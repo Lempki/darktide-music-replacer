@@ -14,33 +14,33 @@ local function in_mission(zone)
 end
 
 describe("context.lua last stand", function()
-	it("resolves mission_last_stand over explore", function()
+	it("resolves last_stand over explore", function()
 		local harness = in_mission("zone_3")
 
 		harness:state("music_objective", "last_man_standing")
 
-		assert_deep_equal(harness.changes, { "mission_last_stand" })
+		assert_deep_equal(harness.changes, { "last_stand" })
 	end)
 
-	it("resolves mission_last_stand over combat and a horde", function()
+	it("resolves last_stand over combat and a horde", function()
 		local harness = in_mission("zone_3")
 		harness:state("music_combat", "horde_high")
 
 		harness:state("music_objective", "last_man_standing")
 
-		assert_equal(harness:current(), "mission_last_stand")
+		assert_equal(harness:current(), "last_stand")
 	end)
 
-	it("resolves mission_last_stand in a zoneless mission", function()
+	it("resolves last_stand in a zoneless mission", function()
 		local harness = in_mission(nil)
 
 		harness:state("music_objective", "last_man_standing")
 
-		assert_equal(harness:current(), "mission_last_stand")
+		assert_equal(harness:current(), "last_stand")
 	end)
 
 	-- In the game, last stand music replaces boss music, and boss music returns after a rescue while the bosses live.
-	it("resolves mission_last_stand over bosses, and mission_boss again once it ends with the bosses alive", function()
+	it("resolves last_stand over bosses, and boss again once it ends with the bosses alive", function()
 		local harness = in_mission("zone_3")
 		local boss = harness:new_boss("chaos_beast_of_nurgle")
 		harness:state("music_combat", "boss")
@@ -50,10 +50,10 @@ describe("context.lua last stand", function()
 		harness:wait(60)
 		harness:state("music_objective", "None")
 
-		assert_deep_equal(harness.changes, { "mission_boss", "mission_last_stand", "mission_boss" })
+		assert_deep_equal(harness.changes, { "boss", "last_stand", "boss" })
 	end)
 
-	it("returns to mission_combat and its hold once it ends during combat", function()
+	it("returns to combat and its hold once it ends during combat", function()
 		local harness = in_mission("zone_3")
 		harness:state("music_combat", "normal")
 
@@ -62,35 +62,35 @@ describe("context.lua last stand", function()
 		harness:state("music_combat", "None")
 		harness:wait(8.2)
 
-		assert_deep_equal(harness.changes, { "mission_combat", "mission_last_stand", "mission_combat", "mission_explore" })
+		assert_deep_equal(harness.changes, { "combat", "last_stand", "combat", "explore" })
 	end)
 
-	it("gives way to mission_defeat when the last player falls", function()
+	it("gives way to defeat when the last player falls", function()
 		local harness = in_mission("zone_3")
 		harness:state("music_objective", "last_man_standing")
 
 		harness:end_with_defeat()
 
-		assert_deep_equal(harness.changes, { "mission_last_stand", "mission_defeat", "loading" })
+		assert_deep_equal(harness.changes, { "last_stand", "defeat", "loading" })
 	end)
 
-	it("gives way to mission_victory", function()
+	it("gives way to victory", function()
 		local harness = in_mission("zone_3")
 		harness:state("music_objective", "last_man_standing")
 
 		harness:state("music_game_state", "victory")
 
-		assert_deep_equal(harness.changes, { "mission_last_stand", "mission_victory" })
+		assert_deep_equal(harness.changes, { "last_stand", "victory" })
 	end)
 
 	-- The game replaces event music with last stand music in the same state group, and returns to the event afterward.
-	it("replaces mission_event, and gives it back once the last stand ends", function()
+	it("replaces event, and gives it back once the last stand ends", function()
 		local harness = in_mission("zone_2_depths")
 		harness:state("music_objective", "kill_event_3")
 
 		harness:state("music_objective", "last_man_standing")
 		harness:state("music_objective", "kill_event_3")
 
-		assert_deep_equal(harness.changes, { "mission_event", "mission_last_stand", "mission_event" })
+		assert_deep_equal(harness.changes, { "event", "last_stand", "event" })
 	end)
 end)

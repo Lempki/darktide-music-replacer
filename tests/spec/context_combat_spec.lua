@@ -1,4 +1,4 @@
--- Pins how context.lua switches between mission_explore and mission_combat, including the combat hold.
+-- Pins how context.lua switches between explore and combat, including the combat hold.
 
 local Harness = require("tests.helpers.context_harness")
 
@@ -14,15 +14,15 @@ local function in_mission(hold_seconds)
 end
 
 describe("context.lua combat", function()
-	it("switches to mission_combat at once when combat starts", function()
+	it("switches to combat at once when combat starts", function()
 		local harness = in_mission(8)
 
 		harness:state("music_combat", "normal")
 
-		assert_deep_equal(harness.changes, { "mission_combat" })
+		assert_deep_equal(harness.changes, { "combat" })
 	end)
 
-	it("holds mission_combat for the full hold after combat goes quiet, then returns to mission_explore", function()
+	it("holds combat for the full hold after combat goes quiet, then returns to explore", function()
 		local harness = in_mission(8)
 
 		harness:state("music_combat", "normal")
@@ -30,12 +30,12 @@ describe("context.lua combat", function()
 		harness:state("music_combat", "None")
 		harness:wait(7.8)
 
-		assert_equal(harness:current(), "mission_combat")
+		assert_equal(harness:current(), "combat")
 
 		harness:wait(0.3)
 
-		assert_equal(harness:current(), "mission_explore")
-		assert_deep_equal(harness.changes, { "mission_combat", "mission_explore" })
+		assert_equal(harness:current(), "explore")
+		assert_deep_equal(harness.changes, { "combat", "explore" })
 	end)
 
 	it("shortens a running hold at once when its setting is lowered, and ends it when set to 0", function()
@@ -47,18 +47,18 @@ describe("context.lua combat", function()
 		-- Written straight into the settings, as the mod options do, with no refresh, since the hold settings ask for none.
 		harness.settings.combat_hold_seconds = 2
 		harness:wait(1.9)
-		assert_equal(harness:current(), "mission_combat")
+		assert_equal(harness:current(), "combat")
 		harness:wait(0.2)
-		assert_equal(harness:current(), "mission_explore")
+		assert_equal(harness:current(), "explore")
 
 		harness:state("music_combat", "normal")
 		harness:state("music_combat", "None")
 		harness.settings.combat_hold_seconds = 0
 		harness:wait(0.1)
-		assert_equal(harness:current(), "mission_explore")
+		assert_equal(harness:current(), "explore")
 	end)
 
-	it("reports the combat hold and its seconds left while it keeps mission_combat", function()
+	it("reports the combat hold and its seconds left while it keeps combat", function()
 		local harness = in_mission(8)
 		harness:state("music_combat", "normal")
 		assert_equal(harness.Context.hold(), nil)
@@ -82,7 +82,7 @@ describe("context.lua combat", function()
 		harness:state("music_combat", "None")
 		harness:wait(7.8)
 
-		assert_equal(harness:current(), "mission_combat")
+		assert_equal(harness:current(), "combat")
 	end)
 
 	it("counts the hold from the last time combat went quiet when combat flaps", function()
@@ -97,21 +97,21 @@ describe("context.lua combat", function()
 		harness:state("music_combat", "None")
 		harness:wait(7.8)
 
-		assert_equal(harness:current(), "mission_combat")
+		assert_equal(harness:current(), "combat")
 
 		harness:wait(0.3)
 
-		assert_equal(harness:current(), "mission_explore")
-		assert_deep_equal(harness.changes, { "mission_combat", "mission_explore" })
+		assert_equal(harness:current(), "explore")
+		assert_deep_equal(harness.changes, { "combat", "explore" })
 	end)
 
-	it("returns to mission_explore at once with a hold of zero", function()
+	it("returns to explore at once with a hold of zero", function()
 		local harness = in_mission(0)
 
 		harness:state("music_combat", "normal")
 		harness:state("music_combat", "None")
 
-		assert_deep_equal(harness.changes, { "mission_combat", "mission_explore" })
+		assert_deep_equal(harness.changes, { "combat", "explore" })
 	end)
 
 	it("drops the hold on a real zone change", function()
@@ -121,6 +121,6 @@ describe("context.lua combat", function()
 		harness:state("music_combat", "None")
 		harness:state("music_zone", "zone_4")
 
-		assert_equal(harness:current(), "mission_explore")
+		assert_equal(harness:current(), "explore")
 	end)
 end)

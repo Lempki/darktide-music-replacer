@@ -65,12 +65,12 @@ end
 -- Call on every context change, before take(), to forget the sequences that the new context ends.
 function ResumePoints.enter(context_name)
 	-- The loading and preparation contexts are part of the loading screen, not the next level.
-	if context_name ~= nil and context_name ~= "loading" and context_name ~= "mission_loading" and context_name ~= "mission_preparation" then
+	if context_name ~= nil and context_name ~= "loading" and context_name ~= "mission_briefing" and context_name ~= "mission_preparation" then
 		is_loading = false
 	end
 
 	-- Only the briefing after the preparation screen continues the mission loading song.
-	if context_name ~= "mission_loading" and context_name ~= "mission_preparation" then
+	if context_name ~= "mission_briefing" and context_name ~= "mission_preparation" then
 		loading_point = nil
 	end
 
@@ -106,7 +106,7 @@ function ResumePoints.remember(context_name, file_path, position, duration, is_o
 		return nil
 	end
 
-	if context_name == "mission_loading" then
+	if context_name == "mission_briefing" then
 		loading_point = nil
 		if next_context_name ~= "mission_preparation" then
 			return nil
@@ -143,7 +143,7 @@ function ResumePoints.take(context_name)
 	local point = points[context_name]
 	points[context_name] = nil
 
-	if context_name == "mission_loading" then
+	if context_name == "mission_briefing" then
 		point = loading_point
 		loading_point = nil
 	end

@@ -68,7 +68,7 @@ local playing_track = nil -- Fields: context_name, file_path, duration, is_only_
 local lost_track = nil
 local was_playing = false -- Whether a custom song played on the last tick, so a song that had already stopped is never taken as lost.
 
--- The folder the current context's songs come from: its own, or an override folder inside it, such as "mission_boss/chaos_spawn".
+-- The folder the current context's songs come from: its own, or an override folder inside it, such as "boss/chaos_spawn".
 -- Nil while the context plays no custom music by its setting, so no override is looked for.
 local current_folder = nil
 

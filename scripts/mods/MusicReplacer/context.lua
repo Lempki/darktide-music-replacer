@@ -17,16 +17,16 @@
 --	  Boss windows are also cleared by every loading screen, so a window whose end event never came cannot reach the next level.
 --	  Meat Grinder's boss dummies leave `music_combat` at "boss" after leaving, until the next mission's intro ends.
 --	* `music_combat` flips on and off every few seconds in real combat.
---	  So `mission_combat` holds for `combat_hold_seconds` after combat quiets, and a lull does not drop to `mission_explore`.
+--	  So `combat` holds for `combat_hold_seconds` after combat quiets, and a lull does not drop to `explore`.
 --	  Entering combat is never delayed.
---	* "horde_low" and "horde_high" resolve "mission_horde", below bosses. The game plays its own horde music for both.
+--	* "horde_low" and "horde_high" resolve "horde", below bosses. The game plays its own horde music for both.
 --	  The game reports a horde only while at least 5 enemies are aggroed, so it drops out for a second or two mid-horde.
---	  So `mission_horde` holds for `horde_hold_seconds`, which is shorter than the combat hold, since a horde ends for good.
+--	  So `horde` holds for `horde_hold_seconds`, which is shorter than the combat hold, since a horde ends for good.
 --	  Once that hold runs out, the plain combat state decides, with no combat hold added on top.
 --	* No context resolves while `music_game_state == "cinematic"`, so custom music stays off during cutscenes.
 --	* The hub and mission contexts only resolve while the game state is in the world: "mission", "mission_board" or "mission_ready".
---	  Loading screens and the briefing resolve "loading" or "mission_loading" instead, even once the zone has arrived.
---	  The briefing, and every loading screen after the mission board's "mission_ready", lead into a mission and resolve "mission_loading".
+--	  Loading screens and the briefing resolve "loading" or "mission_briefing" instead, even once the zone has arrived.
+--	  The briefing, and every loading screen after the mission board's "mission_ready", lead into a mission and resolve "mission_briefing".
 --	  A plain loading screen does not say where it leads, so "mission_ready" tells joining a mission apart from leaving one.
 --	  The mission preparation screen, where the party stands together before a mission, resolves "mission_preparation".
 --	  The game reports it as "loadout" in every game mode.
@@ -43,13 +43,13 @@
 --	  It does not count while the hub is still loaded, since leaving the hub clears the zone a moment before the game state changes.
 --	  Nor does it count with no mission loaded at all.
 --	  Leaving the hub for character select unloads the hub a few seconds before the game state changes.
---	* `music_objective == "last_man_standing"` resolves "mission_last_stand", over bosses, combat and explore.
+--	* `music_objective == "last_man_standing"` resolves "last_stand", over bosses, combat and explore.
 --	  The game sets it when one player of the team is alive. Once it ends, the context follows the other states again.
 --	* Any other `music_objective` value is mission event music, for example "kill_event" or "fortification_event".
---	  It resolves "mission_event", over bosses, as the game's own event music does. Spillway's scripted bosses are events.
+--	  It resolves "event", over bosses, as the game's own event music does. Spillway's scripted bosses are events.
 --	  Last stand and event music share the group, so the game itself decides between them, and last stand wins there.
 --	  Some events clear `music_objective` for a few seconds between their stages, such as Cargo's end event.
---	  So `mission_event` holds for `event_hold_seconds` after it clears, and the event's song does not start over at every stage.
+--	  So `event` holds for `event_hold_seconds` after it clears, and the event's song does not start over at every stage.
 --	* Mortis Trials is recognized by its own music zone, "horde_mode".
 --	  Its waves, objective rounds and final win set `music_objective` and resolve "mortis_trials_wave".
 --	  The breaks between them resolve "mortis_trials_break".
@@ -103,12 +103,12 @@ local COMBAT_HOLD_SECONDS_DEFAULT = 8
 local HORDE_HOLD_SECONDS_DEFAULT = 3
 local EVENT_HOLD_SECONDS_DEFAULT = 5
 
-local combat_hold_remaining = 0 -- Seconds left before mission_combat may fall back to mission_explore.
-local horde_hold_remaining = 0 -- Seconds left before mission_horde may fall back to the plain combat state.
-local event_hold_remaining = 0 -- Seconds left before mission_event may fall back to the states below it.
+local combat_hold_remaining = 0 -- Seconds left before combat may fall back to explore.
+local horde_hold_remaining = 0 -- Seconds left before horde may fall back to the plain combat state.
+local event_hold_remaining = 0 -- Seconds left before event may fall back to the states below it.
 local active_hold = nil -- "combat", "horde", or "event" while the resolved context comes from that hold, else nil.
 
-local MISSION_OUTCOME_CONTEXTS = { victory = "mission_victory", defeat = "mission_defeat" }
+local MISSION_OUTCOME_CONTEXTS = { victory = "victory", defeat = "defeat" }
 
 -- Breeds the game plays no boss music for, mapped to the setting that makes them count as bosses.
 -- The game has several daemonhost breeds, for mutators and other modes, and all of them behave alike.
@@ -300,7 +300,7 @@ local function resolve(mod)
 
 	-- A loading screen clears the outcome, so the loading screen after a mission's end gets here too.
 	if LOADING_GAME_STATES[music_game_state] then
-		return (heading_to_mission or music_game_state == "mission_briefing") and "mission_loading" or "loading"
+		return (heading_to_mission or music_game_state == "mission_briefing") and "mission_briefing" or "loading"
 	end
 
 	if PREPARATION_GAME_STATES[music_game_state] then
@@ -328,7 +328,7 @@ local function resolve(mod)
 	end
 
 	if music_objective == LAST_MAN_STANDING then
-		return "mission_last_stand"
+		return "last_stand"
 	end
 
 	if music_zone == MORTIS_TRIALS_ZONE then
@@ -339,17 +339,17 @@ local function resolve(mod)
 	-- Operations script their music across the whole mission, in stages with short gaps between them, so each is one long event.
 	if is_event_active() then
 		event_hold_remaining = event_hold_seconds(mod)
-		return "mission_event"
+		return "event"
 	end
 
 	if event_hold_remaining > 0 then
-		diagnostic_log(string.format("[hold] event quiet, holding mission_event for %.1fs more", event_hold_remaining))
+		diagnostic_log(string.format("[hold] event quiet, holding event for %.1fs more", event_hold_remaining))
 		active_hold = "event"
-		return "mission_event"
+		return "event"
 	end
 
 	if is_boss_active(mod) then
-		return "mission_boss"
+		return "boss"
 	end
 
 	if has_no_zone() and resolved_context == nil then
@@ -359,27 +359,27 @@ local function resolve(mod)
 	if is_horde_active() then
 		horde_hold_remaining = horde_hold_seconds(mod)
 		combat_hold_remaining = 0
-		return "mission_horde"
+		return "horde"
 	end
 
 	if horde_hold_remaining > 0 then
-		diagnostic_log(string.format("[hold] horde quiet, holding mission_horde for %.1fs more", horde_hold_remaining))
+		diagnostic_log(string.format("[hold] horde quiet, holding horde for %.1fs more", horde_hold_remaining))
 		active_hold = "horde"
-		return "mission_horde"
+		return "horde"
 	end
 
 	if is_combat_active() then
 		combat_hold_remaining = combat_hold_seconds(mod)
-		return "mission_combat"
+		return "combat"
 	end
 
 	if combat_hold_remaining > 0 then
-		diagnostic_log(string.format("[hold] combat quiet, holding mission_combat for %.1fs more", combat_hold_remaining))
+		diagnostic_log(string.format("[hold] combat quiet, holding combat for %.1fs more", combat_hold_remaining))
 		active_hold = "combat"
-		return "mission_combat"
+		return "combat"
 	end
 
-	return "mission_explore"
+	return "explore"
 end
 
 local function recompute(mod)
@@ -448,9 +448,9 @@ end
 function Context.override_keys(mod, context_name)
 	local keys = {}
 
-	if context_name == "mission_event" and event_kind then
+	if context_name == "event" and event_kind then
 		keys[#keys + 1] = event_kind
-	elseif context_name == "mission_boss" then
+	elseif context_name == "boss" then
 		keys[#keys + 1] = current_boss_breed(mod)
 	end
 

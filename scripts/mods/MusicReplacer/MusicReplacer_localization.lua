@@ -65,10 +65,10 @@ local strings = {
 			highlight("Game's Own") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing." ..
 			EMPTY_FOLDER_NOTE,
 	},
-	source_mission_loading = {
+	source_mission_briefing = {
 		en = "Mission Loading",
 	},
-	source_mission_loading_tooltip = {
+	source_mission_briefing_tooltip = {
 		en = "What plays on the loading screens and the briefing on the way into a mission, also when joining a mission in progress.\n\n" ..
 			highlight("Custom") .. " plays your songs from its folder. " ..
 			highlight("Game's Own") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing. " ..
@@ -216,14 +216,14 @@ local strings = {
 -- The loading screens and Meat Grinder have tooltips of their own above.
 local CONTEXT_TEXT = {
 	hub = { "Hub", "in the Mourningstar" },
-	mission_explore = { "Explore", "in a mission while nothing threatens you" },
-	mission_combat = { "Combat", "while enemies attack you outside a horde or a boss fight" },
-	mission_horde = { "Horde", "during a horde" },
-	mission_boss = { "Boss", "while a monstrosity is near you" },
-	mission_event = { "Event", "while a mission event plays its music, and through a whole Operation" },
-	mission_last_stand = { "Last Stand", "while only one player of the team is alive" },
-	mission_victory = { "Victory", "after a mission is won" },
-	mission_defeat = { "Defeat", "after a mission is lost" },
+	explore = { "Explore", "in a mission while nothing threatens you" },
+	combat = { "Combat", "while enemies attack you outside a horde or a boss fight" },
+	horde = { "Horde", "during a horde" },
+	boss = { "Boss", "while a monstrosity is near you" },
+	event = { "Event", "while a mission event plays its music, and through a whole Operation" },
+	last_stand = { "Last Stand", "while only one player of the team is alive" },
+	victory = { "Victory", "after a mission is won" },
+	defeat = { "Defeat", "after a mission is lost" },
 	mortis_trials_wave = { "Mortis Trials Wave", "during a Mortis Trials wave" },
 	mortis_trials_break = { "Mortis Trials Break", "between Mortis Trials waves" },
 }

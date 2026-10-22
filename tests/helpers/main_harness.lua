@@ -24,7 +24,7 @@ local DEFAULT_SETTINGS = {
 }
 
 -- A stand-in for library.lua over `files`, which maps a folder key to a list of { name, duration }.
--- A folder key is a context, or an override folder inside it, such as "mission_boss/chaos_spawn".
+-- A folder key is a context, or an override folder inside it, such as "boss/chaos_spawn".
 -- Picks go through each folder in order, so the specs know which file comes next.
 local function new_library(files)
 	-- `gone` marks a folder whose files the listing still has, but which are no longer on disk, so nothing can be picked.

@@ -20,8 +20,8 @@ local function in_mission(settings)
 	local harness = MainHarness.new({
 		settings = settings,
 		files = {
-			mission_explore = { { name = "x.mp3", duration = 300 }, { name = "y.mp3", duration = 300 } },
-			mission_combat = { { name = "c.mp3", duration = 200 }, { name = "d.mp3", duration = 200 } },
+			explore = { { name = "x.mp3", duration = 300 }, { name = "y.mp3", duration = 300 } },
+			combat = { { name = "c.mp3", duration = 200 }, { name = "d.mp3", duration = 200 } },
 		},
 	})
 	harness:cold_start_to_hub()
@@ -81,7 +81,7 @@ describe("MusicReplacer.lua context changes", function()
 
 		local played_combat = false
 		for _, play in ipairs(harness.client.plays) do
-			played_combat = played_combat or play.file_path:find("^mission_combat/") ~= nil
+			played_combat = played_combat or play.file_path:find("^combat/") ~= nil
 		end
 		assert_equal(played_combat, true)
 	end)
@@ -95,7 +95,7 @@ describe("MusicReplacer.lua context changes", function()
 		harness:settle()
 
 		assert_equal(harness:playing(), nil)
-		assert_equal(harness:logged("[playback] mission_explore: no file available, using native music"), true)
+		assert_equal(harness:logged("[playback] explore: no file available, using native music"), true)
 
 		harness:state("music_combat", "normal")
 		assert_equal(harness.engine:wwise_state("music_combat"), "normal")
@@ -183,7 +183,7 @@ describe("MusicReplacer.lua resume points", function()
 
 		harness:state("music_combat", "normal")
 		harness:settle()
-		assert_equal(harness:playing():find("^mission_combat/") ~= nil, true)
+		assert_equal(harness:playing():find("^combat/") ~= nil, true)
 
 		harness:state("music_combat", "None")
 		harness:wait(8)
@@ -291,7 +291,7 @@ describe("MusicReplacer.lua native music events", function()
 	end)
 
 	it("lets the event play while the game's music plays", function()
-		local harness = in_mission({ source_mission_explore = "game" })
+		local harness = in_mission({ source_explore = "game" })
 
 		local playing_id = CLASS.WwiseWorld.trigger_resource_event({}, EXPLORATION_EVENT)
 
@@ -373,9 +373,9 @@ describe("MusicReplacer.lua loading", function()
 	local FILES = {
 		hub = { { name = "h.mp3", duration = 300 } },
 		loading = { { name = "l1.mp3", duration = 300 } },
-		mission_loading = { { name = "m1.mp3", duration = 300 }, { name = "m2.mp3", duration = 300 } },
+		mission_briefing = { { name = "m1.mp3", duration = 300 }, { name = "m2.mp3", duration = 300 } },
 		mission_preparation = { { name = "p.mp3", duration = 300 } },
-		mission_explore = { { name = "x.mp3", duration = 300 } },
+		explore = { { name = "x.mp3", duration = 300 } },
 	}
 
 	-- Returns a harness that has settled in the hub, after the first loading screen played l1.mp3.
@@ -404,7 +404,7 @@ describe("MusicReplacer.lua loading", function()
 		local harness = in_hub_with(FILES)
 		harness:leave_hub()
 		harness:wait(5)
-		assert_equal(harness:playing(), "mission_loading/m1.mp3")
+		assert_equal(harness:playing(), "mission_briefing/m1.mp3")
 		harness.client.position = 42
 
 		harness:state("music_game_state", "loadout")
@@ -417,7 +417,7 @@ describe("MusicReplacer.lua loading", function()
 		harness:mission("lm_cooling")
 		harness:wait(3.1)
 
-		assert_equal(harness:playing(), "mission_loading/m1.mp3")
+		assert_equal(harness:playing(), "mission_briefing/m1.mp3")
 		assert_equal(harness:last_play().opts.start_position, 42)
 
 		harness:state("music_game_state", "mission_intro")
@@ -429,7 +429,7 @@ describe("MusicReplacer.lua loading", function()
 		harness:state("music_game_state", "mission")
 		harness:settle()
 
-		assert_equal(harness:playing(), "mission_explore/x.mp3")
+		assert_equal(harness:playing(), "explore/x.mp3")
 	end)
 
 	it("leaves loading screens to the game's own music while the loading folder is empty", function()
@@ -440,7 +440,7 @@ describe("MusicReplacer.lua loading", function()
 
 		assert_equal(harness:playing(), nil)
 		assert_equal(harness.engine:wwise_state("music_game_state"), "loading")
-		assert_equal(harness:logged("[playback] mission_loading: no file available, using native music"), true)
+		assert_equal(harness:logged("[playback] mission_briefing: no file available, using native music"), true)
 	end)
 
 	it("plays the loading folder, not the mission loading one, on the way back to the hub", function()
@@ -521,66 +521,66 @@ describe("MusicReplacer.lua override folders", function()
 
 	it("plays the mission's override folder over the context's own", function()
 		local harness = in_cooling({
-			mission_explore = { { name = "x.mp3", duration = 300 } },
-			["mission_explore/lm_cooling"] = { { name = "cooling.mp3", duration = 300 } },
+			explore = { { name = "x.mp3", duration = 300 } },
+			["explore/lm_cooling"] = { { name = "cooling.mp3", duration = 300 } },
 		})
 
-		assert_equal(harness:playing(), "mission_explore/lm_cooling/cooling.mp3")
+		assert_equal(harness:playing(), "explore/lm_cooling/cooling.mp3")
 	end)
 
 	it("plays the context's own folder while no override folder has songs", function()
 		local harness = in_cooling({
-			mission_explore = { { name = "x.mp3", duration = 300 } },
-			["mission_explore/fm_cargo"] = { { name = "cargo.mp3", duration = 300 } },
+			explore = { { name = "x.mp3", duration = 300 } },
+			["explore/fm_cargo"] = { { name = "cargo.mp3", duration = 300 } },
 		})
 
-		assert_equal(harness:playing(), "mission_explore/x.mp3")
+		assert_equal(harness:playing(), "explore/x.mp3")
 	end)
 
 	it("switches to the boss's folder once the game names the boss, after its music already started", function()
 		local harness = in_cooling({
-			mission_boss = { { name = "b.mp3", duration = 300 } },
-			["mission_boss/chaos_spawn"] = { { name = "spawn.mp3", duration = 300 } },
+			boss = { { name = "b.mp3", duration = 300 } },
+			["boss/chaos_spawn"] = { { name = "spawn.mp3", duration = 300 } },
 		})
 		harness:state("music_combat", "boss")
 		harness:settle()
-		assert_equal(harness:playing(), "mission_boss/b.mp3")
+		assert_equal(harness:playing(), "boss/b.mp3")
 
 		harness:boss_start(harness:new_boss("chaos_spawn"))
 		harness:wait(0.6)
 
-		assert_equal(harness:playing(), "mission_boss/chaos_spawn/spawn.mp3")
-		assert_equal(harness:logged("[playback] mission_boss: switching from the mission_boss folder to the mission_boss/chaos_spawn folder"), true)
+		assert_equal(harness:playing(), "boss/chaos_spawn/spawn.mp3")
+		assert_equal(harness:logged("[playback] boss: switching from the boss folder to the boss/chaos_spawn folder"), true)
 	end)
 
 	it("falls back to the context's own folder once an override folder's songs would not play", function()
 		local harness = in_cooling({
-			mission_boss = { { name = "b.mp3", duration = 300 } },
-			["mission_boss/chaos_spawn"] = { { name = "spawn.mp3", duration = 300 }, { name = "spawn2.mp3", duration = 300 } },
+			boss = { { name = "b.mp3", duration = 300 } },
+			["boss/chaos_spawn"] = { { name = "spawn.mp3", duration = 300 }, { name = "spawn2.mp3", duration = 300 } },
 		})
 		harness:state("music_combat", "boss")
 		harness:settle()
 		harness:boss_start(harness:new_boss("chaos_spawn"))
 		harness:wait(0.6)
-		assert_equal(harness:playing(), "mission_boss/chaos_spawn/spawn.mp3")
+		assert_equal(harness:playing(), "boss/chaos_spawn/spawn.mp3")
 
 		for _ = 1, 3 do
 			harness:finish_song(0, true)
 		end
 
-		assert_equal(harness:playing(), "mission_boss/b.mp3")
-		assert_equal(harness:logged("from the mission_boss/chaos_spawn folder ended within 3s, trying the next folder"), true)
+		assert_equal(harness:playing(), "boss/b.mp3")
+		assert_equal(harness:logged("from the boss/chaos_spawn folder ended within 3s, trying the next folder"), true)
 
 		harness:wait(1)
-		assert_equal(harness:playing(), "mission_boss/b.mp3")
+		assert_equal(harness:playing(), "boss/b.mp3")
 	end)
 
 	it("plays the context's own folder when an override folder's files are gone from disk, without switching back", function()
 		local harness = MainHarness.new({ files = {
-			mission_explore = { { name = "x.mp3", duration = 300 } },
-			["mission_explore/lm_cooling"] = { { name = "cooling.mp3", duration = 300 } },
+			explore = { { name = "x.mp3", duration = 300 } },
+			["explore/lm_cooling"] = { { name = "cooling.mp3", duration = 300 } },
 		} })
-		harness.library.gone["mission_explore/lm_cooling"] = true
+		harness.library.gone["explore/lm_cooling"] = true
 		harness:cold_start_to_hub()
 		harness:leave_hub()
 		harness:enter_mission("lm_cooling", "zone_3")
@@ -589,14 +589,14 @@ describe("MusicReplacer.lua override folders", function()
 
 		harness:wait(2)
 
-		assert_equal(harness:playing(), "mission_explore/x.mp3")
+		assert_equal(harness:playing(), "explore/x.mp3")
 		assert_equal(#harness.client.plays, plays)
-		assert_equal(harness:logged("[playback] mission_explore: the mission_explore/lm_cooling folder has no songs left, trying the next folder"), true)
+		assert_equal(harness:logged("[playback] explore: the explore/lm_cooling folder has no songs left, trying the next folder"), true)
 	end)
 
 	it("plays an event kind's folder even while the event's own folder is empty", function()
 		local harness = in_cooling({
-			["mission_event/escape_event"] = { { name = "escape.mp3", duration = 300 } },
+			["event/escape_event"] = { { name = "escape.mp3", duration = 300 } },
 		})
 
 		harness:state("music_objective", "kill_event")
@@ -605,13 +605,13 @@ describe("MusicReplacer.lua override folders", function()
 
 		harness:state("music_objective", "escape_event")
 		harness:wait(0.6)
-		assert_equal(harness:playing(), "mission_event/escape_event/escape.mp3")
+		assert_equal(harness:playing(), "event/escape_event/escape.mp3")
 	end)
 
 	it("looks for no override while a context is set to the game's own music", function()
 		local harness = in_cooling({
-			["mission_boss/chaos_spawn"] = { { name = "spawn.mp3", duration = 300 } },
-		}, { source_mission_boss = "game" })
+			["boss/chaos_spawn"] = { { name = "spawn.mp3", duration = 300 } },
+		}, { source_boss = "game" })
 		harness:state("music_combat", "boss")
 		harness:boss_start(harness:new_boss("chaos_spawn"))
 		harness:wait(1.2)
@@ -672,11 +672,11 @@ describe("MusicReplacer.lua during a change that is still settling", function()
 		local stops = harness.client.stops
 		harness:state("music_combat", "normal")
 
-		harness:set_setting("source_mission_explore", "game")
+		harness:set_setting("source_explore", "game")
 		assert_equal(harness.client.stops, stops)
 
 		harness:wait(0.7)
-		assert_equal(harness:playing():find("^mission_combat/") ~= nil, true)
+		assert_equal(harness:playing():find("^combat/") ~= nil, true)
 	end)
 
 	it("still follows the changed setting when the change settles back on the same context", function()
@@ -684,11 +684,11 @@ describe("MusicReplacer.lua during a change that is still settling", function()
 		harness:state("music_combat", "normal")
 		harness:state("music_combat", "None")
 
-		harness:set_setting("source_mission_explore", "game")
+		harness:set_setting("source_explore", "game")
 		harness:wait(0.7)
 
 		assert_equal(harness:playing(), nil)
-		assert_equal(harness:logged("[playback] mission_explore: set to the game's own music"), true)
+		assert_equal(harness:logged("[playback] explore: set to the game's own music"), true)
 	end)
 end)
 

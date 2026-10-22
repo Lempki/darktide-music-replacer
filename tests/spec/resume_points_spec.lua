@@ -15,69 +15,69 @@ describe("resume_points.lua", function()
 	it("gives back an explore song's position once, then forgets it", function()
 		local ResumePoints = load_resume_points()
 
-		assert_equal(ResumePoints.remember("mission_explore", "mission_explore/a.mp3", 63.5, 200, false), 63.5)
+		assert_equal(ResumePoints.remember("explore", "explore/a.mp3", 63.5, 200, false), 63.5)
 
-		assert_deep_equal({ ResumePoints.take("mission_explore") }, { "mission_explore/a.mp3", 63.5 })
-		assert_equal(ResumePoints.take("mission_explore"), nil)
+		assert_deep_equal({ ResumePoints.take("explore") }, { "explore/a.mp3", 63.5 })
+		assert_equal(ResumePoints.take("explore"), nil)
 	end)
 
 	it("keeps explore and combat apart", function()
 		local ResumePoints = load_resume_points()
 
-		ResumePoints.remember("mission_explore", "mission_explore/a.mp3", 30, 200, false)
-		ResumePoints.remember("mission_combat", "mission_combat/b.mp3", 40, 200, false)
+		ResumePoints.remember("explore", "explore/a.mp3", 30, 200, false)
+		ResumePoints.remember("combat", "combat/b.mp3", 40, 200, false)
 
-		assert_deep_equal({ ResumePoints.take("mission_combat") }, { "mission_combat/b.mp3", 40 })
-		assert_deep_equal({ ResumePoints.take("mission_explore") }, { "mission_explore/a.mp3", 30 })
+		assert_deep_equal({ ResumePoints.take("combat") }, { "combat/b.mp3", 40 })
+		assert_deep_equal({ ResumePoints.take("explore") }, { "explore/a.mp3", 30 })
 	end)
 
 	it("remembers no hub, last stand, or mission end song", function()
 		local ResumePoints = load_resume_points()
 
-		for _, context_name in ipairs({ "hub", "mission_last_stand", "mission_victory", "mission_defeat" }) do
-			assert_equal(ResumePoints.remember(context_name, context_name .. "/a.mp3", 30, 200, false, "mission_explore"), nil)
+		for _, context_name in ipairs({ "hub", "last_stand", "victory", "defeat" }) do
+			assert_equal(ResumePoints.remember(context_name, context_name .. "/a.mp3", 30, 200, false, "explore"), nil)
 			assert_equal(ResumePoints.take(context_name), nil)
 		end
 	end)
 
 	it("keeps explore and combat songs through any other context", function()
 		local ResumePoints = load_resume_points()
-		ResumePoints.remember("mission_explore", "mission_explore/a.mp3", 30, 200, false, "mission_combat")
-		ResumePoints.remember("mission_combat", "mission_combat/b.mp3", 40, 200, false, "mission_explore")
+		ResumePoints.remember("explore", "explore/a.mp3", 30, 200, false, "combat")
+		ResumePoints.remember("combat", "combat/b.mp3", 40, 200, false, "explore")
 
-		for _, context_name in ipairs({ "mission_horde", "mission_boss", "mission_event", "mission_combat", "mission_explore" }) do
+		for _, context_name in ipairs({ "horde", "boss", "event", "combat", "explore" }) do
 			ResumePoints.enter(context_name)
 		end
 
-		assert_deep_equal({ ResumePoints.take("mission_explore") }, { "mission_explore/a.mp3", 30 })
-		assert_deep_equal({ ResumePoints.take("mission_combat") }, { "mission_combat/b.mp3", 40 })
+		assert_deep_equal({ ResumePoints.take("explore") }, { "explore/a.mp3", 30 })
+		assert_deep_equal({ ResumePoints.take("combat") }, { "combat/b.mp3", 40 })
 	end)
 
 	it("remembers nothing with the setting off", function()
 		local ResumePoints = load_resume_points({ resume_songs = false })
 
-		assert_equal(ResumePoints.remember("mission_explore", "mission_explore/a.mp3", 30, 200, false), nil)
-		assert_equal(ResumePoints.take("mission_explore"), nil)
+		assert_equal(ResumePoints.remember("explore", "explore/a.mp3", 30, 200, false), nil)
+		assert_equal(ResumePoints.take("explore"), nil)
 	end)
 
 	it("does not keep a song within 10 seconds of its end, and drops the older point for that context", function()
 		local ResumePoints = load_resume_points()
-		ResumePoints.remember("mission_explore", "mission_explore/a.mp3", 30, 200, false)
+		ResumePoints.remember("explore", "explore/a.mp3", 30, 200, false)
 
-		assert_equal(ResumePoints.remember("mission_explore", "mission_explore/b.mp3", 191, 200, false), nil)
-		assert_equal(ResumePoints.take("mission_explore"), nil)
+		assert_equal(ResumePoints.remember("explore", "explore/b.mp3", 191, 200, false), nil)
+		assert_equal(ResumePoints.take("explore"), nil)
 	end)
 
 	it("wraps a single file's loop back into the file", function()
 		local ResumePoints = load_resume_points()
 
-		assert_equal(ResumePoints.remember("mission_combat", "mission_combat/only.mp3", 250, 100, true), 50)
+		assert_equal(ResumePoints.remember("combat", "combat/only.mp3", 250, 100, true), 50)
 	end)
 
 	it("keeps a song of unknown duration at its position", function()
 		local ResumePoints = load_resume_points()
 
-		assert_equal(ResumePoints.remember("mission_explore", "mission_explore/a.mp3", 500, nil, false), 500)
+		assert_equal(ResumePoints.remember("explore", "explore/a.mp3", 500, nil, false), 500)
 	end)
 
 	it("continues Mortis Trials' wave and break songs every time either comes back", function()
@@ -100,13 +100,13 @@ describe("resume_points.lua", function()
 
 	it("forgets everything at a loading screen, so the next mission starts fresh", function()
 		local ResumePoints = load_resume_points()
-		ResumePoints.remember("mission_explore", "mission_explore/a.mp3", 30, 200, false)
-		ResumePoints.remember("mission_combat", "mission_combat/b.mp3", 40, 200, false)
+		ResumePoints.remember("explore", "explore/a.mp3", 30, 200, false)
+		ResumePoints.remember("combat", "combat/b.mp3", 40, 200, false)
 
 		ResumePoints.on_state_change("music_game_state", "loading")
 
-		assert_equal(ResumePoints.take("mission_explore"), nil)
-		assert_equal(ResumePoints.take("mission_combat"), nil)
+		assert_equal(ResumePoints.take("explore"), nil)
+		assert_equal(ResumePoints.take("combat"), nil)
 	end)
 
 	-- Leaving a mission can report the loading state before the context change that stops the song.
@@ -114,12 +114,12 @@ describe("resume_points.lua", function()
 		local ResumePoints = load_resume_points()
 
 		ResumePoints.on_state_change("music_game_state", "loading")
-		assert_equal(ResumePoints.remember("mission_explore", "mission_explore/a.mp3", 30, 200, false), nil)
+		assert_equal(ResumePoints.remember("explore", "explore/a.mp3", 30, 200, false), nil)
 
 		ResumePoints.on_state_change("music_game_state", "mission_intro")
 		ResumePoints.on_state_change("music_game_state", "mission")
-		ResumePoints.enter("mission_explore")
-		assert_equal(ResumePoints.remember("mission_explore", "mission_explore/a.mp3", 30, 200, false), 30)
+		ResumePoints.enter("explore")
+		assert_equal(ResumePoints.remember("explore", "explore/a.mp3", 30, 200, false), 30)
 	end)
 
 	-- The debounced change away from the old level can arrive after the game state has already moved past loading.
@@ -130,8 +130,8 @@ describe("resume_points.lua", function()
 		ResumePoints.on_state_change("music_game_state", "mission_briefing")
 		ResumePoints.enter(nil)
 
-		assert_equal(ResumePoints.remember("mission_explore", "mission_explore/a.mp3", 30, 200, false, nil), nil)
-		assert_equal(ResumePoints.take("mission_explore"), nil)
+		assert_equal(ResumePoints.remember("explore", "explore/a.mp3", 30, 200, false, nil), nil)
+		assert_equal(ResumePoints.take("explore"), nil)
 	end)
 
 	-- The loading context lasts from leaving the hub until the intro, so a song from the old level can still stop during it.
@@ -141,148 +141,148 @@ describe("resume_points.lua", function()
 		ResumePoints.on_state_change("music_game_state", "loading")
 		ResumePoints.enter("loading")
 
-		assert_equal(ResumePoints.remember("mission_explore", "mission_explore/a.mp3", 30, 200, false, "loading"), nil)
-		assert_equal(ResumePoints.take("mission_explore"), nil)
+		assert_equal(ResumePoints.remember("explore", "explore/a.mp3", 30, 200, false, "loading"), nil)
+		assert_equal(ResumePoints.take("explore"), nil)
 	end)
 
 	it("keeps a mission loading song that the preparation screen interrupts through the loading state of the briefing", function()
 		local ResumePoints = load_resume_points()
 		ResumePoints.on_state_change("music_game_state", "loading")
-		ResumePoints.enter("mission_loading")
+		ResumePoints.enter("mission_briefing")
 
-		assert_equal(ResumePoints.remember("mission_loading", "mission_loading/a.mp3", 30, 200, false, "mission_preparation"), 30)
+		assert_equal(ResumePoints.remember("mission_briefing", "mission_briefing/a.mp3", 30, 200, false, "mission_preparation"), 30)
 
 		ResumePoints.enter("mission_preparation")
 		ResumePoints.on_state_change("music_game_state", "loading")
-		ResumePoints.enter("mission_loading")
+		ResumePoints.enter("mission_briefing")
 
-		assert_deep_equal({ ResumePoints.take("mission_loading") }, { "mission_loading/a.mp3", 30 })
+		assert_deep_equal({ ResumePoints.take("mission_briefing") }, { "mission_briefing/a.mp3", 30 })
 	end)
 
 	it("keeps no loading song for anything but the preparation screen, or with Resume Songs off", function()
 		local ResumePoints = load_resume_points()
 		assert_equal(ResumePoints.remember("loading", "loading/a.mp3", 30, 200, false, "hub"), nil)
-		assert_equal(ResumePoints.remember("mission_loading", "mission_loading/a.mp3", 30, 200, false, "mission_explore"), nil)
-		ResumePoints.remember("mission_loading", "mission_loading/a.mp3", 30, 200, false, "mission_preparation")
+		assert_equal(ResumePoints.remember("mission_briefing", "mission_briefing/a.mp3", 30, 200, false, "explore"), nil)
+		ResumePoints.remember("mission_briefing", "mission_briefing/a.mp3", 30, 200, false, "mission_preparation")
 		ResumePoints.enter(nil)
-		assert_equal(ResumePoints.take("mission_loading"), nil)
+		assert_equal(ResumePoints.take("mission_briefing"), nil)
 
 		local off = load_resume_points({ resume_songs = false })
-		assert_equal(off.remember("mission_loading", "mission_loading/a.mp3", 30, 200, false, "mission_preparation"), nil)
+		assert_equal(off.remember("mission_briefing", "mission_briefing/a.mp3", 30, 200, false, "mission_preparation"), nil)
 	end)
 
 	it("keeps its points through a mid-mission cutscene and other state groups", function()
 		local ResumePoints = load_resume_points()
-		ResumePoints.remember("mission_explore", "mission_explore/a.mp3", 30, 200, false)
+		ResumePoints.remember("explore", "explore/a.mp3", 30, 200, false)
 
 		ResumePoints.on_state_change("music_game_state", "cinematic")
 		ResumePoints.on_state_change("music_game_state", "mission")
 		ResumePoints.on_state_change("music_zone", "None")
 
-		assert_deep_equal({ ResumePoints.take("mission_explore") }, { "mission_explore/a.mp3", 30 })
+		assert_deep_equal({ ResumePoints.take("explore") }, { "explore/a.mp3", 30 })
 	end)
 
 	it("forgets everything on request, as when the setting is turned off", function()
 		local ResumePoints = load_resume_points()
-		ResumePoints.remember("mission_explore", "mission_explore/a.mp3", 30, 200, false)
+		ResumePoints.remember("explore", "explore/a.mp3", 30, 200, false)
 
 		ResumePoints.forget_all()
 
-		assert_equal(ResumePoints.take("mission_explore"), nil)
+		assert_equal(ResumePoints.take("explore"), nil)
 	end)
 
 	describe("hordes, boss fights, and events", function()
 		it("continues a horde song after a boss, an event, or a last stand interrupts the horde", function()
-			for _, interruption in ipairs({ "mission_boss", "mission_event", "mission_last_stand" }) do
+			for _, interruption in ipairs({ "boss", "event", "last_stand" }) do
 				local ResumePoints = load_resume_points()
 
-				assert_equal(ResumePoints.remember("mission_horde", "mission_horde/a.mp3", 45, 200, false, interruption), 45)
+				assert_equal(ResumePoints.remember("horde", "horde/a.mp3", 45, 200, false, interruption), 45)
 				ResumePoints.enter(interruption)
-				ResumePoints.enter("mission_horde")
+				ResumePoints.enter("horde")
 
-				assert_deep_equal({ ResumePoints.take("mission_horde") }, { "mission_horde/a.mp3", 45 }, interruption)
+				assert_deep_equal({ ResumePoints.take("horde") }, { "horde/a.mp3", 45 }, interruption)
 			end
 		end)
 
 		it("does not keep a horde song when the horde ends into combat or explore", function()
-			for _, next_context in ipairs({ "mission_combat", "mission_explore" }) do
+			for _, next_context in ipairs({ "combat", "explore" }) do
 				local ResumePoints = load_resume_points()
 
-				assert_equal(ResumePoints.remember("mission_horde", "mission_horde/a.mp3", 45, 200, false, next_context), nil)
-				assert_equal(ResumePoints.take("mission_horde"), nil)
+				assert_equal(ResumePoints.remember("horde", "horde/a.mp3", 45, 200, false, next_context), nil)
+				assert_equal(ResumePoints.take("horde"), nil)
 			end
 		end)
 
 		it("forgets an interrupted horde's song once the music drops to combat or explore", function()
-			for _, next_context in ipairs({ "mission_combat", "mission_explore" }) do
+			for _, next_context in ipairs({ "combat", "explore" }) do
 				local ResumePoints = load_resume_points()
-				ResumePoints.remember("mission_horde", "mission_horde/a.mp3", 45, 200, false, "mission_boss")
-				ResumePoints.enter("mission_boss")
+				ResumePoints.remember("horde", "horde/a.mp3", 45, 200, false, "boss")
+				ResumePoints.enter("boss")
 
 				ResumePoints.enter(next_context)
 
-				assert_equal(ResumePoints.take("mission_horde"), nil, next_context)
+				assert_equal(ResumePoints.take("horde"), nil, next_context)
 			end
 		end)
 
 		it("continues a boss song after an event or a last stand", function()
-			for _, interruption in ipairs({ "mission_event", "mission_last_stand" }) do
+			for _, interruption in ipairs({ "event", "last_stand" }) do
 				local ResumePoints = load_resume_points()
 
-				assert_equal(ResumePoints.remember("mission_boss", "mission_boss/a.mp3", 45, 200, false, interruption), 45)
+				assert_equal(ResumePoints.remember("boss", "boss/a.mp3", 45, 200, false, interruption), 45)
 				ResumePoints.enter(interruption)
-				ResumePoints.enter("mission_boss")
+				ResumePoints.enter("boss")
 
-				assert_deep_equal({ ResumePoints.take("mission_boss") }, { "mission_boss/a.mp3", 45 }, interruption)
+				assert_deep_equal({ ResumePoints.take("boss") }, { "boss/a.mp3", 45 }, interruption)
 			end
 		end)
 
 		it("ends a boss fight's song when the music drops to a horde, combat, or explore", function()
-			for _, next_context in ipairs({ "mission_horde", "mission_combat", "mission_explore" }) do
+			for _, next_context in ipairs({ "horde", "combat", "explore" }) do
 				local ResumePoints = load_resume_points()
-				assert_equal(ResumePoints.remember("mission_boss", "mission_boss/a.mp3", 45, 200, false, next_context), nil, next_context)
+				assert_equal(ResumePoints.remember("boss", "boss/a.mp3", 45, 200, false, next_context), nil, next_context)
 
-				ResumePoints.remember("mission_boss", "mission_boss/a.mp3", 45, 200, false, "mission_event")
-				ResumePoints.enter("mission_event")
+				ResumePoints.remember("boss", "boss/a.mp3", 45, 200, false, "event")
+				ResumePoints.enter("event")
 				ResumePoints.enter(next_context)
 
-				assert_equal(ResumePoints.take("mission_boss"), nil, next_context)
+				assert_equal(ResumePoints.take("boss"), nil, next_context)
 			end
 		end)
 
 		-- A boss that spawns on top of a horde and dies while the horde goes on.
 		it("continues the horde song and forgets the boss song when a boss ends back into the same horde", function()
 			local ResumePoints = load_resume_points()
-			ResumePoints.remember("mission_horde", "mission_horde/a.mp3", 45, 200, false, "mission_boss")
-			ResumePoints.enter("mission_boss")
+			ResumePoints.remember("horde", "horde/a.mp3", 45, 200, false, "boss")
+			ResumePoints.enter("boss")
 
-			ResumePoints.remember("mission_boss", "mission_boss/b.mp3", 20, 200, false, "mission_horde")
-			ResumePoints.enter("mission_horde")
+			ResumePoints.remember("boss", "boss/b.mp3", 20, 200, false, "horde")
+			ResumePoints.enter("horde")
 
-			assert_deep_equal({ ResumePoints.take("mission_horde") }, { "mission_horde/a.mp3", 45 })
-			assert_equal(ResumePoints.take("mission_boss"), nil)
+			assert_deep_equal({ ResumePoints.take("horde") }, { "horde/a.mp3", 45 })
+			assert_equal(ResumePoints.take("boss"), nil)
 		end)
 
 		it("continues an event song after a last stand", function()
 			local ResumePoints = load_resume_points()
 
-			assert_equal(ResumePoints.remember("mission_event", "mission_event/a.mp3", 45, 200, false, "mission_last_stand"), 45)
-			ResumePoints.enter("mission_last_stand")
-			ResumePoints.enter("mission_event")
+			assert_equal(ResumePoints.remember("event", "event/a.mp3", 45, 200, false, "last_stand"), 45)
+			ResumePoints.enter("last_stand")
+			ResumePoints.enter("event")
 
-			assert_deep_equal({ ResumePoints.take("mission_event") }, { "mission_event/a.mp3", 45 })
+			assert_deep_equal({ ResumePoints.take("event") }, { "event/a.mp3", 45 })
 		end)
 
 		it("ends an event's song when the music drops to a boss, a horde, combat, or explore", function()
-			for _, next_context in ipairs({ "mission_boss", "mission_horde", "mission_combat", "mission_explore" }) do
+			for _, next_context in ipairs({ "boss", "horde", "combat", "explore" }) do
 				local ResumePoints = load_resume_points()
-				assert_equal(ResumePoints.remember("mission_event", "mission_event/a.mp3", 45, 200, false, next_context), nil, next_context)
+				assert_equal(ResumePoints.remember("event", "event/a.mp3", 45, 200, false, next_context), nil, next_context)
 
-				ResumePoints.remember("mission_event", "mission_event/a.mp3", 45, 200, false, "mission_last_stand")
-				ResumePoints.enter("mission_last_stand")
+				ResumePoints.remember("event", "event/a.mp3", 45, 200, false, "last_stand")
+				ResumePoints.enter("last_stand")
 				ResumePoints.enter(next_context)
 
-				assert_equal(ResumePoints.take("mission_event"), nil, next_context)
+				assert_equal(ResumePoints.take("event"), nil, next_context)
 			end
 		end)
 	end)

@@ -14,7 +14,7 @@ local function in_mission()
 end
 
 describe("context.lua mission endings", function()
-	it("plays mission_victory from victory through the score screen, then loading, then hub", function()
+	it("plays victory from victory through the score screen, then loading, then hub", function()
 		local harness = in_mission()
 
 		harness:end_with_victory("zone_3")
@@ -23,10 +23,10 @@ describe("context.lua mission endings", function()
 
 		harness:arrive_in_hub()
 
-		assert_deep_equal(harness.changes, { "mission_victory", "loading", "hub" })
+		assert_deep_equal(harness.changes, { "victory", "loading", "hub" })
 	end)
 
-	it("resolves mission_victory over combat and boss signals that are still set", function()
+	it("resolves victory over combat and boss signals that are still set", function()
 		local harness = in_mission()
 		local boss = harness:new_boss("chaos_beast_of_nurgle")
 		harness:state("music_combat", "boss")
@@ -35,10 +35,10 @@ describe("context.lua mission endings", function()
 
 		harness:state("music_game_state", "victory")
 
-		assert_deep_equal(harness.changes, { "mission_victory" })
+		assert_deep_equal(harness.changes, { "victory" })
 	end)
 
-	it("plays mission_defeat from defeat through the score screen, then loading, then hub", function()
+	it("plays defeat from defeat through the score screen, then loading, then hub", function()
 		local harness = in_mission()
 
 		harness:end_with_defeat()
@@ -47,10 +47,10 @@ describe("context.lua mission endings", function()
 
 		harness:arrive_in_hub()
 
-		assert_deep_equal(harness.changes, { "mission_defeat", "loading", "hub" })
+		assert_deep_equal(harness.changes, { "defeat", "loading", "hub" })
 	end)
 
-	it("resolves mission_defeat over a boss encounter that a wipe left open", function()
+	it("resolves defeat over a boss encounter that a wipe left open", function()
 		local harness = in_mission()
 		local boss = harness:new_boss("renegade_wizard")
 		harness:boss_start(boss)
@@ -58,7 +58,7 @@ describe("context.lua mission endings", function()
 
 		harness:state("music_game_state", "defeat")
 
-		assert_deep_equal(harness.changes, { "mission_defeat" })
+		assert_deep_equal(harness.changes, { "defeat" })
 	end)
 
 	-- Some missions play a debrief cutscene after the loading screen, with the hub zone arriving partway through.
@@ -68,11 +68,11 @@ describe("context.lua mission endings", function()
 		harness:end_with_victory("zone_3")
 		harness:debrief_cutscene_to_hub()
 
-		assert_deep_equal(harness.changes, { "mission_victory", "loading", "nil", "hub" })
+		assert_deep_equal(harness.changes, { "victory", "loading", "nil", "hub" })
 	end)
 
 	-- A story mission's score screen goes straight into the cutscene, with no loading screen to clear the outcome.
-	it("does not carry mission_victory into the hub after a story mission's cutscene", function()
+	it("does not carry victory into the hub after a story mission's cutscene", function()
 		local harness = in_mission()
 
 		harness:state("music_game_state", "victory")
@@ -91,7 +91,7 @@ describe("context.lua mission endings", function()
 		harness:wait(41)
 		harness:state("music_game_state", "mission")
 
-		assert_deep_equal(harness.changes, { "mission_victory", "nil", "hub" })
+		assert_deep_equal(harness.changes, { "victory", "nil", "hub" })
 	end)
 
 	it("clears the outcome when the next mission's intro starts", function()
@@ -102,6 +102,6 @@ describe("context.lua mission endings", function()
 		harness:state("music_game_state", "mission_intro")
 		harness:state("music_game_state", "mission")
 
-		assert_equal(harness:current(), "mission_explore")
+		assert_equal(harness:current(), "explore")
 	end)
 end)

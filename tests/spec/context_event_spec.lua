@@ -14,7 +14,7 @@ local function in_mission(zone)
 end
 
 describe("context.lua mission events", function()
-	it("resolves mission_event over explore and combat while the event lasts, then follows the other states again", function()
+	it("resolves event over explore and combat while the event lasts, then follows the other states again", function()
 		local harness = in_mission("zone_3")
 		harness:state("music_combat", "normal")
 
@@ -24,19 +24,19 @@ describe("context.lua mission events", function()
 		harness:state("music_objective", "None")
 		harness:wait(5.1)
 
-		assert_deep_equal(harness.changes, { "mission_combat", "mission_event", "mission_explore" })
+		assert_deep_equal(harness.changes, { "combat", "event", "explore" })
 	end)
 
-	it("resolves mission_event in a zoneless mission", function()
+	it("resolves event in a zoneless mission", function()
 		local harness = in_mission(nil)
 
 		harness:state("music_objective", "operation_stage_1")
 
-		assert_equal(harness:current(), "mission_event")
+		assert_equal(harness:current(), "event")
 	end)
 
 	-- Spillway's mid-mission captain starts at the same moment as its kill event.
-	it("resolves mission_event for a scripted boss that starts with its event", function()
+	it("resolves event for a scripted boss that starts with its event", function()
 		local harness = in_mission("zone_2_depths")
 		local boss = harness:new_boss("renegade_captain")
 
@@ -46,11 +46,11 @@ describe("context.lua mission events", function()
 		harness:state("music_objective", "None")
 		harness:wait(5.1)
 
-		assert_deep_equal(harness.changes, { "mission_event", "mission_explore" })
+		assert_deep_equal(harness.changes, { "event", "explore" })
 	end)
 
 	-- Spillway's end event ends a few seconds before the wizard's encounter window closes.
-	it("returns to explore, not mission_boss, when an event ends before its scripted boss's window closes", function()
+	it("returns to explore, not boss, when an event ends before its scripted boss's window closes", function()
 		local harness = in_mission("zone_2_depths")
 		local boss = harness:new_boss("renegade_wizard")
 
@@ -61,11 +61,11 @@ describe("context.lua mission events", function()
 		harness:wait(9)
 		harness:boss_end(boss)
 
-		assert_deep_equal(harness.changes, { "mission_event", "mission_explore" })
+		assert_deep_equal(harness.changes, { "event", "explore" })
 	end)
 
 	-- A monstrosity can spawn during a holdout and set the boss music state, and the game keeps playing event music.
-	it("keeps mission_event over a monster that sets the boss music state during the event", function()
+	it("keeps event over a monster that sets the boss music state during the event", function()
 		local harness = in_mission("zone_3")
 		local boss = harness:new_boss("chaos_spawn")
 		harness:state("music_objective", "fortification_event")
@@ -73,16 +73,16 @@ describe("context.lua mission events", function()
 		harness:state("music_combat", "boss")
 		harness:boss_start(boss)
 
-		assert_equal(harness:current(), "mission_event")
+		assert_equal(harness:current(), "event")
 
 		harness:state("music_objective", "None")
 		harness:wait(5.1)
 
-		assert_equal(harness:current(), "mission_boss")
+		assert_equal(harness:current(), "boss")
 	end)
 
 	-- Cargo's end event clears its music for 1, 1, and 4 seconds between stages, then for 10 seconds before the escape.
-	it("holds mission_event through short gaps between an event's stages, and lets a longer gap end the event", function()
+	it("holds event through short gaps between an event's stages, and lets a longer gap end the event", function()
 		local harness = in_mission("zone_3")
 
 		harness:state("music_objective", "fortification_event")
@@ -92,14 +92,14 @@ describe("context.lua mission events", function()
 			harness:wait(gap)
 			harness:state("music_objective", "fortification_event")
 		end
-		assert_deep_equal(harness.changes, { "mission_event" })
+		assert_deep_equal(harness.changes, { "event" })
 
 		harness:wait(60)
 		harness:state("music_objective", "None")
 		harness:wait(10)
 		harness:state("music_objective", "escape_event")
 
-		assert_deep_equal(harness.changes, { "mission_event", "mission_explore", "mission_event" })
+		assert_deep_equal(harness.changes, { "event", "explore", "event" })
 	end)
 
 	it("holds for as long as the setting says, and follows the game at once at 0", function()
@@ -109,15 +109,15 @@ describe("context.lua mission events", function()
 		harness:state("music_objective", "fortification_event")
 		harness:state("music_objective", "None")
 
-		assert_deep_equal(harness.changes, { "mission_event", "mission_explore" })
+		assert_deep_equal(harness.changes, { "event", "explore" })
 
 		harness:set_setting("event_hold_seconds", 12)
 		harness:state("music_objective", "fortification_event")
 		harness:state("music_objective", "None")
 		harness:wait(11.9)
-		assert_equal(harness:current(), "mission_event")
+		assert_equal(harness:current(), "event")
 		harness:wait(0.2)
-		assert_equal(harness:current(), "mission_explore")
+		assert_equal(harness:current(), "explore")
 	end)
 
 	it("shortens a running event hold at once when its setting is lowered", function()
@@ -131,7 +131,7 @@ describe("context.lua mission events", function()
 		harness.settings.event_hold_seconds = 0
 		harness:wait(0.1)
 
-		assert_equal(harness:current(), "mission_explore")
+		assert_equal(harness:current(), "explore")
 	end)
 
 	it("lets a last stand take over during the hold, and still ends the event once the hold runs out", function()
@@ -144,25 +144,25 @@ describe("context.lua mission events", function()
 		harness:wait(10)
 		harness:state("music_objective", "None")
 
-		assert_deep_equal(harness.changes, { "mission_event", "mission_last_stand", "mission_explore" })
+		assert_deep_equal(harness.changes, { "event", "last_stand", "explore" })
 	end)
 
-	it("follows a change from one event to the next without leaving mission_event", function()
+	it("follows a change from one event to the next without leaving event", function()
 		local harness = in_mission("zone_3")
 
 		harness:state("music_objective", "fortification_event")
 		harness:state("music_objective", "escape_event")
 
-		assert_deep_equal(harness.changes, { "mission_event" })
+		assert_deep_equal(harness.changes, { "event" })
 	end)
 
-	it("gives way to mission_victory", function()
+	it("gives way to victory", function()
 		local harness = in_mission("zone_3")
 		harness:state("music_objective", "escape_event")
 
 		harness:state("music_game_state", "victory")
 
-		assert_deep_equal(harness.changes, { "mission_event", "mission_victory" })
+		assert_deep_equal(harness.changes, { "event", "victory" })
 	end)
 
 	it("resolves the hub even when quitting mid-event left the event music set", function()

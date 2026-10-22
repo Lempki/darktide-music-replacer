@@ -28,15 +28,15 @@ Install this mod like any other Darktide mod, then drop your own audio files int
     hub\
     loading\
     mission_preparation\
-    mission_loading\
-    mission_explore\
-    mission_combat\
-    mission_horde\
-    mission_boss\
-    mission_event\
-    mission_last_stand\
-    mission_victory\
-    mission_defeat\
+    mission_briefing\
+    explore\
+    combat\
+    horde\
+    boss\
+    event\
+    last_stand\
+    victory\
+    defeat\
     mortis_trials_wave\
     mortis_trials_break\
 ```
@@ -50,15 +50,15 @@ Supported formats are `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, and `.wma`. Other
 | `hub` | In the Mourningstar. |
 | `loading` | On loading screens that lead anywhere but into a mission: after starting the game, after a mission, and on the way to Meat Grinder. |
 | `mission_preparation` | On the mission preparation screen, where the party stands together before a mission and can still change loadouts, in every game mode. Joining a mission already in progress skips it. |
-| `mission_loading` | On the loading screens and the briefing on the way into a mission, also when joining a mission already in progress. A song that the preparation screen interrupts continues in the briefing, unless Resume Songs is off. The mission's intro itself keeps the game's own music. For music that differs by game mode, as the game's own does, use override folders such as `mission_loading\havoc\` or `mission_loading\expeditions\`. |
-| `mission_explore` | In a mission, no meaningful threat. |
-| `mission_combat` | In a mission, while enemies are attacking you outside a horde or a boss fight. The game itself plays no music here. |
-| `mission_horde` | In a mission, during a horde. With no files here, the game's own horde music plays, as it does without the mod. |
-| `mission_boss` | In a mission, while a monstrosity is near you, such as a Chaos Spawn, a Beast of Nurgle, a Plague Ogryn, or an Ogryn Houndmaster. This is exactly when the game plays its own boss music. It does not play during an event, a last stand, or the mission's end, which take priority. It also does not play for an angered Daemonhost unless you turn on its setting. It does not play for captains unless you turn on their setting, or while a scripted boss such as Spillway's psyker is alive, since the game does not report those as bosses. |
-| `mission_event` | In a mission, while an event plays its own music, such as a holdout, a hacking event, an escape, or a scripted boss fight like those in Spillway. It replaces boss, horde, combat, and explore music, as the game's own event music does. It does not play during a last stand or the mission's end, and it stops a few seconds after the game ends the event's music, as set by Event Music Hold. In Operations, such as Rolling Steel and No Man's Land, it plays for the whole mission, since the game scripts their music from start to end. |
-| `mission_last_stand` | In a mission, while only one player of the team is still alive. It replaces boss, combat, and explore music, as the game's own last stand music does. |
-| `mission_victory` | From the moment a mission is won until the loading screen or a cutscene. |
-| `mission_defeat` | From the moment a mission is lost until the loading screen or a cutscene. |
+| `mission_briefing` | On the loading screens and the briefing on the way into a mission, also when joining a mission already in progress. A song that the preparation screen interrupts continues in the briefing, unless Resume Songs is off. The mission's intro itself keeps the game's own music. For music that differs by game mode, as the game's own does, use override folders such as `mission_briefing\havoc\` or `mission_briefing\expeditions\`. |
+| `explore` | In a mission, no meaningful threat. |
+| `combat` | In a mission, while enemies are attacking you outside a horde or a boss fight. The game itself plays no music here. |
+| `horde` | In a mission, during a horde. With no files here, the game's own horde music plays, as it does without the mod. |
+| `boss` | In a mission, while a monstrosity is near you, such as a Chaos Spawn, a Beast of Nurgle, a Plague Ogryn, or an Ogryn Houndmaster. This is exactly when the game plays its own boss music. It does not play during an event, a last stand, or the mission's end, which take priority. It also does not play for an angered Daemonhost unless you turn on its setting. It does not play for captains unless you turn on their setting, or while a scripted boss such as Spillway's psyker is alive, since the game does not report those as bosses. |
+| `event` | In a mission, while an event plays its own music, such as a holdout, a hacking event, an escape, or a scripted boss fight like those in Spillway. It replaces boss, horde, combat, and explore music, as the game's own event music does. It does not play during a last stand or the mission's end, and it stops a few seconds after the game ends the event's music, as set by Event Music Hold. In Operations, such as Rolling Steel and No Man's Land, it plays for the whole mission, since the game scripts their music from start to end. |
+| `last_stand` | In a mission, while only one player of the team is still alive. It replaces boss, combat, and explore music, as the game's own last stand music does. |
+| `victory` | From the moment a mission is won until the loading screen or a cutscene. |
+| `defeat` | From the moment a mission is lost until the loading screen or a cutscene. |
 | `mortis_trials_wave` | In Mortis Trials, during a wave or an objective round, through to the final win. Bosses, hordes, and fights do not interrupt it, since nearly every wave brings bosses. A last stand still takes over. In Mortis Trials, this and the break folder replace the mission folders above, apart from last stand, victory, and defeat. |
 | `mortis_trials_break` | In Mortis Trials, between waves. |
 
@@ -66,10 +66,10 @@ No custom music plays during cutscenes. The game's own music takes over there.
 
 ### Override folders
 
-A context folder can hold folders of its own, named after what the game reports, which take over from it while they apply. For example, songs in `mission_boss\chaos_spawn\` play while a Chaos Spawn is the boss, and songs in `mission_explore\havoc\` play while exploring in Havoc. When several apply, the first one in this order that has songs wins:
+A context folder can hold folders of its own, named after what the game reports, which take over from it while they apply. For example, songs in `boss\chaos_spawn\` play while a Chaos Spawn is the boss, and songs in `explore\havoc\` play while exploring in Havoc. When several apply, the first one in this order that has songs wins:
 
-1. In `mission_event`, the kind of event, as the game names its event music: for example `escape_event`, `fortification_event`, `twins_event`, or an Operation's `operation_stage_1`. [docs/wwise-events.md](docs/wwise-events.md) lists the kinds seen so far.
-2. In `mission_boss`, the kind of boss: for example `chaos_spawn`, `chaos_beast_of_nurgle`, `chaos_plague_ogryn`, or `chaos_ogryn_houndmaster`, and with their settings on, `renegade_twin_captain` or `chaos_daemonhost`.
+1. In `event`, the kind of event, as the game names its event music: for example `escape_event`, `fortification_event`, `twins_event`, or an Operation's `operation_stage_1`. [docs/wwise-events.md](docs/wwise-events.md) lists the kinds seen so far.
+2. In `boss`, the kind of boss: for example `chaos_spawn`, `chaos_beast_of_nurgle`, `chaos_plague_ogryn`, or `chaos_ogryn_houndmaster`, and with their settings on, `renegade_twin_captain` or `chaos_daemonhost`.
 3. In any context, the mission's code: for example `spillway` or `km_enforcer_twins`. [docs/game-internals.md](docs/game-internals.md) lists every mission's code with its in-game name.
 4. In any context, the game mode: `havoc` or `expeditions`.
 

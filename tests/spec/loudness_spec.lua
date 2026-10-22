@@ -119,14 +119,14 @@ end
 
 describe("loudness.lua measuring", function()
 	it("measures every listed song, the playing context's first, and logs each and a summary", function()
-		local Loudness, test = load_loudness({ ["audio/hub/a.mp3"] = 12, ["audio/mission_combat/b.mp3"] = 30 })
+		local Loudness, test = load_loudness({ ["audio/hub/a.mp3"] = 12, ["audio/combat/b.mp3"] = 30 })
 		Loudness.set_enabled(true)
-		Loudness.set_files(entries({ { "hub/a.mp3" }, { "mission_combat/b.mp3" } }))
+		Loudness.set_files(entries({ { "hub/a.mp3" }, { "combat/b.mp3" } }))
 
-		measure_all(Loudness, "mission_combat")
+		measure_all(Loudness, "combat")
 
-		assert_deep_equal(test.opened, { "audio/mission_combat/b.mp3", "audio/hub/a.mp3" })
-		assert_equal(test.details[1]:match("^%[loudness%] mission_combat/b.mp3: %-30.0 LUFS, peak %-6.0 dBFS") ~= nil, true)
+		assert_deep_equal(test.opened, { "audio/combat/b.mp3", "audio/hub/a.mp3" })
+		assert_equal(test.details[1]:match("^%[loudness%] combat/b.mp3: %-30.0 LUFS, peak %-6.0 dBFS") ~= nil, true)
 		assert_equal(test.details[2]:match("^%[loudness%] hub/a.mp3: %-12.0 LUFS") ~= nil, true)
 		assert_equal(test.lines[1]:match("^%[loudness%] measured 2 song%(s%)") ~= nil, true)
 		assert_equal(test.closed, 2)

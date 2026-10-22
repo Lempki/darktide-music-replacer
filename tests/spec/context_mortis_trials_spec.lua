@@ -89,16 +89,16 @@ describe("context.lua Mortis Trials", function()
 		harness:state("music_objective", "last_man_standing")
 		harness:state("music_objective", "horde_mode_wave")
 
-		assert_deep_equal(harness.changes, { "mission_last_stand", "mortis_trials_wave" })
+		assert_deep_equal(harness.changes, { "last_stand", "mortis_trials_wave" })
 	end)
 
-	it("ends with mission_victory", function()
+	it("ends with victory", function()
 		local harness = in_mortis_trials()
 		harness:clear_changes()
 
 		harness:end_with_victory("horde_mode")
 
-		assert_equal(harness.changes[1], "mission_victory")
+		assert_equal(harness.changes[1], "victory")
 	end)
 
 	it("plays a regular mission's explore music after Mortis Trials", function()
@@ -110,6 +110,6 @@ describe("context.lua Mortis Trials", function()
 
 		harness:enter_mission("lm_cooling", "zone_3")
 
-		assert_equal(harness:current(), "mission_explore")
+		assert_equal(harness:current(), "explore")
 	end)
 end)

@@ -24,7 +24,7 @@ local function new_audio_folders(disk, lengths, missing, broken)
 		end
 		return { unpack(names) }, stamps
 	end
-	-- An override folder is a key with a slash, such as "mission_boss/chaos_spawn", listed under its context.
+	-- An override folder is a key with a slash, such as "boss/chaos_spawn", listed under its context.
 	function folders.subfolders(folder)
 		local context_name = folder:sub(#ROOT + 2)
 		local names = {}
@@ -89,17 +89,17 @@ describe("library.lua listing", function()
 	end)
 
 	it("lists every folder on the first update, and logs how many files each has", function()
-		local Library, _, lines = listed_library({ hub = { "a.mp3" }, mission_boss = { "b.mp3", "c.mp3" } })
+		local Library, _, lines = listed_library({ hub = { "a.mp3" }, boss = { "b.mp3", "c.mp3" } })
 
 		assert_equal(Library.pick_file("hub"), "hub/a.mp3")
 		assert_equal(lines[1]:find("[library] listed the audio folders: hub=1 ", 1, true) ~= nil, true, lines[1])
-		assert_equal(lines[1]:find("mission_boss=2", 1, true) ~= nil, true, lines[1])
+		assert_equal(lines[1]:find("boss=2", 1, true) ~= nil, true, lines[1])
 	end)
 
 	it("passes every listing on, with each file's stamp, in context order", function()
 		local engine = FakeEngine.new()
 		local Library = engine:load("library")
-		local folders = new_audio_folders({ hub = { "a.mp3" }, mission_boss = { "b.mp3" } }, {})
+		local folders = new_audio_folders({ hub = { "a.mp3" }, boss = { "b.mp3" } }, {})
 		local listings = {}
 		Library.on_listed(function(entries) listings[#listings + 1] = entries end)
 		Library.init(nil, folders)
@@ -110,8 +110,8 @@ describe("library.lua listing", function()
 		Library.update(0.016)
 
 		assert_deep_equal(listings, {
-			{ { file_path = "hub/a.mp3", stamp = "a.mp3@0" }, { file_path = "mission_boss/b.mp3", stamp = "b.mp3@0" } },
-			{ { file_path = "hub/a.mp3", stamp = "a.mp3@1" }, { file_path = "mission_boss/b.mp3", stamp = "b.mp3@1" } },
+			{ { file_path = "hub/a.mp3", stamp = "a.mp3@0" }, { file_path = "boss/b.mp3", stamp = "b.mp3@0" } },
+			{ { file_path = "hub/a.mp3", stamp = "a.mp3@1" }, { file_path = "boss/b.mp3", stamp = "b.mp3@1" } },
 		})
 	end)
 
@@ -135,8 +135,8 @@ describe("library.lua listing", function()
 
 	it("measures one file's duration per update, and serves it once measured", function()
 		local Library, folders, lines = listed_library(
-			{ hub = { "a.mp3" }, mission_combat = { "b.mp3" } },
-			{ ["hub/a.mp3"] = 245.5, ["mission_combat/b.mp3"] = 120 }
+			{ hub = { "a.mp3" }, combat = { "b.mp3" } },
+			{ ["hub/a.mp3"] = 245.5, ["combat/b.mp3"] = 120 }
 		)
 		assert_deep_equal({ Library.pick_file("hub") }, { "hub/a.mp3", nil, true })
 
@@ -145,7 +145,7 @@ describe("library.lua listing", function()
 		assert_deep_equal({ Library.pick_file("hub") }, { "hub/a.mp3", 245.5, true })
 
 		Library.update(0.016)
-		assert_deep_equal(folders.measured, { "hub/a.mp3", "mission_combat/b.mp3" })
+		assert_deep_equal(folders.measured, { "hub/a.mp3", "combat/b.mp3" })
 		assert_equal(lines[#lines]:find("[library] measured every file's duration", 1, true) ~= nil, true, lines[#lines])
 	end)
 
@@ -313,17 +313,17 @@ describe("library.lua file selection", function()
 		local Library = listed_library({ hub = {} })
 
 		assert_equal(Library.pick_file("hub"), nil)
-		assert_equal(Library.pick_file("mission_horde"), nil)
+		assert_equal(Library.pick_file("horde"), nil)
 		assert_equal(Library.pick_file("not_a_context"), nil)
 	end)
 
 	it("never picks the same file twice in a row when there is a choice", function()
 		math.randomseed(1)
-		local Library = listed_library({ mission_combat = { "a.mp3", "b.mp3", "c.mp3" } })
-		local previous = Library.pick_file("mission_combat")
+		local Library = listed_library({ combat = { "a.mp3", "b.mp3", "c.mp3" } })
+		local previous = Library.pick_file("combat")
 
 		for _ = 1, 50 do
-			local file_path, _, is_only_file = Library.pick_file("mission_combat")
+			local file_path, _, is_only_file = Library.pick_file("combat")
 
 			assert_equal(file_path ~= previous, true, "picked " .. file_path .. " twice in a row")
 			assert_equal(is_only_file, false)
@@ -367,10 +367,10 @@ describe("library.lua file selection", function()
 	end)
 
 	it("finds a specific file with the same values as a pick, or nil once the folder no longer has it", function()
-		local Library = listed_library({ mission_explore = { "a.mp3", "b.mp3" } }, {}, { ["mission_explore/c.mp3"] = true })
+		local Library = listed_library({ explore = { "a.mp3", "b.mp3" } }, {}, { ["explore/c.mp3"] = true })
 
-		assert_deep_equal({ Library.find_file("mission_explore", "mission_explore/b.mp3") }, { "mission_explore/b.mp3", nil, false })
-		assert_equal(Library.find_file("mission_explore", "mission_explore/gone.mp3"), nil)
+		assert_deep_equal({ Library.find_file("explore", "explore/b.mp3") }, { "explore/b.mp3", nil, false })
+		assert_equal(Library.find_file("explore", "explore/gone.mp3"), nil)
 	end)
 
 	it("does not change which file pick_file avoids next when finding one", function()

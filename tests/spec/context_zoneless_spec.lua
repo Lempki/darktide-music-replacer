@@ -26,13 +26,13 @@ describe("context.lua zoneless missions", function()
 		assert_deep_equal(harness.changes, { "nil" })
 	end)
 
-	it("resolves mission_explore once the game state returns to mission", function()
+	it("resolves explore once the game state returns to mission", function()
 		local harness = in_zoneless_mission()
 
-		assert_equal(harness:current(), "mission_explore")
+		assert_equal(harness:current(), "explore")
 	end)
 
-	it("switches between mission_explore and mission_combat with the hold", function()
+	it("switches between explore and combat with the hold", function()
 		local harness = in_zoneless_mission()
 		harness:clear_changes()
 
@@ -40,7 +40,7 @@ describe("context.lua zoneless missions", function()
 		harness:state("music_combat", "None")
 		harness:wait(8.2)
 
-		assert_deep_equal(harness.changes, { "mission_combat", "mission_explore" })
+		assert_deep_equal(harness.changes, { "combat", "explore" })
 	end)
 
 	-- With no zone change between two zoneless levels, only the loading screen can end a window whose end event never came.
@@ -50,13 +50,13 @@ describe("context.lua zoneless missions", function()
 		harness:leave_hub()
 		harness:enter_mission("zoneless_mission", nil)
 		harness:boss_start(harness:new_boss("renegade_captain"))
-		assert_equal(harness:current(), "mission_boss")
+		assert_equal(harness:current(), "boss")
 
 		harness:state("music_game_state", "loading")
 		harness:mission(nil)
 		harness:enter_mission("zoneless_mission", nil)
 
-		assert_equal(harness:current(), "mission_explore")
+		assert_equal(harness:current(), "explore")
 	end)
 
 	-- Leaving the hub for character select clears the zone and unloads the hub, but leaves the game state on "mission" for a few seconds.
@@ -76,13 +76,13 @@ describe("context.lua zoneless missions", function()
 	end)
 
 	-- A zoneless mission's victory has no zone change to end it.
-	it("ends with mission_victory and does not fall back to mission_explore in the transient mission state", function()
+	it("ends with victory and does not fall back to explore in the transient mission state", function()
 		local harness = in_zoneless_mission()
 		harness:clear_changes()
 
 		harness:end_with_victory(nil)
 		harness:arrive_in_hub()
 
-		assert_deep_equal(harness.changes, { "mission_victory", "loading", "hub" })
+		assert_deep_equal(harness.changes, { "victory", "loading", "hub" })
 	end)
 end)
