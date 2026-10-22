@@ -21,7 +21,6 @@ local function new_stream(path, opts)
 
 	function stream.pause(self) self.paused = true end
 	function stream.resume(self) self.paused = false end
-	function stream.is_paused(self) return self.paused end
 
 	function stream.fade_to(self, target, seconds)
 		self.fades[#self.fades + 1] = { target, seconds }

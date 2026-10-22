@@ -280,7 +280,7 @@ describe("player.lua", function()
 		stream:resume()
 		stream:update(0.1)
 
-		assert_equal(stream:is_paused(), false)
+		assert_equal(stream.paused, false)
 		assert_equal(#voice.submitted, 4)
 	end)
 

@@ -212,6 +212,8 @@ function MediaDecoder.open(path)
 
 	local decoder = setmetatable({
 		reader = reader,
+		-- Read many times a second, so it is fetched from the reader once.
+		read_sample = NativeFfi.method(reader, READ_SAMPLE[1], READ_SAMPLE[2]),
 		format = format,
 		duration = read_duration(reader),
 		source_ended = false,
@@ -253,7 +255,7 @@ local function keep_rest(self, source, bytes)
 end
 
 local function has_flag(flags, flag)
-	return math.floor(flags / flag) % 2 == 1
+	return bit.band(flags, flag) ~= 0
 end
 
 -- Whether to follow a format change the reader reports, which also updates the format before any audio has been handed out.
@@ -277,7 +279,7 @@ end
 -- Reads the next sample and handles what the reader reports with it. Returns the sample, which the caller releases, or nil.
 local function next_sample(self)
 	self.out[0] = nil
-	local hresult = call(self.reader, READ_SAMPLE, FIRST_AUDIO_STREAM, 0, self.stream_index, self.flags, self.timestamp, self.out)
+	local hresult = self.read_sample(self.reader, FIRST_AUDIO_STREAM, 0, self.stream_index, self.flags, self.timestamp, self.out)
 	local flags = self.flags[0]
 	if not NativeFfi.succeeded(hresult) or has_flag(flags, END_OF_STREAM_FLAG) or has_flag(flags, ERROR_FLAG) then
 		self.source_ended = true

@@ -30,7 +30,7 @@ function AudioFolders.available()
 end
 
 local function is_directory(attributes)
-	return math.floor(attributes / FILE_ATTRIBUTE_DIRECTORY) % 2 == 1
+	return bit.band(attributes, FILE_ATTRIBUTE_DIRECTORY) ~= 0
 end
 
 -- Calls `visit(data)` for every entry directly inside `folder`, a UTF-8 path. Returns false when the folder does not exist.

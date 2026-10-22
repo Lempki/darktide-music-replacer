@@ -45,10 +45,8 @@ XAudio.init(NativeFfi)
 Player.init(NativeFfi, MediaDecoder, XAudio)
 assert(Player.available(), Player.error())
 
-if not pcall(ffi.typeof, "MusicReplacer_DemoSleep") then
-	ffi.cdef([[void MusicReplacer_DemoSleep(uint32_t milliseconds) __asm__("Sleep");]])
-end
-local kernel32 = ffi.load("kernel32")
+NativeFfi.define([[void MusicReplacer_DemoSleep(uint32_t milliseconds) __asm__("Sleep");]])
+local kernel32 = NativeFfi.kernel32()
 
 local function describe(name, stream)
 	if not stream then
@@ -80,7 +78,8 @@ while true do
 		kernel32.MusicReplacer_DemoSleep(3000)
 	elseif t >= 10 and not b then
 		local probe = assert(MediaDecoder.open(file_b))
-		local start = (probe.duration or 60) - 12
+		-- A file shorter than 12 seconds starts at its beginning instead.
+		local start = math.max(0, (probe.duration or 60) - 12)
 		probe:close()
 		b = assert(Player.open(file_b, { gain = GAIN, fade = 0, start_position = start, loop = true }))
 		print(string.format("B: %s from %.1f s, looping", file_b:match("[^/\\]+$"), start))

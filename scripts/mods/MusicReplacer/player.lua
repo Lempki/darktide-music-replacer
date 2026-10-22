@@ -273,10 +273,6 @@ function Stream:resume()
 	end
 end
 
-function Stream:is_paused()
-	return self.paused
-end
-
 -- Seconds into the file. A looping stream wraps back at the file's end.
 function Stream:position()
 	local position = self.start_position + self.voice:samples_played() / self.sample_rate

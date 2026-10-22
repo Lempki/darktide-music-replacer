@@ -37,10 +37,8 @@ int32_t MusicReplacer_XAudio2Create(void **engine, uint32_t flags, uint32_t proc
 local XAUDIO2_DEFAULT_PROCESSOR = 1
 local XAUDIO2_DEFAULT_FREQ_RATIO = 2
 local XAUDIO2_END_OF_STREAM = 0x40
+local XAUDIO2_VOICE_NOSAMPLESPLAYED = 0x100
 local AUDIO_CATEGORY_GAME_MEDIA = 7
-
--- XAudio2 holds at most 64 buffers per voice.
-local MAX_QUEUED_BUFFERS = 64
 
 -- The formats XAudio2 can play. A voice for anything else is always refused, whatever state the engine is in.
 local MIN_SAMPLE_RATE = 1000
@@ -203,8 +201,9 @@ function XAudio.create_voice(format)
 	}, Voice)
 end
 
-local function read_state(self)
-	self.methods.get_state(self.pointer, self.state, 0)
+-- `flags` is XAUDIO2_VOICE_NOSAMPLESPLAYED when only the queue is needed, which spares XAudio2 working out the samples played.
+local function read_state(self, flags)
+	self.methods.get_state(self.pointer, self.state, flags)
 	return self.state
 end
 
@@ -238,7 +237,7 @@ function Voice:queued()
 	if self.pointer == nil then
 		return 0
 	end
-	return read_state(self).BuffersQueued
+	return read_state(self, XAUDIO2_VOICE_NOSAMPLESPLAYED).BuffersQueued
 end
 
 -- Samples played since the voice was created, across every buffer.
@@ -247,18 +246,14 @@ function Voice:samples_played()
 	if self.pointer == nil then
 		return 0
 	end
-	local state = read_state(self)
+	local state = read_state(self, 0)
 	return state.SamplesPlayedLow + state.SamplesPlayedHigh * 4294967296
 end
 
 -- Queues `bytes` at `data`. The caller keeps that memory alive until the queue has moved past it.
--- `last` marks the end of the stream. Returns false when the queue is full or XAudio2 refuses the buffer.
+-- `last` marks the end of the stream. Returns false when XAudio2 refuses the buffer.
+-- player.lua never queues more than its 16 slots, far below XAudio2's 64, so the queue cannot be full here.
 function Voice:submit(data, bytes, last)
-	if self:queued() >= MAX_QUEUED_BUFFERS then
-		self.error = self.error or "the voice's queue is full"
-		return false
-	end
-
 	local buffer = self.buffer
 	buffer.Flags = last and XAUDIO2_END_OF_STREAM or 0
 	buffer.AudioBytes = bytes

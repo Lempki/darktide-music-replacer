@@ -74,7 +74,9 @@ local com_ready = false
 local load_error = nil
 
 -- Declares each top-level C declaration in `text` on its own.
--- A mod reload finds the earlier ones already defined, which ffi.cdef rejects, so each failure is skipped and newer ones still land.
+-- A mod reload declares everything again, which LuaJIT may reject as a redefinition, so that error alone is skipped.
+-- Any other error, such as a typo in a declaration, stops the load, since it would otherwise surface later as a missing name.
+-- The first load's layouts stay until the game restarts, as LuaJIT keeps every declaration for the life of its state.
 -- A packed region between #pragma pack(push) and #pragma pack(pop) stays one declaration.
 function NativeFfi.define(text)
 	local chunk = {}
@@ -95,7 +97,10 @@ function NativeFfi.define(text)
 		depth = depth + opened - closed
 
 		if not packed and depth == 0 and (line:find(";%s*$") or line:find("^#pragma pack%(pop")) then
-			pcall(ffi.cdef, table.concat(chunk, "\n"))
+			local ok, err = pcall(ffi.cdef, table.concat(chunk, "\n"))
+			if not ok and not tostring(err):find("attempt to redefine", 1, true) then
+				error(err, 2)
+			end
 			chunk = {}
 		end
 	end
@@ -177,8 +182,9 @@ function NativeFfi.hex(hresult)
 	return string.format("0x%08X", hresult < 0 and hresult + 2 ^ 32 or hresult)
 end
 
--- Calls the method in vtable slot `index` of `object`. `signature` is the method's C type with the object pointer first.
-function NativeFfi.call(object, index, signature, ...)
+-- The method in vtable slot `index` of `object`, as a function that takes the object pointer first, as `signature` declares.
+-- A method called every frame is fetched once with this, since each fetch makes a new cdata object on the Lua heap.
+function NativeFfi.method(object, index, signature)
 	local method_type = method_types[signature]
 	if not method_type then
 		method_type = ffi.typeof(signature)
@@ -186,7 +192,12 @@ function NativeFfi.call(object, index, signature, ...)
 	end
 
 	local vtable = ffi.cast("MusicReplacer_ComObject *", object).lpVtbl
-	return ffi.cast(method_type, vtable[index])(object, ...)
+	return ffi.cast(method_type, vtable[index])
+end
+
+-- Calls the method in vtable slot `index` of `object`. `signature` is the method's C type with the object pointer first.
+function NativeFfi.call(object, index, signature, ...)
+	return NativeFfi.method(object, index, signature)(object, ...)
 end
 
 function NativeFfi.release(object)
