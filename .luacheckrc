@@ -7,8 +7,9 @@ local engine_globals = { "Application", "CLASS", "Color", "Managers", "Mods", "W
 
 read_globals = engine_globals
 
--- Hook handlers and engine callbacks must accept arguments they do not use.
-unused_args = false
+-- A method's implicit self often goes unused, as in callbacks the game calls as methods and in the test stand-ins.
+-- Every other unused argument is reported, since it can be a misspelled or forgotten parameter.
+self = false
 
 -- Comment lines follow the 140 character limit. Code and string lines have none.
 max_code_line_length = false

@@ -620,7 +620,7 @@ function Context.init(mod, detail_logger)
 	-- Passing a function registers without error, then crashes the game when the event fires.
 	-- A repeated start for an open unit keeps its window as it is, and is not logged.
 	-- Meat Grinder's boss dummies repeat their start over and over.
-	function mod.on_boss_start(self, unit, boss_extension)
+	function mod:on_boss_start(unit, boss_extension)
 		if unit and open_bosses[unit] then
 			return
 		end
@@ -637,7 +637,7 @@ function Context.init(mod, detail_logger)
 		recompute(mod)
 	end
 
-	function mod.on_boss_end(self, unit, boss_extension)
+	function mod:on_boss_end(unit)
 		log_detail("[raw] boss_encounter_end")
 
 		if unit then
