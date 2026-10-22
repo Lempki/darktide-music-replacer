@@ -431,6 +431,7 @@ end
 Suppression.init(log_detail)
 EventProbe.init(log_detail)
 MissionProbe.init(log)
+Context.on_mission_change(MissionProbe.on_mission_change)
 ResumePoints.init(mod)
 Context.on_state_change(Suppression.on_state_change)
 Context.on_state_change(ResumePoints.on_state_change)
@@ -624,7 +625,6 @@ mod.update = function(dt)
 		end
 	end
 
-	MissionProbe.update()
 	DebugOverlay.update()
 
 	if enabled and has_pending_change then

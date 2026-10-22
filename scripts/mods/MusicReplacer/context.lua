@@ -95,6 +95,7 @@ local resolved_context = nil -- Last computed context string, for example "hub".
 local learned_groups = {}
 local change_listeners = {}
 local state_listeners = {}
+local mission_listeners = {}
 local listeners_registered = false
 local log_detail = function() end -- No-op unless a real logger is passed to Context.init.
 
@@ -269,8 +270,8 @@ local function read_mode(template)
 	return nil
 end
 
--- Returns the current mission's name, whether its template is the hub, whether it is an Operation, and its game mode.
--- Returns nil, false, false, nil before a level has loaded.
+-- Returns the current mission's name, whether its template is the hub, whether it is an Operation, its game mode, and its template.
+-- Returns nil, false, false, nil, nil before a level has loaded.
 local function read_mission()
 	local game_state = Managers and Managers.state
 	local mission_manager = game_state and game_state.mission
@@ -288,7 +289,7 @@ local function read_mission()
 	local template_ok, template = pcall(mission_manager.mission, mission_manager)
 	template = template_ok and type(template) == "table" and template or nil
 
-	return name, template ~= nil and template.is_hub == true, template ~= nil and template.mission_type == "operations", read_mode(template)
+	return name, template ~= nil and template.is_hub == true, template ~= nil and template.mission_type == "operations", read_mode(template), template
 end
 
 -- Wwise reports "None" as a string, not as nil.
@@ -485,6 +486,12 @@ function Context.relearn()
 	resolved_context = nil
 end
 
+-- Register a function to call with the mission's name and template whenever the mission changes, before the context follows it.
+-- Both are nil while no level is loaded.
+function Context.on_mission_change(listener)
+	mission_listeners[#mission_listeners + 1] = listener
+end
+
 -- Register a function to call on every real transition of a music state group, after context.lua has tracked it.
 -- The listener receives (group_name, new_state) for music_combat, music_zone, music_game_state and music_objective only.
 function Context.on_state_change(listener)
@@ -644,11 +651,20 @@ end
 -- Call from the main mod file's mod.update.
 -- Managers.event does not exist at mod-load time, so the boss callbacks are registered on the first tick where it does.
 function Context.update(mod, dt)
-	local current_mission_name, current_mission_is_hub, current_mission_is_operation, current_mode = read_mission()
+	local current_mission_name, current_mission_is_hub, current_mission_is_operation, current_mode, template = read_mission()
 
 	if current_mode ~= mission_mode then
 		log_detail(string.format("[mission] game mode: %s", tostring(current_mode or "ordinary")))
 		mission_mode = current_mode
+	end
+
+	if current_mission_name ~= mission_name then
+		for _, listener in ipairs(mission_listeners) do
+			local ok, err = pcall(listener, current_mission_name, template)
+			if not ok then
+				mod:error("Music Replacer could not follow a change of mission: %s", tostring(err))
+			end
+		end
 	end
 
 	if current_mission_name ~= mission_name or current_mission_is_hub ~= mission_is_hub
