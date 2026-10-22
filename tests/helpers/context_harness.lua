@@ -8,20 +8,11 @@ local Harness = {}
 Harness.__index = Harness
 
 -- The defaults of the mod's own settings.
-local DEFAULT_SETTINGS = { combat_hold_seconds = 8, horde_hold_seconds = 3, event_hold_seconds = 5, source_meat_grinder = "silence", daemonhost_boss_music = false, captain_boss_music = false }
-
 local FRAME_SECONDS = 0.1
 
--- Settings not given fall back to the mod's defaults.
+-- Settings not given read as the mod's defaults, as in the game.
 function Harness.new(settings)
-	local merged = {}
-	for key, value in pairs(DEFAULT_SETTINGS) do
-		merged[key] = value
-	end
-	for key, value in pairs(settings or {}) do
-		merged[key] = value
-	end
-
+	local merged = settings or {}
 	local engine = FakeEngine.new({ settings = merged })
 	local Context = engine:load("context")
 	Context.init(engine.mod)

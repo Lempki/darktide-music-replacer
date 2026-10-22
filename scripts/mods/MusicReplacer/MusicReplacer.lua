@@ -89,8 +89,9 @@ local function source_of(context_name)
 end
 
 -- The volume settings are percentages of the music's normal level.
+-- DMF writes every setting's default from MusicReplacer_data.lua before this script runs, so a setting never reads as nil.
 local function custom_volume()
-	return (mod:get("custom_music_volume") or 100) / 100
+	return mod:get("custom_music_volume") / 100
 end
 
 -- Moving from one menu to another, such as from a vendor back to the Esc menu, reports no menu for a moment.
@@ -106,7 +107,7 @@ local function menu_volume(dt)
 		menu_closed_elapsed = menu_closed_elapsed + dt
 	end
 
-	return menu_closed_elapsed < MENU_CLOSED_SECONDS and (mod:get("menu_volume") or 50) / 100 or 1
+	return menu_closed_elapsed < MENU_CLOSED_SECONDS and mod:get("menu_volume") / 100 or 1
 end
 
 local function remember_playing_track(next_context_name)
@@ -408,7 +409,7 @@ local function overlay_snapshot()
 		duration = AudioClient.duration(),
 		volume = volume,
 		menu_level = menu_level,
-		menu_volume = (mod:get("menu_volume") or 50) / 100,
+		menu_volume = mod:get("menu_volume") / 100,
 		song_level = song_level,
 		evening_out = mod:get("normalize_loudness") == true,
 	}
@@ -423,7 +424,7 @@ local function create_overlay_element(constant_elements, draw_layer)
 end
 
 local function apply_overlay_settings()
-	DebugOverlay.set_enabled(mod:get("debug_overlay") == true, mod:get("debug_overlay_corner"), (mod:get("debug_overlay_scale") or 100) / 100)
+	DebugOverlay.set_enabled(mod:get("debug_overlay") == true, mod:get("debug_overlay_corner"), mod:get("debug_overlay_scale") / 100)
 end
 
 -- Raw state transitions, suppression, and sound events are detailed lines. The rest of the log is the important events.

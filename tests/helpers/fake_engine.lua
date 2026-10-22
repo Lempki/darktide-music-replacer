@@ -30,6 +30,25 @@ local function new_wwise_game_sync_manager(engine)
 	return Manager
 end
 
+-- Each widget's default from MusicReplacer_data.lua, by setting ID, read once per engine.
+local function widget_defaults(engine)
+	if not engine.defaults then
+		engine.defaults = {}
+		local data = engine.mod:io_dofile(MOD_NAME .. "/scripts/mods/" .. MOD_NAME .. "/MusicReplacer_data")
+
+		local function collect(widgets)
+			for _, widget in ipairs(widgets or {}) do
+				if widget.default_value ~= nil then
+					engine.defaults[widget.setting_id] = widget.default_value
+				end
+				collect(widget.sub_widgets)
+			end
+		end
+		collect(data.options.widgets)
+	end
+	return engine.defaults
+end
+
 local function new_mod(engine)
 	local mod = { name = MOD_NAME }
 
@@ -61,8 +80,13 @@ local function new_mod(engine)
 		end)
 	end
 
+	-- DMF writes every widget's default into the settings before the mod's script runs, so a setting never set reads as its default.
 	function mod:get(setting_id)
-		return engine.settings[setting_id]
+		local value = engine.settings[setting_id]
+		if value == nil then
+			value = widget_defaults(engine)[setting_id]
+		end
+		return value
 	end
 
 	function mod:get_metadata(key)

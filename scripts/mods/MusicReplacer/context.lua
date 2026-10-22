@@ -73,7 +73,7 @@ local WwiseStateGroupCombat = require("scripts/managers/wwise_game_sync/wwise_st
 -- State
 -- ###########################################################################
 
-local wwise_combat_state = nil -- Current value of the "music_combat" state group.
+local music_combat = nil -- Current value of the "music_combat" state group.
 local music_zone = nil -- Current value of the "music_zone" state group.
 local music_game_state = nil -- Current value of the "music_game_state" state group.
 local music_objective = nil -- Current value of the "music_objective" state group.
@@ -86,7 +86,7 @@ local heading_to_mission = false -- True from the mission board's "mission_ready
 local event_kind = nil -- The music_objective value of the event playing now, kept through its hold, or nil.
 local mission_outcome = nil -- "victory" or "defeat" from that game state until the next level starts, else nil.
 local open_bosses = {} -- Boss unit -> { breed = name, order = n } for every open encounter window.
-local boss_open_count = 0 -- Increases with every newly opened window, so the latest one can be found.
+local boss_open_order = 0 -- Counts up with every newly opened window, so the latest one can be found.
 
 local resolved_context = nil -- Last computed context string, for example "hub".
 
@@ -98,14 +98,20 @@ local state_listeners = {}
 local listeners_registered = false
 local log_detail = function() end -- No-op unless a real logger is passed to Context.init.
 
--- Fallbacks for when the hold settings read nil.
-local COMBAT_HOLD_SECONDS_DEFAULT = 8
-local HORDE_HOLD_SECONDS_DEFAULT = 3
-local EVENT_HOLD_SECONDS_DEFAULT = 5
+-- The holds that keep a context playing for a while after the game's state for it went quiet, in the order they drain.
+-- Each is named after the context it keeps, and `remaining` is its seconds left.
+-- Its setting always has a value, since DMF writes every setting's default before the mod's script runs.
+local HOLDS = {
+	{ name = "event", setting_id = "event_hold_seconds", remaining = 0 },
+	{ name = "horde", setting_id = "horde_hold_seconds", remaining = 0 },
+	{ name = "combat", setting_id = "combat_hold_seconds", remaining = 0 },
+}
 
-local combat_hold_remaining = 0 -- Seconds left before combat may fall back to explore.
-local horde_hold_remaining = 0 -- Seconds left before horde may fall back to the plain combat state.
-local event_hold_remaining = 0 -- Seconds left before event may fall back to the states below it.
+local hold_named = {}
+for _, hold in ipairs(HOLDS) do
+	hold_named[hold.name] = hold
+end
+
 local active_hold = nil -- "combat", "horde", or "event" while the resolved context comes from that hold, else nil.
 
 local MISSION_OUTCOME_CONTEXTS = { victory = "victory", defeat = "defeat" }
@@ -183,7 +189,7 @@ local function opted_in(mod, boss)
 end
 
 local function is_boss_active(mod)
-	if wwise_combat_state == "boss" then
+	if music_combat == "boss" then
 		return true
 	end
 
@@ -212,19 +218,25 @@ local function current_boss_breed(mod)
 end
 
 local function is_horde_active()
-	return wwise_combat_state == "horde_low" or wwise_combat_state == "horde_high"
+	return music_combat == "horde_low" or music_combat == "horde_high"
 end
 
-local function combat_hold_seconds(mod)
-	return mod:get("combat_hold_seconds") or COMBAT_HOLD_SECONDS_DEFAULT
+-- Starts the named hold at its full length, while its state is still active.
+local function start_hold(mod, name)
+	local hold = hold_named[name]
+	hold.remaining = mod:get(hold.setting_id)
 end
 
-local function horde_hold_seconds(mod)
-	return mod:get("horde_hold_seconds") or HORDE_HOLD_SECONDS_DEFAULT
-end
+-- True while the named hold keeps its context, which is then the hold the overlay shows.
+local function holding(name)
+	local hold = hold_named[name]
+	if hold.remaining <= 0 then
+		return false
+	end
 
-local function event_hold_seconds(mod)
-	return mod:get("event_hold_seconds") or EVENT_HOLD_SECONDS_DEFAULT
+	log_detail(string.format("[hold] %s quiet, holding %s for %.1fs more", name, name, hold.remaining))
+	active_hold = name
+	return true
 end
 
 -- Operations count as one event from start to end. Last stand shares the group, but is not an event.
@@ -233,8 +245,12 @@ local function is_event_active()
 end
 
 local function is_combat_active()
-	return wwise_combat_state == "normal" or wwise_combat_state == "horde_low" or wwise_combat_state == "horde_high"
+	return music_combat == "normal" or music_combat == "horde_low" or music_combat == "horde_high"
 end
+
+hold_named.event.is_active = is_event_active
+hold_named.horde.is_active = is_horde_active
+hold_named.combat.is_active = is_combat_active
 
 -- "havoc" during a Havoc run, "expeditions" during an Expedition, else nil.
 local function read_mode(template)
@@ -338,13 +354,11 @@ local function resolve(mod)
 
 	-- Operations script their music across the whole mission, in stages with short gaps between them, so each is one long event.
 	if is_event_active() then
-		event_hold_remaining = event_hold_seconds(mod)
+		start_hold(mod, "event")
 		return "event"
 	end
 
-	if event_hold_remaining > 0 then
-		log_detail(string.format("[hold] event quiet, holding event for %.1fs more", event_hold_remaining))
-		active_hold = "event"
+	if holding("event") then
 		return "event"
 	end
 
@@ -357,25 +371,21 @@ local function resolve(mod)
 	end
 
 	if is_horde_active() then
-		horde_hold_remaining = horde_hold_seconds(mod)
-		combat_hold_remaining = 0
+		start_hold(mod, "horde")
+		hold_named.combat.remaining = 0
 		return "horde"
 	end
 
-	if horde_hold_remaining > 0 then
-		log_detail(string.format("[hold] horde quiet, holding horde for %.1fs more", horde_hold_remaining))
-		active_hold = "horde"
+	if holding("horde") then
 		return "horde"
 	end
 
 	if is_combat_active() then
-		combat_hold_remaining = combat_hold_seconds(mod)
+		start_hold(mod, "combat")
 		return "combat"
 	end
 
-	if combat_hold_remaining > 0 then
-		log_detail(string.format("[hold] combat quiet, holding combat for %.1fs more", combat_hold_remaining))
-		active_hold = "combat"
+	if holding("combat") then
 		return "combat"
 	end
 
@@ -387,7 +397,7 @@ local function recompute(mod)
 
 	-- An event's kind lasts until the event and its hold are over, so a cutscene in the middle of it keeps it for its return.
 	-- The game does not set music_objective again after such an interruption, so the kind would not come back on its own.
-	if not is_event_active() and event_hold_remaining == 0 then
+	if not is_event_active() and hold_named.event.remaining == 0 then
 		event_kind = nil
 	end
 
@@ -428,18 +438,12 @@ function Context.current()
 	return resolved_context
 end
 
-local HOLD_REMAINING = {
-	combat = function() return combat_hold_remaining end,
-	horde = function() return horde_hold_remaining end,
-	event = function() return event_hold_remaining end,
-}
-
 -- The hold that keeps the current context, "combat", "horde", or "event", and its seconds left, or nil.
 function Context.hold()
 	if not active_hold then
 		return nil
 	end
-	return active_hold, HOLD_REMAINING[active_hold]()
+	return active_hold, hold_named[active_hold].remaining
 end
 
 -- The override folder names `context_name` may use right now, most specific first.
@@ -492,7 +496,7 @@ local function track_transition(mod, group_name, current, new_state)
 	learned_groups[group_name] = true
 
 	if group_name == "music_combat" then
-		wwise_combat_state = new_state
+		music_combat = new_state
 		log_detail(describe_transition(group_name, current, new_state))
 	elseif group_name == "music_zone" then
 		log_detail(describe_transition(group_name, music_zone, new_state))
@@ -511,11 +515,12 @@ local function track_transition(mod, group_name, current, new_state)
 			-- A real zone change clears both boss signals, since either can get stuck on its own.
 			-- The tracked combat state is only this module's copy, so it corrects itself on the next real transition.
 			-- A boss encounter that is still open keeps is_boss_active() true anyway.
-			wwise_combat_state = nil
+			music_combat = nil
 			open_bosses = {}
-			combat_hold_remaining = 0 -- A new zone starts fresh, not partway through the last hold.
-			horde_hold_remaining = 0
-			event_hold_remaining = 0
+			-- A new zone starts fresh, not partway through the last hold.
+			for _, hold in ipairs(HOLDS) do
+				hold.remaining = 0
+			end
 		end
 	elseif group_name == "music_game_state" then
 		log_detail(describe_transition(group_name, current, new_state))
@@ -618,8 +623,8 @@ function Context.init(mod, detail_logger)
 		log_detail(string.format("[raw] boss_encounter_start breed=%s", breed_name))
 
 		if unit then
-			boss_open_count = boss_open_count + 1
-			open_bosses[unit] = { breed = breed_name, order = boss_open_count }
+			boss_open_order = boss_open_order + 1
+			open_bosses[unit] = { breed = breed_name, order = boss_open_order }
 		end
 
 		recompute(mod)
@@ -657,27 +662,13 @@ function Context.update(mod, dt)
 	-- A hold only counts down once its state is inactive.
 	-- resolve() sets it to its full length whenever it runs while the state is active, so it must not also drain then.
 	-- Each hold is capped by its setting on every tick, so a lowered setting also shortens a hold that is already running.
-	if event_hold_remaining > 0 and not is_event_active() then
-		event_hold_remaining = math.max(math.min(event_hold_remaining, event_hold_seconds(mod)) - dt, 0)
+	for _, hold in ipairs(HOLDS) do
+		if hold.remaining > 0 and not hold.is_active() then
+			hold.remaining = math.max(math.min(hold.remaining, mod:get(hold.setting_id)) - dt, 0)
 
-		if event_hold_remaining == 0 then
-			recompute(mod)
-		end
-	end
-
-	if horde_hold_remaining > 0 and not is_horde_active() then
-		horde_hold_remaining = math.max(math.min(horde_hold_remaining, horde_hold_seconds(mod)) - dt, 0)
-
-		if horde_hold_remaining == 0 then
-			recompute(mod)
-		end
-	end
-
-	if combat_hold_remaining > 0 and not is_combat_active() then
-		combat_hold_remaining = math.max(math.min(combat_hold_remaining, combat_hold_seconds(mod)) - dt, 0)
-
-		if combat_hold_remaining == 0 then
-			recompute(mod)
+			if hold.remaining == 0 then
+				recompute(mod)
+			end
 		end
 	end
 

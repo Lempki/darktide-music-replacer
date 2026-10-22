@@ -9,20 +9,6 @@ local Harness = require("tests.helpers.context_harness")
 local MainHarness = setmetatable({}, { __index = Harness })
 MainHarness.__index = MainHarness
 
--- The defaults of the mod's own settings.
-local DEFAULT_SETTINGS = {
-	resume_songs = true,
-	custom_music_volume = 100,
-	normalize_loudness = false,
-	menu_volume = 50,
-	captain_boss_music = false,
-	daemonhost_boss_music = false,
-	source_meat_grinder = "silence",
-	combat_hold_seconds = 8,
-	horde_hold_seconds = 3,
-	event_hold_seconds = 5,
-}
-
 -- A stand-in for library.lua over `files`, which maps a folder key to a list of { name, duration }.
 -- A folder key is a context, or an override folder inside it, such as "boss/chaos_spawn".
 -- Picks go through each folder in order, so the specs know which file comes next.
@@ -159,15 +145,12 @@ end
 
 -- Options:
 -- * `files`: each context's files for the library stand-in, as { name, duration } lists.
--- * `settings`: overrides of the mod's default settings.
+-- * `settings`: overrides of the mod's default settings, which every other setting reads as, as in the game.
 -- * `turned_off`: the mod starts turned off in the mod options, as DMF reports with on_disabled(true).
 function MainHarness.new(options)
 	options = options or {}
 
 	local settings = {}
-	for key, value in pairs(DEFAULT_SETTINGS) do
-		settings[key] = value
-	end
 	for key, value in pairs(options.settings or {}) do
 		settings[key] = value
 	end
