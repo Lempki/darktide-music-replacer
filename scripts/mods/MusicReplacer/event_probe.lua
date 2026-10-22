@@ -25,6 +25,7 @@ local NOISE_PATTERNS = {
 	"events/ui/play_ui_character_loadout",
 }
 
+-- Every event name seen once, noise included, so a repeated event is never matched against the patterns again.
 local seen_events = {}
 local log_detail = function() end -- No-op unless a real logger is passed to EventProbe.init.
 
@@ -52,9 +53,11 @@ function EventProbe.observe(event_name, extra_arg_count)
 
 	if event_name:find("music", 1, true) then
 		log_detail(string.format("[probe] music event: %s (extra args: %d)", event_name, extra_arg_count))
-	elseif not seen_events[event_name] and not is_noise(event_name) then
+	elseif not seen_events[event_name] then
 		seen_events[event_name] = true
-		log_detail(string.format("[probe] new event: %s", event_name))
+		if not is_noise(event_name) then
+			log_detail(string.format("[probe] new event: %s", event_name))
+		end
 	end
 end
 

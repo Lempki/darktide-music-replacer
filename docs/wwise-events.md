@@ -56,7 +56,7 @@ Each line below shows up in the log with Detailed Logging on:
 
 | Log line | What it means |
 |---|---|
-| `[suppress] forcing music_combat to None while a custom track plays` | The game's combat, horde, and boss music is off. It stays off through every change of `music_combat` until the custom song stops. |
+| `[suppress] forcing music_combat normal -> None` | The game's combat, horde, and boss music is off. It shows when a custom song starts while `music_combat` has a value, and it stays off through every later change of `music_combat` until the custom song stops. |
 | `[suppress] forcing music_zone hub -> None` | The game's hub music is off while a custom hub song plays. |
 | `[suppress] forcing music_game_state victory -> None` | The game's victory, defeat, loading, mission loading, or preparation music is off while a custom song for that context plays. |
 | `[suppress] forcing music_objective fortification_event -> None` | The game's event, last stand, or Mortis Trials wave music is off while a custom song for that context plays. |

@@ -16,8 +16,6 @@ local log_detail = function() end -- No-op unless a real logger is passed to Sup
 local real_states = {} -- State group name -> the last value the game set, fed by Suppression.on_state_change.
 local forced_groups = {} -- State group name -> true while that group is forced to "None" and not yet restored.
 
-local combat_suppressed = false
-local combat_forced = false -- True while music_combat is forced to "None" and not yet restored.
 local events_suppressed = false
 
 -- State group name -> true while that group is suppressed and forced again after every real transition.
@@ -72,41 +70,15 @@ end
 -- Turning it on also forces the current value, otherwise a value set before suppression started plays until the next flap.
 -- Turning it off restores the real value.
 -- The game only re-sends a state when it changes, so a boss that started while this was on would otherwise stay silent for the whole fight.
-function Suppression.set_combat(should_suppress)
-	if should_suppress then
-		if not combat_suppressed then
-			log_detail("[suppress] forcing music_combat to None while a custom track plays")
-		end
-
-		combat_suppressed = true
-
-		local real_value = real_states.music_combat
-
-		if real_value and real_value ~= "None" then
-			combat_forced = true
-			Wwise.set_state("music_combat", "None")
-		end
-
-		return
-	end
-
-	combat_suppressed = false
-
-	if combat_forced then
-		combat_forced = false
-
-		local real_value = real_states.music_combat or "None"
-
-		log_detail(string.format("[suppress] restoring music_combat to %s", real_value))
-		Wwise.set_state("music_combat", real_value)
-	end
+local function set_combat(should_suppress)
+	set_reforced_group("music_combat", should_suppress)
 end
 
 -- Forces music_zone to "None" so the native hub music stops.
--- The hub does not run on music_combat, so set_combat has no effect there.
+-- The hub does not run on music_combat, so the combat lever has no effect there.
 -- The game only re-sends music_zone when it changes, so the forced value stays until the next real zone change.
 -- Turning it off restores the real zone, otherwise native hub music would stay silent after the custom track stops.
-function Suppression.set_zone(should_suppress)
+local function set_zone(should_suppress)
 	if should_suppress then
 		force_group_to_none("music_zone")
 	else
@@ -116,21 +88,21 @@ end
 
 -- Forces music_game_state to "None" so the game's own victory, defeat, and loading music stops.
 -- The game sets this state repeatedly around a mission's start and end, so it is forced again after every real transition while on.
-function Suppression.set_game_state(should_suppress)
+local function set_game_state(should_suppress)
 	set_reforced_group("music_game_state", should_suppress)
 end
 
 -- Forces music_objective to "None" so the game's own last stand or event music stops.
 -- It is engaged only for the last stand, event and Mortis Trials wave contexts, which are the ones this group decides.
 -- The game sets this group repeatedly, so it is forced again after every real transition while on.
-function Suppression.set_objective(should_suppress)
+local function set_objective(should_suppress)
 	set_reforced_group("music_objective", should_suppress)
 end
 
 -- Stops native music events that match SUPPRESSED_MUSIC_EVENT_PATTERNS as soon as they start.
 -- Mission event sequences start their own music through events, which the state forcing never reaches.
 -- Only an event that starts while this is on is stopped, so the game's music is untouched once it is off.
-function Suppression.set_events(should_suppress)
+local function set_events(should_suppress)
 	events_suppressed = should_suppress
 end
 
@@ -167,14 +139,7 @@ end
 function Suppression.on_state_change(group_name, new_state)
 	real_states[group_name] = new_state
 
-	if group_name == "music_combat" then
-		if combat_suppressed and new_state ~= "None" then
-			combat_forced = true
-			Wwise.set_state("music_combat", "None")
-		elseif new_state == "None" then
-			combat_forced = false -- Wwise already matches the real value.
-		end
-	elseif group_name == "music_zone" then
+	if group_name == "music_zone" then
 		forced_groups.music_zone = false -- The game just set a real zone, which replaces any forced value.
 	elseif reforced_groups[group_name] and new_state ~= "None" then
 		forced_groups[group_name] = true
@@ -191,20 +156,20 @@ function Suppression.engage(context_name)
 	local context = Contexts.get(context_name)
 	local silences = context and context.silences
 
-	Suppression.set_combat(true)
-	Suppression.set_events(true)
-	Suppression.set_zone(silences == "music_zone")
-	Suppression.set_game_state(silences == "music_game_state")
-	Suppression.set_objective(silences == "music_objective")
+	set_combat(true)
+	set_events(true)
+	set_zone(silences == "music_zone")
+	set_game_state(silences == "music_game_state")
+	set_objective(silences == "music_objective")
 end
 
 -- Turns every lever off, for no context or a context with no custom track.
 function Suppression.release()
-	Suppression.set_combat(false)
-	Suppression.set_zone(false)
-	Suppression.set_game_state(false)
-	Suppression.set_objective(false)
-	Suppression.set_events(false)
+	set_combat(false)
+	set_zone(false)
+	set_game_state(false)
+	set_objective(false)
+	set_events(false)
 end
 
 return Suppression
