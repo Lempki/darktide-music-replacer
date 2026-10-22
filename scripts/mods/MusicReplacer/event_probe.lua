@@ -26,7 +26,7 @@ local NOISE_PATTERNS = {
 }
 
 local seen_events = {}
-local log = function() end -- No-op unless a real logger is passed to EventProbe.init.
+local log_detail = function() end -- No-op unless a real logger is passed to EventProbe.init.
 
 local function is_noise(event_name)
 	for _, pattern in ipairs(NOISE_PATTERNS) do
@@ -39,8 +39,8 @@ local function is_noise(event_name)
 end
 
 -- Call once from the main mod file's top level.
-function EventProbe.init(real_log)
-	log = real_log or log
+function EventProbe.init(detail_logger)
+	log_detail = detail_logger or log_detail
 end
 
 -- Called for every Wwise event, from the single trigger_resource_event hook in MusicReplacer.lua.
@@ -51,10 +51,10 @@ function EventProbe.observe(event_name, extra_arg_count)
 	end
 
 	if event_name:find("music", 1, true) then
-		log(string.format("[probe] music event: %s (extra args: %d)", event_name, extra_arg_count))
+		log_detail(string.format("[probe] music event: %s (extra args: %d)", event_name, extra_arg_count))
 	elseif not seen_events[event_name] and not is_noise(event_name) then
 		seen_events[event_name] = true
-		log(string.format("[probe] new event: %s", event_name))
+		log_detail(string.format("[probe] new event: %s", event_name))
 	end
 end
 

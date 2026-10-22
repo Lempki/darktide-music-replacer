@@ -30,7 +30,7 @@ local AUDIO_ROOT = "./../mods/MusicReplacer/audio"
 
 local _os = Mods and Mods.lua and Mods.lua.os -- Only for timing the duration measurements.
 
-local diagnostic_log = function() end -- No-op unless a real logger is passed to Library.init.
+local log = function() end -- No-op unless a real logger is passed to Library.init.
 local AudioFolders = nil
 local waiting_to_scan = false
 local rescan_requested = false
@@ -135,7 +135,7 @@ local function scan_folders(what)
 	end
 
 	reported_missing = {}
-	diagnostic_log(string.format("[library] %s: %s", what, describe_counts()))
+	log(string.format("[library] %s: %s", what, describe_counts()))
 
 	local entries = {}
 	for _, key in ipairs(each_folder_key()) do
@@ -166,12 +166,12 @@ local function measure_next_duration()
 
 		if err then
 			unplayable[file_path] = true
-			diagnostic_log(string.format("[library] %s cannot be played, skipping it: %s", file_path, err))
+			log(string.format("[library] %s cannot be played, skipping it: %s", file_path, err))
 		end
 	end
 
 	if not measure_queue[measure_index] then
-		diagnostic_log(string.format("[library] measured every file's duration, %.0f ms in total", measure_seconds * 1000))
+		log(string.format("[library] measured every file's duration, %.0f ms in total", measure_seconds * 1000))
 		measure_queue = {}
 		measure_index = 1
 		measure_seconds = 0
@@ -182,8 +182,8 @@ end
 -- Creates any missing folder at once, and lists them on the first update.
 -- `log`, if given, receives a line for each listing and the total measuring time.
 -- It also receives one for each file Windows cannot open, and the first time a listed file turns out to be missing.
-function Library.init(log, audio_folders)
-	diagnostic_log = log or diagnostic_log
+function Library.init(logger, audio_folders)
+	log = logger or log
 
 	if not (audio_folders and audio_folders.available()) then
 		return -- No way to list the folders. pick_file() below correctly returns nil.
@@ -199,7 +199,7 @@ function Library.init(log, audio_folders)
 	local err
 	watcher, err = AudioFolders.watch(AUDIO_ROOT)
 	if not watcher then
-		diagnostic_log(string.format("[library] %s, so changed files need Rescan Audio Folders", tostring(err)))
+		log(string.format("[library] %s, so changed files need Rescan Audio Folders", tostring(err)))
 	end
 
 	waiting_to_scan = true
@@ -308,7 +308,7 @@ local function usable_entries(context_name)
 				usable[#usable + 1] = { file_path = file_path, duration = durations[file_path] or nil }
 			elseif not reported_missing[file_path] then
 				reported_missing[file_path] = true
-				diagnostic_log(string.format("[library] %s is listed but missing on disk, skipping it until the folders are listed again", file_path))
+				log(string.format("[library] %s is listed but missing on disk, skipping it until the folders are listed again", file_path))
 			end
 		end
 	end

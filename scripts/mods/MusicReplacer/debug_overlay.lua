@@ -37,7 +37,7 @@ local RESET = "{#reset()}"
 
 local snapshot_fn = function() return nil end
 local create_element = nil
-local log_fn = function() end
+local log = function() end
 local enabled = false
 local corner = "top_left"
 local scale = 1 -- The Overlay Size setting, as a factor.
@@ -171,8 +171,8 @@ function DebugOverlay.scale()
 end
 
 -- `options.snapshot()` returns the state to show, and `options.create_element(constant_elements, draw_layer)` makes the element.
-function DebugOverlay.init(log, options)
-	log_fn = log or log_fn
+function DebugOverlay.init(logger, options)
+	log = logger or log
 	snapshot_fn = options.snapshot or snapshot_fn
 	create_element = options.create_element
 end
@@ -251,7 +251,7 @@ function DebugOverlay.update()
 	if not ok then
 		install_failed = true
 		remove()
-		log_fn("[overlay] could not be shown: " .. tostring(err))
+		log("[overlay] could not be shown: " .. tostring(err))
 	end
 end
 

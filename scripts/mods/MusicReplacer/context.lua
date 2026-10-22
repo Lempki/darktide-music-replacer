@@ -96,7 +96,7 @@ local learned_groups = {}
 local change_listeners = {}
 local state_listeners = {}
 local listeners_registered = false
-local diagnostic_log = function() end -- No-op unless a real logger is passed to Context.init.
+local log_detail = function() end -- No-op unless a real logger is passed to Context.init.
 
 -- Fallbacks for when the hold settings read nil.
 local COMBAT_HOLD_SECONDS_DEFAULT = 8
@@ -343,7 +343,7 @@ local function resolve(mod)
 	end
 
 	if event_hold_remaining > 0 then
-		diagnostic_log(string.format("[hold] event quiet, holding event for %.1fs more", event_hold_remaining))
+		log_detail(string.format("[hold] event quiet, holding event for %.1fs more", event_hold_remaining))
 		active_hold = "event"
 		return "event"
 	end
@@ -353,7 +353,7 @@ local function resolve(mod)
 	end
 
 	if has_no_zone() and resolved_context == nil then
-		diagnostic_log(string.format("[zoneless] music_zone=%s with music_game_state=%s, treating as a mission", tostring(music_zone), tostring(music_game_state)))
+		log_detail(string.format("[zoneless] music_zone=%s with music_game_state=%s, treating as a mission", tostring(music_zone), tostring(music_game_state)))
 	end
 
 	if is_horde_active() then
@@ -363,7 +363,7 @@ local function resolve(mod)
 	end
 
 	if horde_hold_remaining > 0 then
-		diagnostic_log(string.format("[hold] horde quiet, holding horde for %.1fs more", horde_hold_remaining))
+		log_detail(string.format("[hold] horde quiet, holding horde for %.1fs more", horde_hold_remaining))
 		active_hold = "horde"
 		return "horde"
 	end
@@ -374,7 +374,7 @@ local function resolve(mod)
 	end
 
 	if combat_hold_remaining > 0 then
-		diagnostic_log(string.format("[hold] combat quiet, holding combat for %.1fs more", combat_hold_remaining))
+		log_detail(string.format("[hold] combat quiet, holding combat for %.1fs more", combat_hold_remaining))
 		active_hold = "combat"
 		return "combat"
 	end
@@ -493,9 +493,9 @@ local function track_transition(mod, group_name, current, new_state)
 
 	if group_name == "music_combat" then
 		wwise_combat_state = new_state
-		diagnostic_log(describe_transition(group_name, current, new_state))
+		log_detail(describe_transition(group_name, current, new_state))
 	elseif group_name == "music_zone" then
-		diagnostic_log(describe_transition(group_name, music_zone, new_state))
+		log_detail(describe_transition(group_name, music_zone, new_state))
 
 		-- Catching up after a load or Context.relearn() is not a zone change, so it keeps the outcome and the boss windows.
 		local zone_changed = music_zone ~= nil and new_state ~= music_zone
@@ -518,7 +518,7 @@ local function track_transition(mod, group_name, current, new_state)
 			event_hold_remaining = 0
 		end
 	elseif group_name == "music_game_state" then
-		diagnostic_log(describe_transition(group_name, current, new_state))
+		log_detail(describe_transition(group_name, current, new_state))
 		music_game_state = new_state
 
 		-- A loading screen that ends in "mission" has reached its level, such as when joining a mission in progress.
@@ -546,20 +546,20 @@ local function track_transition(mod, group_name, current, new_state)
 			open_bosses = {}
 		end
 	elseif group_name == "music_objective" then
-		diagnostic_log(describe_transition(group_name, current, new_state))
+		log_detail(describe_transition(group_name, current, new_state))
 		music_objective = new_state
 		if new_state ~= "None" and new_state ~= LAST_MAN_STANDING then
 			event_kind = new_state
 		end
 	elseif group_name == "options" then
-		diagnostic_log(describe_transition(group_name, current, new_state))
+		log_detail(describe_transition(group_name, current, new_state))
 		menu_state = new_state
 		return
 	else
 		local expedition_only = group_name == "expeditions_intensity"
 			and (EXPEDITION_ONLY_COMBAT_STATES[new_state] or EXPEDITION_ONLY_COMBAT_STATES[current])
 		if LOGGED_ONLY_STATE_GROUPS[group_name] or expedition_only then
-			diagnostic_log(describe_transition(group_name, current, new_state))
+			log_detail(describe_transition(group_name, current, new_state))
 		end
 
 		return
@@ -587,8 +587,8 @@ end
 -- Call once from the main mod file's top level.
 -- `log`, if given, receives a line for every raw state transition and boss event.
 -- That is much more output than Context.on_change, so it is meant for diagnosing state issues.
-function Context.init(mod, log)
-	diagnostic_log = log or diagnostic_log
+function Context.init(mod, detail_logger)
+	log_detail = detail_logger or log_detail
 
 	-- The game's combat group decides only once per launch whether it runs an Expedition, on the first mission it sees.
 	-- Without this, every mission after an Expedition reports Expedition states to the mod, with no horde or boss, until the game restarts.
@@ -615,7 +615,7 @@ function Context.init(mod, log)
 
 		local breed = boss_extension and boss_extension._breed
 		local breed_name = breed and breed.name or "<unknown>"
-		diagnostic_log(string.format("[raw] boss_encounter_start breed=%s", breed_name))
+		log_detail(string.format("[raw] boss_encounter_start breed=%s", breed_name))
 
 		if unit then
 			boss_open_count = boss_open_count + 1
@@ -626,7 +626,7 @@ function Context.init(mod, log)
 	end
 
 	function mod.on_boss_end(self, unit, boss_extension)
-		diagnostic_log("[raw] boss_encounter_end")
+		log_detail("[raw] boss_encounter_end")
 
 		if unit then
 			open_bosses[unit] = nil
@@ -642,7 +642,7 @@ function Context.update(mod, dt)
 	local current_mission_name, current_mission_is_hub, current_mission_is_operation, current_mode = read_mission()
 
 	if current_mode ~= mission_mode then
-		diagnostic_log(string.format("[mission] game mode: %s", tostring(current_mode or "ordinary")))
+		log_detail(string.format("[mission] game mode: %s", tostring(current_mode or "ordinary")))
 		mission_mode = current_mode
 	end
 

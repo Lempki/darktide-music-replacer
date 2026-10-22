@@ -41,7 +41,7 @@ local STATS_LOG_SECONDS = 300
 local Player = nil
 local disk_path = function(file_path) return file_path end
 local level_of = function() return 1 end
-local log_fn = function() end
+local log = function() end
 
 local current = nil -- Fields: stream, file_path, loop, level, duration, on_finished, elapsed, end_fading.
 local outgoing = {} -- { stream, file_path, loop, level, parked_elapsed } for songs fading out or parked, after a switch or a stop.
@@ -66,8 +66,8 @@ local used = false -- Set by the first play, so the stats only show once music h
 -- `options.player` is an initialized player.lua.
 -- `options.disk_path(file_path)` turns a library path into a path on disk.
 -- `options.level_of(file_path)` gives a song's own volume scale, 1 by default.
-function AudioClient.init(log, options)
-	log_fn = log or log_fn
+function AudioClient.init(logger, options)
+	log = logger or log
 	Player = options.player
 	disk_path = options.disk_path or disk_path
 	level_of = options.level_of or level_of
@@ -86,7 +86,7 @@ end
 -- Lets playback try again after it gave up for the session, as when the player turns the mod on again or rescans the folders.
 function AudioClient.try_again()
 	if broken then
-		log_fn("[player] trying playback again after giving up")
+		log("[player] trying playback again after giving up")
 	end
 	broken = nil
 	recoveries = 0
@@ -239,7 +239,7 @@ local function rebuild_engine(reason)
 	recoveries = recoveries + 1
 	if recoveries > MAX_RECOVERIES then
 		broken = string.format("gave up after %d recoveries in a row, the last after: %s", MAX_RECOVERIES, reason)
-		log_fn("[player] " .. broken)
+		log("[player] " .. broken)
 		return false
 	end
 
@@ -280,7 +280,7 @@ function AudioClient.play(file_path, opts)
 	-- A failure that outlived its stream means the engine stopped working while no song needed it, so it is rebuilt first.
 	local engine_failure = Player.engine_failure() or engine_suspect
 	if engine_failure then
-		log_fn(string.format("[player] the engine stopped working (%s), rebuilding it", engine_failure))
+		log(string.format("[player] the engine stopped working (%s), rebuilding it", engine_failure))
 		if not rebuild_engine(engine_failure) or not AudioClient.available() then
 			return false
 		end
@@ -314,7 +314,7 @@ function AudioClient.play(file_path, opts)
 		stream:resume()
 		stream:set_gain(gain * level)
 		stream:fade_to(1, opts.fade_in and CROSSFADE_SECONDS or 0)
-		log_fn(string.format("[player] continuing %s from %.1fs, where it faded out", file_path, stream:position()))
+		log(string.format("[player] continuing %s from %.1fs, where it faded out", file_path, stream:position()))
 	else
 		local open_opts = {
 			start_position = opts.start_position,
@@ -326,14 +326,14 @@ function AudioClient.play(file_path, opts)
 		stream, err, refused_voice = Player.open(disk_path(file_path), open_opts)
 
 		if Player.last_open_ms() >= SLOW_OPEN_MS then
-			log_fn(string.format("[timing] opening %s took %d ms", file_path, Player.last_open_ms()))
+			log(string.format("[timing] opening %s took %d ms", file_path, Player.last_open_ms()))
 		end
 
 		-- A dead engine refuses every voice, and so can one file's format.
 		-- With no song fading out to show the engine still plays, it is rebuilt and the file gets one more try.
 		-- That is not counted as a recovery, since a file the engine refuses again was the cause.
 		if not stream and refused_voice and not has_live_stream() then
-			log_fn(string.format("[player] %s was refused a voice (%s), rebuilding the engine and trying once more", file_path, tostring(err)))
+			log(string.format("[player] %s was refused a voice (%s), rebuilding the engine and trying once more", file_path, tostring(err)))
 			destroy_all()
 			Player.reset()
 			if AudioClient.available() then
@@ -346,7 +346,7 @@ function AudioClient.play(file_path, opts)
 				stream:fade_to(1, CROSSFADE_SECONDS)
 			end
 		else
-			log_fn(string.format("[player] %s could not be played: %s", file_path, tostring(err)))
+			log(string.format("[player] %s could not be played: %s", file_path, tostring(err)))
 		end
 	end
 
@@ -399,7 +399,7 @@ local function recover(reason)
 		return
 	end
 
-	log_fn(string.format("[player] playback failed (%s), rebuilding the engine and resuming at %.1fs", reason, position))
+	log(string.format("[player] playback failed (%s), rebuilding the engine and resuming at %.1fs", reason, position))
 
 	if resume then
 		local resumed = AudioClient.play(resume.file_path, {
@@ -411,7 +411,7 @@ local function recover(reason)
 		})
 
 		if not resumed and AudioClient.can_retry() then
-			log_fn(string.format("[player] no audio output (%s), trying again every %ds", tostring(Player.error()), RETRY_SECONDS))
+			log(string.format("[player] no audio output (%s), trying again every %ds", tostring(Player.error()), RETRY_SECONDS))
 		end
 	end
 end
@@ -433,7 +433,7 @@ local function update_current(dt)
 	end
 
 	if stream:file_failure() then
-		log_fn(string.format("[player] %s could not be played: %s", current.file_path, stream:file_failure()))
+		log(string.format("[player] %s could not be played: %s", current.file_path, stream:file_failure()))
 		finish(true)
 		return
 	end
@@ -462,7 +462,7 @@ local function log_stats(dt)
 	stats_elapsed = stats_elapsed + dt
 	if stats_elapsed >= STATS_LOG_SECONDS then
 		stats_elapsed = 0
-		log_fn(string.format("[player] pools %d KB, Lua heap %d KB, slowest refill %.1f ms, longest update gap %.2fs",
+		log(string.format("[player] pools %d KB, Lua heap %d KB, slowest refill %.1f ms, longest update gap %.2fs",
 			Player.pool_bytes() / 1024, collectgarbage("count"), Player.slowest_fill_ms(), longest_gap))
 		longest_gap = 0
 	end
@@ -482,7 +482,7 @@ function AudioClient.update(dt)
 			retry_elapsed = 0
 			Player.reset()
 			if Player.available() then
-				log_fn("[player] the audio output is back")
+				log("[player] the audio output is back")
 			end
 		end
 	else

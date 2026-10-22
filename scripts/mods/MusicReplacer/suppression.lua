@@ -11,7 +11,7 @@ local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/
 -- Plain substrings, matched against the full event name.
 local SUPPRESSED_MUSIC_EVENT_PATTERNS = { "events/music/play_exploration" }
 
-local diagnostic_log = function() end -- No-op unless a real logger is passed to Suppression.init.
+local log_detail = function() end -- No-op unless a real logger is passed to Suppression.init.
 
 local real_states = {} -- State group name -> the last value the game set, fed by Suppression.on_state_change.
 local forced_groups = {} -- State group name -> true while that group is forced to "None" and not yet restored.
@@ -38,7 +38,7 @@ local function force_group_to_none(group_name)
 	end
 
 	forced_groups[group_name] = true
-	diagnostic_log(string.format("[suppress] forcing %s %s -> None", group_name, real_value))
+	log_detail(string.format("[suppress] forcing %s %s -> None", group_name, real_value))
 	Wwise.set_state(group_name, "None")
 end
 
@@ -48,7 +48,7 @@ local function restore_group(group_name)
 	end
 
 	forced_groups[group_name] = false
-	diagnostic_log(string.format("[suppress] restoring %s to %s", group_name, tostring(real_states[group_name])))
+	log_detail(string.format("[suppress] restoring %s to %s", group_name, tostring(real_states[group_name])))
 	Wwise.set_state(group_name, real_states[group_name] or "None")
 end
 
@@ -75,7 +75,7 @@ end
 function Suppression.set_combat(should_suppress)
 	if should_suppress then
 		if not combat_suppressed then
-			diagnostic_log("[suppress] forcing music_combat to None while a custom track plays")
+			log_detail("[suppress] forcing music_combat to None while a custom track plays")
 		end
 
 		combat_suppressed = true
@@ -97,7 +97,7 @@ function Suppression.set_combat(should_suppress)
 
 		local real_value = real_states.music_combat or "None"
 
-		diagnostic_log(string.format("[suppress] restoring music_combat to %s", real_value))
+		log_detail(string.format("[suppress] restoring music_combat to %s", real_value))
 		Wwise.set_state("music_combat", real_value)
 	end
 end
@@ -140,8 +140,8 @@ end
 
 -- Call once from the main mod file's top level.
 -- `log`, if given, receives a line each time a lever forces, restores or stops something.
-function Suppression.init(log)
-	diagnostic_log = log or diagnostic_log
+function Suppression.init(detail_logger)
+	log_detail = detail_logger or log_detail
 end
 
 -- Called for every Wwise event, from the single trigger_resource_event hook in MusicReplacer.lua.
@@ -154,7 +154,7 @@ function Suppression.should_stop_event(event_name)
 
 	for _, pattern in ipairs(SUPPRESSED_MUSIC_EVENT_PATTERNS) do
 		if event_name:find(pattern, 1, true) then
-			diagnostic_log(string.format("[suppress] stopped native music event: %s", event_name))
+			log_detail(string.format("[suppress] stopped native music event: %s", event_name))
 			return true
 		end
 	end

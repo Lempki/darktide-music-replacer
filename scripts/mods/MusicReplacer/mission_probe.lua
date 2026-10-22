@@ -4,7 +4,7 @@
 
 local MissionProbe = {}
 
-local diagnostic_log = function() end -- No-op unless a real logger is passed to MissionProbe.init.
+local log = function() end -- No-op unless a real logger is passed to MissionProbe.init.
 
 local last_mission_name = nil
 local failed = false -- Set after an error, so a broken lookup is reported once and not every tick.
@@ -32,8 +32,8 @@ local function describe(mission)
 end
 
 -- Call once from the main mod file's top level.
-function MissionProbe.init(log)
-	diagnostic_log = log or diagnostic_log
+function MissionProbe.init(logger)
+	log = logger or log
 end
 
 -- Logs the current mission once each time its name changes, including the hub.
@@ -54,7 +54,7 @@ local function check_mission()
 
 	local mission = mission_manager:mission()
 
-	diagnostic_log(string.format("[mission] name=%s type=%s | %s",
+	log(string.format("[mission] name=%s type=%s | %s",
 		mission_name, tostring(mission and mission.mission_type), mission and describe(mission) or "no template"))
 end
 
@@ -69,7 +69,7 @@ function MissionProbe.update()
 
 	if not ok then
 		failed = true
-		diagnostic_log(string.format("[mission] probe failed: %s", tostring(err)))
+		log(string.format("[mission] probe failed: %s", tostring(err)))
 	end
 end
 

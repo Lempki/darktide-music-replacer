@@ -154,6 +154,16 @@ local function choose_file(folder, resume_path, resume_position)
 	return Library.pick_file(folder)
 end
 
+-- Stops any custom song and lets the game's own music play, as wherever no custom song plays.
+-- `status`, when given, is the reason the debug overlay shows.
+local function hand_back(status)
+	if status then
+		context_status = status
+	end
+	AudioClient.stop()
+	Suppression.release()
+end
+
 -- is_new_context separates a real context change from advancing within the same context.
 -- Advancing means a playlist continuation, and only a real change should fade in again.
 local function play_context(context_name, is_new_context)
@@ -165,19 +175,16 @@ local function play_context(context_name, is_new_context)
 	current_folder = nil
 
 	if not context_name then
-		context_status = "game's music"
-		AudioClient.stop()
-		Suppression.release()
+		hand_back("game's music")
 		return
 	end
 
 	-- Meat Grinder only resolves to its own context for these two, since "custom" plays the mission contexts there.
 	local source = source_of(context_name)
-	context_status = SOURCE_NAMES[source] or source
+	context_status = SOURCE_NAMES[source]
 
 	if source == "game" then
-		AudioClient.stop()
-		Suppression.release()
+		hand_back()
 		log(string.format("[playback] %s: set to the game's own music", context_name))
 		return
 	end
@@ -191,9 +198,7 @@ local function play_context(context_name, is_new_context)
 
 	-- Playback that could not start, or gave up after repeated audio device failures, leaves the native music alone.
 	if not AudioClient.available() then
-		context_status = "game's music, no audio output"
-		AudioClient.stop()
-		Suppression.release()
+		hand_back("game's music, no audio output")
 		return
 	end
 
@@ -229,9 +234,7 @@ local function play_context(context_name, is_new_context)
 
 	-- Only the context's own folder gets here, since an override folder that gave up is left out.
 	if gave_up[folder] then
-		context_status = "game's music, its songs would not play"
-		AudioClient.stop()
-		Suppression.release()
+		hand_back("game's music, its songs would not play")
 		log(string.format("[playback] %s: its tracks would not play earlier, using native music", context_name))
 		return
 	end
@@ -239,9 +242,7 @@ local function play_context(context_name, is_new_context)
 	if not file_path then
 		-- No replacement is available: no folder, an empty folder, or a scan that has not finished.
 		-- Native music is left alone.
-		context_status = "game's music, no songs"
-		AudioClient.stop()
-		Suppression.release()
+		hand_back("game's music, no songs")
 		log(string.format("[playback] %s: no file available, using native music", context_name))
 		return
 	end
@@ -288,11 +289,9 @@ local function play_context(context_name, is_new_context)
 						log(string.format("[playback] %s: %d tracks in a row from the %s folder ended within %ds, trying the next folder until the folders are rescanned",
 							context_name, MAX_QUICK_ENDS, folder, QUICK_END_SECONDS))
 					else
-						context_status = "game's music, its songs would not play"
 						log(string.format("[playback] %s: %d tracks in a row ended within %ds, using native music until the game restarts or the folders are rescanned",
 							context_name, MAX_QUICK_ENDS, QUICK_END_SECONDS))
-						AudioClient.stop()
-						Suppression.release()
+						hand_back("game's music, its songs would not play")
 						return
 					end
 				end
@@ -321,6 +320,12 @@ for _, context in ipairs(Contexts.list) do
 end
 
 local pending_context = nil
+
+-- How long the pending change waits for quiet, which is longer for a change into a loading screen.
+local function debounce_seconds()
+	return LOADING_CONTEXTS[pending_context] and LOADING_DEBOUNCE_SECONDS or DEBOUNCE_SECONDS
+end
+
 local debounce_elapsed = 0
 local pending_elapsed = 0
 local has_pending_change = false
@@ -386,8 +391,7 @@ local function overlay_snapshot()
 
 	local pending_seconds = nil
 	if has_pending_change then
-		local debounce_seconds = LOADING_CONTEXTS[pending_context] and LOADING_DEBOUNCE_SECONDS or DEBOUNCE_SECONDS
-		pending_seconds = math.max(0, math.min(debounce_seconds - debounce_elapsed, MAX_DEBOUNCE_SECONDS - pending_elapsed))
+		pending_seconds = math.max(0, math.min(debounce_seconds() - debounce_elapsed, MAX_DEBOUNCE_SECONDS - pending_elapsed))
 	end
 
 	return {
@@ -503,8 +507,7 @@ mod.on_disabled = function(initial_call)
 	replay_requested = false
 	current_context = nil
 	playing_track = nil
-	AudioClient.stop()
-	Suppression.release()
+	hand_back()
 	log("[mod] turned off, the game's own music plays")
 end
 
@@ -627,8 +630,7 @@ mod.update = function(dt)
 		debounce_elapsed = debounce_elapsed + dt
 		pending_elapsed = pending_elapsed + dt
 
-		local debounce_seconds = LOADING_CONTEXTS[pending_context] and LOADING_DEBOUNCE_SECONDS or DEBOUNCE_SECONDS
-		if debounce_elapsed >= debounce_seconds or pending_elapsed >= MAX_DEBOUNCE_SECONDS then
+		if debounce_elapsed >= debounce_seconds() or pending_elapsed >= MAX_DEBOUNCE_SECONDS then
 			commit_pending_context()
 		end
 	end

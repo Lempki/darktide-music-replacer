@@ -30,8 +30,8 @@ local CACHE_HEADER = "# Music Replacer's loudness measurements, format 2: file s
 local _io = Mods and Mods.lua and Mods.lua.io
 local _os = Mods and Mods.lua and Mods.lua.os
 
-local log_fn = function() end
-local detail_fn = function() end
+local log = function() end
+local log_detail = function() end
 local MediaDecoder = nil
 local NativeFfi = nil
 local LoudnessMeter = nil
@@ -135,7 +135,7 @@ local function finish_active()
 	local peak = meter:peak()
 	results[active.file_path] = { stamp = active.stamp, loudness = loudness or false, peak = peak }
 
-	detail_fn(string.format("[loudness] %s: %s, peak %.1f dBFS, %.0f ms",
+	log_detail(string.format("[loudness] %s: %s, peak %.1f dBFS, %.0f ms",
 		active.file_path, loudness and string.format("%.1f LUFS", loudness) or "no measurable loudness", decibels(peak), active.ms))
 
 	measured_count = measured_count + 1
@@ -149,7 +149,7 @@ local function finish_active()
 	end
 
 	if #pending == 0 then
-		log_fn(string.format("[loudness] measured %d song(s), %.1f s of measuring spread over the updates", measured_count, measured_ms / 1000))
+		log(string.format("[loudness] measured %d song(s), %.1f s of measuring spread over the updates", measured_count, measured_ms / 1000))
 		measured_count = 0
 		measured_ms = 0
 	end
@@ -173,7 +173,7 @@ end
 local function start(file_path)
 	local decoder, err = MediaDecoder.open(disk_path(file_path))
 	if not decoder then
-		detail_fn(string.format("[loudness] %s could not be measured: %s", file_path, tostring(err)))
+		log_detail(string.format("[loudness] %s could not be measured: %s", file_path, tostring(err)))
 		failed[file_path] = stamps[file_path]
 		return
 	end
@@ -202,8 +202,8 @@ end
 -- options: log, detail, media_decoder, native_ffi, and loudness_meter, which are loaded and initialized modules.
 -- options.disk_path(file_path) turns a library path into a path on disk, and options.folder is where loudness.txt goes.
 function Loudness.init(options)
-	log_fn = options.log or log_fn
-	detail_fn = options.detail or detail_fn
+	log = options.log or log
+	log_detail = options.detail or log_detail
 	MediaDecoder = options.media_decoder
 	NativeFfi = options.native_ffi
 	LoudnessMeter = options.loudness_meter
