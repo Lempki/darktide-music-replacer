@@ -1,0 +1,47 @@
+-- Every context the mod can resolve, in the order the mod options list their dropdowns and the audio folders are listed.
+-- Each entry says what the other modules need to know about its context, so a new context is one entry here.
+-- It also needs its strings in MusicReplacer_localization.lua, and the rule that resolves it in context.lua.
+--
+-- Fields:
+--	* id: the context's name, which is also its audio folder's name and its setting's "source_" suffix.
+--	* folder: true when it plays songs from an audio folder of its own. Meat Grinder plays the mission folders instead.
+--	* default_source: what its dropdown starts at, when that is not "custom".
+--	* silences: the game's state group that plays this context's own music, forced to "None" while a custom song plays.
+--	  Combat music and the exploration music events are silenced for every context, so they are not listed.
+--	* priority: its rank among the mission contexts, lowest first, matching the order context.lua resolves them in.
+--	* resume: "always" when its song continues whenever it returns, "sequence" when only within one horde, fight, or event.
+--	* loading_screen: true for a loading screen's context, which waits longer before it takes over.
+
+local Contexts = {}
+
+Contexts.list = {
+	{ id = "hub", folder = true, silences = "music_zone" },
+	{ id = "loading", folder = true, silences = "music_game_state", loading_screen = true },
+	{ id = "mission_preparation", folder = true, silences = "music_game_state" },
+	{ id = "mission_loading", folder = true, silences = "music_game_state", loading_screen = true },
+	{ id = "mission_explore", folder = true, priority = 1, resume = "always" },
+	{ id = "mission_combat", folder = true, priority = 2, resume = "always" },
+	{ id = "mission_horde", folder = true, priority = 3, resume = "sequence" },
+	{ id = "mission_boss", folder = true, priority = 4, resume = "sequence" },
+	{ id = "mission_event", folder = true, silences = "music_objective", priority = 5, resume = "sequence" },
+	{ id = "mission_last_stand", folder = true, silences = "music_objective", priority = 6 },
+	{ id = "mission_victory", folder = true, silences = "music_game_state" },
+	{ id = "mission_defeat", folder = true, silences = "music_game_state" },
+	-- Mortis Trials' wave and break rank like event and explore, which they replace there.
+	{ id = "mortis_trials_wave", folder = true, silences = "music_objective", priority = 5, resume = "always" },
+	{ id = "mortis_trials_break", folder = true, priority = 1, resume = "always" },
+	-- The game plays no music in Meat Grinder, so it starts silent like an unmodified game.
+	{ id = "meat_grinder", default_source = "silence" },
+}
+
+local by_id = {}
+for _, context in ipairs(Contexts.list) do
+	by_id[context.id] = context
+end
+
+-- The entry for `id`, or nil for a context the catalog does not know.
+function Contexts.get(id)
+	return id and by_id[id]
+end
+
+return Contexts

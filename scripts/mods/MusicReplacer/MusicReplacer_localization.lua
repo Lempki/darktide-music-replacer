@@ -1,4 +1,5 @@
 local InputUtils = require("scripts/managers/input/input_utils")
+local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/contexts")
 
 -- Key values in the tooltips, in the color the game itself uses for highlighted terms.
 local function highlight(text)
@@ -211,24 +212,28 @@ local strings = {
 	},
 }
 
--- Each context's dropdown: its title, and when it plays.
-local CONTEXTS = {
-	{ "hub", "Hub", "in the Mourningstar" },
-	{ "mission_explore", "Explore", "in a mission while nothing threatens you" },
-	{ "mission_combat", "Combat", "while enemies attack you outside a horde or a boss fight" },
-	{ "mission_horde", "Horde", "during a horde" },
-	{ "mission_boss", "Boss", "while a monstrosity is near you" },
-	{ "mission_event", "Event", "while a mission event plays its music, and through a whole Operation" },
-	{ "mission_last_stand", "Last Stand", "while only one player of the team is alive" },
-	{ "mission_victory", "Victory", "after a mission is won" },
-	{ "mission_defeat", "Defeat", "after a mission is lost" },
-	{ "mortis_trials_wave", "Mortis Trials Wave", "during a Mortis Trials wave" },
-	{ "mortis_trials_break", "Mortis Trials Break", "between Mortis Trials waves" },
+-- Each context's dropdown title, and when it plays, for the contexts that share the common tooltip.
+-- The loading screens and Meat Grinder have tooltips of their own above.
+local CONTEXT_TEXT = {
+	hub = { "Hub", "in the Mourningstar" },
+	mission_explore = { "Explore", "in a mission while nothing threatens you" },
+	mission_combat = { "Combat", "while enemies attack you outside a horde or a boss fight" },
+	mission_horde = { "Horde", "during a horde" },
+	mission_boss = { "Boss", "while a monstrosity is near you" },
+	mission_event = { "Event", "while a mission event plays its music, and through a whole Operation" },
+	mission_last_stand = { "Last Stand", "while only one player of the team is alive" },
+	mission_victory = { "Victory", "after a mission is won" },
+	mission_defeat = { "Defeat", "after a mission is lost" },
+	mortis_trials_wave = { "Mortis Trials Wave", "during a Mortis Trials wave" },
+	mortis_trials_break = { "Mortis Trials Break", "between Mortis Trials waves" },
 }
 
-for _, context in ipairs(CONTEXTS) do
-	strings["source_" .. context[1]] = { en = context[2] }
-	strings["source_" .. context[1] .. "_tooltip"] = { en = source_tooltip(context[3]) }
+for _, context in ipairs(Contexts.list) do
+	local text = CONTEXT_TEXT[context.id]
+	if text then
+		strings["source_" .. context.id] = { en = text[1] }
+		strings["source_" .. context.id .. "_tooltip"] = { en = source_tooltip(text[2]) }
+	end
 end
 
 return strings

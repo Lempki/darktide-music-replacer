@@ -14,23 +14,15 @@
 
 local Library = {}
 
--- Keep in sync with $AudioContexts in tools/build.ps1.
-local CONTEXTS = {
-	"hub",
-	"loading",
-	"mission_preparation",
-	"mission_loading",
-	"mission_explore",
-	"mission_combat",
-	"mission_horde",
-	"mission_boss",
-	"mission_event",
-	"mission_last_stand",
-	"mission_victory",
-	"mission_defeat",
-	"mortis_trials_wave",
-	"mortis_trials_break",
-}
+local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/contexts")
+
+-- The contexts with an audio folder of their own, in the catalog's order.
+local CONTEXTS = {}
+for _, context in ipairs(Contexts.list) do
+	if context.folder then
+		CONTEXTS[#CONTEXTS + 1] = context.id
+	end
+end
 
 -- Relative to the game's own working directory.
 -- Same "./../mods/<name>/..." convention DMF uses to find this mod's info.json.

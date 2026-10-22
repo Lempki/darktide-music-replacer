@@ -5,37 +5,27 @@
 
 local ResumePoints = {}
 
+local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/contexts")
+
 -- Explore and combat take turns all through a mission, as do Mortis Trials' waves and breaks.
--- So their songs continue whenever they come back.
--- Hordes, boss fights, and events continue only under the sequence rule below.
+-- So their songs continue whenever they come back, which the catalog marks as resuming "always".
+-- Hordes, boss fights, and events continue only under the sequence rule below, which it marks as "sequence".
 -- Last stands, the hub, and the mission's end start a fresh song every time.
-local RESUMABLE_CONTEXTS = {
-	mission_explore = true,
-	mission_combat = true,
-	mission_horde = true,
-	mission_boss = true,
-	mission_event = true,
-	mortis_trials_wave = true,
-	mortis_trials_break = true,
-}
+local RESUMABLE_CONTEXTS = {}
 
 -- Mission contexts by the priority context.lua resolves them in, lowest first.
--- Mortis Trials' break and wave rank like explore and event, which they replace there.
-local PRIORITY = {
-	mission_explore = 1,
-	mission_combat = 2,
-	mission_horde = 3,
-	mission_boss = 4,
-	mission_event = 5,
-	mission_last_stand = 6,
-	mortis_trials_break = 1,
-	mortis_trials_wave = 5,
-}
+local PRIORITY = {}
 
 -- A horde, a boss fight, or an event is one stretch that higher-priority music can interrupt, such as a last stand during an event.
 -- Its song continues only if the music did not drop to a lower-priority context in between, which shows that it ended.
 -- A new horde, fight, or event then gets a new pick, so a folder with several songs still varies.
-local SEQUENCES = { mission_horde = true, mission_boss = true, mission_event = true }
+local SEQUENCES = {}
+
+for _, context in ipairs(Contexts.list) do
+	RESUMABLE_CONTEXTS[context.id] = context.resume ~= nil or nil
+	PRIORITY[context.id] = context.priority
+	SEQUENCES[context.id] = context.resume == "sequence" or nil
+end
 
 local function ends_sequence(context_name, next_context_name)
 	return SEQUENCES[context_name] == true and PRIORITY[next_context_name] ~= nil and PRIORITY[next_context_name] < PRIORITY[context_name]

@@ -5,6 +5,8 @@
 
 local Suppression = {}
 
+local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/contexts")
+
 -- Native music that starts from a Wwise event instead of a state.
 -- Plain substrings, matched against the full event name.
 local SUPPRESSED_MUSIC_EVENT_PATTERNS = { "events/music/play_exploration" }
@@ -184,14 +186,16 @@ end
 
 -- Turns on the levers for a context that has a custom track available, or that is set to silence.
 -- Combat and event suppression apply to every context.
--- The hub, victory, defeat, loading, and preparation contexts, and the last stand, event, and Mortis Trials wave contexts need one more.
+-- A context whose own music comes from one more state group, as the catalog's `silences` names, has that group forced too.
 function Suppression.engage(context_name)
+	local context = Contexts.get(context_name)
+	local silences = context and context.silences
+
 	Suppression.set_combat(true)
 	Suppression.set_events(true)
-	Suppression.set_zone(context_name == "hub")
-	Suppression.set_game_state(context_name == "mission_victory" or context_name == "mission_defeat"
-		or context_name == "loading" or context_name == "mission_loading" or context_name == "mission_preparation")
-	Suppression.set_objective(context_name == "mission_last_stand" or context_name == "mission_event" or context_name == "mortis_trials_wave")
+	Suppression.set_zone(silences == "music_zone")
+	Suppression.set_game_state(silences == "music_game_state")
+	Suppression.set_objective(silences == "music_objective")
 end
 
 -- Turns every lever off, for no context or a context with no custom track.

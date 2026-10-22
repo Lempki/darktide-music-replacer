@@ -2,6 +2,8 @@
 -- Their songs come first, then what plays where and how loud, then fine timing, and troubleshooting last.
 -- Every setting names its tooltip: DMF formats named strings, turning "%%" into "%", but shows an implicit description's "%%" as it is.
 
+local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/contexts")
+
 -- What a context plays. Custom keeps the mod's plain behavior: custom songs where there are files, the game's music elsewhere.
 local function source_widget(context_name, default_value)
 	return {
@@ -15,6 +17,12 @@ local function source_widget(context_name, default_value)
 			{ text = "source_silence", value = "silence" },
 		},
 	}
+end
+
+-- One dropdown per context, in the catalog's order.
+local source_widgets = {}
+for _, context in ipairs(Contexts.list) do
+	source_widgets[#source_widgets + 1] = source_widget(context.id, context.default_source)
 end
 
 return {
@@ -45,23 +53,7 @@ return {
 			{
 				setting_id = "music_per_context",
 				type = "group",
-				sub_widgets = {
-					source_widget("hub"),
-					source_widget("loading"),
-					source_widget("mission_preparation"),
-					source_widget("mission_loading"),
-					source_widget("mission_explore"),
-					source_widget("mission_combat"),
-					source_widget("mission_horde"),
-					source_widget("mission_boss"),
-					source_widget("mission_event"),
-					source_widget("mission_last_stand"),
-					source_widget("mission_victory"),
-					source_widget("mission_defeat"),
-					source_widget("mortis_trials_wave"),
-					source_widget("mortis_trials_break"),
-					source_widget("meat_grinder", "silence"),
-				},
+				sub_widgets = source_widgets,
 			},
 			{
 				setting_id = "volume",

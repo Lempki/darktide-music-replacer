@@ -2,6 +2,7 @@ local mod = get_mod("MusicReplacer")
 
 -- mod:io_dofile paths are relative to "mods/" and include this mod's own folder name.
 -- MusicReplacer.mod's own paths follow the same rule.
+local Contexts = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/contexts")
 local Context = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/context")
 local Suppression = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/suppression")
 local Library = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/library")
@@ -314,7 +315,10 @@ local MAX_DEBOUNCE_SECONDS = 3
 -- Leaving the hub for a mission reports a loading screen for about 2 seconds before the mission preparation screen.
 -- So a change to a loading context waits this long, and the hub song carries straight on into the preparation screen's song.
 local LOADING_DEBOUNCE_SECONDS = 3
-local LOADING_CONTEXTS = { loading = true, mission_loading = true }
+local LOADING_CONTEXTS = {}
+for _, context in ipairs(Contexts.list) do
+	LOADING_CONTEXTS[context.id] = context.loading_screen
+end
 
 local pending_context = nil
 local debounce_elapsed = 0
