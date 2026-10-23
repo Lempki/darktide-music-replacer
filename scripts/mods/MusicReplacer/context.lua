@@ -24,11 +24,12 @@
 --	  A boss's death sends its end event, so boss music never outlasts the boss.
 --	* "horde_low" and "horde_high" resolve "horde", below bosses. The game plays its own horde music for both.
 --	  The game reports a horde only while at least 5 enemies are aggroed, so it drops out for a second or two mid-horde.
---	  So `horde` holds for `horde_hold_seconds`, which is shorter than the combat hold, since a horde ends for good.
+--	  So `horde` holds for `horde_hold_seconds`, whose default is shorter than the combat hold's, since a horde ends for good.
 --	  Once that hold runs out, the plain combat state decides, with no combat hold added on top.
 --	* No context resolves while `music_game_state == "cinematic"`, so custom music stays off during cutscenes.
 --	* The hub and mission contexts only resolve while the game state is in the world: "mission", "mission_board" or "mission_ready".
 --	  Loading screens and the briefing resolve "loading" or "mission_briefing" instead, even once the zone has arrived.
+--	  The game sends the hub zone about 10 seconds before the loading screen ends, and a mission zone partway through the briefing.
 --	  The briefing, and every loading screen after the mission board's "mission_ready", lead into a mission and resolve "mission_briefing".
 --	  A plain loading screen does not say where it leads, so "mission_ready" tells joining a mission apart from leaving one.
 --	  The mission preparation screen, where the party stands together before a mission, resolves "mission_preparation".
@@ -36,7 +37,6 @@
 --	  The mission's intro resolves no context and keeps the game's stinger.
 --	* The title screen, "title", resolves "title_screen", and character select, "main_menu", resolves "character_select".
 --	  Character creation, "character_creation", is a step inside character select and resolves "character_select" too.
---	  The game sends the hub zone about 10 seconds before the loading screen ends, and a mission zone partway through the briefing.
 --	* Meat Grinder has no `wwise_state`, so it is recognized by its mission name instead.
 --	  It resolves to "meat_grinder", whose own setting picks silence or the game's music there.
 --	  With that setting on "custom", it resolves like a mission instead, so the explore and combat music plays.
@@ -100,15 +100,16 @@ local boss_open_order = 0 -- Counts up with every newly opened window, so the la
 local resolved_context = nil -- Last computed context string, for example "hub".
 
 -- State group name -> true once the hook has seen that group since this module loaded or Context.relearn() ran.
--- The game sets every group again on every tick, so a group not yet seen is caught up on the next tick even when its value has not changed.
+-- The game calls _set_state for every group on every tick, even when its value is unchanged.
+-- So a group not yet seen is caught up on the next tick.
 local learned_groups = {}
 local change_listeners = {}
 local state_listeners = {}
 local mission_listeners = {}
 local listeners_registered = false
-local log_detail = function() end -- No-op unless a real logger is passed to Context.init.
+local log_detail = function() end -- It does nothing unless Context.init is given a real logger.
 
--- The holds that keep a context playing for a while after the game's state for it went quiet, in the order they drain.
+-- The holds that keep a context playing for a while after the game's state for it went quiet, in the order resolve() checks them.
 -- Each is named after the context it keeps, and `remaining` is its seconds left.
 -- Its setting always has a value, since DMF writes every setting's default before the mod's script runs.
 local HOLDS = {
@@ -148,7 +149,7 @@ local OPT_IN_BOSS_SETTINGS = {
 -- The music_objective value the game sets while one player of the team is alive.
 local LAST_MAN_STANDING = "last_man_standing"
 
--- Music-related state groups that do not decide a context yet, logged only so their transitions show up in diagnostic.log.
+-- Music-related state groups that decide no context, logged only so their transitions show up with Detailed Logging on.
 local LOGGED_ONLY_STATE_GROUPS = {
 	music_objective_progression = true,
 	event_intensity = true,
@@ -177,7 +178,7 @@ local IN_WORLD_GAME_STATES = { mission = true, mission_board = true, mission_rea
 -- Game states of a loading screen, and of the briefing before a mission.
 local LOADING_GAME_STATES = { loading = true, mission_loading = true, mission_briefing = true }
 
--- Game states that end a trip into a mission: the mission's intro, its end, a cutscene, and the main menu.
+-- Game states that end a trip into a mission: the mission's intro, its end, a cutscene, the title screen, and character select.
 local ARRIVAL_GAME_STATES = {
 	mission_intro = true,
 	victory = true,
@@ -196,7 +197,7 @@ local PREPARATION_GAME_STATES = { loadout = true, loadout_ready = true }
 -- Character creation is a step inside character select, so it keeps character select's music.
 local MENU_CONTEXTS = { title = "title_screen", main_menu = "character_select", character_creation = "character_select" }
 
--- Mission name of the training area where Meat Grinder runs.
+-- The mission name of the training area where Meat Grinder runs.
 -- Its template has no wwise_state, so music_zone reads "None" there.
 local MEAT_GRINDER_MISSION = "tg_shooting_range"
 
@@ -223,6 +224,7 @@ local function is_boss_active(mod)
 		return true
 	end
 
+	-- Other bosses count through music_combat alone, as the game's boss music does, so only an opted-in window adds one.
 	for _, boss in pairs(open_bosses) do
 		if opted_in(mod, boss) then
 			return true
@@ -396,6 +398,7 @@ local function resolve(mod)
 
 	-- A loading screen clears the outcome, so the loading screen after a mission's end gets here too.
 	if LOADING_GAME_STATES[music_game_state] then
+		-- The first "mission_briefing" is the game's state. The second is the mod's context, which also covers loading screens into a mission.
 		return (heading_to_mission or music_game_state == "mission_briefing") and "mission_briefing" or "loading"
 	end
 
@@ -413,7 +416,7 @@ local function resolve(mod)
 		return "meat_grinder"
 	end
 
-	-- Not in the hub or a mission, for example the main menu, a loading screen or a mission end.
+	-- No zone outside a zoneless mission means the player is between levels, as when leaving the hub clears its zone first.
 	-- This comes before the boss signals, since `music_combat` can stay at "boss" after a level ends.
 	if has_no_zone() and not is_zoneless_mission() then
 		return nil
@@ -475,6 +478,7 @@ local function resolve(mod)
 
 	if is_horde_active() then
 		start_hold(mod, "horde")
+		-- Once the horde hold runs out, the plain combat state decides, with no combat hold left over from before the horde.
 		hold_named.combat.remaining = 0
 		return "horde"
 	end
@@ -554,7 +558,7 @@ function Context.current()
 	return resolved_context
 end
 
--- The hold that keeps the current context, "combat", "horde", or "event", and its seconds left, or nil.
+-- The name of the hold that keeps the current context, such as "combat", and its seconds left, or nil.
 function Context.hold()
 	if not active_hold then
 		return nil
@@ -601,7 +605,7 @@ function Context.refresh(mod)
 end
 
 -- Makes the next value the game sets for every state group count as a change, so this module and its listeners catch up.
--- For when the hook may have missed changes, as while the mod is turned off, since DMF disables a mod's hooks then.
+-- It is for when the hook may have missed changes, as while the mod is turned off, since DMF disables a mod's hooks then.
 -- The next change it resolves is reported even if it matches the context from before.
 function Context.relearn()
 	learned_groups = {}
@@ -724,7 +728,7 @@ local function after_set_state(mod, group_name, current, new_state, is_transitio
 end
 
 -- Call once from the main mod file's top level.
--- `log`, if given, receives a line for every raw state transition and boss event.
+-- `detail_logger`, if given, receives a line for every raw state transition and boss event.
 -- That is much more output than Context.on_change, so it is meant for diagnosing state issues.
 function Context.init(mod, detail_logger)
 	log_detail = detail_logger or log_detail
@@ -802,7 +806,7 @@ function Context.update(mod, dt)
 		mission_mode = current_mode
 	end
 
-	-- Only read on the way into a mission, before its level names it.
+	-- The upcoming mission is only read on the way into a mission, before its level names it.
 	local next_mission, next_template = nil, nil
 	if heading_to_mission and (current_mission_name == nil or current_mission_is_hub) then
 		next_mission, next_template = read_upcoming_mission()

@@ -31,7 +31,7 @@ local function ends_sequence(context_name, next_context_name)
 	return SEQUENCES[context_name] == true and PRIORITY[next_context_name] ~= nil and PRIORITY[next_context_name] < PRIORITY[context_name]
 end
 
--- Resuming this close to the end would play a few seconds and then switch songs anyway.
+-- Resuming within this many seconds of the end would play only briefly and then switch songs anyway.
 local MIN_REMAINING_SECONDS = 10
 
 local mod = nil
@@ -45,7 +45,7 @@ function ResumePoints.init(dmf_mod)
 	mod = dmf_mod
 end
 
--- Pass to Context.on_state_change.
+-- Pass this to Context.on_state_change.
 -- A loading screen forgets everything. Nothing is remembered from then on until ResumePoints.enter() gets the next level's first context.
 -- So a song still playing when the debounced change away from the old level arrives is not kept for the next one.
 function ResumePoints.on_state_change(group_name, new_state)
@@ -81,12 +81,7 @@ function ResumePoints.enter(context_name)
 	end
 end
 
--- Remembers `position` seconds into `file_path` for `context_name`, which is giving way to `next_context_name`.
--- Returns the position it kept, or nil.
--- `duration` may be nil. With it, a single file's loop is wrapped back into the file, and a song near its end is not kept.
--- The context change into a loading screen can come after the loading state itself.
--- So nothing is kept from a loading screen until the next level's first context.
--- The position to keep: a single file's loop wraps back into the file, and nil when the song is too close to its end.
+-- Returns the position to keep, with a single file's loop wrapped back into the file, or nil when the song is too close to its end.
 local function kept_position(position, duration, is_only_file)
 	if duration and duration > 0 then
 		if is_only_file then
@@ -101,6 +96,9 @@ local function kept_position(position, duration, is_only_file)
 	return position
 end
 
+-- Remembers `position` seconds into `file_path` for `context_name`, which is giving way to `next_context_name`.
+-- Returns the position it kept, or nil.
+-- `duration` may be nil. With it, a single file's loop is wrapped back into the file, and a song near its end is not kept.
 function ResumePoints.remember(context_name, file_path, position, duration, is_only_file, next_context_name)
 	if not (mod and mod:get("resume_songs")) then
 		return nil
@@ -117,6 +115,8 @@ function ResumePoints.remember(context_name, file_path, position, duration, is_o
 		return position
 	end
 
+	-- The debounced context change into a loading screen can come after the loading state itself.
+	-- So nothing is kept from a loading screen until the next level's first context.
 	if is_loading or not RESUMABLE_CONTEXTS[context_name] then
 		return nil
 	end

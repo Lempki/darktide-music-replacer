@@ -4,12 +4,12 @@
 -- Their lists are kept under that key, in lowercase, since the names match what the game reports and Windows ignores case.
 --
 -- The folders are listed on the first update, again when a rescan is requested, and again once files change on disk.
--- Windows reports a change for every step of a copy, so a change only lists the folders once the changes have stopped for a moment.
+-- Windows reports a change for every step of a copy, so a change only lists the folders once the changes have stopped for QUIET_SECONDS.
 -- Every file's duration is measured in the background, one file per update, so a large library never stalls a frame for long.
 -- A file Windows cannot open while it is measured is left out of the picks from then on, so it cannot use up the caller's retries.
 -- A file deleted after a listing is still listed until the next one, so pick_file() checks that a file exists before returning it.
 -- Where Windows cannot watch the folders, as on some network drives, only the Rescan Audio Folders button lists them again.
--- A missing or empty folder resolves to nil here, which is the fallback-to-native-music signal the caller needs.
+-- A missing or empty folder resolves to nil here, which is the caller's signal to fall back to the game's music.
 -- Every listing is passed on to the Library.on_listed listeners, which is how the loudness measurements learn of changed files.
 
 local Library = {}
@@ -24,13 +24,13 @@ for _, context in ipairs(Contexts.list) do
 	end
 end
 
--- Relative to the game's own working directory.
--- Same "./../mods/<name>/..." convention DMF uses to find this mod's info.json.
+-- The path is relative to the game's own working directory.
+-- It follows the same "./../mods/<name>/..." convention DMF uses to find this mod's info.json.
 local AUDIO_ROOT = "./../mods/MusicReplacer/audio"
 
-local _os = Mods and Mods.lua and Mods.lua.os -- Only for timing the duration measurements.
+local _os = Mods and Mods.lua and Mods.lua.os -- It only times the duration measurements.
 
-local log = function() end -- No-op unless a real logger is passed to Library.init.
+local log = function() end -- It does nothing unless Library.init is given a real logger.
 local AudioFolders = nil
 local waiting_to_scan = false
 local rescan_requested = false
@@ -180,7 +180,7 @@ end
 
 -- Call once, after all mods have loaded, with an initialized audio_folders.lua.
 -- Creates any missing folder at once, and lists them on the first update.
--- `log`, if given, receives a line for each listing and the total measuring time.
+-- `logger`, if given, receives a line for each listing and the total measuring time.
 -- It also receives one for each file Windows cannot open, and the first time a listed file turns out to be missing.
 function Library.init(logger, audio_folders)
 	log = logger or log
@@ -323,7 +323,7 @@ end
 
 -- Returns file_path, duration_seconds and is_only_file, or nil if no file is available.
 -- Nil means the folder is missing, empty or not yet listed, or no listed file exists any more.
--- The caller should fall back to native music on nil.
+-- The caller should fall back to the game's music on nil.
 -- duration is nil until the file has been measured, or when it could not be.
 -- is_only_file flags a folder with exactly one usable file, which loops.
 -- With two or more usable files, the pick is random and never the file returned last time.

@@ -1,10 +1,9 @@
--- Logging-only probe for the current mission's identity.
--- It never changes or silences anything.
--- Useful for finding what separates mission types and game modes.
+-- Logs the current mission's identity, and never changes or silences anything.
+-- It shows what separates mission types and game modes.
 
 local MissionProbe = {}
 
-local log = function() end -- No-op unless a real logger is passed to MissionProbe.init.
+local log = function() end -- It does nothing unless MissionProbe.init is given a real logger.
 
 -- Returns the template's simple fields (strings, numbers and booleans) as one sorted "key=value" line.
 -- Tables and functions are skipped, so the line stays short.
@@ -33,7 +32,7 @@ function MissionProbe.init(logger)
 	log = logger or log
 end
 
--- Pass to Context.on_mission_change, which reads the mission on every tick anyway.
+-- Pass this to Context.on_mission_change, which reads the mission on every tick anyway.
 -- Logs each mission once, the hub included, and nothing while no level is loaded.
 function MissionProbe.on_mission_change(mission_name, mission)
 	if not mission_name then

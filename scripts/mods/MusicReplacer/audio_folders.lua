@@ -4,7 +4,7 @@
 
 local AudioFolders = {}
 
--- What Media Foundation decodes in a desktop program.
+-- These are the formats Media Foundation decodes in a desktop program.
 -- Ogg and Opus are left out, since Microsoft's Web Media Extensions only add them for Store apps.
 local EXTENSIONS = { mp3 = true, m4a = true, aac = true, wav = true, flac = true, wma = true }
 
@@ -13,7 +13,7 @@ local INVALID_FILE_ATTRIBUTES = 0xFFFFFFFF
 local FILE_ATTRIBUTE_DIRECTORY = 0x10
 local WAIT_OBJECT_0 = 0
 
--- File names, folder names, sizes, and write times, which covers files being added, removed, renamed, copied, or replaced.
+-- It watches file names, folder names, sizes, and write times, which covers files being added, removed, renamed, copied, or replaced.
 local CHANGE_FILTER = 0x01 + 0x02 + 0x08 + 0x10
 
 local NativeFfi = nil

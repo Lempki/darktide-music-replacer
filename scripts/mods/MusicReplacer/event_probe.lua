@@ -1,11 +1,9 @@
--- Logging-only probe for Wwise events.
--- It never changes or silences anything.
--- Useful for finding the events behind a sound.
--- Also useful for spotting new, missing or renamed events after a game update.
+-- Logs the game's Wwise events, and never changes or silences anything.
+-- It finds the events behind a sound, and spots new, missing or renamed events after a game update.
 
 local EventProbe = {}
 
--- Event name fragments to leave out of the log.
+-- Events whose names contain any of these are left out of the log, since they fire too often.
 -- Music events are still logged if they ever appear under any of these.
 -- See docs/wwise-events.md for what each folder held and why it is left out.
 local NOISE_PATTERNS = {
@@ -27,7 +25,7 @@ local NOISE_PATTERNS = {
 
 -- Every event name seen once, noise included, so a repeated event is never matched against the patterns again.
 local seen_events = {}
-local log_detail = function() end -- No-op unless a real logger is passed to EventProbe.init.
+local log_detail = function() end -- It does nothing unless EventProbe.init is given a real logger.
 
 local function is_noise(event_name)
 	for _, pattern in ipairs(NOISE_PATTERNS) do
@@ -44,7 +42,7 @@ function EventProbe.init(detail_logger)
 	log_detail = detail_logger or log_detail
 end
 
--- Called for every Wwise event, from the single trigger_resource_event hook in MusicReplacer.lua.
+-- The single trigger_resource_event hook in MusicReplacer.lua calls this for every Wwise event.
 -- A mod can only install one hook per method on itself, so this does not hook anything on its own.
 function EventProbe.observe(event_name, extra_arg_count)
 	if type(event_name) ~= "string" then

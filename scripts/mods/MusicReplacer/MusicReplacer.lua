@@ -25,7 +25,7 @@ local log = DiagnosticLog.write
 local log_detail = DiagnosticLog.detail
 
 -- tools/build.ps1 stamps the packaged info.json with the commit and build time, which tells two builds of one version apart.
--- The console log gets the line too, so a report without diagnostic.log still names the build.
+-- The console log gets the line too, so a report without the mod's own log file still names the build.
 local version_line = string.format("version %s, build %s",
 	tostring(mod:get_metadata("version")), tostring(mod:get_metadata("build") or "unknown"))
 mod:info("%s", version_line)
@@ -35,8 +35,8 @@ log("[startup] " .. version_line)
 -- Playback Orchestration
 -- ###########################################################################
 -- Combines "what context" (context.lua) with "is there a file for it" (library.lua) to decide what audio_client.lua does.
--- Native music is only silenced once a replacement is available.
--- So a context with no file falls back to native music by construction.
+-- The game's music is only silenced once a replacement is available.
+-- So a context with no file falls back to the game's music by construction.
 
 local current_context = nil
 
@@ -49,7 +49,7 @@ local playback_lost = true
 
 -- A track that ends within QUICK_END_SECONDS of starting did not really play, for example because Windows could not decode the file.
 -- After MAX_QUICK_ENDS in a row from one folder, that folder stops retrying until the folders are listed again.
--- An override folder then gives way to the next folder, and a context's own folder to native music.
+-- An override folder then gives way to the next folder, and a context's own folder to the game's music.
 local QUICK_END_SECONDS = 3
 local MAX_QUICK_ENDS = 3
 
@@ -61,7 +61,7 @@ local gave_up = {} -- folder -> true once that folder stopped retrying.
 local emptied = {}
 
 -- The custom track AudioClient was last asked to play, so a context change can remember where it stopped.
-local playing_track = nil -- Fields: context_name, file_path, duration, is_only_file, and position, its last known position.
+local playing_track = nil -- Its fields are context_name, file_path, duration, is_only_file, and position, its last known position.
 
 -- The song that was playing when playback stopped working, as when the only headset is unplugged: context_name, file_path, position.
 -- It continues where it was once playback works again, if its context is still the one playing.
@@ -82,7 +82,7 @@ local context_status = "game's music"
 local SOURCE_NAMES = { custom = "Custom", game = "Game's Own", silence = "Silence" }
 
 -- What a context plays, from its setting: "custom", "game", or "silence".
--- Earlier versions also offered "custom_play_to_end", which plays as "custom" now.
+-- Any other stored value plays as "custom", so a value from an option the dropdown does not offer still plays custom songs.
 local function source_of(context_name)
 	local source = mod:get("source_" .. context_name)
 	return SOURCE_NAMES[source] and source or "custom"
@@ -180,10 +180,10 @@ local function play_context(context_name, is_new_context)
 		return
 	end
 
-	-- Meat Grinder only resolves to its own context for these two, since "custom" plays the mission contexts there.
 	local source = source_of(context_name)
 	context_status = SOURCE_NAMES[source]
 
+	-- Meat Grinder only resolves to its own context for "game" and "silence", since "custom" plays the mission contexts there.
 	if source == "game" then
 		hand_back()
 		log(string.format("[playback] %s: set to the game's own music", context_name))
@@ -197,7 +197,7 @@ local function play_context(context_name, is_new_context)
 		return
 	end
 
-	-- Playback that could not start, or gave up after repeated audio device failures, leaves the native music alone.
+	-- Playback that could not start, or gave up after repeated audio device failures, leaves the game's music alone.
 	if not AudioClient.available() then
 		hand_back("game's music, no audio output")
 		return
@@ -241,8 +241,8 @@ local function play_context(context_name, is_new_context)
 	end
 
 	if not file_path then
-		-- No replacement is available: no folder, an empty folder, or a scan that has not finished.
-		-- Native music is left alone.
+		-- No replacement is available, as with no folder, an empty folder, or a scan that has not finished.
+		-- The game's music is left alone.
 		hand_back("game's music, no songs")
 		log(string.format("[playback] %s: no file available, using native music", context_name))
 		return
@@ -320,12 +320,13 @@ end
 -- Context changes are debounced, so a state that flickers and returns does not restart the track.
 local DEBOUNCE_SECONDS = 0.6
 
--- Each change restarts the debounce, so states that keep flickering would never settle, as with both holds set to 0.
+-- Each change restarts the debounce, so states that keep flickering would never settle, as with the holds set to 0.
 -- A pending change commits after this long anyway.
 local MAX_DEBOUNCE_SECONDS = 3
 
 -- Leaving the hub for a mission reports a loading screen for about 2 seconds before the mission preparation screen.
--- So a change to a loading context waits this long, and the hub song carries straight on into the preparation screen's song.
+-- So a change to a loading context waits LOADING_DEBOUNCE_SECONDS, which outlasts that.
+-- The hub song then carries straight on into the preparation screen's song.
 local LOADING_DEBOUNCE_SECONDS = 3
 local LOADING_CONTEXTS = {}
 for _, context in ipairs(Contexts.list) do
@@ -450,7 +451,7 @@ Context.on_state_change(ResumePoints.on_state_change)
 Context.init(mod, log_detail)
 
 -- Level flow hands an event's IDs on to later nodes, which pass them to the engine unchecked, so a nil ID can raise an error.
--- So a native music event Suppression silences still starts, and is stopped at once, which leaves the game valid IDs.
+-- So a game music event that Suppression silences still starts, and is stopped at once, which leaves the game valid IDs.
 local function stop_if_suppressed(wwise_world, event_name, playing_id, ...)
 	if playing_id and Suppression.should_stop_event(event_name) then
 		WwiseWorld.stop_event(wwise_world, playing_id)
@@ -540,6 +541,7 @@ end
 
 mod.on_setting_changed = function(setting_id)
 	if setting_id == "source_meat_grinder" or setting_id == "daemonhost_boss_music" or setting_id == "captain_boss_music" then
+		-- These settings decide how the context resolves, so it resolves again.
 		Context.refresh(mod)
 
 		-- Game's Own and Silence both resolve meat_grinder, so switching between them changes no context and needs a replay here.
@@ -565,7 +567,7 @@ mod.on_setting_changed = function(setting_id)
 	end
 end
 
--- Called by the Rescan Audio Folders button in the mod settings.
+-- The Rescan Audio Folders button in the mod settings calls this.
 mod.rescan_audio = function()
 	-- Pressing it is also the player's way to ask for another try after playback gave up.
 	AudioClient.try_again()
@@ -588,7 +590,7 @@ mod.update = function(dt)
 		gave_up = {}
 		emptied = {}
 
-		-- A context that played native music for lack of files starts its new track now, not at its next change.
+		-- A context that played the game's music for lack of files starts its new track now, not at its next change.
 		-- A custom track that is playing keeps playing, and the next pick uses the new list.
 		if enabled and not AudioClient.is_playing() then
 			replay_current_context()
@@ -602,7 +604,7 @@ mod.update = function(dt)
 	AudioClient.set_menu_volume(menu_volume(dt))
 	AudioClient.update(dt)
 
-	-- Kept on every tick, since the song is already gone by the time playback is found to have stopped.
+	-- The position is kept on every tick, since the song is already gone by the time playback is found to have stopped.
 	if playing_track and AudioClient.is_playing() then
 		playing_track.position = AudioClient.position()
 	end
