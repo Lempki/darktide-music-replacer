@@ -126,6 +126,15 @@ return {
 						unit_text = "seconds_unit",
 					},
 					{
+						setting_id = "boss_hold_seconds",
+						type = "numeric",
+						tooltip = "boss_hold_seconds_tooltip",
+						default_value = 3,
+						range = { 0, 30 },
+						decimals_number = 0,
+						unit_text = "seconds_unit",
+					},
+					{
 						setting_id = "event_hold_seconds",
 						type = "numeric",
 						tooltip = "event_hold_seconds_tooltip",

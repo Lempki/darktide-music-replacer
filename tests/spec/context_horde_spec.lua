@@ -96,6 +96,7 @@ describe("context.lua hordes", function()
 		harness:state("music_combat", "horde_high")
 		harness:state("music_combat", "boss")
 		harness:state("music_combat", "horde_high")
+		harness:wait(3.1)
 
 		assert_deep_equal(harness.changes, { "horde", "boss", "horde" })
 	end)

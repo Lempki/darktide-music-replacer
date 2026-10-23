@@ -19,6 +19,9 @@
 --	* `music_combat` flips on and off every few seconds in real combat.
 --	  So `combat` holds for `combat_hold_seconds` after combat quiets, and a lull does not drop to `explore`.
 --	  Entering combat is never delayed.
+--	* The game drops "boss" for a second or two now and then while the boss is still alive.
+--	  So `boss` holds for `boss_hold_seconds` after it quiets, but only until the last boss window that counts has closed.
+--	  A boss's death sends its end event, so boss music never outlasts the boss.
 --	* "horde_low" and "horde_high" resolve "horde", below bosses. The game plays its own horde music for both.
 --	  The game reports a horde only while at least 5 enemies are aggroed, so it drops out for a second or two mid-horde.
 --	  So `horde` holds for `horde_hold_seconds`, which is shorter than the combat hold, since a horde ends for good.
@@ -105,6 +108,7 @@ local log_detail = function() end -- No-op unless a real logger is passed to Con
 -- Its setting always has a value, since DMF writes every setting's default before the mod's script runs.
 local HOLDS = {
 	{ name = "event", setting_id = "event_hold_seconds", remaining = 0 },
+	{ name = "boss", setting_id = "boss_hold_seconds", remaining = 0 },
 	{ name = "horde", setting_id = "horde_hold_seconds", remaining = 0 },
 	{ name = "combat", setting_id = "combat_hold_seconds", remaining = 0 },
 	-- An Expedition's fights flip on and off as often as ordinary ones, so they share the combat hold's setting.
@@ -116,7 +120,11 @@ for _, hold in ipairs(HOLDS) do
 	hold_named[hold.name] = hold
 end
 
-local active_hold = nil -- "combat", "horde", or "event" while the resolved context comes from that hold, else nil.
+local active_hold = nil -- The name of the hold the resolved context comes from, else nil.
+
+-- True once the last open boss window that counts has closed, so the boss hold ends with the boss.
+-- A new window that counts, or a boss fight that starts over, clears it.
+local boss_fight_over = false
 
 local MISSION_OUTCOME_CONTEXTS = { victory = "victory", defeat = "defeat" }
 
@@ -200,6 +208,11 @@ local function opted_in(mod, boss)
 	return setting_id ~= nil and mod:get(setting_id) == true
 end
 
+-- A captain or daemonhost with its setting off plays no boss music, so its window does not count.
+local function counts_as_boss(mod, boss)
+	return not OPT_IN_BOSS_SETTINGS[boss.breed] or opted_in(mod, boss)
+end
+
 local function is_boss_active(mod)
 	if music_combat == "boss" then
 		return true
@@ -215,13 +228,12 @@ local function is_boss_active(mod)
 end
 
 -- Breed name of the most recently opened encounter window that counts as a boss, or nil when none does.
--- A captain or daemonhost with its setting off plays no boss music, so it does not name the folder during another boss's fight.
+-- So a captain or daemonhost with its setting off does not name the folder during another boss's fight.
 local function current_boss_breed(mod)
 	local latest = nil
 
 	for _, boss in pairs(open_bosses) do
-		local counts = not OPT_IN_BOSS_SETTINGS[boss.breed] or opted_in(mod, boss)
-		if counts and (not latest or boss.order > latest.order) then
+		if counts_as_boss(mod, boss) and (not latest or boss.order > latest.order) then
 			latest = boss
 		end
 	end
@@ -265,6 +277,7 @@ local function is_expedition_fight_active()
 end
 
 hold_named.event.is_active = is_event_active
+hold_named.boss.is_active = is_boss_active
 hold_named.horde.is_active = is_horde_active
 hold_named.combat.is_active = is_combat_active
 hold_named.expedition_combat.is_active = is_expedition_fight_active
@@ -390,6 +403,24 @@ local function resolve(mod)
 	end
 
 	if is_boss_active(mod) then
+		-- A boss after other music is a new fight, even when no window announced it.
+		if resolved_context ~= "boss" then
+			boss_fight_over = false
+		end
+
+		if not boss_fight_over then
+			start_hold(mod, "boss")
+		end
+
+		return "boss"
+	end
+
+	if holding("boss") then
+		-- Combat that goes on under the held boss starts its own hold, which takes over once the boss hold ends.
+		if is_combat_active() then
+			start_hold(mod, "combat")
+		end
+
 		return "boss"
 	end
 
@@ -513,7 +544,12 @@ function Context.menu_open()
 end
 
 -- Resolves again after a setting change.
+-- A boss that a setting just turned off is no gap in its fight, so the boss hold ends at once.
 function Context.refresh(mod)
+	if not current_boss_breed(mod) then
+		hold_named.boss.remaining = 0
+	end
+
 	recompute(mod)
 end
 
@@ -677,6 +713,10 @@ function Context.init(mod, detail_logger)
 		if unit then
 			boss_open_order = boss_open_order + 1
 			open_bosses[unit] = { breed = breed_name, order = boss_open_order }
+
+			if counts_as_boss(mod, open_bosses[unit]) then
+				boss_fight_over = false
+			end
 		end
 
 		recompute(mod)
@@ -685,8 +725,15 @@ function Context.init(mod, detail_logger)
 	function mod:on_boss_end(unit)
 		log_detail("[raw] boss_encounter_end")
 
-		if unit then
+		local closed = unit and open_bosses[unit]
+		if closed then
 			open_bosses[unit] = nil
+
+			-- The game sends the end event when the boss dies or despawns, so its music has nothing left to bridge.
+			if counts_as_boss(mod, closed) and not current_boss_breed(mod) then
+				boss_fight_over = true
+				hold_named.boss.remaining = 0
+			end
 		end
 
 		recompute(mod)
@@ -724,7 +771,7 @@ function Context.update(mod, dt)
 	-- resolve() sets it to its full length whenever it runs while the state is active, so it must not also drain then.
 	-- Each hold is capped by its setting on every tick, so a lowered setting also shortens a hold that is already running.
 	for _, hold in ipairs(HOLDS) do
-		if hold.remaining > 0 and not hold.is_active() then
+		if hold.remaining > 0 and not hold.is_active(mod) then
 			hold.remaining = math.max(math.min(hold.remaining, mod:get(hold.setting_id)) - dt, 0)
 
 			if hold.remaining == 0 then

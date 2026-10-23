@@ -62,7 +62,7 @@ Supported formats are `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, and `.wma`. Other
 | `explore` | In a mission, no meaningful threat. |
 | `combat` | In a mission, while enemies are attacking you outside a horde or a boss fight. The game itself plays no music here. |
 | `horde` | In a mission, during a horde. With no files here, the game's own horde music plays, as it does without the mod. |
-| `boss` | In a mission, while a monstrosity is near you, such as a Chaos Spawn, a Beast of Nurgle, a Plague Ogryn, or an Ogryn Houndmaster. This is exactly when the game plays its own boss music. It does not play during an event, a last stand, or the mission's end, which take priority. It also does not play for an angered Daemonhost unless you turn on its setting. It does not play for captains unless you turn on their setting, or while a scripted boss such as Spillway's psyker is alive, since the game does not report those as bosses. |
+| `boss` | In a mission, while a monstrosity is near you, such as a Chaos Spawn, a Beast of Nurgle, a Plague Ogryn, or an Ogryn Houndmaster. This is exactly when the game plays its own boss music, and the Boss Music Hold bridges the moments the game briefly stops reporting the boss. It does not play during an event, a last stand, or the mission's end, which take priority. It also does not play for an angered Daemonhost unless you turn on its setting. It does not play for captains unless you turn on their setting, or while a scripted boss such as Spillway's psyker is alive, since the game does not report those as bosses. |
 | `event` | In a mission, while an event plays its own music, such as a holdout, a hacking event, an escape, or a scripted boss fight like those in Spillway. It replaces boss, horde, combat, and explore music, as the game's own event music does. It does not play during a last stand or the mission's end, and it stops a few seconds after the game ends the event's music, as set by Event Music Hold. In Operations, such as Rolling Steel and No Man's Land, it plays for the whole mission, since the game scripts their music from start to end. |
 | `last_stand` | In a mission, while only one player of the team is still alive. It replaces boss, combat, and explore music, as the game's own last stand music does. |
 | `victory` | From the moment a mission is won until the loading screen or a cutscene. |
@@ -132,6 +132,7 @@ Meat Grinder defaults to Silence. There, Custom plays your explore and combat so
 |---|---|---|
 | Combat Music Hold | 8 seconds | How long combat music keeps playing after a fight quiets down, so a short lull does not switch to explore music. Set it to 0 to switch immediately. |
 | Horde Music Hold | 3 seconds | How long horde music keeps playing after the game stops reporting a horde. The game drops its horde signal for a second or two whenever few enemies are on you, so a short hold keeps the track from restarting. Set it to 0 to follow the game exactly. |
+| Boss Music Hold | 3 seconds | How long boss music keeps playing after the game stops reporting a boss that is still alive. The game drops its boss signal for a second or two now and then during a boss fight, so a short hold keeps the track from switching away and back. Boss music still ends as soon as the boss dies. Set it to 0 to follow the game exactly. |
 | Event Music Hold | 5 seconds | How long event music keeps playing after the game ends an event's music. Some events pause their music for a few seconds between stages, so a short hold keeps the event's song from starting over at every stage. Set it to 0 to follow the game exactly. |
 
 ### Debug
@@ -184,6 +185,7 @@ The mod always logs the important events, such as which music plays and why, and
 * [x] All audio folders provisioned automatically, ready to use right after install.
 * [x] Custom music following the in-game volume sliders at once, in both directions.
 * [x] Adjustable combat music hold, so a lull in a fight does not drop back to explore music.
+* [x] A boss music hold that bridges the game's short gaps in a boss fight and ends when the boss dies.
 * [x] Opt-in diagnostic-mode setting, off by default.
 * [x] A setting for whether Meat Grinder plays music, off by default.
 * [x] Options per context: custom music, the game's own music, or silence. Meat Grinder is one more context with these options.
