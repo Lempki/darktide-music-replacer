@@ -41,7 +41,7 @@ Wherever you add no songs, the game's music plays as usual.
    Every folder is listed under Where your music plays.
 3. Start the game and play.
 
-The folders already exist after you install the mod, and the mod creates any missing one when the game starts.
+The mod creates any missing folder when the game starts, so every folder is there after your first launch at the latest.
 Put audio files directly inside the folders you want music for.
 Folders inside them are override folders, which are optional.
 
@@ -51,7 +51,6 @@ File names in any language work.
 
 ## Requirements
 
-* Warhammer 40,000: Darktide on Windows 10 or later.
 * [Darktide Mod Loader](https://www.nexusmods.com/warhammer40kdarktide/mods/19).
 * [Darktide Mod Framework](https://www.nexusmods.com/warhammer40kdarktide/mods/8) (DMF).
 * `MusicReplacer` listed below `dmf` in `mod_load_order.txt`, in the game's `mods` folder.
@@ -197,7 +196,7 @@ With Debug Overlay on, its Folder line shows the folder that plays and the overr
 
 ## Safe by design
 
-* **No game files are changed.** The mod writes only to its own audio folders and to its own folder in `%APPDATA%`.
+* **No game files are changed.** The mod creates its own audio folders and writes files only to its own folder in `%APPDATA%`.
 * **No extra programs or DLLs.** The mod uses the audio decoder and audio engine that come with Windows, and calls them from its Lua scripts.
 * **The game's music is the fallback.** The game's music plays wherever the mod has no songs, cannot play them, or cannot start Windows audio at all.
   The game's music is only silenced once one of your songs is ready to play, or where you chose Silence.
@@ -243,6 +242,9 @@ Check `mods\MusicReplacer\audio\` in the game folder too, since your songs were 
 * Running it alongside other music mods has not been tested.
   A mod that also changes the game's music states may conflict with it.
 * Custom HUD cannot move the debug overlay, since the overlay is not part of the HUD.
+* The mod has not been tested on Steam Deck or Linux.
+  There the game runs through Proton, which brings its own stand-ins for the Windows audio decoder and audio engine the mod uses.
+  If the mod cannot start them, the game's music plays as usual.
 * If your Windows user name has letters outside the language Windows uses for older programs, such as Japanese letters on an English Windows, the mod cannot write `diagnostic.log` or `loudness.txt`.
   Your music still plays, and Even Out Loudness measures your songs again at every launch.
 
