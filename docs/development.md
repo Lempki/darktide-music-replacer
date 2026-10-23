@@ -186,4 +186,12 @@ darktide-music-replacer/
 * Translations of the mod options.
 * Contexts for new game modes and situations as the game adds them.
 * Settings per situation, such as its own volume.
-* Optional subfolders inside `expedition_combat` for each of an Expedition's fight levels, which follow how alert the enemy is, falling back to the main folder when empty.
+* User rules that refine which folder a situation plays, in three layers.
+  A rule never creates a situation of its own, so each situation keeps its silencing, priority, resume rule, and fallback to the game's music.
+  * Richer override folder names: combined conditions, such as `boss\chaos_spawn+havoc\`, and more of what the game reports.
+    Examples are an Expedition's fight level, which follows how alert the enemy is, a mission's circumstance, and event intensity.
+  * An optional rules file for what folder names cannot express, such as several conditions, weights, or a chance to play the game's music instead.
+    A bad rule is skipped and named in the log, and the debug overlay shows which rule matched.
+  * An in-game rule editor, only if players ask for one.
+
+  The priorities between situations stay fixed, offered at most as a few vetted settings.
