@@ -62,7 +62,7 @@ Each line below shows up in the log with Detailed Logging on:
 | `[suppress] forcing music_zone hub -> None` | The game's hub music is off while a custom hub song plays. |
 | `[suppress] forcing music_game_state victory -> None` | The game's victory, defeat, loading, mission loading, or preparation music is off while a custom song for that context plays. |
 | `[suppress] forcing music_objective fortification_event -> None` | The game's event, last stand, or Mortis Trials wave music is off while a custom song for that context plays. |
-| `[suppress] stopped native music event: wwise/events/music/play_exploration_music` | The game's exploration music was stopped as it started, because a custom song plays. |
+| `[suppress] stopped the game's music event: wwise/events/music/play_exploration_music` | The game's exploration music was stopped as it started, because a custom song plays. |
 | `[suppress] restoring music_zone to hub` | The custom song stopped, so the game's own state, and with it its music, is back. |
 
 A silenced state does not show up as a `[raw]` line, since the `[raw]` lines always show the game's own values.

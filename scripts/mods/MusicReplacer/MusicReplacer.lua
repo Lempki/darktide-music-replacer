@@ -236,7 +236,7 @@ local function play_context(context_name, is_new_context)
 	-- Only the context's own folder gets here, since an override folder that gave up is left out.
 	if gave_up[folder] then
 		hand_back("Vanilla, its songs would not play")
-		log(string.format("[playback] %s: its tracks would not play earlier, using native music", context_name))
+		log(string.format("[playback] %s: its tracks would not play earlier, playing the game's music", context_name))
 		return
 	end
 
@@ -244,7 +244,7 @@ local function play_context(context_name, is_new_context)
 		-- No replacement is available, as with no folder, an empty folder, or a scan that has not finished.
 		-- The game's music is left alone.
 		hand_back("Vanilla, no songs")
-		log(string.format("[playback] %s: no file available, using native music", context_name))
+		log(string.format("[playback] %s: no file available, playing the game's music", context_name))
 		return
 	end
 
@@ -282,7 +282,7 @@ local function play_context(context_name, is_new_context)
 						log(string.format("[playback] %s: %d tracks in a row from the %s folder ended within %ds, trying the next folder until the folders are rescanned",
 							context_name, MAX_QUICK_ENDS, folder, QUICK_END_SECONDS))
 					else
-						log(string.format("[playback] %s: %d tracks in a row ended within %ds, using native music until the game restarts or the folders are rescanned",
+						log(string.format("[playback] %s: %d tracks in a row ended within %ds, playing the game's music until the game restarts or the folders are rescanned",
 							context_name, MAX_QUICK_ENDS, QUICK_END_SECONDS))
 						hand_back("Vanilla, its songs would not play")
 						return

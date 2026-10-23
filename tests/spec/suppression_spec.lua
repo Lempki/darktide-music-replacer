@@ -287,7 +287,7 @@ describe("suppression.lua last stand", function()
 end)
 
 describe("suppression.lua events", function()
-	it("stops the native exploration music event only while engaged", function()
+	it("stops the game's exploration music event only while engaged", function()
 		local _, Suppression = load_suppression()
 
 		assert_equal(Suppression.should_stop_event(EXPLORATION_EVENT), false)

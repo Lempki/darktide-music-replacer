@@ -95,7 +95,7 @@ describe("MusicReplacer.lua context changes", function()
 		harness:settle()
 
 		assert_equal(harness:playing(), nil)
-		assert_equal(harness:logged("[playback] explore: no file available, using native music"), true)
+		assert_equal(harness:logged("[playback] explore: no file available, playing the game's music"), true)
 
 		harness:state("music_combat", "normal")
 		assert_equal(harness.engine:wwise_state("music_combat"), "normal")
@@ -125,7 +125,7 @@ describe("MusicReplacer.lua songs that end", function()
 		assert_equal(#harness.client.plays, 3)
 		assert_equal(harness:playing(), nil)
 		assert_equal(harness.engine:wwise_state("music_zone"), "hub")
-		assert_equal(harness:logged("using native music until the game restarts or the folders are rescanned"), true)
+		assert_equal(harness:logged("playing the game's music until the game restarts or the folders are rescanned"), true)
 	end)
 
 	it("does not count a short song that played through, by its decoder's length while the library has none", function()
@@ -337,10 +337,10 @@ describe("MusicReplacer.lua the same lone song in two folders", function()
 	end)
 end)
 
-describe("MusicReplacer.lua native music events", function()
+describe("MusicReplacer.lua music events from the game", function()
 	local EXPLORATION_EVENT = "wwise/events/music/play_exploration_music"
 
-	it("stops a native exploration music event at once while a custom song plays, and returns the game's IDs", function()
+	it("stops the game's exploration music event at once while a custom song plays, and returns the game's IDs", function()
 		local harness = in_mission()
 
 		local playing_id, source_id = CLASS.WwiseWorld.trigger_resource_event({}, EXPLORATION_EVENT)
@@ -500,7 +500,7 @@ describe("MusicReplacer.lua loading", function()
 
 		assert_equal(harness:playing(), nil)
 		assert_equal(harness.engine:wwise_state("music_game_state"), "loading")
-		assert_equal(harness:logged("[playback] mission_briefing: no file available, using native music"), true)
+		assert_equal(harness:logged("[playback] mission_briefing: no file available, playing the game's music"), true)
 	end)
 
 	it("plays the loading folder, not the mission loading one, on the way back to the hub", function()

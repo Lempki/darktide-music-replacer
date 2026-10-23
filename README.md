@@ -13,7 +13,7 @@ This is Music Replacer, a mod for Warhammer 40,000: Darktide that replaces the g
 * Follows the in-game master and music volume sliders at once, in both directions, without restarting the song.
 * Lets you pick, per context, your songs, the game's own music, or silence.
 * Keeps the Meat Grinder training area silent unless you pick music there, which doubles as a quick way to test your files.
-* Native music is silenced only once a replacement track is available, so a context with no files behaves exactly like an unmodified game.
+* The game's music is silenced only once a replacement track is available, so a context with no files behaves exactly like an unmodified game.
 
 ## Prerequisites
 
@@ -180,10 +180,10 @@ The mod always logs the important events, such as which music plays and why, and
 ## Roadmap
 
 * [x] Context-aware hub, explore, combat, boss, victory, and defeat switching.
-* [x] Fallback to native music for any context without files.
+* [x] Fallback to the game's music for any context without files.
 * [x] Fade-in, natural-end fade-out, and true crossfades between songs.
 * [x] Seamless looping for a single-file folder.
-* [x] Native music suppressed while a custom track plays, only once a replacement is confirmed available.
+* [x] The game's music silenced while a custom track plays, only once a replacement is confirmed available.
 * [x] All audio folders provisioned automatically, ready to use right after install.
 * [x] Custom music following the in-game volume sliders at once, in both directions.
 * [x] Adjustable combat music hold, so a lull in a fight does not drop back to explore music.

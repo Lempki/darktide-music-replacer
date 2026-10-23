@@ -130,7 +130,7 @@ function Suppression.should_stop_event(event_name)
 
 	for _, pattern in ipairs(SUPPRESSED_MUSIC_EVENT_PATTERNS) do
 		if event_name:find(pattern, 1, true) then
-			log_detail(string.format("[suppress] stopped native music event: %s", event_name))
+			log_detail(string.format("[suppress] stopped the game's music event: %s", event_name))
 			return true
 		end
 	end
