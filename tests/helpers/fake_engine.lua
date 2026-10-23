@@ -8,6 +8,7 @@ FakeEngine.__index = FakeEngine
 local MOD_NAME = "MusicReplacer"
 local WWISE_GAME_SYNC_MANAGER = "scripts/managers/wwise_game_sync/wwise_game_sync_manager"
 local WWISE_STATE_GROUP_COMBAT = "scripts/managers/wwise_game_sync/wwise_state_groups/wwise_state_group_combat"
+local MISSION_TEMPLATES = "scripts/settings/mission/mission_templates"
 
 -- Every Wwise state group starts at this value in the game.
 local DEFAULT_GROUP_STATE = "None"
@@ -166,6 +167,7 @@ function FakeEngine.new(options)
 		modules = options.modules or {},
 		metadata = options.metadata or {},
 		persistent_tables = {},
+		mission_templates = {},
 	}, FakeEngine)
 
 	engine.mod = new_mod(engine)
@@ -216,6 +218,9 @@ function FakeEngine.new(options)
 
 	-- The game's combat state group class, with the one method the mod hooks.
 	package.loaded[WWISE_STATE_GROUP_COMBAT] = { on_gameplay_shutdown = function() end }
+
+	-- The game's mission templates by mission name, filled by set_mechanism_mission().
+	package.loaded[MISSION_TEMPLATES] = engine.mission_templates
 
 	return engine
 end
@@ -272,6 +277,20 @@ function FakeEngine:set_mission(name, fields)
 	Managers.state.mission = {
 		mission_name = function() return name end,
 		mission = function() return template end,
+	}
+end
+
+-- Sets the mission the game's mechanism data names, as the client learns it on the way into a mission, with its template.
+-- `fields`, if given, are added to the template, as in set_mission().
+function FakeEngine:set_mechanism_mission(name, fields)
+	local template = { name = name }
+	for key, value in pairs(fields or {}) do
+		template[key] = value
+	end
+
+	self.mission_templates[name] = template
+	Managers.mechanism = {
+		mechanism_data = function() return { mission_name = name } end,
 	}
 end
 

@@ -63,8 +63,11 @@
 --	  A loading screen or a real zone clears it, since a story mission's cutscene can skip the loading screen.
 --	* Context.override_keys() names the override folders a context may use, most specific first.
 --	  An event's kind is its `music_objective` value, kept through its hold, and a boss's kind is its breed.
---	  The mission is its code, and the game mode is "havoc" or "expeditions".
+--	  The mission is its code, and the game mode is "havoc", "expeditions", or "mortis_trials".
+--	  The level names its mission only seconds before the briefing ends.
+--	  So on the way into a mission, both come from the game's mechanism data.
 --	  Havoc is told apart by its Havoc data in the difficulty manager, since it changes no music state.
+--	  So Havoc is only known once the mission has loaded.
 --	* Every menu screen sets the `options` group, for example to "ingame_menu" in the Esc menu or "vendor_menu" at a vendor.
 --	  It decides no context. It only tells MusicReplacer.lua that a menu is open, so the music can be lowered.
 
@@ -85,7 +88,9 @@ local menu_state = nil -- Current value of the "options" state group, which name
 local mission_name = nil -- Name of the current mission, or nil while none is loaded.
 local mission_is_hub = false -- True while the loaded mission's template is the hub.
 local mission_is_operation = false -- True while the loaded mission is an Operation.
-local mission_mode = nil -- "havoc" or "expeditions" while one runs, else nil.
+local mission_mode = nil -- "havoc", "expeditions", or "mortis_trials" while one runs, else nil.
+local upcoming_mission = nil -- The mission a trip into a mission leads to, before its level names it, else nil.
+local upcoming_mode = nil -- That mission's game mode, else nil.
 local heading_to_mission = false -- True from the mission board's "mission_ready" until the trip into a mission ends.
 local event_kind = nil -- The music_objective value of the event playing now, kept through its hold, or nil.
 local mission_outcome = nil -- "victory" or "defeat" from that game state until the next level starts, else nil.
@@ -282,10 +287,24 @@ hold_named.horde.is_active = is_horde_active
 hold_named.combat.is_active = is_combat_active
 hold_named.expedition_combat.is_active = is_expedition_fight_active
 
--- "havoc" during a Havoc run, "expeditions" during an Expedition, else nil.
-local function read_mode(template)
-	if template and template.game_mode_name == "expedition" then
+-- The game mode a mission template names: "expeditions" or "mortis_trials", else nil.
+local function template_mode(template)
+	if not template then
+		return nil
+	elseif template.game_mode_name == "expedition" then
 		return "expeditions"
+	elseif template.game_mode_name == "survival" then
+		return "mortis_trials"
+	end
+
+	return nil
+end
+
+-- The template's game mode, or "havoc" during a Havoc run, else nil.
+local function read_mode(template)
+	local mode = template_mode(template)
+	if mode then
+		return mode
 	end
 
 	local difficulty = Managers.state.difficulty
@@ -319,6 +338,32 @@ local function read_mission()
 	template = template_ok and type(template) == "table" and template or nil
 
 	return name, template ~= nil and template.is_hub == true, template ~= nil and template.mission_type == "operations", read_mode(template), template
+end
+
+-- The mission a trip into a mission leads to, and its template, from the game's mechanism data, else nil.
+-- The client gets it from the mission server before the level loads, since the game loads the level by it.
+-- In the hub, the data names the hub, which leads nowhere.
+local function read_upcoming_mission()
+	local mechanism = Managers and Managers.mechanism
+	if not mechanism or not mechanism.mechanism_data then
+		return nil, nil
+	end
+
+	local ok, data = pcall(mechanism.mechanism_data, mechanism)
+	local name = ok and type(data) == "table" and data.mission_name or nil
+	if not name then
+		return nil, nil
+	end
+
+	-- Loaded here, under pcall, so a change in the game's files costs only the early names, never the mod's start.
+	local templates_ok, templates = pcall(require, "scripts/settings/mission/mission_templates")
+	local template = templates_ok and type(templates) == "table" and templates[name] or nil
+
+	if type(template) ~= "table" or template.is_hub then
+		return nil, nil
+	end
+
+	return name, template
 end
 
 -- Wwise reports "None" as a string, not as nil.
@@ -531,9 +576,11 @@ function Context.override_keys(mod, context_name)
 
 	if mission_name and not mission_is_hub then
 		keys[#keys + 1] = mission_name
+	else
+		keys[#keys + 1] = upcoming_mission
 	end
 
-	keys[#keys + 1] = mission_mode
+	keys[#keys + 1] = mission_mode or upcoming_mode
 
 	return keys
 end
@@ -753,6 +800,21 @@ function Context.update(mod, dt)
 	if current_mode ~= mission_mode then
 		log_detail(string.format("[mission] game mode: %s", tostring(current_mode or "ordinary")))
 		mission_mode = current_mode
+	end
+
+	-- Only read on the way into a mission, before its level names it.
+	local next_mission, next_template = nil, nil
+	if heading_to_mission and (current_mission_name == nil or current_mission_is_hub) then
+		next_mission, next_template = read_upcoming_mission()
+	end
+
+	if next_mission ~= upcoming_mission then
+		upcoming_mission = next_mission
+		upcoming_mode = template_mode(next_template)
+
+		if next_mission then
+			log_detail(string.format("[mission] heading to %s, game mode: %s", next_mission, tostring(upcoming_mode or "ordinary")))
+		end
 	end
 
 	if current_mission_name ~= mission_name then

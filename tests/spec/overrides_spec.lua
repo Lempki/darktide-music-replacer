@@ -91,6 +91,64 @@ describe("context.lua override names", function()
 		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "combat"), { "exp_wastes", "expeditions" })
 	end)
 
+	it("offers mortis_trials during Mortis Trials, by its game mode", function()
+		local harness = Harness.new()
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness.engine:set_mission("psykhanium", { game_mode_name = "survival" })
+		harness:tick(0)
+
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "mortis_trials_wave"), { "psykhanium", "mortis_trials" })
+	end)
+
+	-- The level names its mission only seconds before the briefing ends, so the briefing would get its override too late.
+	it("offers the upcoming mission and its game mode from the mechanism data on the way into a mission", function()
+		local harness = Harness.new()
+		harness:cold_start_to_hub()
+		harness.engine:set_mechanism_mission("hub_ship", { is_hub = true })
+		harness:state("music_game_state", "mission_board")
+		harness:state("music_game_state", "mission_ready")
+		harness:tick(0)
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "hub"), {})
+
+		harness:leave_hub()
+		harness.engine:set_mechanism_mission("psykhanium", { game_mode_name = "survival" })
+		harness:tick(0)
+
+		assert_equal(harness:current(), "mission_briefing")
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "mission_briefing"), { "psykhanium", "mortis_trials" })
+	end)
+
+	it("offers an upcoming Expedition through the preparation screen and the briefing", function()
+		local harness = Harness.new()
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness.engine:set_mechanism_mission("exp_wastes", { game_mode_name = "expedition" })
+		harness:state("music_game_state", "loadout")
+		harness:tick(0)
+
+		assert_equal(harness:current(), "mission_preparation")
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "mission_preparation"), { "exp_wastes", "expeditions" })
+
+		harness:state("music_game_state", "loading")
+		harness:state("music_game_state", "mission_briefing")
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "mission_briefing"), { "exp_wastes", "expeditions" })
+	end)
+
+	-- After a mission, the mechanism data still names it until the hub loads.
+	it("offers no upcoming mission on a loading screen out of a mission", function()
+		local harness = Harness.new()
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness.engine:set_mechanism_mission("psykhanium", { game_mode_name = "survival" })
+		harness:enter_mission("psykhanium", "horde_mode")
+		harness:end_with_victory("horde_mode")
+		harness:tick(0)
+
+		assert_equal(harness:current(), "loading")
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "loading"), {})
+	end)
+
 	it("offers havoc while the game has Havoc data, which is how the game itself tells a Havoc run apart", function()
 		local harness = Harness.new()
 		harness:cold_start_to_hub()

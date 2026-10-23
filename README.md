@@ -82,7 +82,9 @@ A context folder can hold folders of its own, named after what the game reports,
 1. In `event`, the kind of event, as the game names its event music: for example `escape_event`, `fortification_event`, `twins_event`, or an Operation's `operation_stage_1`. [docs/wwise-events.md](docs/wwise-events.md) lists the kinds seen so far.
 2. In `boss`, the kind of boss: for example `chaos_spawn`, `chaos_beast_of_nurgle`, `chaos_plague_ogryn`, or `chaos_ogryn_houndmaster`, and with their settings on, `renegade_twin_captain` or `chaos_daemonhost`.
 3. In any context, the mission's code: for example `spillway` or `km_enforcer_twins`. [docs/game-internals.md](docs/game-internals.md) lists every mission's code with its in-game name.
-4. In any context, the game mode: `havoc` or `expeditions`.
+4. In any context, the game mode: `havoc`, `expeditions`, or `mortis_trials`.
+
+On the way into a mission, the mission's code and its game mode apply from the moment the game knows the mission, so `mission_briefing\mortis_trials\` plays during the Mortis Trials briefing. Havoc only applies once the mission has loaded.
 
 An override folder with no songs is skipped, so the context's own folder, or the game's music, plays as before. The mod does not create these folders, so make the ones you want. Their names ignore case, and folders inside an override folder are not read. The music switches as soon as another override applies, for example when the game names a boss a few seconds after the boss music started, or when an event moves on to its escape. With Debug Overlay on, its Folder line shows the folder playing now and the override names the moment looks for.
 
