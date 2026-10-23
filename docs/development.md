@@ -48,6 +48,26 @@ CI runs dev-standards' Lua workflow on every push to `main` and every pull reque
 * `%APPDATA%\Fatshark\Darktide\MusicReplacer\diagnostic.log`, with the previous launch's log beside it as `diagnostic-prev.log`. Detailed Logging adds the game's music state changes, the silencing, and the game's sound events.
 * The game's console logs, in `%APPDATA%\Fatshark\Darktide\console_logs\`.
 
+## Why the mod uses Windows' own audio
+
+Early versions of the mod played the music through ffplay, FFmpeg's player program.
+The [Audio Plugin](https://www.nexusmods.com/warhammer40kdarktide/mods/196) and [DarktideLocalServer](https://www.nexusmods.com/warhammer40kdarktide/mods/211) mods started it as a process of its own.
+That route had limits the mod could not work around:
+
+* Each song ran in its own ffplay process, which took its volume when it started.
+  Lowering a volume slider could follow at once through that process's Windows audio session.
+  Raising it past the starting volume meant restarting the song, with a brief cut.
+* Without volume control at run time, there could be no true crossfades and no lowering of the music in menus.
+* Every request went through the local server, which added a slight delay.
+* The process outlived the game, so a hard crash could leave a song playing until it ended.
+* The Audio Plugin fixed the folder layout at one level deep, so a folder could not hold override folders.
+* Players needed two more mods.
+
+Playing through Media Foundation and XAudio2 inside the game's own process removes every one of these limits.
+The mod needs no other mod beyond the mod loader and DMF, and it ships no program or DLL, its own or anyone else's.
+Windows keeps the decoders up to date itself.
+The cost is Ogg and Opus, which Windows decodes only for Store apps, so the mod does not list them.
+
 ## How playback works
 
 Music Replacer decodes the files with Media Foundation, Windows' own media framework, and plays them with XAudio2 2.9, the audio engine Windows provides for games.
