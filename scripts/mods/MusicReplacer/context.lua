@@ -31,7 +31,8 @@
 --	  The mission preparation screen, where the party stands together before a mission, resolves "mission_preparation".
 --	  The game reports it as "loadout" in every game mode.
 --	  The mission's intro resolves no context and keeps the game's stinger.
---	  Menus such as character select resolve no context either.
+--	* The title screen, "title", resolves "title_screen", and character select, "main_menu", resolves "character_select".
+--	  Character creation, "character_creation", is a step inside character select and resolves "character_select" too.
 --	  The game sends the hub zone about 10 seconds before the loading screen ends, and a mission zone partway through the briefing.
 --	* Meat Grinder has no `wwise_state`, so it is recognized by its mission name instead.
 --	  It resolves to "meat_grinder", whose own setting picks silence or the game's music there.
@@ -172,6 +173,10 @@ local ARRIVAL_GAME_STATES = {
 -- Game states of the mission preparation screen.
 local PREPARATION_GAME_STATES = { loadout = true, loadout_ready = true }
 
+-- Game states of the menus before the hub, by the context each resolves.
+-- Character creation is a step inside character select, so it keeps character select's music.
+local MENU_CONTEXTS = { title = "title_screen", main_menu = "character_select", character_creation = "character_select" }
+
 -- Mission name of the training area where Meat Grinder runs.
 -- Its template has no wwise_state, so music_zone reads "None" there.
 local MEAT_GRINDER_MISSION = "tg_shooting_range"
@@ -308,6 +313,11 @@ local function resolve(mod)
 	-- Cutscenes get no custom music, whatever zone or outcome is still set.
 	if music_game_state == "cinematic" then
 		return nil
+	end
+
+	-- The menus come before the outcome, since a mission's end always passes a loading screen before them.
+	if MENU_CONTEXTS[music_game_state] then
+		return MENU_CONTEXTS[music_game_state]
 	end
 
 	-- Victory and defeat are checked before the boss signals, since a wipe can leave a boss encounter open.

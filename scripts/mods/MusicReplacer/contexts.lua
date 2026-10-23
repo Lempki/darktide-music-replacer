@@ -15,6 +15,8 @@
 local Contexts = {}
 
 Contexts.list = {
+	{ id = "title_screen", folder = true, silences = "music_game_state" },
+	{ id = "character_select", folder = true, silences = "music_game_state" },
 	{ id = "hub", folder = true, silences = "music_zone" },
 	{ id = "loading", folder = true, silences = "music_game_state", loading_screen = true },
 	{ id = "mission_preparation", folder = true, silences = "music_game_state" },

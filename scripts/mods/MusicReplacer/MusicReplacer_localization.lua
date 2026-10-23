@@ -215,6 +215,8 @@ local strings = {
 -- Each context's dropdown title, and when it plays, for the contexts that share the common tooltip.
 -- The loading screens and Meat Grinder have tooltips of their own above.
 local CONTEXT_TEXT = {
+	title_screen = { "Title Screen", "on the title screen, before character select" },
+	character_select = { "Character Select", "on the character select screen, also while creating a character" },
 	hub = { "Hub", "in the Mourningstar" },
 	explore = { "Explore", "in a mission while nothing threatens you" },
 	combat = { "Combat", "while enemies attack you outside a horde or a boss fight" },

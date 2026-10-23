@@ -25,6 +25,8 @@ Install this mod like any other Darktide mod, then drop your own audio files int
 
 ```
 ...\Warhammer 40,000 DARKTIDE\mods\MusicReplacer\audio\
+    title_screen\
+    character_select\
     hub\
     loading\
     mission_preparation\
@@ -41,12 +43,14 @@ Install this mod like any other Darktide mod, then drop your own audio files int
     mortis_trials_break\
 ```
 
-All fourteen folders already exist after install. Put audio files directly inside whichever ones you want music for. Folders inside them are override folders, described below.
+All sixteen folders already exist after install. Put audio files directly inside whichever ones you want music for. Folders inside them are override folders, described below.
 
 Supported formats are `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, and `.wma`. Other files, such as `.ogg` and `.opus`, are ignored, so convert those to a supported format first. File names in any language work.
 
 | Folder | When it plays |
 |---|---|
+| `title_screen` | On the title screen, before character select. |
+| `character_select` | On the character select screen, also while you create a character. |
 | `hub` | In the Mourningstar. |
 | `loading` | On loading screens that lead anywhere but into a mission: after starting the game, after a mission, and on the way to Meat Grinder. |
 | `mission_preparation` | On the mission preparation screen, where the party stands together before a mission and can still change loadouts, in every game mode. Joining a mission already in progress skips it. |
@@ -90,7 +94,7 @@ These are in the in-game mod options under Music Replacer, in six groups, in the
 
 ### Music per Context
 
-One dropdown per context: Hub, Loading, Preparation, Mission Loading, Explore, Combat, Horde, Boss, Event, Last Stand, Victory, Defeat, Mortis Trials Wave, Mortis Trials Break, and Meat Grinder. Each picks what plays there:
+One dropdown per context: Title Screen, Character Select, Hub, Loading, Preparation, Mission Loading, Explore, Combat, Horde, Boss, Event, Last Stand, Victory, Defeat, Mortis Trials Wave, Mortis Trials Break, and Meat Grinder. Each picks what plays there:
 
 | Choice | What plays |
 |---|---|
@@ -148,7 +152,7 @@ Music Replacer decodes your files with Media Foundation, Windows' own audio deco
 * A file Windows cannot decode is skipped once the mod has measured it, shortly after launch, and the log names it. If one is picked before then and fails three times in a row, that context uses the game's own music until the game restarts or the audio folders are listed again.
 * Music Replacer only affects your own game. Squadmates hear the game's own music regardless.
 * If your Windows user name has letters outside the language Windows uses for older programs, such as Japanese letters on an English Windows, the mod cannot write `diagnostic.log` or `loudness.txt`. Your music still plays, and Even Out Loudness measures your songs again at every launch.
-* The mission intro, the main menu, and cutscenes play the game's own music.
+* The mission intro and cutscenes play the game's own music.
 
 ## Troubleshooting
 

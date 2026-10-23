@@ -72,7 +72,7 @@ describe("context.lua zoneless missions", function()
 		harness:state("music_game_state", "loading")
 		harness:arrive_in_hub()
 
-		assert_deep_equal(harness.changes, { "nil", "loading", "hub" })
+		assert_deep_equal(harness.changes, { "nil", "character_select", "loading", "hub" })
 	end)
 
 	-- A zoneless mission's victory has no zone change to end it.

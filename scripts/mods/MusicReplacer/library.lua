@@ -254,11 +254,12 @@ function Library.update(dt)
 
 	measure_next_duration()
 
+	-- The first listing counts as a finished rescan too, since the title screen's context resolves before it, with no files yet.
 	if waiting_to_scan then
 		waiting_to_scan = false
 		rescan_requested = false
 		scan_folders("listed the audio folders")
-		return false
+		return true
 	end
 
 	if not rescan_requested then

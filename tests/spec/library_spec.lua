@@ -84,15 +84,15 @@ describe("library.lua listing", function()
 		local _, folders = listed_library({})
 
 		assert_equal(folders.created[1], ROOT)
-		assert_equal(folders.created[2], ROOT .. "/hub")
-		assert_equal(#folders.created, 15)
+		assert_equal(folders.created[2], ROOT .. "/title_screen")
+		assert_equal(#folders.created, 17)
 	end)
 
 	it("lists every folder on the first update, and logs how many files each has", function()
 		local Library, _, lines = listed_library({ hub = { "a.mp3" }, boss = { "b.mp3", "c.mp3" } })
 
 		assert_equal(Library.pick_file("hub"), "hub/a.mp3")
-		assert_equal(lines[1]:find("[library] listed the audio folders: hub=1 ", 1, true) ~= nil, true, lines[1])
+		assert_equal(lines[1]:find("[library] listed the audio folders: title_screen=0 character_select=0 hub=1 ", 1, true) ~= nil, true, lines[1])
 		assert_equal(lines[1]:find("boss=2", 1, true) ~= nil, true, lines[1])
 	end)
 
@@ -113,6 +113,16 @@ describe("library.lua listing", function()
 			{ { file_path = "hub/a.mp3", stamp = "a.mp3@0" }, { file_path = "boss/b.mp3", stamp = "b.mp3@0" } },
 			{ { file_path = "hub/a.mp3", stamp = "a.mp3@1" }, { file_path = "boss/b.mp3", stamp = "b.mp3@1" } },
 		})
+	end)
+
+	it("reports its first listing as finished, so a context that resolved before it can start its song", function()
+		local engine = FakeEngine.new()
+		local Library = engine:load("library")
+		Library.init(nil, new_audio_folders({ title_screen = { "t.mp3" } }, {}))
+
+		assert_equal(Library.update(0.016), true)
+		assert_equal(Library.pick_file("title_screen"), "title_screen/t.mp3")
+		assert_equal(Library.update(0.016), false)
 	end)
 
 	it("lists nothing before the first update", function()

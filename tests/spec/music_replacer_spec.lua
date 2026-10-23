@@ -277,6 +277,22 @@ describe("MusicReplacer.lua music per context", function()
 	end)
 end)
 
+describe("MusicReplacer.lua menus", function()
+	it("plays the title screen's songs over the game's menu music, and leaves an empty character select to the game", function()
+		local harness = MainHarness.new({ files = { title_screen = { { name = "t.mp3", duration = 200 } } } })
+
+		harness:state("music_game_state", "title")
+		harness:settle()
+		assert_equal(harness:playing(), "title_screen/t.mp3")
+		assert_equal(harness.engine:wwise_state("music_game_state"), "None")
+
+		harness:state("music_game_state", "main_menu")
+		harness:settle()
+		assert_equal(harness:playing(), nil)
+		assert_equal(harness.engine:wwise_state("music_game_state"), "main_menu")
+	end)
+end)
+
 describe("MusicReplacer.lua native music events", function()
 	local EXPLORATION_EVENT = "wwise/events/music/play_exploration_music"
 

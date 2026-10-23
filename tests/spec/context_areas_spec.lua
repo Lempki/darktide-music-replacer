@@ -18,7 +18,7 @@ describe("context.lua areas", function()
 
 		harness:state("music_game_state", "mission")
 
-		assert_deep_equal(harness.changes, { "loading", "hub" })
+		assert_deep_equal(harness.changes, { "title_screen", "character_select", "loading", "hub" })
 	end)
 
 	it("resolves hub after a mission once the loading screen ends, not when the hub zone arrives", function()
@@ -41,19 +41,20 @@ describe("context.lua areas", function()
 		assert_deep_equal(harness.changes, { "hub" })
 	end)
 
-	it("resolves no context in the title screen or the main menu, and loading on the first loading screen", function()
+	it("resolves title_screen on the title screen, character_select on character select, and loading on the first loading screen", function()
 		local harness = Harness.new()
 
 		harness:state("music_game_state", "title")
+		assert_equal(harness:current(), "title_screen")
 		harness:state("music_game_state", "main_menu")
 		harness:wait(10)
 
-		assert_equal(harness:current(), nil)
+		assert_equal(harness:current(), "character_select")
 
 		harness:state("music_game_state", "loading")
 		harness:wait(30)
 
-		assert_deep_equal(harness.changes, { "loading" })
+		assert_deep_equal(harness.changes, { "title_screen", "character_select", "loading" })
 	end)
 
 	it("stays on hub while the mission board is used", function()
@@ -113,7 +114,7 @@ describe("context.lua areas", function()
 	end)
 
 	-- Going back to character select leaves about a second between the two, longer than the debounce.
-	it("resolves no context while leaving the hub for the main menu", function()
+	it("resolves no context while leaving the hub, then character_select once character select opens", function()
 		local harness = Harness.new()
 		harness:cold_start_to_hub()
 		harness:clear_changes()
@@ -122,7 +123,20 @@ describe("context.lua areas", function()
 		harness:wait(1)
 		harness:state("music_game_state", "main_menu")
 
-		assert_deep_equal(harness.changes, { "nil" })
+		assert_deep_equal(harness.changes, { "nil", "character_select" })
+	end)
+
+	it("keeps character_select while a character is created", function()
+		local harness = Harness.new()
+		harness:state("music_game_state", "title")
+		harness:state("music_game_state", "main_menu")
+		harness:clear_changes()
+
+		harness:state("music_game_state", "character_creation")
+		harness:state("music_game_state", "main_menu")
+
+		assert_deep_equal(harness.changes, {})
+		assert_equal(harness:current(), "character_select")
 	end)
 
 	it("resolves mission_preparation on the mission preparation screen, and mission_briefing again for the briefing", function()
