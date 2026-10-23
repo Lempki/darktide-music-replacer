@@ -70,8 +70,10 @@ end
 -- Turning it on also forces the current value, otherwise a value set before suppression started plays until the next flap.
 -- Turning it off restores the real value.
 -- The game only re-sends a state when it changes, so a boss that started while this was on would otherwise stay silent for the whole fight.
+-- expeditions_intensity always holds the same value as music_combat, and the game's Expedition music may follow either.
 local function set_combat(should_suppress)
 	set_reforced_group("music_combat", should_suppress)
+	set_reforced_group("expeditions_intensity", should_suppress)
 end
 
 -- Forces music_zone to "None" so the native hub music stops.

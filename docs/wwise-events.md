@@ -34,8 +34,10 @@ It is `ingame_menu` in the Esc menu and its settings, the inventory, and the mis
 The mod lowers custom music to the Menu Volume setting while it is anything but `None`, and logs its changes as `[raw] options` lines.
 
 One more group, `expeditions_intensity`, is set by the same game logic as `music_combat`, and carries the same values in every mission and in Expeditions.
-The game's source also has Expedition-only values for both groups, `no_combat`, `low_combat`, `med_combat`, `high_combat`, `safe_room`, and `extraction`, used while an Expedition's heat system is active.
-They have not shown up in a log yet, so the mod does not act on them.
+While an Expedition's heat system is on, both groups carry Expedition-only values instead: `no_combat`, `low_combat`, `med_combat`, `high_combat`, `safe_room`, and `extraction`.
+An Expedition with its heat off reports the standard values.
+The mod resolves `low_combat`, `med_combat`, and `high_combat` as `expedition_combat`, `safe_room` as `expedition_safe_room`, `extraction` as `expedition_extraction`, and `no_combat` as `explore`.
+While a custom song plays, the mod forces both groups to `None`, since they always hold the same value.
 `music_combat` is always logged, while `expeditions_intensity` only shows up as a `[raw]` line when it moves to or from one of these values.
 
 ### Events

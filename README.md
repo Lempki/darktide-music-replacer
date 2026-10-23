@@ -42,9 +42,12 @@ Install this mod like any other Darktide mod, then drop your own audio files int
     defeat\
     mortis_trials_wave\
     mortis_trials_break\
+    expedition_combat\
+    expedition_safe_room\
+    expedition_extraction\
 ```
 
-All sixteen folders already exist after install. Put audio files directly inside whichever ones you want music for. Folders inside them are override folders, described below.
+All nineteen folders already exist after install. Put audio files directly inside whichever ones you want music for. Folders inside them are override folders, described below.
 
 Supported formats are `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, and `.wma`. Other files, such as `.ogg` and `.opus`, are ignored, so convert those to a supported format first. File names in any language work.
 
@@ -66,6 +69,9 @@ Supported formats are `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, and `.wma`. Other
 | `defeat` | From the moment a mission is lost until the loading screen or a cutscene. |
 | `mortis_trials_wave` | In Mortis Trials, during a wave or an objective round, through to the final win. Bosses, hordes, and fights do not interrupt it, since nearly every wave brings bosses. A last stand still takes over. In Mortis Trials, this and the break folder replace the mission folders above, apart from last stand, victory, and defeat. |
 | `mortis_trials_break` | In Mortis Trials, between waves. |
+| `expedition_combat` | In an Expedition with its heat on, during a fight. With the heat off, an Expedition plays the mission folders above. |
+| `expedition_safe_room` | In an Expedition's safe room. |
+| `expedition_extraction` | While an Expedition's extraction runs, until the mission is won or lost. Only a last stand takes over. |
 
 No custom music plays during cutscenes. The game's own music takes over there.
 
@@ -95,7 +101,7 @@ These are in the in-game mod options under Music Replacer, in six groups, in the
 
 ### Music per Context
 
-One dropdown per context: Title Screen, Character Select, Hub, Loading, Preparation, Mission Loading, Explore, Combat, Horde, Boss, Event, Last Stand, Victory, Defeat, Mortis Trials Wave, Mortis Trials Break, and Meat Grinder. Each picks what plays there:
+One dropdown per context: Title Screen, Character Select, Hub, Loading, Preparation, Mission Loading, Explore, Combat, Horde, Boss, Event, Last Stand, Victory, Defeat, Mortis Trials Wave, Mortis Trials Break, Expedition Combat, Expedition Safe Room, Expedition Extraction, and Meat Grinder. Each picks what plays there:
 
 | Choice | What plays |
 |---|---|
@@ -195,6 +201,7 @@ The mod always logs the important events, such as which music plays and why, and
 * [x] Volume: lowering custom music while a menu is open, as the game does with its own music, a volume for custom music, and evening out loudness, so quiet and loud files play at a similar level without changing the files.
 * [x] Custom music for loading screens, the mission preparation screen, and the loading screens and briefing on the way into a mission.
 * [x] Optional override folders named after what the game reports, inside a context's folder: per kind of mission event, such as `escape_event`, per kind of boss, such as `chaos_spawn`, per mission, and per game mode, Havoc and Expeditions.
+* [ ] Optional subfolders inside `expedition_combat` for each of an Expedition's heat levels, falling back to the main folder when empty.
 
 ## Development
 

@@ -32,6 +32,11 @@ Contexts.list = {
 	-- Mortis Trials' wave and break rank like event and explore, which they replace there.
 	{ id = "mortis_trials_wave", folder = true, silences = "music_objective", priority = 5, resume = "always" },
 	{ id = "mortis_trials_break", folder = true, priority = 1, resume = "always" },
+	-- An Expedition with its heat on rates its fights, safe rooms, and extraction instead of hordes and bosses.
+	-- Its fights and safe rooms take turns with explore like combat and explore, and its extraction is a finale like an event.
+	{ id = "expedition_combat", folder = true, priority = 2, resume = "always" },
+	{ id = "expedition_safe_room", folder = true, priority = 1, resume = "always" },
+	{ id = "expedition_extraction", folder = true, priority = 5 },
 	-- The game plays no music in Meat Grinder, so it starts silent like an unmodified game.
 	{ id = "meat_grinder", default_source = "silence" },
 }

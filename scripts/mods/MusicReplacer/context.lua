@@ -107,6 +107,8 @@ local HOLDS = {
 	{ name = "event", setting_id = "event_hold_seconds", remaining = 0 },
 	{ name = "horde", setting_id = "horde_hold_seconds", remaining = 0 },
 	{ name = "combat", setting_id = "combat_hold_seconds", remaining = 0 },
+	-- An Expedition's fights flip on and off as often as ordinary ones, so they share the combat hold's setting.
+	{ name = "expedition_combat", setting_id = "combat_hold_seconds", remaining = 0 },
 }
 
 local hold_named = {}
@@ -143,6 +145,7 @@ local LOGGED_ONLY_STATE_GROUPS = {
 
 -- expeditions_intensity copies music_combat everywhere, so it is only logged on the values it has of its own.
 -- The game sets them, in music_combat too, while an Expedition's heat system is active.
+-- With the heat off, an Expedition reports the standard combat states instead, and plays the standard contexts.
 local EXPEDITION_ONLY_COMBAT_STATES = {
 	no_combat = true,
 	low_combat = true,
@@ -151,6 +154,9 @@ local EXPEDITION_ONLY_COMBAT_STATES = {
 	safe_room = true,
 	extraction = true,
 }
+
+-- The heat system's fight levels, which resolve "expedition_combat".
+local EXPEDITION_FIGHT_STATES = { low_combat = true, med_combat = true, high_combat = true }
 
 -- Game states in which the player is in the hub or a mission, rather than on a loading screen, a briefing or a menu.
 local IN_WORLD_GAME_STATES = { mission = true, mission_board = true, mission_ready = true }
@@ -254,9 +260,14 @@ local function is_combat_active()
 	return music_combat == "normal" or music_combat == "horde_low" or music_combat == "horde_high"
 end
 
+local function is_expedition_fight_active()
+	return EXPEDITION_FIGHT_STATES[music_combat] == true
+end
+
 hold_named.event.is_active = is_event_active
 hold_named.horde.is_active = is_horde_active
 hold_named.combat.is_active = is_combat_active
+hold_named.expedition_combat.is_active = is_expedition_fight_active
 
 -- "havoc" during a Havoc run, "expeditions" during an Expedition, else nil.
 local function read_mode(template)
@@ -363,6 +374,11 @@ local function resolve(mod)
 		return in_wave and "mortis_trials_wave" or "mortis_trials_break"
 	end
 
+	-- An Expedition's extraction is its finale, so it ranks like an event, below a last stand.
+	if music_combat == "extraction" then
+		return "expedition_extraction"
+	end
+
 	-- Operations script their music across the whole mission, in stages with short gaps between them, so each is one long event.
 	if is_event_active() then
 		start_hold(mod, "event")
@@ -398,6 +414,19 @@ local function resolve(mod)
 
 	if holding("combat") then
 		return "combat"
+	end
+
+	if is_expedition_fight_active() then
+		start_hold(mod, "expedition_combat")
+		return "expedition_combat"
+	end
+
+	if holding("expedition_combat") then
+		return "expedition_combat"
+	end
+
+	if music_combat == "safe_room" then
+		return "expedition_safe_room"
 	end
 
 	return "explore"
@@ -503,7 +532,7 @@ function Context.on_mission_change(listener)
 end
 
 -- Register a function to call on every real transition of a music state group, after context.lua has tracked it.
--- The listener receives (group_name, new_state) for music_combat, music_zone, music_game_state and music_objective only.
+-- The listener receives (group_name, new_state) for music_combat, music_zone, music_game_state, music_objective, and expeditions_intensity.
 function Context.on_state_change(listener)
 	state_listeners[#state_listeners + 1] = listener
 end
@@ -584,7 +613,10 @@ local function track_transition(mod, group_name, current, new_state)
 			log_detail(describe_transition(group_name, current, new_state))
 		end
 
-		return
+		-- expeditions_intensity decides no context, but its listeners still need it, since the silencing forces it with music_combat.
+		if group_name ~= "expeditions_intensity" then
+			return
+		end
 	end
 
 	for _, listener in ipairs(state_listeners) do
@@ -594,7 +626,9 @@ local function track_transition(mod, group_name, current, new_state)
 		end
 	end
 
-	recompute(mod)
+	if group_name ~= "expeditions_intensity" then
+		recompute(mod)
+	end
 end
 
 -- Hands the game's own return values back through the hook, so the hook stays invisible to the game.

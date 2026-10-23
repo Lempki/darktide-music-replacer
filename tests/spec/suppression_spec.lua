@@ -109,6 +109,20 @@ describe("suppression.lua combat", function()
 		assert_equal(#engine.wwise_calls, calls_before)
 	end)
 
+	it("forces expeditions_intensity with music_combat, again after every transition, and restores it on release", function()
+		local engine, Suppression = load_suppression()
+		engine:set_state("expeditions_intensity", "no_combat")
+
+		Suppression.engage("explore")
+		assert_equal(engine:wwise_state("expeditions_intensity"), "None")
+
+		engine:set_state("expeditions_intensity", "med_combat")
+		assert_equal(engine:wwise_state("expeditions_intensity"), "None")
+
+		Suppression.release()
+		assert_equal(engine:wwise_state("expeditions_intensity"), "med_combat")
+	end)
+
 	it("forces combat for Meat Grinder set to silence too", function()
 		local engine, Suppression = load_suppression()
 		engine:set_state("music_combat", "boss")

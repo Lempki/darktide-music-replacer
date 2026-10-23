@@ -228,6 +228,9 @@ local CONTEXT_TEXT = {
 	defeat = { "Defeat", "after a mission is lost" },
 	mortis_trials_wave = { "Mortis Trials Wave", "during a Mortis Trials wave" },
 	mortis_trials_break = { "Mortis Trials Break", "between Mortis Trials waves" },
+	expedition_combat = { "Expedition Combat", "during a fight in an Expedition with its heat on" },
+	expedition_safe_room = { "Expedition Safe Room", "in an Expedition's safe room" },
+	expedition_extraction = { "Expedition Extraction", "while an Expedition's extraction runs" },
 }
 
 for _, context in ipairs(Contexts.list) do
