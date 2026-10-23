@@ -1,5 +1,6 @@
--- Pins how context.lua resolves an Expedition with its heat on, which reports its own states in music_combat.
--- The heat system rates fights as low_combat, med_combat, or high_combat, and also reports safe rooms and the extraction.
+-- Pins how context.lua resolves an Expedition, which reports its own states in music_combat.
+-- The game rates fights as low_combat, med_combat, or high_combat by how alert the enemy is.
+-- It also reports safe rooms and the extraction.
 
 local Harness = require("tests.helpers.context_harness")
 
@@ -15,7 +16,7 @@ local function in_expedition(settings)
 	return harness
 end
 
-describe("context.lua Expeditions with the heat on", function()
+describe("context.lua Expeditions", function()
 	it("resolves explore while calm, and expedition_combat at every fight level", function()
 		local harness = in_expedition({ combat_hold_seconds = 0 })
 		assert_equal(harness:current(), "explore")
@@ -62,7 +63,7 @@ describe("context.lua Expeditions with the heat on", function()
 		assert_equal(harness:current(), "last_stand")
 	end)
 
-	it("plays boss music over a fight only for an opted-in captain, since the heat system reports no boss", function()
+	it("plays boss music over a fight only for an opted-in captain, since an Expedition reports no boss", function()
 		local harness = in_expedition({ captain_boss_music = true })
 		harness:state("music_combat", "med_combat")
 

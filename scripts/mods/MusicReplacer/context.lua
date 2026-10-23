@@ -144,8 +144,7 @@ local LOGGED_ONLY_STATE_GROUPS = {
 }
 
 -- expeditions_intensity copies music_combat everywhere, so it is only logged on the values it has of its own.
--- The game sets them, in music_combat too, while an Expedition's heat system is active.
--- With the heat off, an Expedition reports the standard combat states instead, and plays the standard contexts.
+-- Every Expedition sets them, in music_combat too, in place of the standard combat states.
 local EXPEDITION_ONLY_COMBAT_STATES = {
 	no_combat = true,
 	low_combat = true,
@@ -155,7 +154,8 @@ local EXPEDITION_ONLY_COMBAT_STATES = {
 	extraction = true,
 }
 
--- The heat system's fight levels, which resolve "expedition_combat".
+-- An Expedition's fight levels, which resolve "expedition_combat".
+-- The level follows how alert the enemy is, not how hard the fight is.
 local EXPEDITION_FIGHT_STATES = { low_combat = true, med_combat = true, high_combat = true }
 
 -- Game states in which the player is in the hub or a mission, rather than on a loading screen, a briefing or a menu.
@@ -648,6 +648,7 @@ function Context.init(mod, detail_logger)
 
 	-- The game's combat group decides only once per launch whether it runs an Expedition, on the first mission it sees.
 	-- Without this, every mission after an Expedition reports Expedition states to the mod, with no horde or boss, until the game restarts.
+	-- The same holds the other way: an Expedition after any other mission reports the standard states, and resolves no Expedition context.
 	-- Clearing that decision as each mission ends makes the next mission decide again.
 	mod:hook_safe(WwiseStateGroupCombat, "on_gameplay_shutdown", function(self)
 		self._is_expedition_init = nil
