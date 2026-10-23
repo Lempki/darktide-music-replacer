@@ -77,9 +77,9 @@ local OVERRIDE_CHECK_SECONDS = 0.5
 local override_check_elapsed = 0
 
 -- What the current context plays, for the debug overlay: a choice's name, or why the game's music plays.
-local context_status = "game's music"
+local context_status = "Vanilla"
 
-local SOURCE_NAMES = { custom = "Custom", game = "Game's Own", silence = "Silence" }
+local SOURCE_NAMES = { custom = "Custom", game = "Vanilla", silence = "Silence" }
 
 -- What a context plays, from its setting: "custom", "game", or "silence".
 -- Any other stored value plays as "custom", so a value from an option the dropdown does not offer still plays custom songs.
@@ -176,7 +176,7 @@ local function play_context(context_name, is_new_context)
 	current_folder = nil
 
 	if not context_name then
-		hand_back("game's music")
+		hand_back("Vanilla")
 		return
 	end
 
@@ -199,7 +199,7 @@ local function play_context(context_name, is_new_context)
 
 	-- Playback that could not start, or gave up after repeated audio device failures, leaves the game's music alone.
 	if not AudioClient.available() then
-		hand_back("game's music, no audio output")
+		hand_back("Vanilla, no audio output")
 		return
 	end
 
@@ -235,7 +235,7 @@ local function play_context(context_name, is_new_context)
 
 	-- Only the context's own folder gets here, since an override folder that gave up is left out.
 	if gave_up[folder] then
-		hand_back("game's music, its songs would not play")
+		hand_back("Vanilla, its songs would not play")
 		log(string.format("[playback] %s: its tracks would not play earlier, using native music", context_name))
 		return
 	end
@@ -243,7 +243,7 @@ local function play_context(context_name, is_new_context)
 	if not file_path then
 		-- No replacement is available, as with no folder, an empty folder, or a scan that has not finished.
 		-- The game's music is left alone.
-		hand_back("game's music, no songs")
+		hand_back("Vanilla, no songs")
 		log(string.format("[playback] %s: no file available, using native music", context_name))
 		return
 	end
@@ -284,7 +284,7 @@ local function play_context(context_name, is_new_context)
 					else
 						log(string.format("[playback] %s: %d tracks in a row ended within %ds, using native music until the game restarts or the folders are rescanned",
 							context_name, MAX_QUICK_ENDS, QUICK_END_SECONDS))
-						hand_back("game's music, its songs would not play")
+						hand_back("Vanilla, its songs would not play")
 						return
 					end
 				end
@@ -544,7 +544,7 @@ mod.on_setting_changed = function(setting_id)
 		-- These settings decide how the context resolves, so it resolves again.
 		Context.refresh(mod)
 
-		-- Game's Own and Silence both resolve meat_grinder, so switching between them changes no context and needs a replay here.
+		-- Vanilla and Silence both resolve meat_grinder, so switching between them changes no context and needs a replay here.
 		if enabled and setting_id == "source_meat_grinder" and current_context == "meat_grinder" and Context.current() == "meat_grinder" then
 			play_context(current_context, true)
 		end

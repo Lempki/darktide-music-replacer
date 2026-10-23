@@ -132,8 +132,8 @@ describe("debug_overlay.lua text", function()
 	it("shows no song while the game's music plays, songs as recorded while evening out is off, and long names cut short", function()
 		local DebugOverlay = load_overlay(new_constant_elements())
 
-		local game = DebugOverlay.text({ context = "event", status = "game's music, no songs", evening_out = false })
-		assert_equal(game, "Context: event (game's music, no songs)\nFolder: none\nSong: none\nVolume: custom 100%, menu 100%, song as recorded")
+		local game = DebugOverlay.text({ context = "event", status = "Vanilla, no songs", evening_out = false })
+		assert_equal(game, "Context: event (Vanilla, no songs)\nFolder: none\nSong: none\nVolume: custom 100%, menu 100%, song as recorded")
 
 		local snapshot = full_snapshot()
 		snapshot.song = string.rep("a", 60) .. ".mp3"

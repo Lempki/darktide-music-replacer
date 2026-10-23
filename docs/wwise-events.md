@@ -26,7 +26,7 @@ Wwise reports "no value" as the word `None`.
 
 * `music_combat` is `normal` while enemies are attacking you, and it flips back to `None` every few seconds in a fight. The Combat Music Hold setting bridges those gaps. `horde_low` and `horde_high` mean a horde is on you, and `boss` means a monstrosity is near. `boss` can drop out for a second or two while the boss is still alive, which the Boss Music Hold setting bridges until the boss's encounter ends.
 * `music_zone` names the hub or the mission's area. It arrives before the music can start: the hub zone about 10 seconds before the loading screen ends, and a mission zone partway through the briefing.
-* `music_game_state` says where the player is. The hub and mission music only plays while it is `mission`, `mission_board`, or `mission_ready`. `mission_briefing`, and `loading` on the way into a mission, play the Mission Loading music, any other `loading` plays the Loading music, `loadout`, the mission preparation screen, plays the Preparation music, and the mission intro keeps the game's own music. `cinematic` means a cutscene, which never gets custom music. After a mission, a story mission can go straight from `game_score_win` to `cinematic`.
+* `music_game_state` says where the player is. The hub and mission music only plays while it is `mission`, `mission_board`, or `mission_ready`. `mission_briefing`, and `loading` on the way into a mission, play the Mission Briefing music, any other `loading` plays the Loading music, `loadout`, the mission preparation screen, plays the Mission Preparation music, and the mission intro keeps the game's own music. `cinematic` means a cutscene, which never gets custom music. After a mission, a story mission can go straight from `game_score_win` to `cinematic`.
 * `music_objective` carries the last stand and mission event music. Some events set it to `None` for a few seconds between their stages, which the Event Music Hold setting bridges.
 
 One more group, `options`, says which kind of menu is open.
@@ -52,7 +52,7 @@ Wwise events start sounds, and a few of them are music.
 ## How the mod silences it
 
 The mod only silences the game's music once it has a custom song for the current context, so a context with no files keeps the game's own music.
-A context set to Silence in Music per Context is the one exception, which silences the game's music with no song at all. Meat Grinder is set to Silence by default.
+A context set to Silence in Music per Situation is the one exception, which silences the game's music with no song at all. Meat Grinder is set to Silence by default.
 
 Each line below shows up in the log with Detailed Logging on:
 

@@ -232,7 +232,7 @@ describe("MusicReplacer.lua rescans", function()
 end)
 
 describe("MusicReplacer.lua music per context", function()
-	it("leaves a context set to Game's Own to the game, even with songs in its folder", function()
+	it("leaves a context set to Vanilla to the game, even with songs in its folder", function()
 		local harness = in_hub(nil, { settings = { source_hub = "game" } })
 
 		assert_equal(harness:last_play(), nil)
@@ -259,7 +259,7 @@ describe("MusicReplacer.lua music per context", function()
 		assert_equal(harness.engine:wwise_state("music_zone"), "None")
 	end)
 
-	it("follows a Meat Grinder change between Silence and Game's Own at once, during the visit", function()
+	it("follows a Meat Grinder change between Silence and Vanilla at once, during the visit", function()
 		local harness = MainHarness.new({ settings = { source_meat_grinder = "silence" }, files = {} })
 		harness:cold_start_to_hub()
 		harness:state("music_zone", "None")
@@ -548,7 +548,7 @@ describe("MusicReplacer.lua debug overlay", function()
 		local harness = in_hub({ hub = {} })
 
 		local snapshot = harness.overlay.options.snapshot()
-		assert_equal(snapshot.status, "game's music, no songs")
+		assert_equal(snapshot.status, "Vanilla, no songs")
 		assert_equal(snapshot.song, nil)
 
 		harness:state("music_game_state", "mission_board")

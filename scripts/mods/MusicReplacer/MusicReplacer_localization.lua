@@ -16,13 +16,13 @@ local EMPTY_FOLDER_NOTE = "\n\nAn empty folder plays the game's own music, excep
 local function source_tooltip(when)
 	return "What plays " .. when .. ".\n\n" ..
 		highlight("Custom") .. " plays your songs from its folder. " ..
-		highlight("Game's Own") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing." ..
+		highlight("Vanilla") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing." ..
 		EMPTY_FOLDER_NOTE
 end
 
 local strings = {
-	songs = {
-		en = "Songs",
+	playback = {
+		en = "Playback",
 	},
 	rescan_audio = {
 		en = "Rescan Audio Folders",
@@ -44,14 +44,14 @@ local strings = {
 			"Every mission and hub visit starts with fresh songs.",
 	},
 
-	music_per_context = {
-		en = "Music per Context",
+	music_per_situation = {
+		en = "Music per Situation",
 	},
 	source_custom = {
 		en = "Custom",
 	},
 	source_game = {
-		en = "Game's Own",
+		en = "Vanilla",
 	},
 	source_silence = {
 		en = "Silence",
@@ -62,26 +62,26 @@ local strings = {
 	source_loading_tooltip = {
 		en = "What plays on loading screens that lead anywhere but into a mission: after starting the game, after a mission, and on the way to Meat Grinder.\n\n" ..
 			highlight("Custom") .. " plays your songs from its folder. " ..
-			highlight("Game's Own") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing." ..
+			highlight("Vanilla") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing." ..
 			EMPTY_FOLDER_NOTE,
 	},
 	source_mission_briefing = {
-		en = "Mission Loading",
+		en = "Mission Briefing",
 	},
 	source_mission_briefing_tooltip = {
 		en = "What plays on the loading screens and the briefing on the way into a mission, also when joining a mission in progress.\n\n" ..
 			highlight("Custom") .. " plays your songs from its folder. " ..
-			highlight("Game's Own") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing. " ..
+			highlight("Vanilla") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing. " ..
 			"The intro itself keeps the game's music, and a song interrupted by the preparation screen continues in the briefing." ..
 			EMPTY_FOLDER_NOTE,
 	},
 	source_mission_preparation = {
-		en = "Preparation",
+		en = "Mission Preparation",
 	},
 	source_mission_preparation_tooltip = {
 		en = "What plays on the mission preparation screen, where the party stands together before a mission and can still change loadouts.\n\n" ..
 			highlight("Custom") .. " plays your songs from its folder. " ..
-			highlight("Game's Own") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing." ..
+			highlight("Vanilla") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing." ..
 			EMPTY_FOLDER_NOTE,
 	},
 	source_meat_grinder = {
@@ -90,7 +90,7 @@ local strings = {
 	source_meat_grinder_tooltip = {
 		en = "What plays in the Meat Grinder training area.\n\n" ..
 			highlight("Custom") .. " plays your explore and combat songs, which is a quick way to test them. " ..
-			highlight("Game's Own") .. " plays the game's combat music, and " .. highlight("Silence") .. " keeps the area quiet.\n\n" ..
+			highlight("Vanilla") .. " plays the game's combat music, and " .. highlight("Silence") .. " keeps the area quiet.\n\n" ..
 			"With " .. highlight("Custom") .. ", empty explore and combat folders play the game's own music.",
 	},
 
@@ -124,7 +124,7 @@ local strings = {
 			"It is a share of the Custom Music Volume. " .. highlight("100%%") .. " keeps the music at full volume in menus.",
 	},
 
-	where_music_plays = {
+	boss_music = {
 		en = "Boss Music",
 	},
 	captain_boss_music = {
@@ -142,8 +142,8 @@ local strings = {
 			highlight("Off") .. " follows the game, which plays no music for daemonhosts.",
 	},
 
-	timing = {
-		en = "Timing",
+	music_holds = {
+		en = "Music Holds",
 	},
 	seconds_unit = {
 		en = "s",

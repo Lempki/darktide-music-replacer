@@ -94,24 +94,24 @@ Your audio survives reinstalling or updating the mod through Vortex. Vortex only
 
 These are in the in-game mod options under Music Replacer, in six groups, in the order the menu shows them.
 
-### Songs
+### Playback
 
 | Setting | Default | What it does |
 |---|---|---|
 | Rescan Audio Folders | (button) | Lists the audio folders again at once. The mod already notices added, removed, and replaced files by itself a few seconds after they change, so this is for drives where Windows cannot report changes, such as some network drives. |
 | Resume Songs | On | When explore or combat music, or a Mortis Trials wave or break, comes back, its song continues from where it stopped. A horde, boss, or event song also continues after higher-priority music interrupts it, such as a boss during a horde or a last stand during an event, as long as that horde, fight, or event did not end in between. A new horde, boss fight, or event gets a new pick. A new song is also picked once one ends on its own. Every mission and hub visit starts with fresh songs. A mission loading song that the mission preparation screen interrupts continues in the briefing after it. |
 
-### Music per Context
+### Music per Situation
 
-One dropdown per context: Title Screen, Character Select, Hub, Loading, Preparation, Mission Loading, Explore, Combat, Horde, Boss, Event, Last Stand, Victory, Defeat, Mortis Trials Wave, Mortis Trials Break, Expedition Combat, Expedition Safe Room, Expedition Extraction, and Meat Grinder. Each picks what plays there:
+One dropdown per context: Title Screen, Character Select, Hub, Loading, Mission Preparation, Mission Briefing, Explore, Combat, Horde, Boss, Event, Last Stand, Victory, Defeat, Mortis Trials Wave, Mortis Trials Break, Expedition Combat, Expedition Safe Room, Expedition Extraction, and Meat Grinder. Each picks what plays there:
 
 | Choice | What plays |
 |---|---|
 | Custom | Your songs from the context's folder, or the game's own music while the folder is empty. This is the default for every context except Meat Grinder. |
-| Game's Own | The game's own music, even with songs in the folder, so you can turn one context off without moving files. |
+| Vanilla | The game's own music, even with songs in the folder, so you can turn one context off without moving files. |
 | Silence | Nothing. The game's own music is silenced too. |
 
-Meat Grinder defaults to Silence. There, Custom plays your explore and combat songs, which is a quick way to test them, and Game's Own plays the game's combat music. A changed choice applies at once, also to the context playing now.
+Meat Grinder defaults to Silence. There, Custom plays your explore and combat songs, which is a quick way to test them, and Vanilla plays the game's combat music. A changed choice applies at once, also to the context playing now.
 
 ### Volume
 
@@ -128,7 +128,7 @@ Meat Grinder defaults to Silence. There, Custom plays your explore and combat so
 | Boss Music for Captains | Off | On plays your boss music for a captain, including the Karnak Twins, from the moment it engages until it dies. Off leaves captains to the game's own music. Event music still plays during an event. |
 | Boss Music for Daemonhosts | Off | Off follows the game, which plays no music for an angered daemonhost. On plays your boss music from the moment a daemonhost is angered until it dies. |
 
-### Timing
+### Music Holds
 
 | Setting | Default | What it does |
 |---|---|---|

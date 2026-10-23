@@ -2,7 +2,7 @@
 -- It is a debug aid behind the Debug Overlay setting, so it is off by default.
 --
 -- The text is drawn by an element added to the game's constant UI, which is drawn on every screen, loading screens included.
--- A HUD element would only exist in the hub and in missions, and miss the Loading and Preparation contexts.
+-- A HUD element would only exist in the hub and in missions, and miss the loading and mission preparation contexts.
 -- The constant UI has no API for mods, so the element is added and removed the way the game sets up its own constant elements.
 
 local DebugOverlay = {}

@@ -32,7 +32,7 @@ return {
 	options = {
 		widgets = {
 			{
-				setting_id = "songs",
+				setting_id = "playback",
 				type = "group",
 				sub_widgets = {
 					{
@@ -51,7 +51,7 @@ return {
 				},
 			},
 			{
-				setting_id = "music_per_context",
+				setting_id = "music_per_situation",
 				type = "group",
 				sub_widgets = source_widgets,
 			},
@@ -86,7 +86,7 @@ return {
 				},
 			},
 			{
-				setting_id = "where_music_plays",
+				setting_id = "boss_music",
 				type = "group",
 				sub_widgets = {
 					{
@@ -104,7 +104,7 @@ return {
 				},
 			},
 			{
-				setting_id = "timing",
+				setting_id = "music_holds",
 				type = "group",
 				sub_widgets = {
 					{

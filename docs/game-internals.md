@@ -80,7 +80,7 @@ The mission line names a mission by its code. These are the in-game names of the
 | `exp_wastes` | Expeditions. `mission_type` is `expeditions`, `game_mode_name` is `expedition`, and its zone is `expeditions`. It reports its own combat states, which resolve the Expedition contexts, and it reports no horde or boss. The game decides only once per launch, on the first mission, whether it runs an Expedition, so the mod makes it decide again at every mission. Without that, an Expedition after an ordinary mission would report the ordinary states, and an ordinary mission after an Expedition the Expedition states. The game's own music for an Expedition sets no `music_objective`. |
 | `op_train`, `op_no_mans_land` | Operations. Their `mission_type` is `operations`, which the mod uses to treat the whole mission as one event. |
 
-Whether the free Psykhanium also runs in `tg_shooting_range` is not known. If it does, the Meat Grinder choice in Music per Context covers it too.
+Whether the free Psykhanium also runs in `tg_shooting_range` is not known. If it does, the Meat Grinder choice in Music per Situation covers it too.
 
 Havoc plays the ordinary missions and reports nothing of its own to the music: the mission line, the zone, and every music state are the same as in an ordinary run, and `circumstance` stays `None`. The game keeps Havoc's own data in its difficulty manager, which is how the mod tells a Havoc run apart for the `havoc` override folders. With Detailed Logging on, the log says `[mission] game mode: havoc` once a Havoc run starts, `[mission] game mode: expeditions` in an Expedition, `[mission] game mode: mortis_trials` in Mortis Trials, and `[mission] game mode: ordinary` after any of them.
 
