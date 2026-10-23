@@ -49,7 +49,7 @@ describe("context.lua mission events", function()
 		assert_deep_equal(harness.changes, { "event", "explore" })
 	end)
 
-	-- Spillway's end event ends a few seconds before the wizard's encounter window closes.
+	-- Spillway's end event ends a few seconds before Rodin Karnak's encounter window closes.
 	it("returns to explore, not boss, when an event ends before its scripted boss's window closes", function()
 		local harness = in_mission("zone_2_depths")
 		local boss = harness:new_boss("renegade_wizard")

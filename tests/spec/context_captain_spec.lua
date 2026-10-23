@@ -65,7 +65,7 @@ describe("context.lua captains", function()
 		assert_deep_equal(harness.changes, { "boss", "explore" })
 	end)
 
-	it("does not count Spillway's psyker, which is not a captain", function()
+	it("does not count Rodin Karnak in Spillway, who is not a captain", function()
 		local harness = in_mission({ captain_boss_music = true, daemonhost_boss_music = true })
 		local wizard = harness:new_boss("renegade_wizard")
 

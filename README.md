@@ -75,7 +75,7 @@ The Music Holds settings also keep combat, horde, boss, and event music going fo
 | `explore` | In a mission while nothing threatens you. |
 | `combat` | In a mission while enemies attack you, outside a horde or a boss fight. |
 | `horde` | During a horde. With no songs here, the game's horde music plays, as it does without the mod. |
-| `boss` | While a monstrosity is near you, such as a Chaos Spawn, a Beast of Nurgle, a Plague Ogryn, or an Ogryn Houndmaster. This is when the game plays its own boss music. Captains and angered daemonhosts get boss music only with their settings on. A scripted boss such as Spillway's psyker gets no boss music, since the game does not report it as a boss. |
+| `boss` | While a monstrosity is near you, such as a Chaos Spawn, a Beast of Nurgle, a Plague Ogryn, or an Ogryn Houndmaster. This is when the game plays its own boss music. Captains and angered daemonhosts get boss music only with their settings on. A scripted boss, such as Rodin Karnak in Spillway, gets no boss music, since the game does not report it as a boss. |
 | `event` | While a mission event plays its music, such as a holdout, a hacking event, an escape, or a scripted boss fight like those in Spillway. It outranks boss, horde, combat, and explore music, as the game's event music does. In Operations, such as Rolling Steel and No Man's Land, it plays for the whole mission, since the game scripts their music from start to end. |
 | `last_stand` | While only one player of the team is left alive. It outranks events, Mortis Trials waves and breaks, the Expedition extraction, bosses, hordes, combat, and explore. Victory and defeat still take over. |
 | `victory` | From the moment a mission is won until the loading screen or a cutscene. |

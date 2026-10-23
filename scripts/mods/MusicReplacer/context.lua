@@ -7,7 +7,7 @@
 --	  The hub zone wins over every mission state, since quitting mid-event or mid-last-stand can leave `music_objective` set.
 --	* A boss is active while Wwise reports `music_combat == "boss"`, which is when the game plays its own boss music.
 --	  Bosses that only open an encounter window get no boss music in the game, so they get none here either.
---	  Those are captains, daemonhosts, and Spillway's psyker, which the game's boss music check leaves out by their breed tags.
+--	  Those are captains, daemonhosts, and Rodin Karnak in Spillway, which the game's boss music check leaves out by their breed tags.
 --	* A captain's or a daemonhost's encounter window counts as a boss only with its setting on.
 --	  Scripted captains appear during events, and event music wins over bosses, so the setting only matters for random ones.
 --	* Encounter windows are tracked per boss unit, since several bosses can be open at once and a start can repeat.
