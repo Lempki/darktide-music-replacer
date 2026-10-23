@@ -364,6 +364,19 @@ function AudioClient.play(file_path, opts)
 	return true
 end
 
+-- Lets the current song play on as `file_path` for a new context, with that context's own ending in `opts.on_finished`.
+-- For a copy of the song that is playing, so it continues instead of starting over. Returns false when nothing plays.
+function AudioClient.retarget(file_path, opts)
+	if not current then
+		return false
+	end
+
+	current.file_path = file_path
+	current.on_finished = opts.on_finished
+	current.duration = opts.duration_seconds
+	return true
+end
+
 -- Fades the current track out quickly, for the native-music fallback and contexts without music.
 function AudioClient.stop()
 	if current and current.stream then

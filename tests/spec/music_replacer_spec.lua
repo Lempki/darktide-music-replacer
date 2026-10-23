@@ -293,6 +293,50 @@ describe("MusicReplacer.lua menus", function()
 	end)
 end)
 
+describe("MusicReplacer.lua the same lone song in two folders", function()
+	-- Returns a harness that plays the title screen's song, with `character_select` as character select's files.
+	local function on_title_screen(character_select)
+		local harness = MainHarness.new({ files = { title_screen = { { name = "a.mp3", duration = 200 } }, character_select = character_select } })
+		harness:state("music_game_state", "title")
+		harness:settle()
+		return harness
+	end
+
+	it("keeps playing it into the next context instead of starting it over", function()
+		local harness = on_title_screen({ { name = "a.mp3", duration = 200 } })
+
+		harness:state("music_game_state", "main_menu")
+		harness:settle()
+
+		assert_equal(#harness.client.plays, 1)
+		assert_equal(harness:playing(), "character_select/a.mp3")
+		assert_equal(harness:logged("[playback] character_select: continuing character_select/a.mp3, the same song as title_screen/a.mp3"), true)
+		assert_equal(harness.engine:wwise_state("music_game_state"), "None")
+	end)
+
+	it("counts a failure of the continued song against the context it continued into", function()
+		local harness = on_title_screen({ { name = "a.mp3", duration = 200 } })
+		harness:state("music_game_state", "main_menu")
+		harness:settle()
+
+		harness:finish_song(0, true)
+
+		assert_equal(harness:last_play().file_path, "character_select/a.mp3")
+	end)
+
+	it("starts over for a different file of the same name, or a folder with more than that song", function()
+		local resized = on_title_screen({ { name = "a.mp3", duration = 200, size = 2 } })
+		resized:state("music_game_state", "main_menu")
+		resized:settle()
+		assert_equal(#resized.client.plays, 2)
+
+		local several = on_title_screen({ { name = "a.mp3", duration = 200 }, { name = "b.mp3", duration = 200 } })
+		several:state("music_game_state", "main_menu")
+		several:settle()
+		assert_equal(#several.client.plays, 2)
+	end)
+end)
+
 describe("MusicReplacer.lua native music events", function()
 	local EXPLORATION_EVENT = "wwise/events/music/play_exploration_music"
 

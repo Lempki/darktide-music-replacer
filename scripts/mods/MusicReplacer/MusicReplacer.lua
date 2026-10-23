@@ -250,16 +250,8 @@ local function play_context(context_name, is_new_context)
 
 	Suppression.engage(context_name)
 
-	local loudness = Loudness.describe(file_path)
-	log(string.format("[playback] %s: %s %s%s (duration=%s%s%s)",
-		context_name, start_position and "resuming" or "playing", file_path,
-		start_position and string.format(" at %.1fs", start_position) or "",
-		tostring(duration), is_only_file and ", looping" or "", loudness and (", " .. loudness) or ""))
-
-	playing_track = { context_name = context_name, file_path = file_path, duration = duration, is_only_file = is_only_file }
-
 	-- A single file loops from its first play, with no seam, so it needs no end fade.
-	AudioClient.play(file_path, {
+	local opts = {
 		duration_seconds = not is_only_file and duration or nil,
 		fade_in = is_new_context,
 		loop = is_only_file,
@@ -302,7 +294,27 @@ local function play_context(context_name, is_new_context)
 
 			play_context(context_name, false)
 		end,
-	})
+	}
+
+	-- A lone song that the new context's folder holds alone too keeps playing instead of starting over.
+	-- The player put the same song in both folders, so it is one piece of music across both contexts.
+	local previous = playing_track
+	if is_new_context and is_only_file and previous and previous.is_only_file and AudioClient.is_playing()
+		and Library.same_song(previous.file_path, file_path) and AudioClient.retarget(file_path, opts) then
+		log(string.format("[playback] %s: continuing %s, the same song as %s", context_name, file_path, previous.file_path))
+		playing_track = { context_name = context_name, file_path = file_path, duration = duration, is_only_file = true, position = previous.position }
+		return
+	end
+
+	local loudness = Loudness.describe(file_path)
+	log(string.format("[playback] %s: %s %s%s (duration=%s%s%s)",
+		context_name, start_position and "resuming" or "playing", file_path,
+		start_position and string.format(" at %.1fs", start_position) or "",
+		tostring(duration), is_only_file and ", looping" or "", loudness and (", " .. loudness) or ""))
+
+	playing_track = { context_name = context_name, file_path = file_path, duration = duration, is_only_file = is_only_file }
+
+	AudioClient.play(file_path, opts)
 end
 
 -- Context changes are debounced, so a state that flickers and returns does not restart the track.

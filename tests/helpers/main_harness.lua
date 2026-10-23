@@ -41,6 +41,20 @@ local function new_library(files)
 		return context_name .. "/" .. list[index].name, list[index].duration, #list == 1
 	end
 
+	-- Copies of one song share a name and a size, which an entry's `size` stands in for, 1 by default.
+	function library.same_song(file_path, other_path)
+		local function entry_of(path)
+			local folder, name = path:match("^(.*)/([^/]+)$")
+			for _, entry in ipairs(library.files[folder] or {}) do
+				if entry.name == name then
+					return entry
+				end
+			end
+		end
+		local entry, other = entry_of(file_path), entry_of(other_path)
+		return entry ~= nil and other ~= nil and entry.name == other.name and (entry.size or 1) == (other.size or 1)
+	end
+
 	function library.find_file(context_name, file_path)
 		local list = library.files[context_name] or {}
 		for _, entry in ipairs(list) do
@@ -84,6 +98,16 @@ local function new_audio_client()
 		client.current = { file_path = file_path, opts = opts }
 		client.plays[#client.plays + 1] = client.current
 		client.elapsed = 0
+		return true
+	end
+
+	function module.retarget(file_path, opts)
+		if not client.current then
+			return false
+		end
+		client.current.file_path = file_path
+		client.current.opts.on_finished = opts.on_finished
+		client.retargets = (client.retargets or 0) + 1
 		return true
 	end
 

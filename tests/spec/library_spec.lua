@@ -125,6 +125,31 @@ describe("library.lua listing", function()
 		assert_equal(Library.update(0.016), false)
 	end)
 
+	it("takes two files for one song when they share a name and a size", function()
+		local disk = { title_screen = { "a.mp3" }, character_select = { "a.mp3", "b.mp3" }, hub = { "a.mp3" } }
+		local sizes = { ["title_screen/a.mp3"] = "100:1:2", ["character_select/a.mp3"] = "100:3:4", ["character_select/b.mp3"] = "100:1:2", ["hub/a.mp3"] = "200:1:2" }
+		local engine = FakeEngine.new()
+		local Library = engine:load("library")
+		local folders = new_audio_folders(disk, {})
+		local list = folders.list
+		function folders.list(folder)
+			local names = list(folder)
+			local key = folder:match("([^/]+)$")
+			local stamps = {}
+			for _, name in ipairs(names or {}) do
+				stamps[name] = sizes[key .. "/" .. name]
+			end
+			return names, names and stamps
+		end
+		Library.init(nil, folders)
+		Library.update(0.016)
+
+		assert_equal(Library.same_song("title_screen/a.mp3", "character_select/a.mp3"), true)
+		assert_equal(Library.same_song("title_screen/a.mp3", "character_select/b.mp3"), false)
+		assert_equal(Library.same_song("title_screen/a.mp3", "hub/a.mp3"), false)
+		assert_equal(Library.same_song("title_screen/a.mp3", nil), false)
+	end)
+
 	it("lists nothing before the first update", function()
 		local engine = FakeEngine.new()
 		local Library = engine:load("library")

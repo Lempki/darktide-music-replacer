@@ -7,6 +7,7 @@ This is Music Replacer, a mod for Warhammer 40,000: Darktide that replaces the g
 * Replaces hub, mission-explore, combat, horde, boss, event, last stand, victory, and defeat music with your own audio files, and gives Mortis Trials its own wave and break music.
 * Several files in a folder are picked at random, never repeating the file that just played.
 * Exactly one file in a folder loops seamlessly and indefinitely.
+* When the next situation's folder holds only the song that is already playing, such as the same song in `title_screen` and `character_select`, it keeps playing instead of starting over. A copy counts as the same song when it has the same file name and size.
 * Switching between songs is a true crossfade: the outgoing song fades out while the incoming one fades in.
 * Explore and combat songs, and Mortis Trials wave and break songs, continue from where they stopped when the music switches back to them, instead of restarting. Horde, boss, and event songs continue too after higher-priority music interrupts them, such as a boss during a horde or a last stand during an event, as long as that horde, fight, or event is still going.
 * Follows the in-game master and music volume sliders at once, in both directions, without restarting the song.

@@ -357,6 +357,18 @@ function Library.disk_path(file_path)
 	return AUDIO_ROOT .. "/" .. file_path
 end
 
+-- True when two listed files are copies of one song: the same file name and the same size.
+-- A copy keeps both, while a different encoding of the same song changes its size, so that counts as another song.
+function Library.same_song(file_path, other_path)
+	if not (file_path and other_path) then
+		return false
+	end
+
+	local size = (stamps[file_path] or ""):match("^(%d+):")
+	local other_size = (stamps[other_path] or ""):match("^(%d+):")
+	return size ~= nil and size == other_size and file_path:match("[^/]+$") == other_path:match("[^/]+$")
+end
+
 -- Returns the same values as pick_file() for one specific file, or nil if the context no longer has it.
 -- A song resumed after a rescan may have been removed, or its folder may have gained or lost files.
 function Library.find_file(context_name, file_path)
