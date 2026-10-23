@@ -118,6 +118,7 @@ darktide-music-replacer/
 ├── .gitignore                           # Its managed block is synced from dev-standards.
 ├── .luacheckrc                          # luacheck settings: LuaJIT, and the globals the game and DMF provide.
 ├── .pre-commit-config.yaml              # The dev-standards hooks and file hygiene checks.
+├── LICENSE                              # MIT. It stays in the repository and is not packaged into the ZIP.
 ├── MusicReplacer.mod
 ├── info.json                            # Version and author metadata, read by DMF at mod init.
 ├── scripts/mods/MusicReplacer/
