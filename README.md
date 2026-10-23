@@ -276,6 +276,12 @@ The mod always logs the important events, such as which music plays and why, and
 If you are asked for more detail, turn on Detailed Logging in the Debug group of the mod options and play until the problem happens again.
 What the detailed lines mean is explained in [docs/wwise-events.md](docs/wwise-events.md) and [docs/game-internals.md](docs/game-internals.md).
 
+## Credits
+
+* [Darktide Mod Loader](https://www.nexusmods.com/warhammer40kdarktide/mods/19) and [Darktide Mod Framework](https://www.nexusmods.com/warhammer40kdarktide/mods/8), which this mod builds on.
+* [Audio Plugin](https://www.nexusmods.com/warhammer40kdarktide/mods/196) and [Darktide Local Server](https://www.nexusmods.com/warhammer40kdarktide/mods/211), which early versions of this mod played their music through.
+* [Simple Audio](https://www.nexusmods.com/warhammer40kdarktide/mods/929) and [Darktide DJ - Music Picker and Shuffler](https://www.nexusmods.com/warhammer40kdarktide/mods/1118), whose takes on custom and situational music inspired this mod.
+
 ## Development
 
 Building, testing, how playback works, the project structure, and the roadmap are covered in [docs/development.md](docs/development.md).
