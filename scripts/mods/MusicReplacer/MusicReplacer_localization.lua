@@ -30,7 +30,7 @@ local strings = {
 		en = "Rescan",
 	},
 	rescan_audio_tooltip = {
-		en = "Lists the audio folders again at once, and measures every song again.\n\n" ..
+		en = "Lists the audio folders again at once, and checks every song again.\n\n" ..
 			"The mod notices added, removed, and replaced files by itself a few seconds after they change. " ..
 			"This button is for drives where Windows cannot report changes, such as some network drives, " ..
 			"and for trying a song again that would not play.",
@@ -39,7 +39,7 @@ local strings = {
 		en = "Resume Songs",
 	},
 	resume_songs_tooltip = {
-		en = "Explore, combat, and Mortis Trials songs continue where they stopped when their music comes back.\n\n" ..
+		en = "Explore, combat, Expedition, and Mortis Trials songs continue where they stopped when their music comes back.\n\n" ..
 			"Horde, boss, and event songs continue too after an interruption, while that horde, fight, or event lasts. " ..
 			"Every mission and hub visit starts with fresh songs.",
 	},

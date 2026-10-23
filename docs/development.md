@@ -48,6 +48,64 @@ CI runs dev-standards' Lua workflow on every push to `main` and every pull reque
 * `%APPDATA%\Fatshark\Darktide\MusicReplacer\diagnostic.log`, with the previous launch's log beside it as `diagnostic-prev.log`. Detailed Logging adds the game's music state changes, the silencing, and the game's sound events.
 * The game's console logs, in `%APPDATA%\Fatshark\Darktide\console_logs\`.
 
+## How playback works
+
+Music Replacer decodes the files with Media Foundation, Windows' own media framework, and plays them with XAudio2 2.9, the audio engine Windows provides for games.
+It calls both from Lua through LuaJIT's ffi, which the mod loader exposes as `Mods.lua.ffi`, so the mod ships no DLL or executable.
+Media Foundation starts in its lite mode, which leaves its network support uninitialized, since the mod only opens local files.
+
+### Decoding and streaming
+
+* `media_decoder.lua` asks Media Foundation for 16-bit PCM and reads it synchronously on the game's thread, a chunk at a time, so no Windows thread ever calls back into Lua.
+* `player.lua` gives each stream a fixed pool of 16 slots of 0.25 seconds each, on the Windows heap and outside the game's Lua memory.
+  That keeps 4 seconds queued, so the music plays on through a stalled frame or a busy loading screen.
+* Each pool is allocated once per stream, about 0.7 MB for 44.1 kHz stereo, and grows with the rate and the channels.
+* A stream queues 2 slots before it starts, and each update refills at most 2, so no single frame pays for a whole refill.
+* A looping stream reads on from the file's start in the same buffer, so the loop adds no gap.
+  Silence the file carries itself, such as an MP3's encoder padding, still plays.
+* XAudio2 voice state is polled every update rather than reported through callbacks, since LuaJIT cannot safely take calls from XAudio2's thread.
+
+### Fades and parked songs
+
+* A context change is a 2-second crossfade on an equal-power curve.
+  A song that does not loop fades out over its last 2 seconds, and a stop fades out over half a second.
+* A song that fades out is paused and parked rather than freed.
+  If the mod resumes it, the same stream fades back in from exactly where it stopped, with nothing reopened or sought.
+* Each parked song keeps its 4-second buffer pool, about 0.7 MB for 44.1 kHz stereo, and its file open.
+  It is freed after 60 seconds, and beyond 4 parked songs the oldest is freed first.
+* The master and music sliders, Custom Music Volume, and the menu fade set every stream's gain directly, so no volume change restarts a song.
+
+### Device recovery
+
+* The mastering voice is created with no device ID, so XAudio2 uses Windows' virtual audio client and follows a change of the default audio device by itself.
+* A voice that has audio queued but plays nothing for 2 seconds counts as a lost device, since XAudio2 does not report that stall itself.
+* When the device is lost in a way XAudio2 cannot follow, the mod rebuilds the engine and resumes the song where it was.
+* After 3 rebuilds in a row without 30 seconds of good playback in between, the next failure gives up, and the game's music plays.
+  Rescan Audio Folders, or turning the mod off and on, lets it try again.
+* While Windows has no audio output at all, creating the engine fails.
+  The game's music plays, and the mod tries again every 5 seconds without counting it as a failure, so a headset that stays unplugged never makes it give up.
+
+### Evening out loudness
+
+* `loudness_meter.lua` measures each song's integrated loudness in LUFS following ITU-R BS.1770 and EBU R128: 400 ms blocks every 100 ms, an absolute gate at -70 LUFS, and a relative gate 10 LU below.
+* Every song plays at the level that brings it to -14 LUFS, the level most streaming services play music at.
+* A quiet song is only raised until its loudest sample reaches full scale, so it never clips, and by at most 12 dB, since raising a very quiet recording further mostly raises its hiss.
+* `loudness.lua` decodes each whole song for this, in 50 ms chunks, for at most about a millisecond per update, starting with the folder of the context that plays.
+  It only measures while Even Out Loudness is on.
+* The log says how long measuring took once every song is measured.
+* The results go to `loudness.txt` beside `diagnostic.log`, keyed by each file's size and write time, so a song is measured once and again only after its file changes.
+  It is written every 10 songs, once measuring is done, and on unload.
+  Deleting it measures every song again.
+* A song keeps the level it started with, so one measured while it plays changes level at its next start.
+
+### File checks
+
+* `library.lua` measures every file's duration in the background, one file per update.
+  A file Media Foundation cannot open is left out of the picks from then on.
+* A track that ends within 3 seconds of starting, and before half its length, did not really play.
+  After 3 in a row from one folder, that folder stops retrying until the folders are listed again.
+  An override folder then gives way to the next folder, and a context's own folder to the game's music.
+
 ## Project structure
 
 ```
