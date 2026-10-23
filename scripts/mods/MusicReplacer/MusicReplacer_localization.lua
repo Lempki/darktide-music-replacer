@@ -9,15 +9,14 @@ end
 -- Each tooltip says what its setting does, then gives the notes that matter in a second paragraph.
 -- The README keeps the full explanations.
 
--- Every context's dropdown ends with what an empty folder plays, since that is the question players ask most.
-local EMPTY_FOLDER_NOTE = "\n\nAn empty folder plays the game's own music, except with " .. highlight("Silence") .. "."
-
 -- Every context's dropdown offers the same choices, so their tooltips share the explanation.
-local function source_tooltip(when)
+-- `note`, if given, is one more sentence about that context.
+local function source_tooltip(when, note)
 	return "What plays " .. when .. ".\n\n" ..
 		highlight("Custom") .. " plays your songs from its folder. " ..
 		highlight("Vanilla") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing." ..
-		EMPTY_FOLDER_NOTE
+		(note and " " .. note or "") ..
+		"\n\nWith " .. highlight("Custom") .. ", an empty folder plays the game's music."
 end
 
 local strings = {
@@ -31,9 +30,10 @@ local strings = {
 		en = "Rescan",
 	},
 	rescan_audio_tooltip = {
-		en = "Lists the audio folders again at once.\n\n" ..
+		en = "Lists the audio folders again at once, and measures every song again.\n\n" ..
 			"The mod notices added, removed, and replaced files by itself a few seconds after they change. " ..
-			"This button is for drives where Windows cannot report changes, such as some network drives.",
+			"This button is for drives where Windows cannot report changes, such as some network drives, " ..
+			"and for trying a song again that would not play.",
 	},
 	resume_songs = {
 		en = "Resume Songs",
@@ -56,42 +56,15 @@ local strings = {
 	source_silence = {
 		en = "Silence",
 	},
-	source_loading = {
-		en = "Loading",
-	},
-	source_loading_tooltip = {
-		en = "What plays on loading screens that lead anywhere but into a mission: after starting the game, after a mission, and on the way to Meat Grinder.\n\n" ..
-			highlight("Custom") .. " plays your songs from its folder. " ..
-			highlight("Vanilla") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing." ..
-			EMPTY_FOLDER_NOTE,
-	},
-	source_mission_briefing = {
-		en = "Mission Briefing",
-	},
-	source_mission_briefing_tooltip = {
-		en = "What plays on the loading screens and the briefing on the way into a mission, also when joining a mission in progress.\n\n" ..
-			highlight("Custom") .. " plays your songs from its folder. " ..
-			highlight("Vanilla") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing. " ..
-			"The intro itself keeps the game's music, and a song interrupted by the preparation screen continues in the briefing." ..
-			EMPTY_FOLDER_NOTE,
-	},
-	source_mission_preparation = {
-		en = "Mission Preparation",
-	},
-	source_mission_preparation_tooltip = {
-		en = "What plays on the mission preparation screen, where the party stands together before a mission and can still change loadouts.\n\n" ..
-			highlight("Custom") .. " plays your songs from its folder. " ..
-			highlight("Vanilla") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing." ..
-			EMPTY_FOLDER_NOTE,
-	},
 	source_meat_grinder = {
 		en = "Meat Grinder",
 	},
 	source_meat_grinder_tooltip = {
 		en = "What plays in the Meat Grinder training area.\n\n" ..
 			highlight("Custom") .. " plays your explore and combat songs, which is a quick way to test them. " ..
-			highlight("Vanilla") .. " plays the game's combat music, and " .. highlight("Silence") .. " keeps the area quiet.\n\n" ..
-			"With " .. highlight("Custom") .. ", empty explore and combat folders play the game's own music.",
+			highlight("Vanilla") .. " plays the game's music there, which is none, so it sounds the same as " ..
+			highlight("Silence") .. ".\n\n" ..
+			"With " .. highlight("Custom") .. ", empty explore and combat folders play the game's music.",
 	},
 
 	volume = {
@@ -106,7 +79,7 @@ local strings = {
 	},
 	custom_music_volume_tooltip = {
 		en = "How loud your songs play, on top of the game's master and music volume.\n\n" ..
-			"At " .. highlight("100%%") .. " they play as loud as the files themselves. The game's own music is not affected.",
+			"At " .. highlight("100%%") .. " they play as loud as the files themselves. The game's music is not affected.",
 	},
 	normalize_loudness = {
 		en = "Even Out Loudness",
@@ -131,8 +104,8 @@ local strings = {
 		en = "Boss Music for Captains",
 	},
 	captain_boss_music_tooltip = {
-		en = "Plays your boss music while a captain, including the Karnak Twins, is in the fight.\n\n" ..
-			highlight("Off") .. " leaves captains to the game's own music.",
+		en = "Plays your boss music while a captain is in the fight.\n\n" ..
+			highlight("Off") .. " leaves captains to the game's music. During an event, event music still plays.",
 	},
 	daemonhost_boss_music = {
 		en = "Boss Music for Daemonhosts",
@@ -153,7 +126,7 @@ local strings = {
 	},
 	combat_hold_seconds_tooltip = {
 		en = "How long combat music keeps playing after a fight quiets down, so a short lull does not switch to explore music.\n\n" ..
-			"Set to " .. highlight("0") .. " to switch at once.",
+			"Set to " .. highlight("0") .. " to follow the game exactly.",
 	},
 	horde_hold_seconds = {
 		en = "Horde Music Hold",
@@ -191,8 +164,9 @@ local strings = {
 		en = "Debug Overlay",
 	},
 	debug_overlay_tooltip = {
-		en = "Shows the current context, the song playing, and its volume in a corner of the screen, on every screen, loading screens included.\n\n" ..
-			"Meant for checking what the mod does, such as which context a moment counts as.",
+		en = "Shows which situation the mod sees, the song playing, and its volume in a corner of the screen, " ..
+			"on every screen, loading screens included.\n\n" ..
+			"Useful for checking which music a moment counts as.",
 	},
 	debug_overlay_corner = {
 		en = "Overlay Corner",
@@ -215,26 +189,40 @@ local strings = {
 		en = "Top Right",
 	},
 	diagnostic_mode_tooltip = {
-		en = "Adds the game's raw music states, the silencing of its music, and its sound events to " .. highlight("diagnostic.log") .. ".\n\n" ..
+		en = "Writes much more to " .. highlight("diagnostic.log") .. ": every change in the game's music, " ..
+			"each time the mod silences it, and the game's sound events.\n\n" ..
 			"The important events are always logged, which is enough for most bug reports. " ..
-			"The detailed lines add up quickly, so turn this on only while tracking down a problem.",
+			"The extra lines add up quickly, so turn this on only while tracking down a problem.",
 	},
 }
 
--- Each context's dropdown title, and when it plays, for the contexts that share the common tooltip.
--- The loading screens and Meat Grinder have tooltips of their own above.
+-- Each context's dropdown title, when it plays, and an optional note, for the contexts that share the common tooltip.
+-- Meat Grinder has a tooltip of its own above.
 local CONTEXT_TEXT = {
 	title_screen = { "Title Screen", "on the title screen, before character select" },
 	character_select = { "Character Select", "on the character select screen, also while creating a character" },
 	hub = { "Hub", "in the Mourningstar" },
+	loading = {
+		"Loading",
+		"on loading screens that lead anywhere but into a mission: after starting the game, after a mission, and on the way to Meat Grinder",
+	},
+	mission_preparation = {
+		"Mission Preparation",
+		"on the mission preparation screen, where the party stands together before a mission and can still change loadouts",
+	},
+	mission_briefing = {
+		"Mission Briefing",
+		"on the loading screens and the briefing on the way into a mission, also when joining a mission in progress",
+		"The intro itself keeps the game's music, and a song interrupted by the preparation screen continues in the briefing.",
+	},
 	explore = { "Explore", "in a mission while nothing threatens you" },
-	combat = { "Combat", "while enemies attack you outside a horde or a boss fight" },
+	combat = { "Combat", "in a mission while enemies attack you, outside a horde or a boss fight" },
 	horde = { "Horde", "during a horde" },
 	boss = { "Boss", "while a monstrosity is near you" },
 	event = { "Event", "while a mission event plays its music, and through a whole Operation" },
-	last_stand = { "Last Stand", "while only one player of the team is alive" },
-	victory = { "Victory", "after a mission is won" },
-	defeat = { "Defeat", "after a mission is lost" },
+	last_stand = { "Last Stand", "while only one player of the team is left alive" },
+	victory = { "Victory", "after a mission is won, until the loading screen" },
+	defeat = { "Defeat", "after a mission is lost, until the loading screen" },
 	mortis_trials_wave = { "Mortis Trials Wave", "during a Mortis Trials wave" },
 	mortis_trials_break = { "Mortis Trials Break", "between Mortis Trials waves" },
 	expedition_combat = { "Expedition Combat", "during a fight in an Expedition" },
@@ -246,7 +234,7 @@ for _, context in ipairs(Contexts.list) do
 	local text = CONTEXT_TEXT[context.id]
 	if text then
 		strings["source_" .. context.id] = { en = text[1] }
-		strings["source_" .. context.id .. "_tooltip"] = { en = source_tooltip(text[2]) }
+		strings["source_" .. context.id .. "_tooltip"] = { en = source_tooltip(text[2], text[3]) }
 	end
 end
 

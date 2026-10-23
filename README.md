@@ -98,7 +98,7 @@ These are in the in-game mod options under Music Replacer, in six groups, in the
 
 | Setting | Default | What it does |
 |---|---|---|
-| Rescan Audio Folders | (button) | Lists the audio folders again at once. The mod already notices added, removed, and replaced files by itself a few seconds after they change, so this is for drives where Windows cannot report changes, such as some network drives. |
+| Rescan Audio Folders | (button) | Lists the audio folders again at once, and measures every song again. The mod already notices added, removed, and replaced files by itself a few seconds after they change, so this is for drives where Windows cannot report changes, such as some network drives, and for trying a song again that would not play. |
 | Resume Songs | On | When explore or combat music, or a Mortis Trials wave or break, comes back, its song continues from where it stopped. A horde, boss, or event song also continues after higher-priority music interrupts it, such as a boss during a horde or a last stand during an event, as long as that horde, fight, or event did not end in between. A new horde, boss fight, or event gets a new pick. A new song is also picked once one ends on its own. Every mission and hub visit starts with fresh songs. A mission loading song that the mission preparation screen interrupts continues in the briefing after it. |
 
 ### Music per Situation
@@ -111,7 +111,7 @@ One dropdown per context: Title Screen, Character Select, Hub, Loading, Mission 
 | Vanilla | The game's own music, even with songs in the folder, so you can turn one context off without moving files. |
 | Silence | Nothing. The game's own music is silenced too. |
 
-Meat Grinder defaults to Silence. There, Custom plays your explore and combat songs, which is a quick way to test them, and Vanilla plays the game's combat music. A changed choice applies at once, also to the context playing now.
+Meat Grinder defaults to Silence. There, Custom plays your explore and combat songs, which is a quick way to test them, and Vanilla plays the game's music there, which is none, so it sounds the same as Silence. A changed choice applies at once, also to the context playing now.
 
 ### Volume
 
@@ -125,14 +125,14 @@ Meat Grinder defaults to Silence. There, Custom plays your explore and combat so
 
 | Setting | Default | What it does |
 |---|---|---|
-| Boss Music for Captains | Off | On plays your boss music for a captain, including the Karnak Twins, from the moment it engages until it dies. Off leaves captains to the game's own music. Event music still plays during an event. |
+| Boss Music for Captains | Off | On plays your boss music for a captain from the moment it engages until it dies. Off leaves captains to the game's own music. Event music still plays during an event. |
 | Boss Music for Daemonhosts | Off | Off follows the game, which plays no music for an angered daemonhost. On plays your boss music from the moment a daemonhost is angered until it dies. |
 
 ### Music Holds
 
 | Setting | Default | What it does |
 |---|---|---|
-| Combat Music Hold | 8 seconds | How long combat music keeps playing after a fight quiets down, so a short lull does not switch to explore music. Set it to 0 to switch immediately. |
+| Combat Music Hold | 8 seconds | How long combat music keeps playing after a fight quiets down, so a short lull does not switch to explore music. Set it to 0 to follow the game exactly. |
 | Horde Music Hold | 3 seconds | How long horde music keeps playing after the game stops reporting a horde. The game drops its horde signal for a second or two whenever few enemies are on you, so a short hold keeps the track from restarting. Set it to 0 to follow the game exactly. |
 | Boss Music Hold | 3 seconds | How long boss music keeps playing after the game stops reporting a boss that is still alive. The game drops its boss signal for a second or two now and then during a boss fight, so a short hold keeps the track from switching away and back. Boss music still ends as soon as the boss dies. Set it to 0 to follow the game exactly. |
 | Event Music Hold | 5 seconds | How long event music keeps playing after the game ends an event's music. Some events pause their music for a few seconds between stages, so a short hold keeps the event's song from starting over at every stage. Set it to 0 to follow the game exactly. |
@@ -194,7 +194,7 @@ The mod always logs the important events, such as which music plays and why, and
 * [x] Custom music for the last stand, when only one player of the team is still alive.
 * [x] Custom music for mission events, such as holdouts, escapes, and scripted boss fights.
 * [x] A setting for whether angered daemonhosts play boss music, off by default.
-* [x] A setting for whether captains, including the Karnak Twins, play boss music, off by default.
+* [x] A setting for whether captains play boss music, off by default.
 * [x] A button in the mod settings that rescans the audio folders without a restart.
 * [x] Custom music for hordes, with the game's own horde music when the folder is empty, and its own hold setting.
 * [x] Songs continuing from where they left off: explore and combat whenever they come back, and a horde, boss fight, or event after an interruption while it is still going.

@@ -27,7 +27,7 @@ end
 
 return {
 	name = "Music Replacer",
-	description = "Plays your own music in the hub and missions, chosen by what is happening in the game.",
+	description = "Plays your own music in the hub and missions, chosen by what is happening in the game, and keeps the game's music wherever you add none.",
 	is_togglable = true,
 	options = {
 		widgets = {

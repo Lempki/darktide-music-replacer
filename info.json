@@ -1,5 +1,5 @@
 {
   "version": "0.1.0",
   "author": "Kempli",
-  "description": "Replaces Darktide's music with your own files per context, keeping the game's music wherever you add none."
+  "description": "Plays your own music in the hub and missions, chosen by what is happening in the game, and keeps the game's music wherever you add none."
 }
