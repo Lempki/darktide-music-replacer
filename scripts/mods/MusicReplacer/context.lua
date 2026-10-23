@@ -697,6 +697,12 @@ function Context.init(mod, detail_logger)
 		return after_set_state(mod, group_name, current, new_state, is_transition, func(self, group_name, new_state))
 	end)
 
+	-- The game sends its boss extension with both events, so both lines can name the breed.
+	local function breed_name_of(boss_extension)
+		local breed = boss_extension and boss_extension._breed
+		return breed and breed.name or "<unknown>"
+	end
+
 	-- Managers.event:register needs the callback as a string method name, looked up on the registered object.
 	-- Passing a function registers without error, then crashes the game when the event fires.
 	-- A repeated start for an open unit keeps its window as it is, and is not logged.
@@ -706,8 +712,7 @@ function Context.init(mod, detail_logger)
 			return
 		end
 
-		local breed = boss_extension and boss_extension._breed
-		local breed_name = breed and breed.name or "<unknown>"
+		local breed_name = breed_name_of(boss_extension)
 		log_detail(string.format("[raw] boss_encounter_start breed=%s", breed_name))
 
 		if unit then
@@ -722,8 +727,8 @@ function Context.init(mod, detail_logger)
 		recompute(mod)
 	end
 
-	function mod:on_boss_end(unit)
-		log_detail("[raw] boss_encounter_end")
+	function mod:on_boss_end(unit, boss_extension)
+		log_detail(string.format("[raw] boss_encounter_end breed=%s", breed_name_of(boss_extension)))
 
 		local closed = unit and open_bosses[unit]
 		if closed then

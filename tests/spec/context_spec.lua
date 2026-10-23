@@ -149,7 +149,7 @@ describe("context.lua state logging", function()
 		assert_equal((Context.current()), nil)
 	end)
 
-	it("logs a boss encounter's start once, however often the game repeats it", function()
+	it("logs a boss encounter's start once, however often the game repeats it, and its end with the breed", function()
 		local engine = FakeEngine.new()
 		local Context = engine:load("context")
 		local lines = {}
@@ -165,7 +165,7 @@ describe("context.lua state logging", function()
 
 		assert_deep_equal(lines, {
 			"[raw] boss_encounter_start breed=chaos_spawn",
-			"[raw] boss_encounter_end",
+			"[raw] boss_encounter_end breed=chaos_spawn",
 			"[raw] boss_encounter_start breed=chaos_spawn",
 		})
 	end)
