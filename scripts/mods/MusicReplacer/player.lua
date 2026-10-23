@@ -1,12 +1,14 @@
 -- Plays songs inside the game: each stream is a Media Foundation decoder feeding an XAudio2 voice.
--- A stream decodes into a fixed pool of buffers on the Windows heap, allocated once, so playing never grows the Lua heap.
+-- A stream decodes into a fixed pool of buffers on the Windows heap, allocated once per stream, so playing never grows the Lua heap.
 -- The pool keeps several seconds queued, so the music plays on while the game's thread stalls, as it can during loading.
 -- A stream's volume is its gain times its fade. The gain follows settings such as the sliders, and the fade shapes fades and crossfades.
 
 local Player = {}
 
+-- The audio each pool slot holds. With SLOT_COUNT it sets how long the queue lasts through a stall.
+-- With FILLS_PER_UPDATE it sets how much one update can refill, half a second, far more than one frame plays.
 local CHUNK_SECONDS = 0.25
-local SLOT_COUNT = 16 -- 4 seconds queued.
+local SLOT_COUNT = 16 -- 4 seconds queued, well under the 64 buffers an XAudio2 voice can queue.
 local START_SLOTS = 2 -- Queued before a stream starts, so it never starts starved.
 local FILLS_PER_UPDATE = 2 -- Spreads decoding over frames, so no single frame pays for a whole refill.
 
@@ -121,7 +123,8 @@ local function fill(self, max_fills)
 		local bytes = self.decoder:read_into(slot, self.slot_bytes)
 
 		if self.loop and self.decoder:at_end() then
-			-- Gapless: the rest of this buffer continues from the file's start.
+			-- The rest of this buffer continues from the file's start, so looping adds no gap between the file's end and its start.
+			-- Silence the file carries itself, such as an MP3's encoder padding, still plays.
 			if not self.decoder:seek(0) then
 				self.file_failed = "it could not go back to its start to loop"
 				break
@@ -178,6 +181,7 @@ local function open_stream(path, opts)
 		return nil, format_error
 	end
 
+	-- Each slot holds whole frames, since Decoder:read_into() wants a multiple of the block size.
 	local slot_bytes = math.floor(CHUNK_SECONDS * format.nAvgBytesPerSec / format.nBlockAlign) * format.nBlockAlign
 	local pool = NativeFfi.alloc(slot_bytes * SLOT_COUNT)
 	if not pool then
@@ -216,6 +220,7 @@ local function open_stream(path, opts)
 		stalled_seconds = 0,
 	}, Stream)
 
+	-- The volume is set before the voice starts, since a new XAudio2 voice plays at volume 1 until told otherwise.
 	apply_volume(self)
 	fill(self, START_SLOTS)
 	voice_ok(self, voice:start())
@@ -225,7 +230,7 @@ end
 
 -- Opens `path` and starts it playing.
 -- Returns the stream, or nil, why, and whether XAudio2 refused the voice, which a dead engine also does.
--- opts.start_position starts partway in, in seconds. opts.loop repeats the file without a gap.
+-- opts.start_position starts partway in, in seconds. opts.loop repeats the file with no gap added between its end and its start.
 -- opts.gain and opts.fade set the starting levels, 1 by default.
 function Player.open(path, opts)
 	local started = clock()

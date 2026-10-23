@@ -28,7 +28,7 @@ function assert_equal(actual, expected, message)
 	end
 end
 
--- Returns the path of the first difference between two values, or nil when they are deeply equal.
+-- Describes the first difference between two values and where it is, or returns nil when they are deeply equal.
 local function find_difference(actual, expected, path)
 	if type(actual) ~= "table" or type(expected) ~= "table" then
 		if actual ~= expected then
@@ -83,6 +83,7 @@ end
 -- Discovery and running
 -- ###########################################################################
 
+-- Both commands list the specs in name order, so every system runs them in the same order.
 local function find_spec_files()
 	local spec_dir = REPO_ROOT .. "/tests/spec"
 	local command = IS_WINDOWS
@@ -107,6 +108,7 @@ for _, file in ipairs(spec_files) do
 	tests = {}
 	local ok, err = pcall(dofile, file)
 
+	-- A file that fails to load counts as one failure, and the tests it registered before the error still run.
 	if not ok then
 		failures = failures + 1
 		print(string.format("FAIL %s (load error)\n     %s", file, tostring(err)))

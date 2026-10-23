@@ -1,6 +1,6 @@
 -- Measures every song's loudness in the background, so each can play at the level that brings it to TARGET_LUFS.
 -- Measuring decodes a whole file, so it runs a little at a time, for at most MEASURE_MS per update, and frames stay smooth.
--- The results are kept in loudness.txt beside diagnostic.log, so a song is measured once and the music files are never changed.
+-- The results are kept in loudness.txt in the mod's own folder, so a song is measured once and the music files are never changed.
 -- A song is measured again once its file changes, which its size and write time show.
 -- A song keeps the level it started with, so one measured while it plays changes level only at its next start.
 
@@ -16,9 +16,11 @@ local MAX_BOOST_DB = 12
 local MIN_LUFS = -70
 local MAX_LUFS = 10
 
+-- One millisecond is the smallest step os.clock() takes on Windows, whose C runtime counts clock() in milliseconds.
+-- It is also a small share of a frame, about 6 percent of one at 60 frames per second.
 local MEASURE_MS = 1
 
--- Decoded per read. A short chunk keeps each update close to MEASURE_MS.
+-- Decoded per read. The time is checked only between reads, so a short chunk keeps an update from running far past MEASURE_MS.
 local CHUNK_SECONDS = 0.05
 
 local CACHE_FILE_NAME = "loudness.txt"
@@ -52,7 +54,8 @@ local unsaved_count = 0 -- Songs measured since loudness.txt was last written.
 local SAVE_EVERY_SONGS = 10
 local measured_ms = 0
 
--- Wall time in seconds, or nil where there is no clock, which measures one chunk per update.
+-- Wall time in seconds, since the Windows C runtime's clock() counts elapsed time rather than CPU time.
+-- It is nil where there is no clock, which measures one chunk per update.
 local function clock()
 	return _os and _os.clock and _os.clock() or nil
 end

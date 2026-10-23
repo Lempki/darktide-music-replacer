@@ -18,7 +18,7 @@ int32_t MusicReplacer_MFCreateSourceReaderFromURL(const uint16_t *url, void *att
 ]]
 
 local MF_VERSION = 0x00020070
-local MFSTARTUP_LITE = 1 -- Local files only, no network sources.
+local MFSTARTUP_LITE = 1 -- Leaves the sockets library uninitialized, since the mod only opens local files.
 
 local FIRST_AUDIO_STREAM = 0xFFFFFFFD
 local ALL_STREAMS = 0xFFFFFFFE
@@ -163,6 +163,7 @@ end
 local function configure_pcm(reader)
 	local out = ffi.new("void *[1]")
 
+	-- Only the first audio stream stays selected, so the reader decodes nothing that does not play.
 	call(reader, SET_STREAM_SELECTION, ALL_STREAMS, 0)
 	call(reader, SET_STREAM_SELECTION, FIRST_AUDIO_STREAM, 1)
 
@@ -390,6 +391,7 @@ function Decoder:seek(seconds)
 	end
 
 	local ok = NativeFfi.succeeded(call(self.reader, SET_CURRENT_POSITION, guids.null, position))
+	-- Audio kept from before the seek belongs to the old position, so it is dropped.
 	if ok then
 		self.source_ended = false
 		self.carry_bytes = 0

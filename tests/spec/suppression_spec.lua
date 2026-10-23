@@ -85,7 +85,7 @@ describe("suppression.lua combat", function()
 		end
 	end)
 
-	-- A boss that started under a custom track must get its native music back when the track stops.
+	-- A boss that started under a custom track must get the game's music back when the track stops.
 	-- The game only re-sends a state when it changes, so the release has to restore it.
 	it("restores the real combat state on release", function()
 		local engine, Suppression = load_suppression()

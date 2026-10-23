@@ -594,7 +594,7 @@ describe("audio_client.lua", function()
 end)
 
 describe("audio_client.lua volume", function()
-	-- Full sliders, so a stream's gain is the volume settings alone.
+	-- Loads a client with full sliders, so a stream's gain is the volume settings alone.
 	local function load_full_client()
 		local AudioClient, player, streams, sliders, lines = load_client()
 		sliders.option_master_slider = 100

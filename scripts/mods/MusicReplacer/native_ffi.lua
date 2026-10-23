@@ -150,7 +150,12 @@ function NativeFfi.kernel32()
 end
 
 -- CoInitializeEx would change how the calling thread runs COM for the whole game, so it is never called.
--- If this thread has no COM yet, CoIncrementMTAUsage lets it use the process-wide multithreaded apartment without joining it.
+-- If this thread has no COM yet, CoIncrementMTAUsage keeps the process-wide multithreaded apartment alive.
+-- The thread then runs in it implicitly, without initializing COM itself.
+-- Its cookie is never passed to CoDecrementMTAUsage, so the apartment outlives every COM object the mod creates.
+-- That holds across a mod reload too, which reruns this file and would lose a stored cookie anyway.
+-- The reloaded file finds the thread in the implicit apartment already, so it never adds a second count.
+-- The apartment ends with the game's process.
 function NativeFfi.ensure_com()
 	if com_ready then
 		return
@@ -200,6 +205,7 @@ function NativeFfi.call(object, index, signature, ...)
 	return NativeFfi.method(object, index, signature)(object, ...)
 end
 
+-- Calls IUnknown::Release, which is slot 2 of every COM object's vtable.
 function NativeFfi.release(object)
 	if object ~= nil then
 		NativeFfi.call(object, 2, "uint32_t (*)(void *)")
@@ -262,6 +268,7 @@ function NativeFfi.create_directories(path)
 	local prefix = nil
 	for part in path:gsub("/", "\\"):gmatch("[^\\]+") do
 		prefix = prefix and (prefix .. "\\" .. part) or part
+		-- A drive such as C: is a root, not a folder to create.
 		if not prefix:find(":$") then
 			kernel32.MusicReplacer_CreateDirectoryA(prefix, nil)
 		end

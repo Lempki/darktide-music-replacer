@@ -35,7 +35,7 @@ describe("context.lua catching up after being turned off", function()
 		harness:cold_start_to_hub()
 		harness:leave_hub()
 
-		-- Turned off on the way in, so the hook sees none of the trip.
+		-- The mod is turned off on the way in, so the hook sees none of the trip.
 		for _, step in ipairs({ { "music_game_state", "loadout" }, { "music_game_state", "mission_briefing" },
 			{ "music_zone", "zone_3" }, { "music_game_state", "mission_intro" }, { "music_game_state", "mission" } }) do
 			harness.engine:set_state_unseen(step[1], step[2])

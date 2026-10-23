@@ -1,13 +1,13 @@
 -- Drives context.lua through the fake engine and records every context it resolves.
 -- The sequence methods set the music states in the order the game sets them, so the specs exercise real transitions.
--- Time only passes through wait() and tick(), in steps no longer than one game frame.
+-- Time only passes through wait() and tick(), and wait() splits its time into steps of at most FRAME_SECONDS.
 
 local FakeEngine = require("tests.helpers.fake_engine")
 
 local Harness = {}
 Harness.__index = Harness
 
--- The defaults of the mod's own settings.
+-- The longest single step wait() takes, standing in for one game frame.
 local FRAME_SECONDS = 0.1
 
 -- Settings not given read as the mod's defaults, as in the game.

@@ -14,7 +14,8 @@ local RELATIVE_GATE_LU = -10
 
 -- Each channel's weight by channel count, in the WAVE order that XAudio2 also plays them in. The LFE channel does not count.
 -- XAudio2 plays a mono song at full level on both speakers, so it counts twice, as it sounds.
--- The surrounds beside the listener weigh 1.41 and the ones behind 1, as BS.1770 sets them.
+-- The surround pair weighs 1.41, as BS.1770 sets it. Quad and 5.x carry it on their back pair.
+-- 7.1 carries it on its side pair, and its back pair sits behind the listener, which weighs 1.
 local CHANNEL_WEIGHTS = {
 	[1] = { 2 },
 	[4] = { 1, 1, 1.41, 1.41 }, -- Quad: front left and right, back left and right.

@@ -1,9 +1,9 @@
 -- Plays PCM audio through XAudio2, Windows' game audio engine, through LuaJIT's ffi.
 -- XAudio2 mixes and plays on its own thread, so the game only needs to keep each voice's queue topped up.
--- No callback is ever registered, since LuaJIT cannot take calls from XAudio2's thread. Voice state is polled instead.
--- XAudio2 reads a submitted buffer while it plays, so the caller keeps each buffer alive until the voice's queue has moved past it.
--- An error from XAudio2's own family, or a lost audio endpoint, means the engine failed and must be recreated.
--- Any other error, such as a bad argument, fails only the voice it came from.
+-- No callback is ever registered, since LuaJIT cannot safely take calls from XAudio2's thread. Voice state is polled instead.
+-- XAudio2 reads a submitted buffer's audio while it plays, so the caller keeps that memory alive until the queue has moved past it.
+-- An error in XAudio2's own facility or in the Windows audio client's counts as a failed engine, so it and every voice must be made again.
+-- Any other error fails only the voice it came from.
 -- Docs: https://learn.microsoft.com/en-us/windows/win32/xaudio2/xaudio2-introduction
 
 local XAudio = {}
@@ -34,10 +34,19 @@ typedef struct {
 int32_t MusicReplacer_XAudio2Create(void **engine, uint32_t flags, uint32_t processor) __asm__("XAudio2Create");
 ]]
 
+-- XAudio2's default processor, processor 1. Microsoft advises it over choosing processors, which can get in the scheduler's way.
+-- Setting more than one processor bit would also start a worker thread for each.
 local XAUDIO2_DEFAULT_PROCESSOR = 1
+
+-- XAudio2's own default for the highest frequency ratio a voice allows.
+-- The mod never changes a voice's pitch, so this only caps what SetFrequencyRatio could set.
 local XAUDIO2_DEFAULT_FREQ_RATIO = 2
+
 local XAUDIO2_END_OF_STREAM = 0x40
 local XAUDIO2_VOICE_NOSAMPLESPLAYED = 0x100
+
+-- AudioCategory_GameMedia, the category Microsoft gives game music.
+-- Windows then mutes it on its own while another application plays music in the background.
 local AUDIO_CATEGORY_GAME_MEDIA = 7
 
 -- The formats XAudio2 can play. A voice for anything else is always refused, whatever state the engine is in.
@@ -45,11 +54,13 @@ local MIN_SAMPLE_RATE = 1000
 local MAX_SAMPLE_RATE = 200000
 local MAX_CHANNELS = 64
 
--- XAudio2 rejects a volume above this, and a NaN or negative one.
+-- XAudio2 takes volumes from -2^24 to 2^24, where a negative one inverts the phase.
+-- A volume here is never negative, so Voice:set_volume() keeps it between 0 and this.
 local MAX_VOLUME = 2 ^ 24
 
--- The top 16 bits of an error HRESULT from XAudio2 itself, such as XAUDIO2_E_DEVICE_INVALIDATED, or from the audio client.
--- Both come from the engine or the device, never from one voice's arguments.
+-- The top 16 bits of an error HRESULT in XAudio2's own facility, such as XAUDIO2_E_DEVICE_INVALIDATED, or the audio client's.
+-- XAudio2's own codes stand for invalid calls, failed effects, and a lost device, while an invalid argument has no code.
+-- So neither prefix points at one voice's arguments.
 local XAUDIO2_ERROR_PREFIX = 0x8896
 local AUDCLNT_ERROR_PREFIX = 0x8889
 
@@ -58,7 +69,7 @@ local CREATE_SOURCE_VOICE = { 5, "int32_t (*)(void *, void **, const MusicReplac
 local CREATE_MASTERING_VOICE = { 7, "int32_t (*)(void *, void **, uint32_t, uint32_t, uint32_t, const uint16_t *, void *, int32_t)" }
 local DESTROY_VOICE = { 18, "void (*)(void *)" } -- IXAudio2Voice's slot, also used on the mastering voice.
 
--- Slots 12 to 18 are IXAudio2Voice's, and 19 onward are IXAudio2SourceVoice's.
+-- Slots 0 to 18 are IXAudio2Voice's, and 19 onward are IXAudio2SourceVoice's.
 local VOICE_METHODS = {
 	set_volume = { 12, "int32_t (*)(void *, float, uint32_t)" },
 	destroy_voice = DESTROY_VOICE,
@@ -124,6 +135,7 @@ function XAudio.available()
 	local created = out[0]
 
 	-- This fails while Windows has no audio output at all, for example right after the only headset is unplugged.
+	-- A nil device ID asks for Windows' default output.
 	hresult = call(created, CREATE_MASTERING_VOICE, out, 0, 0, 0, nil, nil, AUDIO_CATEGORY_GAME_MEDIA)
 	if not NativeFfi.succeeded(hresult) then
 		NativeFfi.release(created)
@@ -195,7 +207,8 @@ function XAudio.create_voice(format)
 	return setmetatable({
 		pointer = pointer,
 		methods = methods,
-		-- Made once and reused, since XAudio2 copies the descriptor when a buffer is submitted.
+		-- Both are made once, so submitting and polling allocate nothing on the Lua heap.
+		-- XAudio2 lets the buffer descriptor be reused as soon as SubmitSourceBuffer returns. Only the audio it points to must stay alive.
 		buffer = ffi.new("MusicReplacer_XAUDIO2_BUFFER"),
 		state = ffi.new("MusicReplacer_XAUDIO2_VOICE_STATE"),
 	}, Voice)
@@ -279,7 +292,8 @@ function Voice:stop()
 	return checked_voice(self, "stopping a voice", "stop", 0, 0)
 end
 
--- Stops and frees the voice. XAudio2 has finished with every buffer once this returns.
+-- Stops and frees the voice. DestroyVoice waits for XAudio2's thread to be idle.
+-- So XAudio2 has finished with every buffer once this returns.
 function Voice:destroy()
 	if self.pointer ~= nil then
 		self.methods.destroy_voice(self.pointer)
@@ -287,7 +301,7 @@ function Voice:destroy()
 	end
 end
 
--- Frees the output and the engine. Destroy every voice first.
+-- Frees the output and the engine. Destroy every voice first, since XAudio2 cannot destroy the output while a voice exists.
 function XAudio.shutdown()
 	if mastering_voice ~= nil then
 		call(mastering_voice, DESTROY_VOICE)

@@ -3,7 +3,7 @@
 -- The important events, such as context changes, playback decisions, and failures, are always written, so a bug report can include the log.
 -- The detailed lines, such as raw state transitions and sound events, are only written while the "diagnostic_mode" option is on.
 -- The option is checked on every call, so toggling it applies immediately.
--- Every launch starts a fresh file and keeps the previous session's beside it as diagnostic-prev.log.
+-- Every launch starts a fresh file and keeps the previous launch's beside it as diagnostic-prev.log.
 
 local DiagnosticLog = {}
 
@@ -14,14 +14,14 @@ local LOG_DIR_NAME = "Fatshark/Darktide/MusicReplacer"
 local LOG_FILE_NAME = "diagnostic.log"
 local PREVIOUS_FILE_NAME = "diagnostic-prev.log"
 
--- A runaway log stops here rather than filling the disk. A long session with detailed lines stays well under a megabyte.
+-- A runaway log stops here rather than filling the disk. Hours of play with detailed lines on stay well under a megabyte.
 local MAX_BYTES = 10 * 1024 * 1024
 
 local mod = nil -- Set by DiagnosticLog.init, needed for the mod options and error reporting.
 local log_file = nil
 local log_file_attempted = false
 
--- DMF keeps a persistent table through a mod reload, so a reload continues the session's file instead of starting a new one.
+-- DMF keeps a persistent table through a mod reload, so a reload continues this launch's file instead of starting a new one.
 local launch_state = {}
 
 local function appdata_root()

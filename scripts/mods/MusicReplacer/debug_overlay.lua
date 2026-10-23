@@ -218,7 +218,7 @@ local function install(constant_elements)
 	-- Set first, so a failure below still has its partial setup removed.
 	installed_into = constant_elements
 
-	-- Fills in the visibility groups the same way the game does for its own elements.
+	-- Fills in the visibility groups the same way the game does for its own elements. The misspelled name is the game's own.
 	constant_elements:_setup_visiblity_groups({ { class_name = CLASS_NAME, visibility_groups = VISIBILITY_GROUPS } })
 
 	local element = create_element(constant_elements, DRAW_LAYER)

@@ -19,7 +19,8 @@ local STOP_FADE_SECONDS = 0.5
 -- How long the music takes to go down to its menu volume, or back up.
 local MENU_FADE_SECONDS = 0.5
 
--- How long a faded-out song stays parked. Each holds about 0.7 MB, and most returns, like combat after a lull, come sooner.
+-- How long a faded-out song stays parked, since most returns, like combat after a lull, come sooner.
+-- Each parked song holds its 4-second buffer pool, about 0.7 MB for 44.1 kHz stereo, which grows with the rate and channels.
 local PARK_SECONDS = 60
 
 -- Parked songs beyond this are freed, oldest first. Each also keeps its file open.
@@ -129,6 +130,7 @@ function AudioClient.levels()
 	return volume, menu_level, current and current.level or 1
 end
 
+-- The keys are spelled as the game's sound_settings.lua spells them, "option_" for the master slider and "options_" for music.
 local function read_sliders()
 	local master = Application.user_setting("sound_settings", "option_master_slider") or 100
 	local music = Application.user_setting("sound_settings", "options_music_slider") or 100
@@ -377,7 +379,7 @@ function AudioClient.retarget(file_path, opts)
 	return true
 end
 
--- Fades the current track out quickly, for the native-music fallback and contexts without music.
+-- Fades the current track out quickly, for falling back to the game's music and for contexts without music.
 function AudioClient.stop()
 	if current and current.stream then
 		fade_out(current, STOP_FADE_SECONDS)

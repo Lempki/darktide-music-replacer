@@ -1,4 +1,4 @@
--- Pins diagnostic_log.lua: which lines reach the file, the previous session's file, mod reloads, and the size cap.
+-- Pins diagnostic_log.lua: which lines reach the file, the previous launch's file, mod reloads, and the size cap.
 -- The file system is an in-memory stand-in for Mods.lua.io and Mods.lua.os.
 
 local FakeEngine = require("tests.helpers.fake_engine")

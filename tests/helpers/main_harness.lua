@@ -13,7 +13,7 @@ MainHarness.__index = MainHarness
 -- A folder key is a context, or an override folder inside it, such as "boss/chaos_spawn".
 -- Picks go through each folder in order, so the specs know which file comes next.
 local function new_library(files)
-	-- `gone` marks a folder whose files the listing still has, but which are no longer on disk, so nothing can be picked.
+	-- `gone` marks a folder whose files the listing still has but which are gone from disk, so nothing can be picked.
 	local library = { files = files, rescan_requested = false, listed_listeners = {}, gone = {} }
 	local last_index = {}
 
@@ -83,7 +83,7 @@ local function new_audio_client()
 	function client.refresh_levels() client.levels_refreshed = (client.levels_refreshed or 0) + 1 end
 	function client.try_again() client.tries_again = (client.tries_again or 0) + 1 end
 
-	-- The real module reads these as functions, so they are looked up on the module table, not as fields.
+	-- MusicReplacer.lua calls these as functions, while the specs set their values as fields on `client`, so the module wraps them.
 	local module = setmetatable({}, { __index = client })
 
 	function module.available() return client.available end
@@ -255,7 +255,7 @@ function MainHarness:finish_song(seconds, failed, length)
 	current.opts.on_finished(failed == true)
 end
 
--- The settled context: the debounce needs 0.6 seconds of quiet.
+-- Waits until the context settles, since MusicReplacer.lua's debounce needs 0.6 seconds of quiet.
 function MainHarness:settle()
 	self:wait(0.7)
 end

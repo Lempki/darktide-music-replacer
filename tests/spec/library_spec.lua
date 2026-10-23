@@ -5,7 +5,7 @@ local FakeEngine = require("tests.helpers.fake_engine")
 local ROOT = "./../mods/MusicReplacer/audio"
 
 -- A fake audio_folders.lua over `disk`, which maps a context to its file names, and `lengths`, which maps a file path to seconds.
--- `missing` lists file paths that are listed but no longer exist, and `broken` maps a file path Windows cannot open to why.
+-- `missing` lists file paths that are listed but gone from disk, and `broken` maps a file path Windows cannot open to why.
 -- Setting `changes` to true makes the watcher report a change on its next check, and `watch_error` makes watching fail.
 local function new_audio_folders(disk, lengths, missing, broken)
 	local folders = { created = {}, measured = {}, missing = missing or {}, broken = broken or {}, changes = false, closed = false }

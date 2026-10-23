@@ -22,7 +22,11 @@ $ErrorActionPreference = 'Stop'
 $ModName = 'MusicReplacer'
 $SourceItems = @("$ModName.mod", 'info.json', 'scripts')
 # The same folders as the contexts with a folder in contexts.lua, which tests/spec/contexts_spec.lua checks.
-$AudioContexts = @('title_screen', 'character_select', 'hub', 'loading', 'mission_preparation', 'mission_briefing', 'explore', 'combat', 'horde', 'boss', 'event', 'last_stand', 'victory', 'defeat', 'mortis_trials_wave', 'mortis_trials_break', 'expedition_combat', 'expedition_safe_room', 'expedition_extraction')
+$AudioContexts = @(
+    'title_screen', 'character_select', 'hub', 'loading', 'mission_preparation', 'mission_briefing',
+    'explore', 'combat', 'horde', 'boss', 'event', 'last_stand', 'victory', 'defeat',
+    'mortis_trials_wave', 'mortis_trials_break', 'expedition_combat', 'expedition_safe_room', 'expedition_extraction'
+)
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 if (-not $OutDir) {
@@ -112,15 +116,18 @@ $infoText = ([regex]'\{').Replace($infoText, "{`n  `"build`": `"$BuildStamp`",",
 if ((ConvertFrom-Json $infoText).build -ne $BuildStamp) {
     throw 'The stamped info.json does not read back as JSON with its build stamp.'
 }
-[System.IO.File]::WriteAllText($StagedInfo, $infoText, (New-Object System.Text.UTF8Encoding $false)) # UTF-8 without a BOM, like the source file.
+# UTF-8 without a BOM, like the source file.
+[System.IO.File]::WriteAllText($StagedInfo, $infoText, (New-Object System.Text.UTF8Encoding $false))
 
-# Empty folders so a fresh install is ready to receive files immediately, without waiting for the mod to create them on its first launch.
-# Synthesized here, since git cannot track an empty directory.
+# The empty audio folders let a fresh install from the ZIP receive files before the mod's first launch.
+# The mod creates any missing folder on its own when it starts anyway.
+# They are made here, since git cannot track an empty directory.
 foreach ($context in $AudioContexts) {
     New-Item -ItemType Directory -Path (Join-Path $StageMod "audio\$context") -Force | Out-Null
 }
 
-# Wrapper dir matters: MusicReplacer.mod's declared paths and io_dofile calls are resolved as mods\<path>, so the archive needs MusicReplacer\ as the first segment, not the files loose at the root.
+# MusicReplacer.mod's declared paths and the io_dofile calls are resolved as mods\<path>.
+# So every entry must sit under MusicReplacer\, not loose at the archive's root.
 # Compress-Archive in Windows PowerShell 5.1 writes "\" into entry names, which Linux and Steam Deck tools extract as literal file names.
 # So the archive is written entry by entry, with the "/" separators the zip format requires, and the empty audio folders as folder entries.
 Add-Type -AssemblyName System.IO.Compression
@@ -139,7 +146,8 @@ try {
             [void]$zip.CreateEntry("$entryName/")
         }
         else {
-            [void][System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $item.FullName, $entryName, [System.IO.Compression.CompressionLevel]::Optimal)
+            [void][System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+                $zip, $item.FullName, $entryName, [System.IO.Compression.CompressionLevel]::Optimal)
         }
     }
 }
@@ -154,7 +162,8 @@ Write-Host ("Build stamp: {0}" -f $BuildStamp)
 Write-Host ""
 
 # Reads the archive back, so a layout that would install wrongly fails the build instead of reaching players.
-# Every entry sits in MusicReplacer/, as the mod file, info.json, a script, or an audio folder, and the files the mod cannot load without are there.
+# Every entry must sit in MusicReplacer/, as the mod file, info.json, a script, or an audio folder.
+# The files the mod cannot load without must be there too.
 $allowedEntry = "^$ModName/($ModName\.mod|info\.json|scripts/.*|audio/.*)?$"
 $requiredEntries = @("$ModName/$ModName.mod", "$ModName/info.json", "$ModName/scripts/mods/$ModName/$ModName.lua")
 $badEntries = @()
@@ -190,7 +199,8 @@ if (-not $Deploy) {
 $target = Join-Path (Join-Path $GameDir 'mods') $ModName
 
 if (-not (Test-Path -LiteralPath $target -PathType Container)) {
-    throw ("Deploy target does not exist: $target`n Install the mod through Vortex at least once first. Deploying into a folder Vortex doesn't know about would leave an install it can't manage or remove.")
+    throw ("Deploy target does not exist: $target`n Install the mod through Vortex at least once first. " +
+        "Deploying into a folder Vortex doesn't know about would leave an install it can't manage or remove.")
 }
 
 # Copy file-by-file, not the whole directory, so audio\ and Vortex's own markers are left alone.
@@ -217,7 +227,7 @@ catch [System.UnauthorizedAccessException] {
 Write-Host ""
 Write-Host "Deployed $copied file(s) to $target"
 
-# Same as the ZIP: create any that are missing, never touch existing ones.
+# As in the ZIP, any missing audio folder is created, and existing ones are never touched.
 foreach ($context in $AudioContexts) {
     $contextDir = Join-Path $target "audio\$context"
     if (-not (Test-Path -LiteralPath $contextDir)) {
