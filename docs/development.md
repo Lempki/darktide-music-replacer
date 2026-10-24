@@ -43,6 +43,23 @@ They tell this is a Lua repository from `.luacheckrc`, so it needs no settings f
 Install the hooks once per clone with `uvx pre-commit install`.
 CI runs dev-standards' Lua workflow on every push to `main` and every pull request: the hooks, luacheck, and the specs under LuaJIT.
 
+## Contributing
+
+Pull requests and issues are welcome on GitHub.
+Before you open a pull request, run the checks under Building and testing.
+
+### Translations
+
+All player-facing text is in `scripts/mods/MusicReplacer/MusicReplacer_localization.lua`.
+Each string is a table with one entry per language, keyed by the game's language ID, such as `en` for English and `de` for German.
+DMF shows a string in the game's language, and falls back to `en` when that language has none.
+
+* To add a language, add an entry next to `en` in every string, for example `de = "..."`.
+* The situation dropdowns build their English tooltips with `source_tooltip()`.
+  A translation writes each tooltip as its own full text instead, since the sentence order differs between languages.
+* `highlight()` colors the key words in a tooltip, such as the names of the choices, so keep it around the translated words.
+* DMF formats every string, so `%%` shows as a single percent sign.
+
 ## Logs
 
 * `%APPDATA%\Fatshark\Darktide\MusicReplacer\diagnostic.log`, with the previous launch's log beside it as `diagnostic-prev.log`. Detailed Logging adds the game's music state changes, the silencing, and the game's sound events.

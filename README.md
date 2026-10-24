@@ -276,6 +276,15 @@ The mod always logs the important events, such as which music plays and why, and
 If you are asked for more detail, turn on Detailed Logging in the Debug group of the mod options and play until the problem happens again.
 What the detailed lines mean is explained in [docs/wwise-events.md](docs/wwise-events.md) and [docs/game-internals.md](docs/game-internals.md).
 
+## Languages and contributing
+
+* The mod options and their tooltips are in English.
+  With the game set to another language, they show in English too.
+* Translations are welcome as pull requests on [GitHub](https://github.com/Lempki/darktide-music-replacer).
+  [docs/development.md](docs/development.md) explains where the texts live and how to add a language.
+* Fixes, ideas, and bug reports are welcome there too, as pull requests or issues.
+  For a bug, attach the files listed under Troubleshooting.
+
 ## Credits
 
 * [Darktide Mod Loader](https://www.nexusmods.com/warhammer40kdarktide/mods/19) and [Darktide Mod Framework](https://www.nexusmods.com/warhammer40kdarktide/mods/8), which this mod builds on.
