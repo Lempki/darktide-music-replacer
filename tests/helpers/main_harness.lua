@@ -127,6 +127,10 @@ local function new_audio_client()
 		return client.volume or 1, client.menu_volume or 1, 1
 	end
 
+	function module.meter()
+		return client.meter or 0
+	end
+
 	client.module = module
 	return client
 end
@@ -157,10 +161,10 @@ end
 
 -- A stand-in for debug_overlay.lua that keeps what the main file gives it, so a spec can read the overlay's snapshot.
 local function new_overlay()
-	local overlay = { enabled = false, corner = nil, options = nil }
+	local overlay = { enabled = false, options = nil }
 
 	function overlay.init(_, options) overlay.options = options end
-	function overlay.set_enabled(on, corner, scale) overlay.enabled, overlay.corner, overlay.scale = on, corner, scale end
+	function overlay.set_enabled(on, scale, opacity) overlay.enabled, overlay.scale, overlay.opacity = on, scale, opacity end
 	function overlay.update() end
 	function overlay.shutdown() end
 

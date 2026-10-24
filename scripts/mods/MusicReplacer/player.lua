@@ -12,6 +12,11 @@ local SLOT_COUNT = 16 -- 4 seconds queued, well under the 64 buffers an XAudio2 
 local START_SLOTS = 2 -- Queued before a stream starts, so it never starts starved.
 local FILLS_PER_UPDATE = 2 -- Spreads decoding over frames, so no single frame pays for a whole refill.
 
+-- The music's level is measured in blocks this long as it is decoded, for the debug overlay's meter.
+-- The ring keeps every block still queued, so the block playing now is always in it.
+local METER_BLOCK_SECONDS = 0.05
+local METER_RING = math.ceil(SLOT_COUNT * CHUNK_SECONDS / METER_BLOCK_SECONDS) + 2
+
 -- A stream whose voice has queued audio but plays nothing for this long has lost its audio device.
 local STALL_SECONDS = 2
 
@@ -108,6 +113,31 @@ local function apply_volume(self)
 	voice_ok(self, self.voice:set_volume(self.gain * self.fade))
 end
 
+-- Measures a decoded buffer's peaks block by block, continuing the block the last buffer left open.
+-- Blocks are counted in frames since the stream started, the same count the voice reports as played.
+local function measure(self, memory, bytes)
+	if not NativeFfi.peak_int16 then
+		return
+	end
+
+	local frames = math.floor(bytes / self.block_align)
+	local done = 0
+	while done < frames do
+		local take = math.min(frames - done, self.meter_block_frames - self.meter_frames)
+		local peak = NativeFfi.peak_int16(memory + done * self.block_align, take * self.channels)
+		self.meter_peak = math.max(self.meter_peak, peak)
+		self.meter_frames = self.meter_frames + take
+		done = done + take
+
+		if self.meter_frames == self.meter_block_frames then
+			self.meter_ring[self.meter_blocks % METER_RING + 1] = self.meter_peak
+			self.meter_blocks = self.meter_blocks + 1
+			self.meter_peak = 0
+			self.meter_frames = 0
+		end
+	end
+end
+
 -- Decodes up to `max_fills` buffers into free pool slots and queues them.
 local function fill(self, max_fills)
 	local started = clock()
@@ -143,6 +173,7 @@ local function fill(self, max_fills)
 		local last = not self.loop and self.decoder:at_end()
 
 		if bytes > 0 then
+			measure(self, slot, bytes)
 			if not voice_ok(self, self.voice:submit(slot, bytes, last)) then
 				break
 			end
@@ -199,12 +230,24 @@ local function open_stream(path, opts)
 
 	pool_bytes = pool_bytes + slot_bytes * SLOT_COUNT
 
+	local meter_ring = {}
+	for index = 1, METER_RING do
+		meter_ring[index] = 0
+	end
+
 	local self = setmetatable({
 		decoder = decoder,
 		voice = voice,
 		pool = pool,
 		slot_bytes = slot_bytes,
 		sample_rate = format.nSamplesPerSec,
+		block_align = format.nBlockAlign,
+		channels = format.nChannels or 2,
+		meter_block_frames = math.max(1, math.floor(format.nSamplesPerSec * METER_BLOCK_SECONDS)),
+		meter_ring = meter_ring,
+		meter_blocks = 0,
+		meter_peak = 0,
+		meter_frames = 0,
 		duration = decoder.duration,
 		start_position = start_position,
 		loop = opts.loop == true,
@@ -285,6 +328,24 @@ function Stream:position()
 		position = position % self.duration
 	end
 	return position
+end
+
+-- The peak of the music playing now, as a share of full scale, before the stream's volume.
+-- It is 0 for a block not measured yet, such as the last part of a song.
+function Stream:level()
+	local block = math.floor(self.voice:samples_played() / self.meter_block_frames)
+	if block >= self.meter_blocks or block < self.meter_blocks - METER_RING then
+		return 0
+	end
+	return self.meter_ring[block % METER_RING + 1]
+end
+
+-- How loud the stream sounds now: its music's peak times its gain and fade, or 0 while it is paused.
+function Stream:audible_level()
+	if self.paused or not self.voice then
+		return 0
+	end
+	return self:level() * self.gain * self.fade
 end
 
 -- True once a stream that does not loop has played its last sample.

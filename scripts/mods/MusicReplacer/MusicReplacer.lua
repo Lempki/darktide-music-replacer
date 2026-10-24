@@ -399,7 +399,7 @@ local function overlay_snapshot()
 		return { turned_off = true }
 	end
 
-	local hold, hold_seconds = Context.hold()
+	local hold, hold_seconds, hold_length = Context.hold()
 	local volume, menu_level, song_level = AudioClient.levels()
 	local song = AudioClient.is_playing() and playing_track and playing_track.file_path or nil
 
@@ -410,10 +410,13 @@ local function overlay_snapshot()
 
 	return {
 		context = current_context,
+		situation = current_context and mod:localize("source_" .. current_context) or nil,
 		status = context_status,
 		hold = hold,
 		hold_seconds = hold_seconds,
+		hold_length = hold_length,
 		pending = has_pending_change and (pending_context or "none") or nil,
+		pending_length = has_pending_change and debounce_seconds() or nil,
 		folder = current_folder,
 		overrides = current_context and table.concat(Context.override_keys(mod, current_context), ", ") or nil,
 		pending_seconds = pending_seconds,
@@ -422,6 +425,7 @@ local function overlay_snapshot()
 		duration = AudioClient.duration(),
 		volume = volume,
 		menu_level = menu_level,
+		menu_open = Context.menu_open(),
 		menu_volume = mod:get("menu_volume") / 100,
 		song_level = song_level,
 		evening_out = mod:get("normalize_loudness") == true,
@@ -437,7 +441,7 @@ local function create_overlay_element(constant_elements, draw_layer)
 end
 
 local function apply_overlay_settings()
-	DebugOverlay.set_enabled(mod:get("debug_overlay") == true, mod:get("debug_overlay_corner"), mod:get("debug_overlay_scale") / 100)
+	DebugOverlay.set_enabled(mod:get("debug_overlay") == true, mod:get("debug_overlay_scale") / 100, mod:get("debug_overlay_opacity") / 100)
 end
 
 -- Raw state transitions, suppression, and sound events are detailed lines. The rest of the log is the important events.
@@ -479,7 +483,7 @@ mod.on_all_mods_loaded = function()
 	Library.on_listed(Loudness.set_files)
 	AudioClient.init(log, { player = Player, disk_path = Library.disk_path, level_of = Loudness.level })
 	AudioClient.set_volume(custom_volume())
-	DebugOverlay.init(log, { snapshot = overlay_snapshot, create_element = create_overlay_element })
+	DebugOverlay.init(log, { snapshot = overlay_snapshot, meter = AudioClient.meter, create_element = create_overlay_element })
 	apply_overlay_settings()
 
 	-- A mod can only install one hook per method on itself.
@@ -548,7 +552,7 @@ mod.on_setting_changed = function(setting_id)
 		if enabled and setting_id == "source_meat_grinder" and current_context == "meat_grinder" and Context.current() == "meat_grinder" then
 			play_context(current_context, true)
 		end
-	elseif setting_id == "debug_overlay" or setting_id == "debug_overlay_corner" or setting_id == "debug_overlay_scale" then
+	elseif setting_id == "debug_overlay" or setting_id == "debug_overlay_scale" or setting_id == "debug_overlay_opacity" then
 		apply_overlay_settings()
 	elseif setting_id == "custom_music_volume" then
 		AudioClient.set_volume(custom_volume())

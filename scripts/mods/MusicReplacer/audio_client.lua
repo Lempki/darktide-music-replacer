@@ -130,6 +130,18 @@ function AudioClient.levels()
 	return volume, menu_level, current and current.level or 1
 end
 
+-- How loud the music sounds now, as a share of full scale, for the debug overlay's meter.
+-- During a crossfade it is the louder of the two songs.
+function AudioClient.meter()
+	local loudest = current and current.stream and current.stream:audible_level() or 0
+	for _, entry in ipairs(outgoing) do
+		if entry.stream then
+			loudest = math.max(loudest, entry.stream:audible_level())
+		end
+	end
+	return loudest
+end
+
 -- The keys are spelled as the game's sound_settings.lua spells them, "option_" for the master slider and "options_" for music.
 local function read_sliders()
 	local master = Application.user_setting("sound_settings", "option_master_slider") or 100

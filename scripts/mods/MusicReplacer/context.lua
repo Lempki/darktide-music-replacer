@@ -256,6 +256,7 @@ end
 local function start_hold(mod, name)
 	local hold = hold_named[name]
 	hold.remaining = mod:get(hold.setting_id)
+	hold.length = hold.remaining
 end
 
 -- True while the named hold keeps its context, which is then the hold the overlay shows.
@@ -558,12 +559,13 @@ function Context.current()
 	return resolved_context
 end
 
--- The name of the hold that keeps the current context, such as "combat", and its seconds left, or nil.
+-- The name of the hold that keeps the current context, such as "combat", its seconds left, and its full length, or nil.
 function Context.hold()
 	if not active_hold then
 		return nil
 	end
-	return active_hold, hold_named[active_hold].remaining
+	local hold = hold_named[active_hold]
+	return active_hold, hold.remaining, hold.length or hold.remaining
 end
 
 -- The override folder names `context_name` may use right now, most specific first.

@@ -90,6 +90,11 @@ local function new_mod(engine)
 		return value
 	end
 
+	-- DMF returns the string in the game's language. The fake marks the ID instead, so a spec can see which was asked for.
+	function mod:localize(text_id)
+		return "<" .. text_id .. ">"
+	end
+
 	function mod:get_metadata(key)
 		return engine.metadata[key]
 	end

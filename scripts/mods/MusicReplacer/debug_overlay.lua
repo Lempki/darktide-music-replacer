@@ -1,4 +1,4 @@
--- Shows what the mod is doing in a corner of the screen: the context, the song, and its volume.
+-- Shows what the mod is doing in the top left corner of the screen: the situation, the song, and how loud it plays.
 -- It is a debug aid behind the Debug Overlay setting, so it is off by default.
 --
 -- The text is drawn by an element added to the game's constant UI, which is drawn on every screen, loading screens included.
@@ -30,17 +30,13 @@ local VISIBILITY_GROUPS = {
 -- Song names are cut to this many characters, so the overlay keeps its size.
 local MAX_SONG_CHARACTERS = 48
 
--- The game's text markup. Labels are dimmed, so the values stand out, and the line about timing is amber, so it stands out from the rest.
-local LABEL_COLOR = "{#color(150,150,150)}"
-local TIMING_COLOR = "{#color(255,190,90)}"
-local RESET = "{#reset()}"
-
 local snapshot_fn = function() return nil end
+local meter_fn = function() return 0 end
 local create_element = nil
 local log = function() end
 local enabled = false
-local corner = "top_left"
 local scale = 1 -- The Overlay Size setting, as a factor.
+local opacity = 0.7 -- The Backdrop Opacity setting, as a share.
 local installed_into = nil -- The constant UI the element was added to, or nil.
 local install_failed = false
 
@@ -55,18 +51,6 @@ end
 
 local function percent(share)
 	return math.floor(share * 100 + 0.5)
-end
-
--- The Menu Volume setting, and while the music is lowered for a menu, or fading there or back, how far it is now.
-local function menu_text(setting, level)
-	local text = string.format("menu %d%%", percent(setting))
-	if level >= 1 then
-		return text
-	end
-	if percent(level) == percent(setting) then
-		return text .. " (lowered)"
-	end
-	return text .. string.format(" (now %d%%)", percent(level))
 end
 
 -- Cuts on a character boundary, since a name in another script uses several bytes per character and half a character garbles the text.
@@ -93,87 +77,161 @@ local function plain(text)
 	return (text:gsub("{#", "{ #"))
 end
 
--- The overlay's lines for a snapshot from MusicReplacer.lua, each { label, value }, and timing = true on the line about timing.
--- Its fields are turned_off, context, status, folder, overrides, pending, pending_seconds, hold, and hold_seconds.
--- The song's are song, position, and duration, and the volume's are volume, menu_volume, menu_level, song_level, and evening_out.
--- menu_volume is the Menu Volume setting, and menu_level how far the music is lowered for a menu now, both as scales.
-function DebugOverlay.lines(snapshot)
+-- The choice a status names, which colors its tag: "custom", "silence", or "game" for every reason the game's music plays.
+local function kind_of(status)
+	status = tostring(status)
+	if status:find("^Custom") then
+		return "custom"
+	elseif status:find("^Silence") then
+		return "silence"
+	end
+	return "game"
+end
+
+-- The menu lowering while it is under way or done, and the song's own level while Even Out Loudness is on.
+-- The settings that stay the same are left out, so the line only speaks when something changes what you hear.
+local function level_words(snapshot)
+	local words = {}
+	local menu_level = snapshot.menu_level or 1
+	if menu_level < 1 then
+		if percent(menu_level) == percent(snapshot.menu_volume or 1) then
+			words[#words + 1] = "menu lowered"
+		else
+			words[#words + 1] = string.format("menu %d%%", percent(menu_level))
+		end
+	end
+	if snapshot.evening_out and snapshot.song then
+		words[#words + 1] = string.format("%+.1f dB", decibels(snapshot.song_level or 1))
+	end
+	return table.concat(words, ", ")
+end
+
+-- What the overlay shows for a snapshot from MusicReplacer.lua, as plain fields for the element to draw.
+-- The snapshot's fields are turned_off, context, situation, status, folder, overrides, and menu_open.
+-- Its timing fields are hold, hold_seconds, hold_length, pending, pending_seconds, and pending_length.
+-- The song's are song, position, and duration, and the volume's are menu_volume, menu_level, song_level, and evening_out.
+-- The view has title, situation, tag, kind, folder, song or idle, time, progress, level, waiting, and waiting_share.
+-- Each is only set when shown, and idle says what plays while no song of yours does.
+-- For the element, menu is true while a menu is open, evening_out while Even Out Loudness is on, and loudness is the song's level.
+-- The meter itself shows the menu lowering's fade, so the marker follows the menu, not the fade.
+function DebugOverlay.view(snapshot)
+	local view = { title = "Music Replacer" }
+
 	if not snapshot then
-		return { { "Music Replacer", "starting" } }
+		view.situation = "Starting"
+		return view
 	end
 
 	if snapshot.turned_off then
-		return { { "Music Replacer", "turned off" } }
+		view.situation = "Turned off"
+		return view
 	end
 
-	local lines = { { "Context", tostring(snapshot.context or "none") .. " (" .. tostring(snapshot.status) .. ")" } }
+	-- DMF marks a string it has no text for as "<id>", so the context's own name stands in.
+	local situation = snapshot.situation
+	if not situation or situation:find("^<") then
+		situation = snapshot.context
+	end
+	view.situation = situation or "No situation"
+	view.tag = tostring(snapshot.status)
+	view.kind = kind_of(snapshot.status)
 
 	-- The override names the context looks for, so a player can see which folder to make.
-	if snapshot.context then
-		local folder = snapshot.folder or "none"
-		if snapshot.overrides and snapshot.overrides ~= "" then
-			folder = folder .. ", overrides: " .. snapshot.overrides
+	-- With no folder and nothing to look for, as while the game's music plays, the row says nothing and is left out.
+	local overrides = snapshot.overrides ~= "" and snapshot.overrides or nil
+	if snapshot.context and (snapshot.folder or overrides) then
+		local folder = plain(snapshot.folder or "none")
+		if overrides then
+			folder = folder .. " (looks for " .. plain(overrides) .. ")"
 		end
-		lines[#lines + 1] = { "Folder", folder }
+		view.folder = folder
 	end
 
 	-- Holds and changes that are still settling explain why the music has not changed yet.
 	local timing = {}
+	local share = nil
 	if snapshot.hold then
 		timing[#timing + 1] = string.format("%s hold %.1fs", snapshot.hold, snapshot.hold_seconds or 0)
+		share = (snapshot.hold_length or 0) > 0 and (snapshot.hold_seconds or 0) / snapshot.hold_length or nil
 	end
 	if snapshot.pending then
 		timing[#timing + 1] = string.format("%s in %.1fs", snapshot.pending, snapshot.pending_seconds or 0)
+		if not share and (snapshot.pending_length or 0) > 0 then
+			share = (snapshot.pending_seconds or 0) / snapshot.pending_length
+		end
 	end
 	if #timing > 0 then
-		lines[#lines + 1] = { "Waiting", table.concat(timing, ", "), timing = true }
+		view.waiting = table.concat(timing, ", ")
+		view.waiting_share = share and math.max(0, math.min(1, share)) or 1
 	end
 
-	if snapshot.song then
-		lines[#lines + 1] = { "Song", shorten(snapshot.song) .. "  " .. minutes(snapshot.position) .. " / " .. (snapshot.duration and minutes(snapshot.duration) or "?") }
+	if not snapshot.song then
+		view.idle = view.kind == "silence" and "Nothing plays" or view.kind == "game" and "The game's music plays" or "No song playing"
 	else
-		lines[#lines + 1] = { "Song", "none" }
+		view.song = plain(shorten(snapshot.song))
+		view.time = minutes(snapshot.position) .. " / " .. (snapshot.duration and minutes(snapshot.duration) or "?")
+		if snapshot.duration and snapshot.duration > 0 then
+			view.progress = math.max(0, math.min(1, (snapshot.position or 0) / snapshot.duration))
+		end
 	end
 
-	lines[#lines + 1] = { "Volume", string.format("custom %d%%, %s, %s",
-		percent(snapshot.volume or 1), menu_text(snapshot.menu_volume or 1, snapshot.menu_level or 1),
-		snapshot.evening_out and string.format("song %+.1f dB", decibels(snapshot.song_level or 1)) or "song as recorded") }
+	view.level = level_words(snapshot)
+	view.menu = snapshot.menu_open == true
+	view.evening_out = snapshot.evening_out == true
+	if snapshot.evening_out and snapshot.song then
+		view.loudness = string.format("%+.1f dB", decibels(snapshot.song_level or 1))
+	end
 
-	return lines
+	return view
 end
 
--- The overlay's text, one line per row. With `colored`, in the game's text markup.
-function DebugOverlay.text(snapshot, colored)
-	local rows = {}
-	for index, line in ipairs(DebugOverlay.lines(snapshot)) do
-		if colored then
-			local value_color = line.timing and TIMING_COLOR or RESET
-			rows[index] = LABEL_COLOR .. line[1] .. ": " .. value_color .. plain(line[2]) .. RESET
-		else
-			rows[index] = line[1] .. ": " .. line[2]
-		end
+-- The overlay as plain text, one row per line, for the log and the specs.
+function DebugOverlay.text(snapshot)
+	local view = DebugOverlay.view(snapshot)
+	if not view.tag then
+		return view.title .. ": " .. view.situation:lower()
+	end
+
+	local rows = { view.situation .. " (" .. view.tag .. ")" }
+	if view.folder then
+		rows[#rows + 1] = "Folder: " .. view.folder
+	end
+	if view.waiting then
+		rows[#rows + 1] = "Waiting: " .. view.waiting
+	end
+	rows[#rows + 1] = "Song: " .. (view.song and (view.song .. "  " .. view.time) or "none")
+	if view.level ~= "" then
+		rows[#rows + 1] = "Level: " .. view.level
 	end
 	return table.concat(rows, "\n")
 end
 
--- The current text, colored, for the element to draw.
-function DebugOverlay.current_text()
-	local ok, text = pcall(DebugOverlay.text, snapshot_fn(), true)
-	return ok and text or ("Music Replacer: " .. tostring(text))
+-- The current view, for the element to draw. A failure shows as the situation, so the overlay still says something.
+function DebugOverlay.current_view()
+	local ok, view = pcall(DebugOverlay.view, snapshot_fn())
+	return ok and view or { title = "Music Replacer", situation = "error: " .. tostring(view) }
 end
 
-function DebugOverlay.corner()
-	return corner
+-- How loud the music sounds now, as a share of full scale, for the meter. Cheap enough to read every frame.
+function DebugOverlay.meter()
+	local ok, level = pcall(meter_fn)
+	return ok and tonumber(level) or 0
+end
+
+function DebugOverlay.opacity()
+	return opacity
 end
 
 function DebugOverlay.scale()
 	return scale
 end
 
--- `options.snapshot()` returns the state to show, and `options.create_element(constant_elements, draw_layer)` makes the element.
+-- `options.snapshot()` returns the state to show, and `options.meter()` how loud the music sounds now.
+-- `options.create_element(constant_elements, draw_layer)` makes the element.
 function DebugOverlay.init(logger, options)
 	log = logger or log
 	snapshot_fn = options.snapshot or snapshot_fn
+	meter_fn = options.meter or meter_fn
 	create_element = options.create_element
 end
 
@@ -255,11 +313,11 @@ function DebugOverlay.update()
 	end
 end
 
--- Turns the overlay on or off, moves it to `new_corner`, "top_left" or "top_right", and sizes it by `new_scale`, 1 by default.
-function DebugOverlay.set_enabled(on, new_corner, new_scale)
+-- Turns the overlay on or off, sizes it by `new_scale`, and sets its backdrop's opacity to `new_opacity`, both as factors.
+function DebugOverlay.set_enabled(on, new_scale, new_opacity)
 	enabled = on == true
-	corner = new_corner or corner
 	scale = new_scale or scale
+	opacity = new_opacity or opacity
 
 	if not enabled then
 		remove()
@@ -268,7 +326,7 @@ function DebugOverlay.set_enabled(on, new_corner, new_scale)
 
 	local element = installed_into and installed_into._elements and installed_into._elements[CLASS_NAME]
 	if element and element.set_layout then
-		element:set_layout(corner, scale)
+		element:set_layout(scale, opacity)
 	end
 
 	DebugOverlay.update()

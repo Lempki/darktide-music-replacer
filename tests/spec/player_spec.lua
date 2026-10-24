@@ -76,7 +76,8 @@ end
 -- Returns player.lua initialized with fakes, and the fakes: the decoder `seconds` long, the voice, and freed pools.
 -- `voice_error`, if given, makes XAudio2 refuse the voice with that error.
 -- The returned `xaudio` fake takes `engine_failure`, as XAudio2's engine-wide failure, and `format_error`.
-local function load_player(seconds, voice_error)
+-- `peak`, if given, stands in for NativeFfi.peak_int16(memory, count), so the level meter measures.
+local function load_player(seconds, voice_error, peak)
 	local engine = FakeEngine.new()
 	local Player = engine:load("player")
 	local decoder = new_decoder(seconds)
@@ -95,13 +96,55 @@ local function load_player(seconds, voice_error)
 	function xaudio.format_error() return xaudio.unplayable end
 
 	Player.init(
-		{ alloc = function() return POOL end, free = function(memory) freed[#freed + 1] = memory end },
+		{ alloc = function() return POOL end, free = function(memory) freed[#freed + 1] = memory end, peak_int16 = peak },
 		{ open = function() return decoder end, available = function() return true end, error = function() return nil end },
 		xaudio
 	)
 
 	return Player, decoder, voice, freed, xaudio
 end
+
+describe("player.lua level meter", function()
+	it("measures the music's peak block by block, and reports the block playing now", function()
+		-- Each block's peak is its place in the pool, so the spec can tell the blocks apart.
+		local counts = {}
+		local function peak(memory, count)
+			counts[#counts + 1] = count
+			return (memory - POOL + 200) / 100000
+		end
+		local Player, _, voice = load_player(60, nil, peak)
+		local stream = Player.open("a.mp3", { gain = 0.5 })
+
+		assert_equal(stream:level(), 0.002)
+		assert_equal(counts[1], 100)
+
+		voice.played = 60
+		assert_equal(stream:level(), 0.004)
+
+		voice.played = 250
+		assert_equal(stream:level(), 0.012)
+		assert_equal(stream:audible_level(), 0.006)
+
+		voice.played = 500
+		assert_equal(stream:level(), 0)
+	end)
+
+	it("hears nothing from a paused stream", function()
+		local Player = load_player(60, nil, function() return 0.5 end)
+		local stream = Player.open("a.mp3")
+
+		stream:pause()
+
+		assert_equal(stream:audible_level(), 0)
+	end)
+
+	it("reports no level without a peak measurement", function()
+		local Player = load_player(60)
+		local stream = Player.open("a.mp3")
+
+		assert_equal(stream:level(), 0)
+	end)
+end)
 
 describe("player.lua", function()
 	it("queues two buffers and starts at once, and holds a 16-buffer pool until destroyed", function()

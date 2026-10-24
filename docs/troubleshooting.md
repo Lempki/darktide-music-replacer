@@ -12,7 +12,7 @@ Fixes for common problems, how to report one, and what the mod writes where.
 * **One file never plays.** Windows cannot decode it.
   Convert it to another supported format.
   The mod picks up the new file by itself.
-* **A situation plays the game's music although its folder has songs.** Turn on Debug Overlay and read its Context line.
+* **A situation plays the game's music although its folder has songs.** Turn on Debug Overlay and read the tag beside the situation.
   `Vanilla` means the situation is set to Vanilla.
   `Vanilla, no songs` means the mod found no playable file in that folder.
   `Vanilla, its songs would not play` means three songs in a row failed.

@@ -521,13 +521,13 @@ describe("MusicReplacer.lua debug overlay", function()
 		local harness = in_hub()
 		assert_equal(harness.overlay.enabled, false)
 
-		harness:set_setting("debug_overlay_corner", "top_right")
 		harness:set_setting("debug_overlay_scale", 150)
+		harness:set_setting("debug_overlay_opacity", 40)
 		harness:set_setting("debug_overlay", true)
 
 		assert_equal(harness.overlay.enabled, true)
-		assert_equal(harness.overlay.corner, "top_right")
 		assert_equal(harness.overlay.scale, 1.5)
+		assert_equal(harness.overlay.opacity, 0.4)
 	end)
 
 	it("reports the context, its choice, and the song playing", function()
@@ -537,6 +537,7 @@ describe("MusicReplacer.lua debug overlay", function()
 		local snapshot = harness.overlay.options.snapshot()
 
 		assert_equal(snapshot.context, "hub")
+		assert_equal(snapshot.situation, "<source_hub>")
 		assert_equal(snapshot.status, "Custom")
 		assert_equal(snapshot.song, "a.mp3")
 		assert_equal(snapshot.position, 12)

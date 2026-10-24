@@ -281,29 +281,23 @@ local strings = {
 		en = "Debug Overlay",
 	},
 	debug_overlay_tooltip = {
-		en = "Shows which situation the mod sees, the song playing, and its volume in a corner of the screen, " ..
+		en = "Shows which situation the mod sees, the song playing, and how loud it plays in the top left corner of the screen, " ..
 			"on every screen, loading screens included.\n\n" ..
 			"Useful for checking which music a moment counts as.",
-	},
-	debug_overlay_corner = {
-		en = "Overlay Corner",
-	},
-	debug_overlay_corner_tooltip = {
-		en = "Where the debug overlay sits.\n\n" ..
-			highlight("Top Left") .. " stays clear of the mission objectives, which sit at the top right.",
 	},
 	debug_overlay_scale = {
 		en = "Overlay Size",
 	},
 	debug_overlay_scale_tooltip = {
-		en = "How big the debug overlay is. It grows and shrinks away from its corner.\n\n" ..
+		en = "How big the debug overlay is. It grows and shrinks away from the corner.\n\n" ..
 			highlight("100%%") .. " is its normal size.",
 	},
-	debug_overlay_top_left = {
-		en = "Top Left",
+	debug_overlay_opacity = {
+		en = "Backdrop Opacity",
 	},
-	debug_overlay_top_right = {
-		en = "Top Right",
+	debug_overlay_opacity_tooltip = {
+		en = "How dark the backdrop behind the debug overlay is. The text always stays fully visible.\n\n" ..
+			highlight("0%%") .. " leaves out the backdrop.",
 	},
 	diagnostic_mode_tooltip = {
 		en = "Writes much more to " .. highlight("diagnostic.log") .. ": every change in the game's music, " ..

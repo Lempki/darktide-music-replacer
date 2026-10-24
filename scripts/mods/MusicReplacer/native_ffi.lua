@@ -228,6 +228,22 @@ function NativeFfi.free(memory)
 	end
 end
 
+-- The loudest of `count` 16-bit samples at `memory`, as a share of full scale.
+function NativeFfi.peak_int16(memory, count)
+	local samples = ffi.cast("const int16_t *", memory)
+	local peak = 0
+	for index = 0, count - 1 do
+		local sample = samples[index]
+		if sample < 0 then
+			sample = -sample
+		end
+		if sample > peak then
+			peak = sample
+		end
+	end
+	return peak / 32768
+end
+
 -- A NUL-terminated UTF-16 copy of a UTF-8 string, for the wide-character APIs.
 function NativeFfi.wide(text)
 	local length = kernel32.MusicReplacer_MultiByteToWideChar(CP_UTF8, 0, text, -1, nil, 0)

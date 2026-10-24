@@ -69,12 +69,6 @@ return {
 						unit_text = "percent_unit",
 					},
 					{
-						setting_id = "normalize_loudness",
-						type = "checkbox",
-						tooltip = "normalize_loudness_tooltip",
-						default_value = false,
-					},
-					{
 						setting_id = "menu_volume",
 						type = "numeric",
 						tooltip = "menu_volume_tooltip",
@@ -82,6 +76,12 @@ return {
 						range = { 0, 100 },
 						decimals_number = 0,
 						unit_text = "percent_unit",
+					},
+					{
+						setting_id = "normalize_loudness",
+						type = "checkbox",
+						tooltip = "normalize_loudness_tooltip",
+						default_value = false,
 					},
 				},
 			},
@@ -162,21 +162,20 @@ return {
 						default_value = false,
 						sub_widgets = {
 							{
-								setting_id = "debug_overlay_corner",
-								type = "dropdown",
-								tooltip = "debug_overlay_corner_tooltip",
-								default_value = "top_left",
-								options = {
-									{ text = "debug_overlay_top_left", value = "top_left" },
-									{ text = "debug_overlay_top_right", value = "top_right" },
-								},
-							},
-							{
 								setting_id = "debug_overlay_scale",
 								type = "numeric",
 								tooltip = "debug_overlay_scale_tooltip",
 								default_value = 100,
 								range = { 50, 200 },
+								decimals_number = 0,
+								unit_text = "percent_unit",
+							},
+							{
+								setting_id = "debug_overlay_opacity",
+								type = "numeric",
+								tooltip = "debug_overlay_opacity_tooltip",
+								default_value = 70,
+								range = { 0, 100 },
 								decimals_number = 0,
 								unit_text = "percent_unit",
 							},

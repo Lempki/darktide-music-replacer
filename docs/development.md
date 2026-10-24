@@ -101,6 +101,8 @@ Media Foundation starts in its lite mode, which leaves its network support unini
 * A looping stream reads on from the file's start in the same buffer, so the loop adds no gap.
   Silence the file carries itself, such as an MP3's encoder padding, still plays.
 * XAudio2 voice state is polled every update rather than reported through callbacks, since LuaJIT cannot safely take calls from XAudio2's thread.
+* Each decoded buffer's peaks are measured in 50 ms blocks as it is queued, for the debug overlay's level meter.
+  The meter reads the block at the voice's play position, times the stream's volume, so it shows the music as you hear it.
 
 ### Fades and parked songs
 

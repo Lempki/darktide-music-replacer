@@ -46,9 +46,9 @@ local function load_overlay(constant_elements, failing)
 			if failing then
 				error("no renderer")
 			end
-			local element = { __class_name = CLASS_NAME, parent = parent, draw_layer = draw_layer, corners = {} }
+			local element = { __class_name = CLASS_NAME, parent = parent, draw_layer = draw_layer, layouts = {} }
 			function element:destroy(renderer) self.destroyed_with = renderer end
-			function element:set_layout(corner, scale) self.corners[#self.corners + 1] = corner .. "@" .. scale end
+			function element:set_layout(scale, opacity) self.layouts[#self.layouts + 1] = scale .. "@" .. opacity end
 			made[#made + 1] = element
 			return element
 		end,
@@ -60,6 +60,7 @@ end
 local function full_snapshot()
 	return {
 		context = "combat",
+		situation = "Combat",
 		status = "Custom",
 		folder = "combat",
 		song = "Antagonist - Valfaris.mp3",
@@ -73,72 +74,91 @@ local function full_snapshot()
 	}
 end
 
-describe("debug_overlay.lua text", function()
-	it("shows the context and its choice, the song with its time, and the volume factors", function()
+describe("debug_overlay.lua view", function()
+	it("shows the situation by its dropdown name with its choice, the folder, the song with its time, and the song's level", function()
 		local DebugOverlay = load_overlay(new_constant_elements())
 
 		assert_equal(DebugOverlay.text(full_snapshot()),
-			"Context: combat (Custom)\n" ..
+			"Combat (Custom)\n" ..
 			"Folder: combat\n" ..
 			"Song: Antagonist - Valfaris.mp3  1:23 / 4:25\n" ..
-			"Volume: custom 100%, menu 50%, song -7.9 dB")
+			"Level: -7.9 dB")
 	end)
 
-	it("shows the Menu Volume setting, and how far the music is lowered while a menu is open", function()
+	it("gives the song's progress as a share, and the choice's kind for the tag's color", function()
+		local DebugOverlay = load_overlay(new_constant_elements())
+		local view = DebugOverlay.view(full_snapshot())
+
+		assert_equal(math.abs(view.progress - 83.4 / 265.6) < 1e-9, true)
+		assert_equal(view.kind, "custom")
+		assert_equal(DebugOverlay.view({ context = "event", status = "Vanilla, no songs" }).kind, "game")
+		assert_equal(DebugOverlay.view({ context = "event", status = "Silence" }).kind, "silence")
+	end)
+
+	it("speaks about the volume only while something changes it", function()
 		local DebugOverlay = load_overlay(new_constant_elements())
 		local snapshot = full_snapshot()
-		local function volume_line()
-			return DebugOverlay.text(snapshot):match("Volume: ([^\n]+)")
-		end
-
-		assert_equal(volume_line(), "custom 100%, menu 50%, song -7.9 dB")
+		snapshot.evening_out = false
+		assert_equal(DebugOverlay.view(snapshot).level, "")
 
 		snapshot.menu_level = 0.72
-		assert_equal(volume_line(), "custom 100%, menu 50% (now 72%), song -7.9 dB")
+		assert_equal(DebugOverlay.view(snapshot).level, "menu 72%")
 
 		snapshot.menu_level = 0.5
-		assert_equal(volume_line(), "custom 100%, menu 50% (lowered), song -7.9 dB")
+		snapshot.evening_out = true
+		assert_equal(DebugOverlay.view(snapshot).level, "menu lowered, -7.9 dB")
 	end)
 
-	it("adds a line of its own for the hold and the pending change", function()
+	it("lights the menu marker while a menu is open, not while the music fades back, and the loudness marker while evening out", function()
+		local DebugOverlay = load_overlay(new_constant_elements())
+		local snapshot = full_snapshot()
+
+		local view = DebugOverlay.view(snapshot)
+		assert_equal(view.menu, false)
+		assert_equal(view.evening_out, true)
+		assert_equal(view.loudness, "-7.9 dB")
+
+		snapshot.menu_open = true
+		assert_equal(DebugOverlay.view(snapshot).menu, true)
+
+		snapshot.menu_open = false
+		snapshot.menu_level = 0.8
+		snapshot.evening_out = false
+		view = DebugOverlay.view(snapshot)
+		assert_equal(view.menu, false)
+		assert_equal(view.evening_out, false)
+		assert_equal(view.loudness, nil)
+	end)
+
+	it("adds a row for the hold and the pending change, with how much of the hold is left", function()
 		local DebugOverlay = load_overlay(new_constant_elements())
 		local snapshot = full_snapshot()
 		snapshot.hold = "combat"
-		snapshot.hold_seconds = 6.24
+		snapshot.hold_seconds = 6
+		snapshot.hold_length = 8
 		snapshot.pending = "boss"
 		snapshot.pending_seconds = 0.4
+		snapshot.pending_length = 0.6
 
-		local lines = DebugOverlay.lines(snapshot)
+		local view = DebugOverlay.view(snapshot)
 
-		assert_equal(#lines, 5)
-		assert_deep_equal(lines[3], { "Waiting", "combat hold 6.2s, boss in 0.4s", timing = true })
+		assert_equal(view.waiting, "combat hold 6.0s, boss in 0.4s")
+		assert_equal(view.waiting_share, 0.75)
+		assert_equal(DebugOverlay.text(snapshot):match("Waiting: [^\n]+"), "Waiting: combat hold 6.0s, boss in 0.4s")
 	end)
 
-	it("dims the labels and colors the waiting line in the game's text markup", function()
-		local DebugOverlay = load_overlay(new_constant_elements())
-		local snapshot = full_snapshot()
-		snapshot.hold = "horde"
-		snapshot.hold_seconds = 2
-
-		local rows = {}
-		for row in DebugOverlay.text(snapshot, true):gmatch("[^\n]+") do
-			rows[#rows + 1] = row
-		end
-
-		assert_equal(rows[1], "{#color(150,150,150)}Context: {#reset()}combat (Custom){#reset()}")
-		assert_equal(rows[3], "{#color(150,150,150)}Waiting: {#color(255,190,90)}horde hold 2.0s{#reset()}")
-	end)
-
-	it("shows no song while the game's music plays, songs as recorded while evening out is off, and long names cut short", function()
+	it("says what plays while no song of yours does, with no folder or song level, and cuts long names short", function()
 		local DebugOverlay = load_overlay(new_constant_elements())
 
-		local game = DebugOverlay.text({ context = "event", status = "Vanilla, no songs", evening_out = false })
-		assert_equal(game, "Context: event (Vanilla, no songs)\nFolder: none\nSong: none\nVolume: custom 100%, menu 100%, song as recorded")
+		local game = DebugOverlay.view({ context = "event", situation = "Event", status = "Vanilla, no songs", evening_out = true })
+		assert_equal(game.idle, "The game's music plays")
+		assert_equal(game.folder, nil)
+		assert_equal(game.level, "")
+		assert_equal(DebugOverlay.view({ context = "event", status = "Silence" }).idle, "Nothing plays")
 
 		local snapshot = full_snapshot()
 		snapshot.song = string.rep("a", 60) .. ".mp3"
-		local song_line = DebugOverlay.text(snapshot):match("(Song: [^\n]+)")
-		assert_equal(song_line, "Song: " .. string.rep("a", 45) .. "...  1:23 / 4:25")
+		assert_equal(DebugOverlay.view(snapshot).song, string.rep("a", 45) .. "...")
 	end)
 
 	it("cuts a long name in another script between its characters, not inside one", function()
@@ -147,12 +167,10 @@ describe("debug_overlay.lua text", function()
 		local kana = "\227\129\130" -- One Japanese character, three bytes in UTF-8.
 
 		snapshot.song = string.rep(kana, 60) .. ".mp3"
-		local song_line = DebugOverlay.text(snapshot):match("(Song: [^\n]+)")
-		assert_equal(song_line, "Song: " .. string.rep(kana, 45) .. "...  1:23 / 4:25")
+		assert_equal(DebugOverlay.view(snapshot).song, string.rep(kana, 45) .. "...")
 
 		snapshot.song = string.rep(kana, 48)
-		song_line = DebugOverlay.text(snapshot):match("(Song: [^\n]+)")
-		assert_equal(song_line, "Song: " .. string.rep(kana, 48) .. "  1:23 / 4:25")
+		assert_equal(DebugOverlay.view(snapshot).song, string.rep(kana, 48))
 	end)
 
 	it("shows markup in a song or folder name as plain text", function()
@@ -161,27 +179,39 @@ describe("debug_overlay.lua text", function()
 		snapshot.song = "red {#color(255,0,0)}.mp3"
 		snapshot.folder = "combat/{#reset()}"
 
-		local text = DebugOverlay.text(snapshot, true)
+		local view = DebugOverlay.view(snapshot)
 
-		assert_equal(text:find("{#color(255,0,0)}", 1, true), nil)
-		assert_equal(text:find("red { #color(255,0,0)}.mp3", 1, true) ~= nil, true)
-		assert_equal(text:find("combat/{ #reset()}", 1, true) ~= nil, true)
+		assert_equal(view.song, "red { #color(255,0,0)}.mp3")
+		assert_equal(view.folder, "combat/{ #reset()}")
 	end)
 
-	it("names the override folders the context looks for, after the folder it plays from", function()
+	it("names the override folders the situation looks for, after the folder it plays from", function()
 		local DebugOverlay = load_overlay(new_constant_elements())
 		local snapshot = full_snapshot()
 		snapshot.context = "boss"
 		snapshot.folder = "boss/chaos_spawn"
 		snapshot.overrides = "chaos_spawn, fm_cargo, havoc"
 
-		assert_deep_equal(DebugOverlay.lines(snapshot)[2], { "Folder", "boss/chaos_spawn, overrides: chaos_spawn, fm_cargo, havoc" })
+		assert_equal(DebugOverlay.view(snapshot).folder, "boss/chaos_spawn (looks for chaos_spawn, fm_cargo, havoc)")
+	end)
+
+	it("falls back to the context's own name when the dropdown has no text", function()
+		local DebugOverlay = load_overlay(new_constant_elements())
+		local snapshot = full_snapshot()
+		snapshot.situation = "<source_combat>"
+
+		assert_equal(DebugOverlay.view(snapshot).situation, "combat")
 	end)
 
 	it("says so while the mod is turned off", function()
 		local DebugOverlay = load_overlay(new_constant_elements())
 
 		assert_equal(DebugOverlay.text({ turned_off = true }), "Music Replacer: turned off")
+	end)
+
+	it("reads the meter safely, as 0 when it fails", function()
+		local DebugOverlay = load_overlay(new_constant_elements())
+		assert_equal(DebugOverlay.meter(), 0)
 	end)
 end)
 
@@ -193,7 +223,7 @@ describe("debug_overlay.lua element", function()
 		DebugOverlay.update()
 		assert_equal(#made, 0)
 
-		DebugOverlay.set_enabled(true, "top_left")
+		DebugOverlay.set_enabled(true)
 
 		assert_equal(constant_elements._elements[CLASS_NAME], made[1])
 		assert_equal(constant_elements._elements_array[2], made[1])
@@ -201,7 +231,7 @@ describe("debug_overlay.lua element", function()
 		assert_equal(constant_elements._visibility_groups[1].visible_elements[CLASS_NAME], true)
 		assert_equal(constant_elements._current_group_name, nil)
 
-		DebugOverlay.set_enabled(false, "top_left")
+		DebugOverlay.set_enabled(false)
 
 		assert_equal(constant_elements._elements[CLASS_NAME], nil)
 		assert_equal(#constant_elements._elements_array, 1)
@@ -209,22 +239,22 @@ describe("debug_overlay.lua element", function()
 		assert_equal(made[1].destroyed_with, "renderer")
 	end)
 
-	it("moves and sizes its element without making a new one", function()
+	it("sizes its element and sets its backdrop without making a new one", function()
 		local DebugOverlay, made = load_overlay(new_constant_elements())
-		DebugOverlay.set_enabled(true, "top_left", 1)
+		DebugOverlay.set_enabled(true, 1, 0.7)
 
-		DebugOverlay.set_enabled(true, "top_right", 1.5)
+		DebugOverlay.set_enabled(true, 1.5, 0.4)
 
 		assert_equal(#made, 1)
-		assert_deep_equal(made[1].corners, { "top_right@1.5" })
-		assert_equal(DebugOverlay.corner(), "top_right")
+		assert_deep_equal(made[1].layouts, { "1.5@0.4" })
 		assert_equal(DebugOverlay.scale(), 1.5)
+		assert_equal(DebugOverlay.opacity(), 0.4)
 	end)
 
 	it("adds its element again when the game builds a new UI", function()
 		local first = new_constant_elements()
 		local DebugOverlay, made, _, ui = load_overlay(first)
-		DebugOverlay.set_enabled(true, "top_left")
+		DebugOverlay.set_enabled(true)
 
 		local second = new_constant_elements()
 		ui.current = second
@@ -237,7 +267,7 @@ describe("debug_overlay.lua element", function()
 	it("adds its element to a new UI without touching the one the game tore down", function()
 		local first = new_constant_elements()
 		local DebugOverlay, made, _, ui = load_overlay(first)
-		DebugOverlay.set_enabled(true, "top_left")
+		DebugOverlay.set_enabled(true)
 
 		-- The game's teardown destroys every element, then drops its element list.
 		made[1]:destroy("renderer")
@@ -256,7 +286,7 @@ describe("debug_overlay.lua element", function()
 		local constant_elements = new_constant_elements()
 		local DebugOverlay, _, lines = load_overlay(constant_elements, true)
 
-		DebugOverlay.set_enabled(true, "top_left")
+		DebugOverlay.set_enabled(true)
 		DebugOverlay.update()
 		DebugOverlay.update()
 
