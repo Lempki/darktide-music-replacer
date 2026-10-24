@@ -204,7 +204,19 @@ darktide-music-replacer/
 
 ## Roadmap
 
-* An option to let a song finish before the next situation's music takes over.
+* Playback controls, in three layers.
+  Manual control only steers the situation playing now, so a new situation still starts its own pick.
+  * Keybinds for the next song, the previous song or restarting the current one, and pausing.
+    A paused situation stays silent instead of handing back to the game's music, and a skipped song gets no resume point.
+    A keybind that removes the playing song from its folder's rotation for good, kept in a small file beside `loudness.txt`.
+    A short message for each keybind, so the controls work without the widget.
+  * Settings for the order and repeat: shuffle on or off, where off plays a folder in name order, and repeating the folder or one song.
+    An option to let a song finish before the next situation's music takes over belongs here too.
+  * A now-playing widget that shows the song and the shuffle, repeat, and pause state.
+    Its look is up to the players, with settings of its own for the hub and for missions, since the hub shows almost no HUD.
+    A few presets set its position, size, and opacity at once, and offset settings move it anywhere on the screen.
+    It can be hidden completely, and the keybinds still work then.
+    In missions it can show for a few seconds when a song starts or a keybind is pressed, and then fade out.
 * Translations of the mod options.
 * Contexts for new game modes and situations as the game adds them.
 * Settings per situation, such as its own volume.
