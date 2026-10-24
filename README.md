@@ -44,7 +44,7 @@ Wherever you add no songs, the game's music plays as usual.
 The mod creates any missing folder when the game starts, so every folder is there after your first launch at the latest.
 You can add, remove, or replace files while the game runs, and the mod picks them up by itself 3 seconds after files stop changing.
 Put audio files directly inside the folders you want music for.
-Folders inside them are override folders, which are optional.
+Folders inside them are [override folders](docs/override-folders.md), which are optional.
 
 The formats that work are `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, and `.wma`.
 Other files, such as `.ogg` and `.opus`, are ignored, so convert those to a supported format first.
@@ -113,87 +113,14 @@ A changed choice applies at once, also to the situation that is playing.
 
 ## Settings
 
-The settings are in the in-game mod options under Music Replacer, in six groups, in the order the menu shows them.
-
-### Playback
-
-| Setting | Default | What it does |
-|---|---|---|
-| Rescan Audio Folders | (button) | Lists the audio folders again at once, and checks every song again. The mod notices added, removed, and replaced files by itself. It lists the folders again 3 seconds after files stop changing. Use this button on drives where Windows cannot report changes, such as some network drives, and to try a song again that would not play. It also lets the mod try playback again after it gave up. It does not measure loudness again. |
-| Resume Songs | On | Explore, combat, Mortis Trials, and Expedition fight and safe room songs continue where they stopped when their music comes back. Horde, boss, and event songs continue too after music that outranks them interrupts them, such as a boss during a horde or a last stand during an event, while that horde, fight, or event lasts. A new horde, boss fight, or event gets a new pick. A song that stopped in its last 10 seconds is not continued. A new song is picked once one ends on its own. Every mission and hub visit starts with fresh songs. |
-
-### Music per Situation
-
-One dropdown per situation, with the choices Custom, Vanilla, and Silence.
-See Choosing what plays above.
-
-### Volume
-
-| Setting | Default | What it does |
-|---|---|---|
-| Custom Music Volume | 100% | How loud your songs play, on top of the game's master and music volume sliders. At 100%, they play as loud as the files themselves. The game's music is not affected. |
-| Even Out Loudness | Off | Plays every song at about the same loudness, without changing your files. Each song is measured once in the background and remembered, starting with the folder that plays. A song not measured yet plays at its own level, and a song measured while it plays changes level at its next start. Loud songs are turned down. A quiet song is only raised as far as it can go without distorting, and a very quiet one only partway, since raising it further mostly raises its hiss. |
-| Menu Volume | 50% | How loud your songs play while a menu is open, as a share of the Custom Music Volume. The menus are the ones the game reports to its audio: the Esc menu and its settings, the inventory, the mission board, vendors, the store, and character appearance. The music fades down over half a second. It fades back up once no menu has been open for half a second, so moving between menus does not raise it. 100% keeps the music at full volume in menus. |
-
-### Boss Music
-
-| Setting | Default | What it does |
-|---|---|---|
-| Boss Music for Captains | Off | Plays your boss music while a captain is in the fight, from the moment it engages until it dies. Off leaves captains to the game's music. During an event, event music still plays. |
-| Boss Music for Daemonhosts | Off | Plays your boss music while an angered daemonhost is alive. Off follows the game, which plays no music for daemonhosts. |
-
-### Music Holds
-
-Each hold goes from 0 to 30 seconds.
-Set one to 0 to follow the game exactly.
-
-| Setting | Default | What it does |
-|---|---|---|
-| Combat Music Hold | 8 seconds | How long combat music keeps playing after a fight quiets down, so a short lull does not switch to explore music. |
-| Horde Music Hold | 3 seconds | How long horde music keeps playing after the game stops reporting a horde. The game drops that signal for a moment whenever few enemies are on you, so a short hold keeps the song from switching away and back. |
-| Boss Music Hold | 3 seconds | How long boss music keeps playing after the game stops reporting a boss that is still alive. The game drops that signal for a moment now and then during a boss fight. Boss music still ends as soon as the boss dies. |
-| Event Music Hold | 5 seconds | How long event music keeps playing after the game ends an event's music. Some events pause their music for a few seconds between stages, so a short hold keeps the event's song from starting over at every stage. |
-
-### Debug
-
-| Setting | Default | What it does |
-|---|---|---|
-| Detailed Logging | Off | Writes much more to `diagnostic.log`: every change in the game's music, each time the mod silences it, and the game's sound events. The important events are always logged, which is enough for most bug reports. The extra lines add up quickly, so turn this on only while tracking down a problem. |
-| Debug Overlay | Off | Shows which situation the mod sees, the song playing, and its volume in a top corner of the screen. It shows on every screen, loading screens and the preparation screen included. It is useful for checking which music a moment counts as. |
-| Overlay Corner | Top Left | Where the debug overlay sits, shown while the overlay is on. Top Left stays clear of the mission objectives, which sit at the top right. |
-| Overlay Size | 100% | How big the debug overlay is, from 50% to 200%, shown while the overlay is on. It grows and shrinks away from its corner. |
-
-The debug overlay has these lines:
-
-* **Context** names the situation and what plays there, for example `explore (Custom)`, `hub (Vanilla)`, or `boss (Vanilla, no songs)`.
-* **Folder** names the folder that plays, and the override names the moment looks for.
-* **Waiting** shows a hold or a change that is still settling, with the seconds left.
-* **Song** shows the file name, how far into it the song is, and its length.
-* **Volume** shows the Custom Music Volume, the Menu Volume, and the song's own level from Even Out Loudness.
+The settings are in the in-game mod options under Music Replacer, in six groups: Playback, Music per Situation, Volume, Boss Music, Music Holds, and Debug.
+Every setting and its default is explained in [docs/settings.md](docs/settings.md).
 
 ## Override folders
 
-This section is optional and for advanced use.
-Your music works without any of it.
-
-A folder can hold folders of its own, named after what the game reports, which take over from it while they apply.
-For example, songs in `boss\chaos_spawn\` play while a Chaos Spawn is the boss, and songs in `explore\expeditions\` play while you explore in an Expedition.
-When several apply, the first one in this order that has songs wins:
-
-1. In `event`, the kind of event, as the game names its event music: for example `escape_event`, `fortification_event`, `twins_event`, or an Operation's `operation_stage_1`. [docs/wwise-events.md](docs/wwise-events.md) lists the kinds.
-2. In `boss`, the kind of boss: for example `chaos_spawn`, `chaos_beast_of_nurgle`, `chaos_plague_ogryn`, or `chaos_ogryn_houndmaster`, and with their settings on, `renegade_twin_captain` or `chaos_daemonhost`.
-3. In any folder, the mission's code: for example `spillway` or `km_enforcer_twins`. [docs/game-internals.md](docs/game-internals.md) lists every mission's code with its in-game name.
-4. In any folder, the game mode: `havoc`, `expeditions`, or `mortis_trials`.
-
-On the way into a mission, the mission's code and its game mode apply during the preparation screen and the briefing.
-So `mission_briefing\mortis_trials\` plays during the Mortis Trials briefing.
-Havoc applies only once the mission has loaded, so a `havoc` folder does not apply on the preparation screen.
-
-An override folder with no songs is skipped, so its parent folder, or the game's music, plays as before.
-The mod does not create these folders, so make the ones you want.
-Their names ignore case, and folders inside an override folder are not read.
-The music switches within half a second once another override applies, for example when the game names a boss a few seconds after the boss music started, or when an event moves on to its escape.
-With Debug Overlay on, its Folder line shows the folder that plays and the override names the moment looks for.
+Override folders are optional and for advanced use.
+A folder can hold folders of its own, which play for a kind of event, a kind of boss, a mission, or a game mode.
+They are explained in [docs/override-folders.md](docs/override-folders.md).
 
 ## Safe by design
 
@@ -208,22 +135,7 @@ With Debug Overlay on, its Folder line shows the folder that plays and the overr
 * **Your music files are never changed.** The mod only reads them.
 * **It stops with the game.** The music plays inside the game itself, so it stops when the game closes, even after a crash.
 
-The mod writes these files to `%APPDATA%\Fatshark\Darktide\MusicReplacer\`:
-
-* `diagnostic.log`, the log of the current or last game session.
-  Every launch starts a fresh one.
-  A runaway log stops growing at 10 MB.
-* `diagnostic-prev.log`, the log of the session before that.
-* `loudness.txt`, the remembered results of Even Out Loudness, so each song is measured only once, and again after its file changes.
-  Deleting it measures every song again.
-
-If your audio device goes away, the mod handles it like this:
-
-* While Windows has no audio output at all, for example right after you unplug your only headset, the game's music takes over.
-  The mod tries again every 5 seconds, and your music comes back once an output does.
-* If the audio device is lost in a way Windows cannot recover from by itself, the mod restarts its audio and continues the song where it was.
-* If it still fails after three restarts in a row, the mod gives up and the game's music plays.
-  Press Rescan Audio Folders, or turn the mod off and on, to let it try again.
+What the mod writes where, and how it handles a lost audio device, are covered in [docs/troubleshooting.md](docs/troubleshooting.md).
 
 ## Updating and uninstalling
 
@@ -250,31 +162,13 @@ Check `mods\MusicReplacer\audio\` in the game folder too, since your songs were 
 
 ## Troubleshooting
 
-* **No custom music anywhere.** Check that `MusicReplacer` is listed below `dmf` in `mod_load_order.txt`, that Music Replacer appears in the mod options and is turned on, and that your files sit directly inside the audio folders in a supported format.
-* **The chat shows "Music Replacer could not start Windows audio playback".** The mod could not start Windows' audio decoder or audio engine, so the game's music plays as usual.
-  The message ends with the reason.
-  On a Windows "N" edition, install the Media Feature Pack.
-  If Windows had no audio output at that moment, the mod keeps trying and starts once there is one.
-* **One file never plays.** Windows cannot decode it.
-  Convert it to another supported format.
-  The mod picks up the new file by itself.
-* **A situation plays the game's music although its folder has songs.** Turn on Debug Overlay and read its Context line.
-  `Vanilla` means the situation is set to Vanilla.
-  `Vanilla, no songs` means the mod found no playable file in that folder.
-  `Vanilla, its songs would not play` means three songs in a row failed.
-  `Vanilla, no audio output` means Windows audio is not available, or the mod gave up on it after repeated failures.
-* **Changed files are not picked up.** The mod lists the folders again 3 seconds after files stop changing.
-  On a drive where Windows cannot report changes, such as some network drives, press Rescan Audio Folders.
+Fixes for common problems are in [docs/troubleshooting.md](docs/troubleshooting.md).
 
 To report a problem, attach these two files:
 
 * The mod's log from `%APPDATA%\Fatshark\Darktide\MusicReplacer\`.
   That is `diagnostic.log` if the problem happened in the current or last game session, or `diagnostic-prev.log` if it happened in the session before that.
 * The newest file in `%APPDATA%\Fatshark\Darktide\console_logs\`.
-
-The mod always logs the important events, such as which music plays and why, and any file it could not play.
-If you are asked for more detail, turn on Detailed Logging in the Debug group of the mod options and play until the problem happens again.
-What the detailed lines mean is explained in [docs/wwise-events.md](docs/wwise-events.md) and [docs/game-internals.md](docs/game-internals.md).
 
 ## Languages and contributing
 
@@ -291,6 +185,14 @@ What the detailed lines mean is explained in [docs/wwise-events.md](docs/wwise-e
 * [Audio Plugin](https://www.nexusmods.com/warhammer40kdarktide/mods/196) and [Darktide Local Server](https://www.nexusmods.com/warhammer40kdarktide/mods/211), which early versions of this mod played their music through.
 * [Simple Audio](https://www.nexusmods.com/warhammer40kdarktide/mods/929) and [Darktide DJ - Music Picker and Shuffler](https://www.nexusmods.com/warhammer40kdarktide/mods/1118), whose takes on custom and situational music inspired this mod.
 
-## Development
+## More documentation
 
-Building, testing, how playback works, the project structure, and the roadmap are covered in [docs/development.md](docs/development.md).
+* For players:
+  * [Settings](docs/settings.md): every setting, its default, and the debug overlay's lines.
+  * [Override folders](docs/override-folders.md): songs for a kind of event, a kind of boss, a mission, or a game mode.
+  * [Troubleshooting](docs/troubleshooting.md): fixes, reporting a problem, the files the mod writes, and a lost audio device.
+* For reading the log:
+  * [Wwise music states and events](docs/wwise-events.md): the game's music states, how the mod silences them, and tracing a sound.
+  * [Game missions and modes](docs/game-internals.md): how the game reports its missions and modes.
+* For developers:
+  * [Development](docs/development.md): building, testing, how playback works, the project structure, and the roadmap.

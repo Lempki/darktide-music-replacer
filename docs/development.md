@@ -183,6 +183,9 @@ darktide-music-replacer/
 ├── docs/
 │   ├── development.md                   # This file.
 │   ├── game-internals.md                # How the game reports its missions and modes, and the mission lines in the log.
+│   ├── override-folders.md              # The optional override folders, for players.
+│   ├── settings.md                      # Every setting and its default, and the debug overlay's lines, for players.
+│   ├── troubleshooting.md               # Common problems, reporting one, the files the mod writes, and a lost audio device.
 │   └── wwise-events.md                  # The game's music states and events, how the mod silences them, and tracing a sound.
 ├── tests/
 │   ├── run.lua                          # Minimal spec runner, needs only LuaJIT.
