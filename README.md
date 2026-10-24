@@ -32,7 +32,7 @@ Wherever you add no songs, the game's music plays as usual.
   It plays only the files in its own audio folders.
 * It does not change your music files.
 
-## Quick start
+## Quickstart
 
 1. Install Music Replacer like any other Darktide mod, for example through Vortex.
    Check that `MusicReplacer` is listed below `dmf` in `mod_load_order.txt`, as described under Requirements.
@@ -42,6 +42,7 @@ Wherever you add no songs, the game's music plays as usual.
 3. Start the game and play.
 
 The mod creates any missing folder when the game starts, so every folder is there after your first launch at the latest.
+You can add, remove, or replace files while the game runs, and the mod picks them up by itself 3 seconds after files stop changing.
 Put audio files directly inside the folders you want music for.
 Folders inside them are override folders, which are optional.
 
@@ -241,7 +242,6 @@ Check `mods\MusicReplacer\audio\` in the game folder too, since your songs were 
   Squadmates hear their own game's music, with or without the mod.
 * Running it alongside other music mods has not been tested.
   A mod that also changes the game's music states may conflict with it.
-* Custom HUD cannot move the debug overlay, since the overlay is not part of the HUD.
 * The mod has not been tested on Steam Deck or Linux.
   There the game runs through Proton, which brings its own stand-ins for the Windows audio decoder and audio engine the mod uses.
   If the mod cannot start them, the game's music plays as usual.
