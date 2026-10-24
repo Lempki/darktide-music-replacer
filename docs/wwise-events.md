@@ -1,9 +1,6 @@
 # Wwise music states and events
 
-How Darktide's music reaches the player through Wwise, how Music Replacer silences it, and how to find out where a sound comes from.
-It is a reference for reading `diagnostic.log` with Detailed Logging on.
-The log calls each situation from the README a context, such as `explore` or `mission_briefing`, which is also the name of its audio folder.
-Which mission or game mode is running is covered in [game-internals.md](game-internals.md).
+How Darktide's music reaches the player through Wwise, how Music Replacer silences it, and how to find out where a sound comes from. It is a reference for reading `diagnostic.log` with Detailed Logging on. The log calls each situation from the README a context, such as `explore` or `mission_briefing`, which is also the name of its audio folder. Which mission or game mode is running is covered in [game-internals.md](game-internals.md).
 
 ## Where the game's music comes from
 
@@ -11,10 +8,7 @@ The game's music has two sources, and the mod handles each differently.
 
 ### State groups
 
-The game sets Wwise state groups all the time, and Wwise picks the music from them.
-With Detailed Logging on, every change shows up as a `[raw]` line, such as `[raw] music_zone: None -> hub`.
-After the mod loads or is turned back on, it reads each group once more, which shows up as a line such as `[raw] music_game_state: mission, read again`.
-Four groups matter for music:
+The game sets Wwise state groups all the time, and Wwise picks the music from them. With Detailed Logging on, every change shows up as a `[raw]` line, such as `[raw] music_zone: None -> hub`. After the mod loads or is turned back on, it reads each group once more, which shows up as a line such as `[raw] music_game_state: mission, read again`. Four groups matter for music:
 
 | Group | Values |
 |---|---|
@@ -25,19 +19,10 @@ Four groups matter for music:
 
 Wwise reports "no value" as the word `None`.
 
-* `music_combat` is `normal` while enemies are attacking you.
-  It flips back to `None` every few seconds in a fight, and the Combat Music Hold setting bridges those gaps.
-  `horde_low` and `horde_high` mean a horde is on you.
-  The game reports a horde only while at least 5 enemies are aggroed, and the Horde Music Hold setting bridges the moments it drops out.
-  `boss` means a monstrosity is near.
-  It can drop out for a second or two while the boss is still alive, and the Boss Music Hold setting bridges that until the boss's encounter ends.
-  In an Expedition, the group carries the Expedition values in place of the others.
-* `music_zone` names the hub or the mission's area.
-  It arrives before the music can start.
-  The hub zone arrives about 10 seconds before the loading screen ends, and a mission zone partway through the briefing.
+* `music_combat` is `normal` while enemies are attacking you. It flips back to `None` every few seconds in a fight, and the Combat Music Hold setting bridges those gaps. `horde_low` and `horde_high` mean a horde is on you. The game reports a horde only while at least 5 enemies are aggroed, and the Horde Music Hold setting bridges the moments it drops out. `boss` means a monstrosity is near. It can drop out for a second or two while the boss is still alive, and the Boss Music Hold setting bridges that until the boss's encounter ends. In an Expedition, the group carries the Expedition values in place of the others.
+* `music_zone` names the hub or the mission's area. It arrives before the music can start. The hub zone arrives about 10 seconds before the loading screen ends, and a mission zone partway through the briefing.
 * `music_game_state` says where the player is, as the table below lays out.
-* `music_objective` carries the last stand and mission event music.
-  Some events set it to `None` for a few seconds between their stages, which the Event Music Hold setting bridges.
+* `music_objective` carries the last stand and mission event music. Some events set it to `None` for a few seconds between their stages, which the Event Music Hold setting bridges.
 
 What each `music_game_state` value plays, by the dropdowns in Music per Situation:
 
@@ -54,22 +39,11 @@ What each `music_game_state` value plays, by the dropdowns in Music per Situatio
 | `defeat`, `game_score_lose` | The Defeat music, until the loading screen. |
 | `cinematic` | The game's music. This state is a cutscene, which never gets custom music. |
 
-A loading screen leads into a mission when it follows `mission_ready`, `loadout`, or `mission_briefing`.
-After a mission, a story mission can go straight from `game_score_win` to `cinematic`.
+A loading screen leads into a mission when it follows `mission_ready`, `loadout`, or `mission_briefing`. After a mission, a story mission can go straight from `game_score_win` to `cinematic`.
 
-One more group, `options`, says which kind of menu is open.
-It is `ingame_menu` in the Esc menu and its settings, the inventory, and the mission board.
-It is `vendor_menu` at vendors, `appearance_menu` in character appearance, and `credit_store_menu` in the store.
-It is `None` with no menu open.
-The mod lowers custom music to the Menu Volume setting while it is anything but `None`, and logs its changes as `[raw] options` lines.
+One more group, `options`, says which kind of menu is open. It is `ingame_menu` in the Esc menu and its settings, the inventory, and the mission board. It is `vendor_menu` at vendors, `appearance_menu` in character appearance, and `credit_store_menu` in the store. It is `None` with no menu open. The mod lowers custom music to the Menu Volume setting while it is anything but `None`, and logs its changes as `[raw] options` lines.
 
-One more group, `expeditions_intensity`, always holds the same value as `music_combat`, in every mission and in Expeditions.
-In an Expedition, both groups carry the Expedition-only values `no_combat`, `low_combat`, `med_combat`, `high_combat`, `safe_room`, and `extraction`.
-The fight level follows how alert the enemy is, not how hard the fight is.
-The mod resolves `low_combat`, `med_combat`, and `high_combat` as `expedition_combat`, which uses the Combat Music Hold setting too.
-It resolves `safe_room` as `expedition_safe_room`, `extraction` as `expedition_extraction`, and `no_combat` as `explore`.
-While a custom song plays, the mod forces both groups to `None`.
-`music_combat` is always logged, while `expeditions_intensity` only shows up as a `[raw]` line when it moves to or from one of these values.
+One more group, `expeditions_intensity`, always holds the same value as `music_combat`, in every mission and in Expeditions. In an Expedition, both groups carry the Expedition-only values `no_combat`, `low_combat`, `med_combat`, `high_combat`, `safe_room`, and `extraction`. The fight level follows how alert the enemy is, not how hard the fight is. The mod resolves `low_combat`, `med_combat`, and `high_combat` as `expedition_combat`, which uses the Combat Music Hold setting too. It resolves `safe_room` as `expedition_safe_room`, `extraction` as `expedition_extraction`, and `no_combat` as `explore`. While a custom song plays, the mod forces both groups to `None`. `music_combat` is always logged, while `expeditions_intensity` only shows up as a `[raw]` line when it moves to or from one of these values.
 
 The `[raw]` lines also show `music_objective_progression`, `event_intensity`, `event_category`, and `circumstance`, which decide no context.
 
@@ -78,20 +52,14 @@ The `[raw]` lines also show `music_objective_progression`, `event_intensity`, `e
 Wwise events start sounds, and a few of them are music.
 
 * `wwise/events/music/play_exploration_music` and `wwise/events/music/play_exploration_the_machine_spiri_1`, `_3`, and `_4` fire during hordes and around mission event sequences, such as holding a position or minigames.
-* `wwise/events/cinematics/play_outro_win_generic_01` and `wwise/events/ui/play_ui_eor_start_stinger` fire during a mission's victory.
-  Neither has "music" in its name.
+* `wwise/events/cinematics/play_outro_win_generic_01` and `wwise/events/ui/play_ui_eor_start_stinger` fire during a mission's victory. Neither has "music" in its name.
 * `wwise/events/cinematics/play_mission_intro_stinger_generic` fires at the start of a mission's intro.
 
 ## How the mod silences it
 
-The mod only silences the game's music once it has a custom song for the current context, so a context with no songs keeps the game's music.
-A context set to Silence in Music per Situation is the one exception.
-It silences the game's music with no song at all.
-Meat Grinder is set to Silence by default.
-A context set to Vanilla never silences the game's music.
+The mod only silences the game's music once it has a custom song for the current context, so a context with no songs keeps the game's music. A context set to Silence in Music per Situation is the one exception. It silences the game's music with no song at all. Meat Grinder is set to Silence by default. A context set to Vanilla never silences the game's music.
 
-Each line below shows up in the log with Detailed Logging on.
-A context set to Silence forces the same groups as a custom song for it does.
+Each line below shows up in the log with Detailed Logging on. A context set to Silence forces the same groups as a custom song for it does.
 
 | Log line | What it means |
 |---|---|
@@ -103,8 +71,7 @@ A context set to Silence forces the same groups as a custom song for it does.
 | `[suppress] stopped the game's music event: wwise/events/music/play_exploration_music` | The mod stopped the game's exploration music event as it started, since a custom song plays. It stops every event whose name contains `events/music/play_exploration`. |
 | `[suppress] restoring music_zone to hub` | The group is back at the game's value, and the game's music with it. It shows when the custom song stops, or when the next context does not silence that group. Each restored group logs its own line. |
 
-A silenced state does not show up as a `[raw]` line, since the `[raw]` lines always show the game's values.
-An exploration music event that fires while no custom song plays is not stopped, so the game's music plays as usual.
+A silenced state does not show up as a `[raw]` line, since the `[raw]` lines always show the game's values. An exploration music event that fires while no custom song plays is not stopped, so the game's music plays as usual.
 
 ## Holds and bosses
 
@@ -143,17 +110,14 @@ Most sound events are too frequent to log, so these are left out unless their na
 | `events/ui/play_ui_npc_interacts` | Hub NPC interaction sounds. |
 | `events/ui/play_ui_character_loadout` | Loadout equip sounds. |
 
-Everything else is logged, such as the rest of `events/ui/`, `events/cinematics/`, `events/vo/`, and `events/npc/`.
-The victory events above have no "music" in their names, which is why `events/ui/` and `events/cinematics/` are only partly left out.
+Everything else is logged, such as the rest of `events/ui/`, `events/cinematics/`, `events/vo/`, and `events/npc/`. The victory events above have no "music" in their names, which is why `events/ui/` and `events/cinematics/` are only partly left out.
 
 ## Tracing a sound
 
 1. Turn on Detailed Logging in the Debug group of the mod options, and play until you hear the sound.
-2. Read `diagnostic.log` around that moment.
-   The `[context]` and `[playback]` lines show which music the mod chose and why.
+2. Read `diagnostic.log` around that moment. The `[context]` and `[playback]` lines show which music the mod chose and why.
 3. Look for `[probe] music event:` lines first, then for `[probe] new event:` lines from shortly before the sound.
 4. If no probe line fits, look for a `[raw] music_*` change at that moment, since the game's music also follows its state groups.
-5. If the game's music plays under a custom song, check for the matching `[suppress]` line from the table above.
-   Its absence, or a `restoring` line, explains why the game's music came back.
+5. If the game's music plays under a custom song, check for the matching `[suppress]` line from the table above. Its absence, or a `restoring` line, explains why the game's music came back.
 
 A sound that turns out to be the game's music, but that the mod does not silence, is worth a bug report with the log attached.

@@ -1,8 +1,6 @@
 # Game missions and modes
 
-How Darktide reports which mission or game mode is running, as Music Replacer sees it.
-It is a reference for reading `diagnostic.log`, next to [wwise-events.md](wwise-events.md), which covers the music states and events.
-The log calls each situation from the README a context, such as `explore` or `event`, which is also the name of its audio folder.
+How Darktide reports which mission or game mode is running, as Music Replacer sees it. It is a reference for reading `diagnostic.log`, next to [wwise-events.md](wwise-events.md), which covers the music states and events. The log calls each situation from the README a context, such as `explore` or `event`, which is also the name of its audio folder.
 
 ## The mission line
 
@@ -12,10 +10,7 @@ Every time the current mission changes, including on entering the hub, the log g
 [mission] name=<mission name> type=<mission type> | <key>=<value>, <key>=<value>, ...
 ```
 
-The name and the rest of the line come from the game's own mission template.
-The part after the bar lists every field of the template that holds plain text, a number, or true or false, sorted by name.
-The template's `wwise_state` field is what the game reports as `music_zone`.
-These lines are always logged, so every bug report says which mission it came from.
+The name and the rest of the line come from the game's own mission template. The part after the bar lists every field of the template that holds plain text, a number, or true or false, sorted by name. The template's `wwise_state` field is what the game reports as `music_zone`. These lines are always logged, so every bug report says which mission it came from.
 
 ## Zones
 
@@ -40,8 +35,7 @@ These lines are always logged, so every bug report says which mission it came fr
 
 ## Missions
 
-The mission line names a mission by its code.
-These are the in-game names of the ordinary missions, which Havoc plays too, by area.
+The mission line names a mission by its code. These are the in-game names of the ordinary missions, which Havoc plays too, by area.
 
 | Code | In-game name | `mission_type` | `music_zone` |
 |---|---|---|---|
@@ -82,38 +76,23 @@ These are the in-game names of the ordinary missions, which Havoc plays too, by 
 | `exp_wastes` | Expeditions. `mission_type` is `expeditions`, `game_mode_name` is `expedition`, and its zone is `expeditions`. It reports its own combat states, which resolve `expedition_combat`, `expedition_safe_room`, and `expedition_extraction`. It reports no horde or boss. The game decides only once per launch, on the first mission, whether it runs an Expedition. So the mod makes it decide again at every mission. Without that, an Expedition after an ordinary mission would report the ordinary states, and an ordinary mission after an Expedition the Expedition states. The game's music for an Expedition sets no `music_objective`. |
 | `op_train`, `op_no_mans_land` | Operations. Their `mission_type` is `operations`, which the mod uses to treat the whole mission as one `event`. |
 
-Havoc plays the ordinary missions and reports nothing of its own to the music.
-The mission line, the zone, and every music state are the same as in an ordinary run, and `circumstance` stays `None`.
-The game keeps Havoc's own data in its difficulty manager, which is how the mod tells a Havoc run apart for the `havoc` override folders.
-With Detailed Logging on, the log says `[mission] game mode: havoc` once a Havoc run starts.
-It says `[mission] game mode: expeditions` in an Expedition, `[mission] game mode: mortis_trials` in Mortis Trials, and `[mission] game mode: ordinary` after any of them.
+Havoc plays the ordinary missions and reports nothing of its own to the music. The mission line, the zone, and every music state are the same as in an ordinary run, and `circumstance` stays `None`. The game keeps Havoc's own data in its difficulty manager, which is how the mod tells a Havoc run apart for the `havoc` override folders. With Detailed Logging on, the log says `[mission] game mode: havoc` once a Havoc run starts. It says `[mission] game mode: expeditions` in an Expedition, `[mission] game mode: mortis_trials` in Mortis Trials, and `[mission] game mode: ordinary` after any of them.
 
-The level names its mission only seconds before the briefing ends.
-The game's mechanism data names it earlier, once the client has joined the mission server, before the level loads.
-On the way into a mission, the mod reads the mission and its game mode from there, so override folders apply on the preparation screen and the briefing too.
-With Detailed Logging on, the log then says, for example, `[mission] heading to exp_wastes, game mode: expeditions`.
-Havoc is only known once the mission has loaded, since its data arrives with the level.
+The level names its mission only seconds before the briefing ends. The game's mechanism data names it earlier, once the client has joined the mission server, before the level loads. On the way into a mission, the mod reads the mission and its game mode from there, so override folders apply on the preparation screen and the briefing too. With Detailed Logging on, the log then says, for example, `[mission] heading to exp_wastes, game mode: expeditions`. Havoc is only known once the mission has loaded, since its data arrives with the level.
 
 ## Moving between the hub, missions, and menus
 
 * Leaving the hub for a mission clears the hub zone a moment before it switches the game state to `loading`.
-* Leaving the hub for character select clears the zone and unloads the hub at once.
-  The game state stays on `mission` for a few seconds before it switches to `main_menu`.
-  The mod plays no music in between.
-* After a victory or defeat, the game state goes back to `mission` for a few seconds before the score screen.
-  The mod keeps the `victory` or `defeat` music through it.
-* Some missions never report a zone, such as Rolling Steel and Basic Training.
-  The mod counts the `mission` game state with a mission loaded as being in a mission there.
-  With Detailed Logging on, the log then says `[zoneless] music_zone=None with music_game_state=mission, treating as a mission`.
+* Leaving the hub for character select clears the zone and unloads the hub at once. The game state stays on `mission` for a few seconds before it switches to `main_menu`. The mod plays no music in between.
+* After a victory or defeat, the game state goes back to `mission` for a few seconds before the score screen. The mod keeps the `victory` or `defeat` music through it.
+* Some missions never report a zone, such as Rolling Steel and Basic Training. The mod counts the `mission` game state with a mission loaded as being in a mission there. With Detailed Logging on, the log then says `[zoneless] music_zone=None with music_game_state=mission, treating as a mission`.
 
 ## Reading the game's source
 
-The public repository `Aussiemon/Darktide-Source-Code` holds the game's Lua, which is where most fields and values above come from.
-The rest, such as the Basic Training row, are observations from play.
+The public repository `Aussiemon/Darktide-Source-Code` holds the game's Lua, which is where most fields and values above come from. The rest, such as the Basic Training row, are observations from play.
 
 * `scripts/managers/wwise_game_sync/wwise_game_sync_manager.lua` sets each music state group on every tick.
-* `scripts/managers/wwise_game_sync/wwise_state_groups/` holds one file per state group.
-  `wwise_state_group_zone.lua` takes the current mission's `wwise_state`, and `wwise_state_group_game.lua` maps the game's state to the `music_game_state` values.
+* `scripts/managers/wwise_game_sync/wwise_state_groups/` holds one file per state group. `wwise_state_group_zone.lua` takes the current mission's `wwise_state`, and `wwise_state_group_game.lua` maps the game's state to the `music_game_state` values.
 * `scripts/managers/mission/mission_manager.lua` holds the current mission and its template.
 * `scripts/managers/mechanism/mechanism_manager.lua` holds the mechanism data that names a mission before its level loads.
 * `scripts/settings/mission/mission_types.lua` lists the mission types.

@@ -1,7 +1,6 @@
 # Settings
 
-Every setting of Music Replacer, with its default.
-The settings are in the in-game mod options under Music Replacer, in six groups, in the order the menu shows them.
+Every setting of Music Replacer, with its default. The settings are in the in-game mod options under Music Replacer, in six groups, in the order the menu shows them.
 
 ## Playback
 
@@ -12,8 +11,7 @@ The settings are in the in-game mod options under Music Replacer, in six groups,
 
 ## Music per Situation
 
-One dropdown per situation, with the choices Custom, Vanilla, and Silence.
-See [Choosing what plays](../README.md#choosing-what-plays) in the README for what each choice does.
+One dropdown per situation, with the choices Custom, Vanilla, and Silence. See [Choosing what plays](../README.md#choosing-what-plays) in the README for what each choice does.
 
 ## Volume
 
@@ -32,8 +30,7 @@ See [Choosing what plays](../README.md#choosing-what-plays) in the README for wh
 
 ## Music Holds
 
-Each hold goes from 0 to 30 seconds.
-Set one to 0 to follow the game exactly.
+Each hold goes from 0 to 30 seconds. Set one to 0 to follow the game exactly.
 
 | Setting | Default | What it does |
 |---|---|---|
@@ -53,15 +50,8 @@ Set one to 0 to follow the game exactly.
 
 The debug overlay shows, from the top:
 
-* **The situation,** by its name in Music per Situation, with a tag for what plays there.
-  The tag is green for Custom, gold for Vanilla, and red for Silence.
-  When the game's music plays for a reason, the tag says so, for example `Vanilla, no songs` or `Vanilla, its songs would not play`.
+* **The situation,** by its name in Music per Situation, with a tag for what plays there. The tag is green for Custom, gold for Vanilla, and red for Silence. When the game's music plays for a reason, the tag says so, for example `Vanilla, no songs` or `Vanilla, its songs would not play`.
 * **The folder** that plays, and the override names the moment looks for.
-* **The song,** with a bar that shows how far into it the song is, and its time and length.
-  While no song of yours plays, this line says what plays instead.
-* **Level,** a meter that moves with the music as you hear it, so it also follows the volume sliders, fades, and the menu lowering.
-  Beside it, the Menu marker lights up while a menu is open, and the Loudness marker while Even Out Loudness is on.
-  With Even Out Loudness on, the song's level shows after them, such as `-6.1 dB`.
-  The row only shows while one of your songs plays.
-* **Waiting,** a bar and the seconds left of a hold or a change that is still settling.
-  It appears only while one of them is counting down.
+* **The song,** with a bar that shows how far into it the song is, and its time and length. While no song of yours plays, this line says what plays instead.
+* **Level,** a meter that moves with the music as you hear it, so it also follows the volume sliders, fades, and the menu lowering. Beside it, the Menu marker lights up while a menu is open, and the Loudness marker while Even Out Loudness is on. With Even Out Loudness on, the song's level shows after them, such as `-6.1 dB`. The row only shows while one of your songs plays.
+* **Waiting,** a bar and the seconds left of a hold or a change that is still settling. It appears only while one of them is counting down.

@@ -1,8 +1,6 @@
 # darktide-music-replacer
 
-Music Replacer is a mod for Warhammer 40,000: Darktide that plays your own music in place of the game's, chosen by what is happening in the hub or a mission.
-You put audio files into folders, one folder per situation, and the mod picks the right one as you play.
-Wherever you add no songs, the game's music plays as usual.
+Music Replacer is a mod for Warhammer 40,000: Darktide that plays your own music in place of the game's, chosen by what is happening in the hub or a mission. You put audio files into folders, one folder per situation, and the mod picks the right one as you play. Wherever you add no songs, the game's music plays as usual.
 
 ## What it does
 
@@ -24,31 +22,20 @@ Wherever you add no songs, the game's music plays as usual.
 * It does not change any game files.
 * It does not install or run any extra program or DLL.
 * It does not change sound effects or voice lines, only the music.
-* It does not affect your squadmates.
-  They hear their own game's music.
-* It does not play your music during mission intros and cutscenes.
-  The game's music plays there.
-* It does not download or stream anything.
-  It plays only the files in its own audio folders.
+* It does not affect your squadmates. They hear their own game's music.
+* It does not play your music during mission intros and cutscenes. The game's music plays there.
+* It does not download or stream anything. It plays only the files in its own audio folders.
 * It does not change your music files.
 
 ## Quickstart
 
-1. Install Music Replacer like any other Darktide mod, for example through Vortex.
-   Check that `MusicReplacer` is listed below `dmf` in `mod_load_order.txt`, as described under Requirements.
-2. Put your audio files into the folders inside the **installed** mod folder: `...\Warhammer 40,000 DARKTIDE\mods\MusicReplacer\audio\<folder>\`.
-   For example, songs in `audio\hub\` play in the Mourningstar.
-   Every folder is listed under Where your music plays.
+1. Install Music Replacer like any other Darktide mod, for example through Vortex. Check that `MusicReplacer` is listed below `dmf` in `mod_load_order.txt`, as described under Requirements.
+2. Put your audio files into the folders inside the **installed** mod folder: `...\Warhammer 40,000 DARKTIDE\mods\MusicReplacer\audio\<folder>\`. For example, songs in `audio\hub\` play in the Mourningstar. Every folder is listed under Where your music plays.
 3. Start the game and play.
 
-The mod creates any missing folder when the game starts, so every folder is there after your first launch at the latest.
-You can add, remove, or replace files while the game runs, and the mod picks them up by itself 3 seconds after files stop changing.
-Put audio files directly inside the folders you want music for.
-Folders inside them are [override folders](docs/override-folders.md), which are optional.
+The mod creates any missing folder when the game starts, so every folder is there after your first launch at the latest. You can add, remove, or replace files while the game runs, and the mod picks them up by itself 3 seconds after files stop changing. Put audio files directly inside the folders you want music for. Folders inside them are [override folders](docs/override-folders.md), which are optional.
 
-The formats that work are `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, and `.wma`.
-Other files, such as `.ogg` and `.opus`, are ignored, so convert those to a supported format first.
-File names in any language work.
+The formats that work are `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, and `.wma`. Other files, such as `.ogg` and `.opus`, are ignored, so convert those to a supported format first. File names in any language work.
 
 ## Requirements
 
@@ -56,14 +43,11 @@ File names in any language work.
 * [Darktide Mod Framework](https://www.nexusmods.com/warhammer40kdarktide/mods/8) (DMF).
 * `MusicReplacer` listed below `dmf` in `mod_load_order.txt`, in the game's `mods` folder.
 
-On a Windows "N" edition, install Microsoft's free Media Feature Pack, which provides the audio decoder the mod uses.
-Without it, the mod cannot play your songs, and the game's music plays as usual.
+On a Windows "N" edition, install Microsoft's free Media Feature Pack, which provides the audio decoder the mod uses. Without it, the mod cannot play your songs, and the game's music plays as usual.
 
 ## Where your music plays
 
-Each folder plays in one situation.
-The music switches about half a second after the situation changes, or 3 seconds for a loading screen, so a moment that flickers does not restart the song.
-The Music Holds settings also keep combat, horde, boss, and event music going for a few seconds, so a short lull does not switch the music at once.
+Each folder plays in one situation. The music switches about half a second after the situation changes, or 3 seconds for a loading screen, so a moment that flickers does not restart the song. The Music Holds settings also keep combat, horde, boss, and event music going for a few seconds, so a short lull does not switch the music at once.
 
 | Folder | When it plays |
 |---|---|
@@ -87,17 +71,13 @@ The Music Holds settings also keep combat, horde, boss, and event music going fo
 | `expedition_safe_room` | In an Expedition's safe room. |
 | `expedition_extraction` | While an Expedition's extraction runs, until the mission is won or lost. Only a last stand takes over. |
 
-In Mortis Trials, the two Mortis Trials folders replace the mission folders from `explore` to `event`.
-In an Expedition, quiet moments play `explore`.
+In Mortis Trials, the two Mortis Trials folders replace the mission folders from `explore` to `event`. In an Expedition, quiet moments play `explore`.
 
-Meat Grinder has no folder of its own.
-It is a choice under Music per Situation, which starts at Silence.
-Set it to Custom to hear your `explore` and `combat` songs there, which is a quick way to test them.
+Meat Grinder has no folder of its own. It is a choice under Music per Situation, which starts at Silence. Set it to Custom to hear your `explore` and `combat` songs there, which is a quick way to test them.
 
 ## Choosing what plays
 
-The Music per Situation group has one dropdown per situation: Title Screen, Character Select, Hub, Loading, Mission Preparation, Mission Briefing, Explore, Combat, Horde, Boss, Event, Last Stand, Victory, Defeat, Mortis Trials Wave, Mortis Trials Break, Expedition Combat, Expedition Safe Room, Expedition Extraction, and Meat Grinder.
-Each offers the same three choices:
+The Music per Situation group has one dropdown per situation: Title Screen, Character Select, Hub, Loading, Mission Preparation, Mission Briefing, Explore, Combat, Horde, Boss, Event, Last Stand, Victory, Defeat, Mortis Trials Wave, Mortis Trials Break, Expedition Combat, Expedition Safe Room, Expedition Extraction, and Meat Grinder. Each offers the same three choices:
 
 | Choice | What plays |
 |---|---|
@@ -105,32 +85,24 @@ Each offers the same three choices:
 | Vanilla | Always the game's music, even with songs in the folder, so you can turn one situation off without moving files. |
 | Silence | Nothing. The game's music is silenced too. |
 
-Meat Grinder starts at Silence.
-There, Custom plays your `explore` and `combat` songs, and empty folders play the game's music.
-Vanilla plays the game's music there, which is none, so it sounds the same as Silence.
+Meat Grinder starts at Silence. There, Custom plays your `explore` and `combat` songs, and empty folders play the game's music. Vanilla plays the game's music there, which is none, so it sounds the same as Silence.
 
 A changed choice applies at once, also to the situation that is playing.
 
 ## Settings
 
-The settings are in the in-game mod options under Music Replacer, in six groups: Playback, Music per Situation, Volume, Boss Music, Music Holds, and Debug.
-Every setting and its default is explained in [docs/settings.md](docs/settings.md).
+The settings are in the in-game mod options under Music Replacer, in six groups: Playback, Music per Situation, Volume, Boss Music, Music Holds, and Debug. Every setting and its default is explained in [docs/settings.md](docs/settings.md).
 
 ## Override folders
 
-Override folders are optional and for advanced use.
-A folder can hold folders of its own, which play for a kind of event, a kind of boss, a mission, or a game mode.
-They are explained in [docs/override-folders.md](docs/override-folders.md).
+Override folders are optional and for advanced use. A folder can hold folders of its own, which play for a kind of event, a kind of boss, a mission, or a game mode. They are explained in [docs/override-folders.md](docs/override-folders.md).
 
 ## Safe by design
 
 * **No game files are changed.** The mod creates its own audio folders and writes files only to its own folder in `%APPDATA%`.
 * **No extra programs or DLLs.** The mod uses the audio decoder and audio engine that come with Windows, and calls them from its Lua scripts.
-* **The game's music is the fallback.** The game's music plays wherever the mod has no songs, cannot play them, or cannot start Windows audio at all.
-  The game's music is only silenced once one of your songs is ready to play, or where you chose Silence.
-* **Broken files are skipped.** A file Windows cannot decode is skipped once the mod has checked it, shortly after launch, and the log names it.
-  If three songs in a row from one folder fail to play, that folder gives way to the game's music until the game restarts or the folders are listed again.
-  An override folder gives way to its parent folder instead.
+* **The game's music is the fallback.** The game's music plays wherever the mod has no songs, cannot play them, or cannot start Windows audio at all. The game's music is only silenced once one of your songs is ready to play, or where you chose Silence.
+* **Broken files are skipped.** A file Windows cannot decode is skipped once the mod has checked it, shortly after launch, and the log names it. If three songs in a row from one folder fail to play, that folder gives way to the game's music until the game restarts or the folders are listed again. An override folder gives way to its parent folder instead.
 * **Easy to turn off.** You can turn the mod off in the mod options at any time, and the game's music comes back at once.
 * **Your music files are never changed.** The mod only reads them.
 * **It stops with the game.** The music plays inside the game itself, so it stops when the game closes, even after a crash.
@@ -139,26 +111,16 @@ What the mod writes where, and how it handles a lost audio device, are covered i
 
 ## Updating and uninstalling
 
-Update or reinstall the mod through Vortex as usual.
-Your songs survive that.
-Vortex only removes files it deployed itself, and the mod archive holds only the empty audio folders, never songs.
-Your songs do not survive the mod folder being renamed, so move `audio\` across by hand if that ever happens.
+Update or reinstall the mod through Vortex as usual. Your songs survive that. Vortex only removes files it deployed itself, and the mod archive holds only the empty audio folders, never songs. Your songs do not survive the mod folder being renamed, so move `audio\` across by hand if that ever happens.
 
-Uninstalling the mod leaves its own files in `%APPDATA%\Fatshark\Darktide\MusicReplacer\` behind.
-Delete that folder by hand if you want them gone.
-Check `mods\MusicReplacer\audio\` in the game folder too, since your songs were never part of the mod archive.
+Uninstalling the mod leaves its own files in `%APPDATA%\Fatshark\Darktide\MusicReplacer\` behind. Delete that folder by hand if you want them gone. Check `mods\MusicReplacer\audio\` in the game folder too, since your songs were never part of the mod archive.
 
 ## Compatibility
 
-* Music Replacer only affects your own game.
-  Squadmates hear their own game's music, with or without the mod.
-* Running it alongside other music mods has not been tested.
-  A mod that also changes the game's music states may conflict with it.
-* The mod has not been tested on Steam Deck or Linux.
-  There the game runs through Proton, which brings its own stand-ins for the Windows audio decoder and audio engine the mod uses.
-  If the mod cannot start them, the game's music plays as usual.
-* If your Windows user name has letters outside the language Windows uses for older programs, such as Japanese letters on an English Windows, the mod cannot write `diagnostic.log` or `loudness.txt`.
-  Your music still plays, and Even Out Loudness measures your songs again at every launch.
+* Music Replacer only affects your own game. Squadmates hear their own game's music, with or without the mod.
+* Running it alongside other music mods has not been tested. A mod that also changes the game's music states may conflict with it.
+* The mod has not been tested on Steam Deck or Linux. There the game runs through Proton, which brings its own stand-ins for the Windows audio decoder and audio engine the mod uses. If the mod cannot start them, the game's music plays as usual.
+* If your Windows user name has letters outside the language Windows uses for older programs, such as Japanese letters on an English Windows, the mod cannot write `diagnostic.log` or `loudness.txt`. Your music still plays, and Even Out Loudness measures your songs again at every launch.
 
 ## Troubleshooting
 
@@ -166,18 +128,14 @@ Fixes for common problems are in [docs/troubleshooting.md](docs/troubleshooting.
 
 To report a problem, attach these two files:
 
-* The mod's log from `%APPDATA%\Fatshark\Darktide\MusicReplacer\`.
-  That is `diagnostic.log` if the problem happened in the current or last game session, or `diagnostic-prev.log` if it happened in the session before that.
+* The mod's log from `%APPDATA%\Fatshark\Darktide\MusicReplacer\`. That is `diagnostic.log` if the problem happened in the current or last game session, or `diagnostic-prev.log` if it happened in the session before that.
 * The newest file in `%APPDATA%\Fatshark\Darktide\console_logs\`.
 
 ## Languages and contributing
 
-* The mod options and their tooltips are in English.
-  With the game set to another language, they show in English too.
-* Translations are welcome as pull requests on [GitHub](https://github.com/Lempki/darktide-music-replacer).
-  [docs/development.md](docs/development.md) explains where the texts live and how to add a language.
-* Fixes, ideas, and bug reports are welcome there too, as pull requests or issues.
-  For a bug, attach the files listed under Troubleshooting.
+* The mod options and their tooltips are in English. With the game set to another language, they show in English too.
+* Translations are welcome as pull requests on [GitHub](https://github.com/Lempki/darktide-music-replacer). [docs/development.md](docs/development.md) explains where the texts live and how to add a language.
+* Fixes, ideas, and bug reports are welcome there too, as pull requests or issues. For a bug, attach the files listed under Troubleshooting.
 
 ## Credits
 
