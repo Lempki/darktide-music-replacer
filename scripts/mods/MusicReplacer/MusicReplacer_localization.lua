@@ -1,5 +1,4 @@
 local InputUtils = require("scripts/managers/input/input_utils")
-local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/contexts")
 
 -- Key values in the tooltips, in the color the game itself uses for highlighted terms.
 local function highlight(text)
@@ -9,8 +8,9 @@ end
 -- Each tooltip says what its setting does, then gives the notes that matter in a second paragraph.
 -- The README keeps the full explanations.
 
--- Every context's dropdown offers the same choices, so their tooltips share the explanation.
--- `note`, if given, is one more sentence about that context.
+-- Builds the English tooltip of a situation dropdown, since every one offers the same choices.
+-- `note`, if given, is one more sentence about that situation.
+-- A translation writes its own full text instead, since the sentence order differs between languages.
 local function source_tooltip(when, note)
 	return "What plays " .. when .. ".\n\n" ..
 		highlight("Custom") .. " plays your songs from its folder. " ..
@@ -55,6 +55,123 @@ local strings = {
 	},
 	source_silence = {
 		en = "Silence",
+	},
+	source_title_screen = {
+		en = "Title Screen",
+	},
+	source_title_screen_tooltip = {
+		en = source_tooltip("on the title screen, before character select"),
+	},
+	source_character_select = {
+		en = "Character Select",
+	},
+	source_character_select_tooltip = {
+		en = source_tooltip("on the character select screen, also while creating a character"),
+	},
+	source_hub = {
+		en = "Hub",
+	},
+	source_hub_tooltip = {
+		en = source_tooltip("in the Mourningstar"),
+	},
+	source_loading = {
+		en = "Loading",
+	},
+	source_loading_tooltip = {
+		en = source_tooltip("on loading screens that lead anywhere but into a mission: after starting the game, after a mission, and on the way to Meat Grinder"),
+	},
+	source_mission_preparation = {
+		en = "Mission Preparation",
+	},
+	source_mission_preparation_tooltip = {
+		en = source_tooltip("on the mission preparation screen, where the party stands together before a mission and can still change loadouts"),
+	},
+	source_mission_briefing = {
+		en = "Mission Briefing",
+	},
+	source_mission_briefing_tooltip = {
+		en = source_tooltip(
+			"on the loading screens and the briefing on the way into a mission, also when joining a mission in progress",
+			"The intro itself keeps the game's music, and a song interrupted by the preparation screen continues in the briefing."
+		),
+	},
+	source_explore = {
+		en = "Explore",
+	},
+	source_explore_tooltip = {
+		en = source_tooltip("in a mission while nothing threatens you"),
+	},
+	source_combat = {
+		en = "Combat",
+	},
+	source_combat_tooltip = {
+		en = source_tooltip("in a mission while enemies attack you, outside a horde or a boss fight"),
+	},
+	source_horde = {
+		en = "Horde",
+	},
+	source_horde_tooltip = {
+		en = source_tooltip("during a horde"),
+	},
+	source_boss = {
+		en = "Boss",
+	},
+	source_boss_tooltip = {
+		en = source_tooltip("while a monstrosity is near you"),
+	},
+	source_event = {
+		en = "Event",
+	},
+	source_event_tooltip = {
+		en = source_tooltip("while a mission event plays its music, and through a whole Operation"),
+	},
+	source_last_stand = {
+		en = "Last Stand",
+	},
+	source_last_stand_tooltip = {
+		en = source_tooltip("while only one player of the team is left alive"),
+	},
+	source_victory = {
+		en = "Victory",
+	},
+	source_victory_tooltip = {
+		en = source_tooltip("after a mission is won, until the loading screen"),
+	},
+	source_defeat = {
+		en = "Defeat",
+	},
+	source_defeat_tooltip = {
+		en = source_tooltip("after a mission is lost, until the loading screen"),
+	},
+	source_mortis_trials_wave = {
+		en = "Mortis Trials Wave",
+	},
+	source_mortis_trials_wave_tooltip = {
+		en = source_tooltip("during a Mortis Trials wave"),
+	},
+	source_mortis_trials_break = {
+		en = "Mortis Trials Break",
+	},
+	source_mortis_trials_break_tooltip = {
+		en = source_tooltip("between Mortis Trials waves"),
+	},
+	source_expedition_combat = {
+		en = "Expedition Combat",
+	},
+	source_expedition_combat_tooltip = {
+		en = source_tooltip("during a fight in an Expedition"),
+	},
+	source_expedition_safe_room = {
+		en = "Expedition Safe Room",
+	},
+	source_expedition_safe_room_tooltip = {
+		en = source_tooltip("in an Expedition's safe room"),
+	},
+	source_expedition_extraction = {
+		en = "Expedition Extraction",
+	},
+	source_expedition_extraction_tooltip = {
+		en = source_tooltip("while an Expedition's extraction runs"),
 	},
 	source_meat_grinder = {
 		en = "Meat Grinder",
@@ -195,47 +312,5 @@ local strings = {
 			"The extra lines add up quickly, so turn this on only while tracking down a problem.",
 	},
 }
-
--- Each context's dropdown title, when it plays, and an optional note, for the contexts that share the common tooltip.
--- Meat Grinder has a tooltip of its own above.
-local CONTEXT_TEXT = {
-	title_screen = { "Title Screen", "on the title screen, before character select" },
-	character_select = { "Character Select", "on the character select screen, also while creating a character" },
-	hub = { "Hub", "in the Mourningstar" },
-	loading = {
-		"Loading",
-		"on loading screens that lead anywhere but into a mission: after starting the game, after a mission, and on the way to Meat Grinder",
-	},
-	mission_preparation = {
-		"Mission Preparation",
-		"on the mission preparation screen, where the party stands together before a mission and can still change loadouts",
-	},
-	mission_briefing = {
-		"Mission Briefing",
-		"on the loading screens and the briefing on the way into a mission, also when joining a mission in progress",
-		"The intro itself keeps the game's music, and a song interrupted by the preparation screen continues in the briefing.",
-	},
-	explore = { "Explore", "in a mission while nothing threatens you" },
-	combat = { "Combat", "in a mission while enemies attack you, outside a horde or a boss fight" },
-	horde = { "Horde", "during a horde" },
-	boss = { "Boss", "while a monstrosity is near you" },
-	event = { "Event", "while a mission event plays its music, and through a whole Operation" },
-	last_stand = { "Last Stand", "while only one player of the team is left alive" },
-	victory = { "Victory", "after a mission is won, until the loading screen" },
-	defeat = { "Defeat", "after a mission is lost, until the loading screen" },
-	mortis_trials_wave = { "Mortis Trials Wave", "during a Mortis Trials wave" },
-	mortis_trials_break = { "Mortis Trials Break", "between Mortis Trials waves" },
-	expedition_combat = { "Expedition Combat", "during a fight in an Expedition" },
-	expedition_safe_room = { "Expedition Safe Room", "in an Expedition's safe room" },
-	expedition_extraction = { "Expedition Extraction", "while an Expedition's extraction runs" },
-}
-
-for _, context in ipairs(Contexts.list) do
-	local text = CONTEXT_TEXT[context.id]
-	if text then
-		strings["source_" .. context.id] = { en = text[1] }
-		strings["source_" .. context.id .. "_tooltip"] = { en = source_tooltip(text[2], text[3]) }
-	end
-end
 
 return strings
