@@ -33,7 +33,7 @@ Music Replacer is a mod for Warhammer 40,000: Darktide that plays your own music
 2. Put your audio files into the folders inside the **installed** mod folder: `...\Warhammer 40,000 DARKTIDE\mods\MusicReplacer\audio\<folder>\`. For example, songs in `audio\hub\` play in the Mourningstar. Every folder is listed under Where your music plays.
 3. Start the game and play.
 
-The mod creates any missing folder when the game starts, so every folder is there after your first launch at the latest. You can add, remove, or replace files while the game runs, and the mod picks them up by itself 3 seconds after files stop changing. Put audio files directly inside the folders you want music for. Folders inside them are [override folders](docs/override-folders.md), which are optional.
+The mod creates any missing folder when the game starts, so every folder is there after your first launch at the latest. You can add, remove, or replace files while the game runs, and the mod picks them up by itself 3 seconds after files stop changing. A song that is playing finishes, even if you remove its file. Put audio files directly inside the folders you want music for. Folders inside them are [override folders](docs/override-folders.md), which are optional.
 
 The formats that work are `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, and `.wma`. Other files, such as `.ogg` and `.opus`, are ignored, so convert those to a supported format first. File names in any language work.
 
