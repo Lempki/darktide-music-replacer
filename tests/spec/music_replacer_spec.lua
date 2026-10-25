@@ -492,6 +492,21 @@ describe("MusicReplacer.lua loading", function()
 		assert_equal(harness:playing(), "explore/x.mp3")
 	end)
 
+	it("starts the briefing song within the normal wait after the preparation screen, so the game's briefing music barely plays", function()
+		local harness = in_hub_with(FILES)
+		harness:leave_hub()
+		harness:wait(2)
+		harness:state("music_game_state", "loadout")
+		harness:settle()
+		assert_equal(harness:playing(), "mission_preparation/p.mp3")
+
+		harness:state("music_game_state", "loading")
+		harness:state("music_game_state", "mission_briefing")
+		harness:wait(0.7)
+
+		assert_equal(harness:playing():find("^mission_briefing/") ~= nil, true)
+	end)
+
 	it("leaves loading screens to the game's own music while the loading folder is empty", function()
 		local harness = in_hub_with({ hub = FILES.hub })
 

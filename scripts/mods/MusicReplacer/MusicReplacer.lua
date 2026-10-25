@@ -327,6 +327,7 @@ local MAX_DEBOUNCE_SECONDS = 3
 -- Leaving the hub for a mission reports a loading screen for about 2 seconds before the mission preparation screen.
 -- So a change to a loading context waits LOADING_DEBOUNCE_SECONDS, which outlasts that.
 -- The hub song then carries straight on into the preparation screen's song.
+-- Nothing that brief follows the preparation screen, so the briefing after it takes the normal wait.
 local LOADING_DEBOUNCE_SECONDS = 3
 local LOADING_CONTEXTS = {}
 for _, context in ipairs(Contexts.list) do
@@ -337,7 +338,10 @@ local pending_context = nil
 
 -- How long the pending change waits for quiet, which is longer for a change into a loading screen.
 local function debounce_seconds()
-	return LOADING_CONTEXTS[pending_context] and LOADING_DEBOUNCE_SECONDS or DEBOUNCE_SECONDS
+	if LOADING_CONTEXTS[pending_context] and current_context ~= "mission_preparation" then
+		return LOADING_DEBOUNCE_SECONDS
+	end
+	return DEBOUNCE_SECONDS
 end
 
 local debounce_elapsed = 0
