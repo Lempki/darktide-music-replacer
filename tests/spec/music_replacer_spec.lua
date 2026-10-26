@@ -507,6 +507,39 @@ describe("MusicReplacer.lua loading", function()
 		assert_equal(harness:playing():find("^mission_briefing/") ~= nil, true)
 	end)
 
+	-- The prologue reports its level for about two seconds before its intro starts.
+	it("waits out an intro that follows a level's arrival straight from a loading screen, and plays nothing of the level before it", function()
+		local harness = in_hub_with(FILES)
+		harness:leave_hub()
+		harness:wait(5)
+		local plays = #harness.client.plays
+
+		harness:state("music_zone", "prologue")
+		harness:mission("prologue")
+		harness:state("music_game_state", "mission")
+		harness:wait(2)
+		harness:state("music_game_state", "mission_intro")
+		harness:settle()
+
+		assert_equal(#harness.client.plays, plays)
+		assert_equal(harness:playing(), nil)
+	end)
+
+	it("plays a level reached straight from a loading screen after the long wait, as when joining a mission in progress", function()
+		local harness = in_hub_with(FILES)
+		harness:leave_hub()
+		harness:wait(5)
+
+		harness:state("music_zone", "zone_3")
+		harness:mission("lm_cooling")
+		harness:state("music_game_state", "mission")
+		harness:wait(2.5)
+		assert_equal(harness:playing():find("^mission_briefing/") ~= nil, true)
+
+		harness:wait(0.6)
+		assert_equal(harness:playing(), "explore/x.mp3")
+	end)
+
 	it("leaves loading screens to the game's own music while the loading folder is empty", function()
 		local harness = in_hub_with({ hub = FILES.hub })
 

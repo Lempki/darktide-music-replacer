@@ -85,6 +85,7 @@ The level names its mission only seconds before the briefing ends. The game's me
 * Leaving the hub for a mission clears the hub zone a moment before it switches the game state to `loading`.
 * Leaving the hub for character select clears the zone and unloads the hub at once. The game state stays on `mission` for a few seconds before it switches to `main_menu`. The mod plays no music in between.
 * After a victory or defeat, the game state goes back to `mission` for a few seconds before the score screen. The mod keeps the `victory` or `defeat` music through it.
+* The prologue reports `mission` for about two seconds after its loading screen, before its intro starts. So the first situation after a loading screen waits 3 seconds, which the intro cuts short, and no song starts for that moment.
 * Some missions never report a zone, such as Rolling Steel and Basic Training. The mod counts the `mission` game state with a mission loaded as being in a mission there. With Detailed Logging on, the log then says `[zoneless] music_zone=None with music_game_state=mission, treating as a mission`.
 
 ## Reading the game's source

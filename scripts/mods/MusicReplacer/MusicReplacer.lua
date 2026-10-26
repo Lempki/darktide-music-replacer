@@ -328,6 +328,10 @@ local MAX_DEBOUNCE_SECONDS = 3
 -- So a change to a loading context waits LOADING_DEBOUNCE_SECONDS, which outlasts that.
 -- The hub song then carries straight on into the preparation screen's song.
 -- Nothing that brief follows the preparation screen, so the briefing after it takes the normal wait.
+-- A level reached straight from a loading screen can start with an intro or a cutscene a moment later, as the prologue does.
+-- So the first situation after a loading screen waits as long too.
+-- The hub and the preparation screen are left out, since nothing replaces them a moment after they arrive.
+local SETTLED_ARRIVALS = { hub = true, mission_preparation = true }
 local LOADING_DEBOUNCE_SECONDS = 3
 local LOADING_CONTEXTS = {}
 for _, context in ipairs(Contexts.list) do
@@ -336,9 +340,12 @@ end
 
 local pending_context = nil
 
--- How long the pending change waits for quiet, which is longer for a change into a loading screen.
+-- How long the pending change waits for quiet, which is longer around a loading screen.
 local function debounce_seconds()
 	if LOADING_CONTEXTS[pending_context] and current_context ~= "mission_preparation" then
+		return LOADING_DEBOUNCE_SECONDS
+	end
+	if LOADING_CONTEXTS[current_context] and pending_context ~= nil and not SETTLED_ARRIVALS[pending_context] then
 		return LOADING_DEBOUNCE_SECONDS
 	end
 	return DEBOUNCE_SECONDS
