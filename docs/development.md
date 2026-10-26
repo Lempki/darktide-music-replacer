@@ -19,11 +19,11 @@ Static analysis needs [luacheck](https://github.com/lunarmodules/luacheck) on `P
 
 ## Deploying
 
-`-Deploy` is the fast iteration path. It copies the staged files over the installed ones, including `MusicReplacer.mod` and the stamped `info.json`, and leaves `audio\` alone. So a change can be tested by restarting the game rather than reinstalling through Vortex. It never deletes a file, so remove a module that was deleted from the source by hand. The ZIP stays the real artifact, and a Vortex purge discards anything deployed this way.
+`-Deploy` is the fast iteration path. It copies the staged files over the installed ones, including `MusicReplacer.mod` and the stamped `info.json`, and only adds missing folders to `audio\`, never touching their files. So a change can be tested by restarting the game rather than reinstalling through Vortex. It never deletes a file, so remove a module that was deleted from the source by hand. The ZIP stays the real artifact, and a Vortex purge discards anything deployed this way.
 
 The build stamps the packaged `info.json` with the commit and build time, and the mod logs it at startup. A `-dirty` suffix means the packaged files had uncommitted changes.
 
-`audio\` is not part of this repository. The mod creates it inside the installed mod folder.
+`audio\` is not part of this repository. The ZIP carries its empty folders, and the mod creates any that are missing.
 
 ## Conventions and CI
 
@@ -38,7 +38,7 @@ Pull requests and issues are welcome on GitHub. Before you open a pull request, 
 All player-facing text is in `scripts/mods/MusicReplacer/MusicReplacer_localization.lua`. Each string is a table with one entry per language, keyed by the game's language ID, such as `en` for English and `de` for German. DMF shows a string in the game's language, and falls back to `en` when that language has none.
 
 * To add a language, add an entry next to `en` in every string, for example `de = "..."`.
-* The situation dropdowns build their English tooltips with `source_tooltip()`. A translation writes each tooltip as its own full text instead, since the sentence order differs between languages.
+* The situation dropdowns, except Meat Grinder's, build their English tooltips with `source_tooltip()`. A translation writes each tooltip as its own full text instead, since the sentence order differs between languages.
 * `highlight()` colors the key words in a tooltip, such as the names of the choices, so keep it around the translated words.
 * DMF formats every string, so `%%` shows as a single percent sign.
 
@@ -49,7 +49,7 @@ All player-facing text is in `scripts/mods/MusicReplacer/MusicReplacer_localizat
 
 ## Why the mod uses Windows' own audio
 
-Early versions of the mod played the music through ffplay, FFmpeg's player program. The [Audio Plugin](https://www.nexusmods.com/warhammer40kdarktide/mods/196) and [DarktideLocalServer](https://www.nexusmods.com/warhammer40kdarktide/mods/211) mods started it as a process of its own. That route had limits the mod could not work around:
+Early versions of the mod played the music through ffplay, FFmpeg's player program. The [Audio Plugin](https://www.nexusmods.com/warhammer40kdarktide/mods/196) and [Darktide Local Server](https://www.nexusmods.com/warhammer40kdarktide/mods/211) mods started it as a process of its own. That route had limits the mod could not work around:
 
 * Each song ran in its own ffplay process, which took its volume when it started. Lowering a volume slider could follow at once through that process's Windows audio session. Raising it past the starting volume meant restarting the song, with a brief cut.
 * Without volume control at run time, there could be no true crossfades and no lowering of the music in menus.
@@ -78,7 +78,7 @@ Music Replacer decodes the files with Media Foundation, Windows' own media frame
 
 * A context change is a crossfade on an equal-power curve, as long as the Fade Length setting, 2 seconds by default. A song that does not loop fades out over its last stretch of that length, and a stop fades out over half a second.
 * A song that fades out is paused and parked rather than freed. If the mod resumes it, the same stream fades back in from exactly where it stopped, with nothing reopened or sought.
-* Each parked song keeps its 4-second buffer pool, about 0.7 MB for 44.1 kHz stereo, and its file open. It is freed after 60 seconds, and beyond 4 parked songs the oldest is freed first.
+* Each parked song keeps its buffer pool and its file open. It is freed after 60 seconds, and beyond 4 parked songs the oldest is freed first.
 * The master and music sliders, Custom Music Volume, and the menu fade set every stream's gain directly, so no volume change restarts a song.
 
 ### Device recovery
@@ -118,6 +118,7 @@ darktide-music-replacer/
 ├── .pre-commit-config.yaml              # The dev-standards hooks and file hygiene checks.
 ├── LICENSE                              # GPLv3. It stays in the repository and is not packaged into the ZIP.
 ├── MusicReplacer.mod
+├── README.md                            # The player guide, with links to these docs.
 ├── info.json                            # Version and author metadata, read by DMF at mod init.
 ├── scripts/mods/MusicReplacer/
 │   ├── MusicReplacer.lua                # Wires everything together and debounces context changes.

@@ -39,7 +39,8 @@ local strings = {
 		en = "Fade Length",
 	},
 	fade_seconds_tooltip = {
-		en = "How long the music crossfades when the situation changes, and how long a song fades out at its end.\n\n" ..
+		en = "How long the music crossfades when the situation changes, and how long a song fades out at its end. " ..
+			"A switch to the game's music or to silence always takes half a second.\n\n" ..
 			"Set to " .. highlight("0") .. " to switch at once.",
 	},
 	resume_songs = {

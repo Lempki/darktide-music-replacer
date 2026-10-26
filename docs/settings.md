@@ -7,8 +7,8 @@ Every setting of Music Replacer, with its default. The settings are in the in-ga
 | Setting | Default | What it does |
 |---|---|---|
 | Rescan Audio Folders | (button) | Lists the audio folders again at once, and checks every song again. The mod notices added, removed, and replaced files by itself. It lists the folders again 3 seconds after files stop changing. Use this button on drives where Windows cannot report changes, such as some network drives, and to try a song again that would not play. It also lets the mod try playback again after it gave up. It does not measure loudness again. |
-| Resume Songs | On | Explore, combat, Mortis Trials, and Expedition fight and safe room songs continue where they stopped when their music comes back. Horde, boss, and event songs continue too after music that outranks them interrupts them, such as a boss during a horde or a last stand during an event, while that horde, fight, or event lasts. A new horde, boss fight, or event gets a new pick. A song that stopped in its last 10 seconds is not continued. A new song is picked once one ends on its own. Every mission and hub visit starts with fresh songs. |
-| Fade Length | 2 seconds | How long the music crossfades when the situation changes, and how long a song fades out at its end, from 0 to 10 seconds. A song that does not loop starts its end fade that long before it ends. Set it to 0 to switch at once. |
+| Resume Songs | On | Explore, combat, Mortis Trials, and Expedition fight and safe room songs continue where they stopped when their music comes back. Horde, boss, and event songs continue too after music that outranks them interrupts them, such as a boss during a horde or a last stand during an event, while that horde, fight, or event lasts. A new horde, boss fight, or event gets a new pick. A song that stopped in its last 10 seconds is not continued. A new song is picked once one ends on its own. Every mission and hub visit starts with fresh songs. A Mission Briefing song that the preparation screen interrupts continues in the briefing after it. |
+| Fade Length | 2 seconds | How long the music crossfades when the situation changes, and how long a song fades out at its end, from 0 to 10 seconds. A song that does not loop, which is any song not alone in its folder, starts its end fade that long before it ends. A song that gives way to the game's music or to silence always fades out over half a second. Set it to 0 to switch at once. |
 
 ## Music per Situation
 
@@ -35,7 +35,7 @@ Each hold goes from 0 to 30 seconds. Set one to 0 to follow the game exactly.
 
 | Setting | Default | What it does |
 |---|---|---|
-| Combat Music Hold | 8 seconds | How long combat music keeps playing after a fight quiets down, so a short lull does not switch to explore music. |
+| Combat Music Hold | 8 seconds | How long combat music keeps playing after a fight quiets down, so a short lull does not switch to explore music. It also covers Expedition Combat. |
 | Horde Music Hold | 3 seconds | How long horde music keeps playing after the game stops reporting a horde. The game drops that signal for a moment whenever few enemies are on you, so a short hold keeps the song from switching away and back. |
 | Boss Music Hold | 3 seconds | How long boss music keeps playing after the game stops reporting a boss that is still alive. The game drops that signal for a moment now and then during a boss fight. Boss music still ends as soon as the boss dies. |
 | Event Music Hold | 5 seconds | How long event music keeps playing after the game ends an event's music. Some events pause their music for a few seconds between stages, so a short hold keeps the event's song from starting over at every stage. |
@@ -51,8 +51,8 @@ Each hold goes from 0 to 30 seconds. Set one to 0 to follow the game exactly.
 
 The debug overlay shows, from the top:
 
-* **The situation,** by its name in Music per Situation, with a tag for what plays there. The tag is green for Custom, gold for Vanilla, and red for Silence. When the game's music plays for a reason, the tag says so, for example `Vanilla, no songs` or `Vanilla, its songs would not play`. While no situation applies, it names the reason instead: Cutscene, Mission Intro, or Unknown Music State, the last for a music state the mod does not know.
+* **The situation,** by its name in Music per Situation, with a tag for what plays there. The tag is green for Custom, gold for Vanilla, and red for Silence. When the game's music plays for a reason, the tag says so, for example `Vanilla, no songs` or `Vanilla, its songs would not play`. While no situation applies, it names the reason instead: Cutscene, Mission Intro, or Unknown Music State, the last for a music state the mod does not know, and No situation otherwise.
 * **The folder** that plays, and the override names the moment looks for.
 * **The song,** with a bar that shows how far into it the song is, and its time and length. While no song of yours plays, this line says what plays instead.
 * **Level,** a meter that moves with the music as you hear it, so it also follows the volume sliders, fades, and the menu lowering. Beside it, the Menu marker lights up while a menu is open, and the Loudness marker while Even Out Loudness is on. With Even Out Loudness on, the song's level shows after them, such as `-6.1 dB`. The row only shows while one of your songs plays.
-* **Waiting,** a bar and the seconds left of a hold or a change that is still settling. It appears only while one of them is counting down.
+* **Waiting,** a bar and the seconds left of a hold, such as `combat hold 5.2s`, or of the short wait before the next situation's music starts, such as `explore in 0.4s`. It appears only while one of them is counting down.

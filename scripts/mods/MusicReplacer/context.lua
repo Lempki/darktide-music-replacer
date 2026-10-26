@@ -26,8 +26,9 @@
 --	  The game reports a horde only while at least 5 enemies are aggroed, so it drops out for a second or two mid-horde.
 --	  So `horde` holds for `horde_hold_seconds`, whose default is shorter than the combat hold's, since a horde ends for good.
 --	  Once that hold runs out, the plain combat state decides, with no combat hold added on top.
---	* A `music_combat` value outside KNOWN_COMBAT_STATES is new to the mod, so what it means is unknown.
---	  Below the last stand and events, it resolves no context, so the game's music plays instead of an explore song silencing it.
+--	* A `music_combat` value outside KNOWN_COMBAT_STATES is one the mod does not know, so its meaning is unknown.
+--	  Below the last stand, Mortis Trials, the Expedition extraction, and events, it resolves no context.
+--	  So the game's music plays instead of an explore song silencing it.
 --	  Each such value is logged once, so a bug report names it.
 --	* No context resolves while `music_game_state == "cinematic"`, so custom music stays off during cutscenes.
 --	* The hub and mission contexts only resolve while the game state is in the world: "mission", "mission_board" or "mission_ready".
