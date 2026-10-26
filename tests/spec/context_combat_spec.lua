@@ -124,3 +124,50 @@ describe("context.lua combat", function()
 		assert_equal(harness:current(), "explore")
 	end)
 end)
+
+describe("context.lua unknown combat states", function()
+	-- A value the game adds later must not be silenced under an explore song, so the game's own music for it plays.
+	it("hands an unknown music_combat value to the game's music, and logs it once", function()
+		local lines = {}
+		local harness = Harness.new({ combat_hold_seconds = 0 }, function(line) lines[#lines + 1] = line end)
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness:enter_mission("lm_cooling", "zone_3")
+		assert_equal(harness:current(), "explore")
+
+		harness:state("music_combat", "new_state")
+		assert_equal(harness:current(), nil)
+
+		harness:state("music_combat", "None")
+		assert_equal(harness:current(), "explore")
+		harness:state("music_combat", "new_state")
+
+		assert_deep_equal(lines, { "[context] music_combat has a value the mod does not know, new_state, so the game's music plays" })
+	end)
+
+	it("still plays event and last stand music over an unknown value", function()
+		local harness = Harness.new()
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness:enter_mission("lm_cooling", "zone_3")
+		harness:state("music_combat", "new_state")
+
+		harness:state("music_objective", "kill_event")
+		assert_equal(harness:current(), "event")
+
+		harness:state("music_objective", "last_man_standing")
+		assert_equal(harness:current(), "last_stand")
+	end)
+
+	it("knows every value the game sends today, the Expedition ones included", function()
+		local harness = Harness.new({ combat_hold_seconds = 0 })
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness:enter_mission("exp_wastes", "expeditions")
+
+		for _, state in ipairs({ "no_combat", "low_combat", "med_combat", "high_combat", "safe_room", "extraction" }) do
+			harness:state("music_combat", state)
+			assert_equal(harness:current() ~= nil, true, state)
+		end
+	end)
+end)

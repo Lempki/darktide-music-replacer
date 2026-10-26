@@ -456,7 +456,7 @@ Context.on_mission_change(MissionProbe.on_mission_change)
 ResumePoints.init(mod)
 Context.on_state_change(Suppression.on_state_change)
 Context.on_state_change(ResumePoints.on_state_change)
-Context.init(mod, log_detail)
+Context.init(mod, log_detail, log)
 
 -- Level flow hands an event's IDs on to later nodes, which pass them to the engine unchecked, so a nil ID can raise an error.
 -- So a game music event that Suppression silences still starts, and is stopped at once, which leaves the game valid IDs.

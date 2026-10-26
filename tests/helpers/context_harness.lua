@@ -11,11 +11,12 @@ Harness.__index = Harness
 local FRAME_SECONDS = 0.1
 
 -- Settings not given read as the mod's defaults, as in the game.
-function Harness.new(settings)
+-- `logger`, if given, receives the important lines context.lua logs.
+function Harness.new(settings, logger)
 	local merged = settings or {}
 	local engine = FakeEngine.new({ settings = merged })
 	local Context = engine:load("context")
-	Context.init(engine.mod)
+	Context.init(engine.mod, nil, logger)
 
 	local harness = setmetatable({ engine = engine, Context = Context, changes = {}, settings = merged }, Harness)
 

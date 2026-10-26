@@ -26,6 +26,9 @@
 --	  The game reports a horde only while at least 5 enemies are aggroed, so it drops out for a second or two mid-horde.
 --	  So `horde` holds for `horde_hold_seconds`, whose default is shorter than the combat hold's, since a horde ends for good.
 --	  Once that hold runs out, the plain combat state decides, with no combat hold added on top.
+--	* A `music_combat` value outside KNOWN_COMBAT_STATES is new to the mod, so what it means is unknown.
+--	  Below the last stand and events, it resolves no context, so the game's music plays instead of an explore song silencing it.
+--	  Each such value is logged once, so a bug report names it.
 --	* No context resolves while `music_game_state == "cinematic"`, so custom music stays off during cutscenes.
 --	* The hub and mission contexts only resolve while the game state is in the world: "mission", "mission_board" or "mission_ready".
 --	  Loading screens and the briefing resolve "loading" or "mission_briefing" instead, even once the zone has arrived.
@@ -108,6 +111,7 @@ local state_listeners = {}
 local mission_listeners = {}
 local listeners_registered = false
 local log_detail = function() end -- It does nothing unless Context.init is given a real logger.
+local log = function() end -- The same for the important lines, which are always logged.
 
 -- The holds that keep a context playing for a while after the game's state for it went quiet, in the order resolve() checks them.
 -- Each is named after the context it keeps, and `remaining` is its seconds left.
@@ -171,6 +175,15 @@ local EXPEDITION_ONLY_COMBAT_STATES = {
 -- An Expedition's fight levels, which resolve "expedition_combat".
 -- The level follows how alert the enemy is, not how hard the fight is.
 local EXPEDITION_FIGHT_STATES = { low_combat = true, med_combat = true, high_combat = true }
+
+-- Every music_combat value the game's wwise_game_sync_settings.lua lists, the standard ones and an Expedition's.
+local KNOWN_COMBAT_STATES = { None = true, normal = true, horde_low = true, horde_high = true, boss = true }
+for state in pairs(EXPEDITION_ONLY_COMBAT_STATES) do
+	KNOWN_COMBAT_STATES[state] = true
+end
+
+-- Unknown music_combat values already logged, so each is logged once.
+local reported_unknown_states = {}
 
 -- Game states in which the player is in the hub or a mission, rather than on a loading screen, a briefing or a menu.
 local IN_WORLD_GAME_STATES = { mission = true, mission_board = true, mission_ready = true }
@@ -449,6 +462,14 @@ local function resolve(mod)
 
 	if holding("event") then
 		return "event"
+	end
+
+	if music_combat ~= nil and not KNOWN_COMBAT_STATES[music_combat] then
+		if not reported_unknown_states[music_combat] then
+			reported_unknown_states[music_combat] = true
+			log(string.format("[context] music_combat has a value the mod does not know, %s, so the game's music plays", music_combat))
+		end
+		return nil
 	end
 
 	if is_boss_active(mod) then
@@ -732,8 +753,10 @@ end
 -- Call once from the main mod file's top level.
 -- `detail_logger`, if given, receives a line for every raw state transition and boss event.
 -- That is much more output than Context.on_change, so it is meant for diagnosing state issues.
-function Context.init(mod, detail_logger)
+-- `logger`, if given, receives the important lines, such as a music_combat value the mod does not know.
+function Context.init(mod, detail_logger, logger)
 	log_detail = detail_logger or log_detail
+	log = logger or log
 
 	-- The game's combat group decides only once per launch whether it runs an Expedition, on the first mission it sees.
 	-- Without this, every mission after an Expedition reports Expedition states to the mod, with no horde or boss, until the game restarts.

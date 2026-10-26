@@ -172,7 +172,9 @@ darktide-music-replacer/
 * Settings per situation, such as its own volume.
 * User rules that refine which folder a situation plays, in three layers. A rule never creates a situation of its own, so each situation keeps its silencing, priority, resume rule, and fallback to the game's music.
   * Richer override folder names: combined conditions, such as `boss\chaos_spawn+havoc\`, and more of what the game reports. Examples are an Expedition's fight level, which follows how alert the enemy is, a mission's circumstance, and event intensity.
+  * A Vanilla marker, an empty file named `vanilla` that any folder can hold. Among other songs, the game's music becomes one more pick in the rotation, and it lasts until the situation changes. Alone in a folder, it keeps the game's music there, so `event\spillway\vanilla` keeps Spillway's own boss music while other events play your songs.
   * An optional rules file for what folder names cannot express, such as several conditions, weights, or a chance to play the game's music instead. A bad rule is skipped and named in the log, and the debug overlay shows which rule matched.
   * An in-game rule editor, only if players ask for one.
 
   The priorities between situations stay fixed, offered at most as a few vetted settings.
+* Any of the game's own tracks in any situation, after the Vanilla marker. The mod would force the game's music states into the combination that makes Wwise play a chosen track, the way it already forces them to silence the game. It needs a list of the tracks and their state combinations, built from the game's own source, and care with states that change other game audio, such as the mission intro's.

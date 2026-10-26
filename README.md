@@ -101,7 +101,7 @@ Override folders are optional and for advanced use. A folder can hold folders of
 
 * **No game files are changed.** The mod creates its own audio folders and writes files only to its own folder in `%APPDATA%`.
 * **No extra programs or DLLs.** The mod uses the audio decoder and audio engine that come with Windows, and calls them from its Lua scripts.
-* **The game's music is the fallback.** The game's music plays wherever the mod has no songs, cannot play them, or cannot start Windows audio at all. The game's music is only silenced once one of your songs is ready to play, or where you chose Silence.
+* **The game's music is the fallback.** The game's music plays wherever the mod has no songs, cannot play them, or cannot start Windows audio at all. It also plays when a game update reports a music state the mod does not know yet, instead of your songs silencing something new. The game's music is only silenced once one of your songs is ready to play, or where you chose Silence.
 * **Broken files are skipped.** A file Windows cannot decode is skipped once the mod has checked it, shortly after launch, and the log names it. If three songs in a row from one folder fail to play, that folder gives way to the game's music until the game restarts or the folders are listed again. An override folder gives way to its parent folder instead.
 * **Easy to turn off.** You can turn the mod off in the mod options at any time, and the game's music comes back at once.
 * **Your music files are never changed.** The mod only reads them.
