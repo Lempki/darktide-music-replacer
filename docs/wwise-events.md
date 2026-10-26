@@ -1,6 +1,6 @@
 # Wwise music states and events
 
-How Darktide's music reaches the player through Wwise, how Music Replacer silences it, and how to find out where a sound comes from. It is a reference for reading `diagnostic.log` with Detailed Logging on. The log calls each situation from the README a context, such as `explore` or `mission_briefing`, which is also the name of its audio folder. Which mission or game mode is running is covered in [game-internals.md](game-internals.md).
+How Darktide's music reaches the player through Wwise, how Music Replacer silences it, and how to find out where a sound comes from. It is a reference for reading `diagnostic.log` with Detailed Logging on. In the log, each situation from the README is a context, named after its audio folder, such as `explore` or `mission_briefing`. Which mission or game mode is running is covered in [game-internals.md](game-internals.md).
 
 ## Where the game's music comes from
 
@@ -17,12 +17,14 @@ The game sets Wwise state groups all the time, and Wwise picks the music from th
 | `music_game_state` | `title`, `main_menu`, `character_creation`, `loading`, `mission_loading`, `mission`, `mission_board`, `mission_ready`, `loadout`, `loadout_ready`, `mission_briefing`, `mission_intro`, `victory`, `defeat`, `game_score_win`, `game_score_lose`, `cinematic`, `None` |
 | `music_objective` | `None`, `last_man_standing`, `kill_event`, `kill_event_2`, `kill_event_3`, `twins_event`, `fortification_event`, `hacking_event`, `scanning_event`, `collect_event`, `demolition_event`, `escape_event`, `gauntlet_event`, `operation_stage_1` to `_4`, `operation_2_stage_1` to `_4`, `progression_stage_1` to `_4`, `progression2_stage_1` to `_4`, and in Mortis Trials `horde_mode_wave`, `horde_mode_objective`, `horde_mode_wave_last`, `horde_mode_win` |
 
-Wwise reports "no value" as the word `None`. A `music_combat` value outside the table is unknown to the mod, so below the last stand, Mortis Trials, the Expedition extraction, and events, the mod hands that moment to the game's music. It always logs the value once, such as `[context] music_combat has a value the mod does not know, new_state, so the game's music plays`.
+Wwise reports "no value" as the word `None`.
 
-* `music_combat` is `normal` while enemies are attacking you. It flips back to `None` every few seconds in a fight, and the Combat Music Hold setting bridges those gaps. `horde_low` and `horde_high` mean a horde is on you. The game reports a horde only while at least 5 enemies are aggroed, and the Horde Music Hold setting bridges the moments it drops out. `boss` means a monstrosity is near. It can drop out for a second or two while the boss is still alive, and the Boss Music Hold setting bridges that until the boss's encounter ends. In an Expedition, the group carries the Expedition values in place of the others.
+* `music_combat` is `normal` while enemies are attacking you. It flips back to `None` every few seconds in a fight, and the Combat Music Hold setting bridges those gaps. `horde_low` and `horde_high` mean a horde is on you. The game reports a horde only while at least 5 enemies are aggroed, and the Horde Music Hold setting bridges the moments it drops out. `boss` means a monstrosity is near. It can drop out for a second or two while the boss is still alive, and the Boss Music Hold setting bridges that until the boss's encounter ends. In an Expedition, the group carries the Expedition values in place of the others. These values follow how alert the enemy is, not how hard the fight is. The mod resolves `low_combat`, `med_combat`, and `high_combat` as `expedition_combat`, `safe_room` as `expedition_safe_room`, `extraction` as `expedition_extraction`, and `no_combat` as `explore`. The Combat Music Hold setting covers `expedition_combat` too.
 * `music_zone` names the hub or the mission's area. It arrives before the music can start. The hub zone arrives about 10 seconds before the loading screen ends, and a mission zone partway through the briefing.
 * `music_game_state` says where the player is, as the table below lays out.
 * `music_objective` carries the last stand and mission event music. Some events set it to `None` for a few seconds between their stages, which the Event Music Hold setting bridges.
+
+A `music_combat` value outside the table is unknown to the mod, so below the last stand, Mortis Trials, the Expedition extraction, and events, the mod hands that moment to the game's music. It always logs the value once, such as `[context] music_combat has a value the mod does not know, new_state, so the game's music plays`.
 
 What each `music_game_state` value plays, by the dropdowns in Music per Situation:
 
@@ -41,11 +43,11 @@ What each `music_game_state` value plays, by the dropdowns in Music per Situatio
 
 A loading screen leads into a mission when it follows `mission_ready`, `loadout`, or `mission_briefing`. After a mission, a story mission can go straight from `game_score_win` to `cinematic`.
 
-One more group, `options`, says which kind of menu is open. It is `ingame_menu` in the Esc menu and its settings, the inventory, and the mission board. It is `vendor_menu` at vendors, `appearance_menu` in character appearance, and `credit_store_menu` in the store. It is `None` with no menu open. The mod lowers custom music to the Menu Volume setting while it is anything but `None`, and logs its changes as `[raw] options` lines.
+Two more groups matter to the mod. The `options` group says which kind of menu is open. It is `ingame_menu` in the Esc menu and its settings, the inventory, and the mission board. It is `vendor_menu` at vendors, `appearance_menu` in character appearance, and `credit_store_menu` in the store. It is `None` with no menu open. The mod lowers custom music to the Menu Volume setting while it is anything but `None`, and logs its changes as `[raw] options` lines.
 
-One more group, `expeditions_intensity`, always holds the same value as `music_combat`, in every mission and in Expeditions. In an Expedition, both groups carry the Expedition-only values `no_combat`, `low_combat`, `med_combat`, `high_combat`, `safe_room`, and `extraction`. The fight level follows how alert the enemy is, not how hard the fight is. The mod resolves `low_combat`, `med_combat`, and `high_combat` as `expedition_combat`, which uses the Combat Music Hold setting too. It resolves `safe_room` as `expedition_safe_room`, `extraction` as `expedition_extraction`, and `no_combat` as `explore`. While a custom song plays, the mod forces both groups to `None`. Every change of `music_combat` shows up as a `[raw]` line, while `expeditions_intensity` only shows up as a `[raw]` line when it moves to or from one of these values.
+The `expeditions_intensity` group always holds the same value as `music_combat`, in every mission and in Expeditions. While a custom song plays, the mod forces both groups to `None`. Unlike `music_combat`, it only shows up as a `[raw]` line when it moves to or from an Expedition value.
 
-The `[raw]` lines also show `music_objective_progression`, `event_intensity`, `event_category`, and `circumstance`, which decide no context.
+The `[raw]` lines also show `music_objective_progression`, `event_intensity`, `event_category`, and `circumstance`, which do not affect the context.
 
 ### Events
 
@@ -58,9 +60,9 @@ Wwise events start sounds, and a few of them are music.
 
 ## How the mod silences it
 
-The mod only silences the game's music once it has a custom song for the current context, so a context with no songs keeps the game's music. A context set to Silence in Music per Situation is the one exception. It silences the game's music with no song at all. Meat Grinder is set to Silence by default. A context set to Vanilla never silences the game's music.
+The mod only silences the game's music once it has a custom song for the current context, so a context with no songs keeps the game's music. A context set to Silence in Music per Situation is the one exception. It silences the game's music with no song at all, by forcing the same groups as a custom song for that context does. Meat Grinder is set to Silence by default. A context set to Vanilla never silences the game's music.
 
-Each line below shows up in the log with Detailed Logging on. A context set to Silence forces the same groups as a custom song for it does.
+Each line below shows up in the log with Detailed Logging on.
 
 | Log line | What it means |
 |---|---|

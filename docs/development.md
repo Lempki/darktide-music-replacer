@@ -25,9 +25,14 @@ The build stamps the packaged `info.json` with the commit and build time, and th
 
 `audio\` is not part of this repository. The ZIP carries its empty folders, and the mod creates any that are missing.
 
+## Logs
+
+* `%APPDATA%\Fatshark\Darktide\MusicReplacer\diagnostic.log`, with the previous launch's log beside it as `diagnostic-prev.log`. Detailed Logging adds the game's music state changes, the silencing, and the game's sound events.
+* The game's console logs, in `%APPDATA%\Fatshark\Darktide\console_logs\`.
+
 ## Conventions and CI
 
-The repository follows the shared conventions in [dev-standards](https://github.com/Lempki/dev-standards). Its hooks keep the managed blocks in `.editorconfig`, `.gitattributes`, and `.gitignore` in sync, and check comments and Markdown against the prose rules. They tell this is a Lua repository from `.luacheckrc`, so it needs no settings file. Install the hooks once per clone with `uvx pre-commit install`. CI runs dev-standards' Lua workflow on every push to `main` and every pull request: the hooks, luacheck, and the specs under LuaJIT.
+The repository follows the shared conventions in [dev-standards](https://github.com/Lempki/dev-standards). Its hooks keep the managed blocks in `.editorconfig`, `.gitattributes`, and `.gitignore` in sync, and check comments and Markdown against the prose rules. They recognize this as a Lua repository by its `.luacheckrc`, so it needs no settings file. Install the hooks once per clone with `uvx pre-commit install`. CI runs dev-standards' Lua workflow on every push to `main` and every pull request: the hooks, luacheck, and the specs under LuaJIT.
 
 ## Contributing
 
@@ -41,11 +46,6 @@ All player-facing text is in `scripts/mods/MusicReplacer/MusicReplacer_localizat
 * The situation dropdowns, except Meat Grinder's, build their English tooltips with `source_tooltip()`. A translation writes each tooltip as its own full text instead, since the sentence order differs between languages.
 * `highlight()` colors the key words in a tooltip, such as the names of the choices, so keep it around the translated words.
 * DMF formats every string, so `%%` shows as a single percent sign.
-
-## Logs
-
-* `%APPDATA%\Fatshark\Darktide\MusicReplacer\diagnostic.log`, with the previous launch's log beside it as `diagnostic-prev.log`. Detailed Logging adds the game's music state changes, the silencing, and the game's sound events.
-* The game's console logs, in `%APPDATA%\Fatshark\Darktide\console_logs\`.
 
 ## Why the mod uses Windows' own audio
 
@@ -67,10 +67,9 @@ Music Replacer decodes the files with Media Foundation, Windows' own media frame
 ### Decoding and streaming
 
 * `media_decoder.lua` asks Media Foundation for 16-bit PCM and reads it synchronously on the game's thread, a chunk at a time, so no Windows thread ever calls back into Lua.
-* `player.lua` gives each stream a fixed pool of 16 slots of 0.25 seconds each, on the Windows heap and outside the game's Lua memory. That keeps 4 seconds queued, so the music plays on through a stalled frame or a busy loading screen.
-* Each pool is allocated once per stream, about 0.7 MB for 44.1 kHz stereo, and grows with the rate and the channels.
+* `player.lua` gives each stream a fixed pool of 16 slots of 0.25 seconds each, on the Windows heap and outside the game's Lua memory. That keeps 4 seconds queued, so the music plays on through a stalled frame or a busy loading screen. The pool is allocated once per stream, about 0.7 MB for 44.1 kHz stereo, and grows with the rate and the channels.
 * A stream queues 2 slots before it starts, and each update refills at most 2, so no single frame pays for a whole refill.
-* A looping stream reads on from the file's start in the same buffer, so the loop adds no gap. Silence the file carries itself, such as an MP3's encoder padding, still plays.
+* A looping stream reads on from the file's start in the same buffer, so the loop adds no gap. Silence in the file itself, such as an MP3's encoder padding, still plays.
 * XAudio2 voice state is polled every update rather than reported through callbacks, since LuaJIT cannot safely take calls from XAudio2's thread.
 * Each decoded buffer's peaks are measured in 50 ms blocks as it is queued, for the debug overlay's level meter. The meter reads the block at the voice's play position, times the stream's volume, so it shows the music as you hear it.
 
@@ -165,7 +164,7 @@ darktide-music-replacer/
 ## Roadmap
 
 * Playback controls, in three layers. Manual control only steers the situation playing now, so a new situation still starts its own pick.
-  * Keybinds for the next song, the previous song or restarting the current one, and pausing. A paused situation stays silent instead of handing back to the game's music, and a skipped song gets no resume point. A keybind that removes the playing song from its folder's rotation for good, kept in a small file beside `loudness.txt`. A short message for each keybind, so the controls work without the widget.
+  * Keybinds to skip to the next song, go back to the previous one or restart the current one, and pause. A paused situation stays silent instead of handing back to the game's music, and a skipped song gets no resume point. A keybind that removes the playing song from its folder's rotation for good, kept in a small file beside `loudness.txt`. A short message for each keybind, so the controls work without the widget.
   * Settings for the order and repeat: shuffle on or off, where off plays a folder in name order, and repeating the folder or one song. An option to let a song finish before the next situation's music takes over belongs here too.
   * A now-playing widget that shows the song and the shuffle, repeat, and pause state. Its look is up to the players, with settings of its own for the hub and for missions, since the hub shows almost no HUD. A few presets set its position, size, and opacity at once, and offset settings move it anywhere on the screen. It can be hidden completely, and the keybinds still work then. In missions it can show for a few seconds when a song starts or a keybind is pressed, and then fade out.
 * Translations of the mod options.
