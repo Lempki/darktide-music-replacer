@@ -36,7 +36,7 @@ The repository follows the shared conventions in [dev-standards](https://github.
 
 ## Contributing
 
-Pull requests and issues are welcome on GitHub. Before you open a pull request, run the checks under Building and testing.
+Pull requests and [issues](https://github.com/Lempki/darktide-music-replacer/issues) are welcome. Before you open a pull request, run the checks under [Building and testing](#building-and-testing).
 
 ### Translations
 

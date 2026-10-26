@@ -34,8 +34,8 @@ On a Windows "N" edition, install Microsoft's free Media Feature Pack, which pro
 
 ## Quickstart
 
-1. Install Music Replacer like any other Darktide mod, for example through Vortex. Check that `MusicReplacer` is listed below `dmf` in `mod_load_order.txt`, as described under Requirements above.
-2. Put your audio files into the folders inside the **installed** mod folder: `...\Warhammer 40,000 DARKTIDE\mods\MusicReplacer\audio\<folder>\`. For example, songs in `audio\hub\` play in the Mourningstar. Every folder is listed under Where your music plays.
+1. Install Music Replacer like any other Darktide mod, for example through Vortex. Check that `MusicReplacer` is listed below `dmf` in `mod_load_order.txt`, as described under [Requirements](#requirements) above.
+2. Put your audio files into the folders inside the **installed** mod folder: `...\Warhammer 40,000 DARKTIDE\mods\MusicReplacer\audio\<folder>\`. For example, songs in `audio\hub\` play in the Mourningstar. Every folder is listed under [Where your music plays](#where-your-music-plays).
 3. Start the game and play.
 
 Put audio files directly inside the folders you want music for. Folders inside them are [override folders](docs/override-folders.md), which are optional. The mod creates any missing folder when the game starts, so every folder exists after your first launch. You can add, remove, or replace files while the game runs, and the mod picks them up by itself 3 seconds after files stop changing. A song that is playing finishes, even if you remove its file.
@@ -128,8 +128,8 @@ To report a problem, attach these two files:
 ## Languages and contributing
 
 * The mod options and their tooltips are in English. With the game set to another language, they show in English too.
-* Translations are welcome as pull requests on [GitHub](https://github.com/Lempki/darktide-music-replacer). [docs/development.md](docs/development.md) explains where the texts live and how to add a language.
-* Fixes, ideas, and bug reports are welcome there too, as pull requests or issues. For a bug, attach the files listed under Troubleshooting.
+* Translations are welcome as pull requests. [docs/development.md](docs/development.md) explains where the texts live and how to add a language.
+* Fixes, ideas, and bug reports are welcome too, as pull requests or [issues](https://github.com/Lempki/darktide-music-replacer/issues). For a bug, attach the files listed under [Troubleshooting](#troubleshooting).
 
 ## Credits
 
