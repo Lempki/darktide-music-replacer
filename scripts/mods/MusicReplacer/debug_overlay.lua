@@ -77,6 +77,9 @@ local function plain(text)
 	return (text:gsub("{#", "{ #"))
 end
 
+-- What the overlay names a moment that resolves no situation, by the reason context.lua gives.
+local IDLE_NAMES = { cutscene = "Cutscene", intro = "Mission Intro", unknown_state = "Unknown Music State" }
+
 -- The choice a status names, which colors its tag: "custom", "silence", or "game" for every reason the game's music plays.
 local function kind_of(status)
 	status = tostring(status)
@@ -107,7 +110,7 @@ local function level_words(snapshot)
 end
 
 -- What the overlay shows for a snapshot from MusicReplacer.lua, as plain fields for the element to draw.
--- The snapshot's fields are turned_off, context, situation, status, folder, overrides, and menu_open.
+-- The snapshot's fields are turned_off, context, situation, idle, status, folder, overrides, and menu_open.
 -- Its timing fields are hold, hold_seconds, hold_length, pending, pending_seconds, and pending_length.
 -- The song's are song, position, and duration, and the volume's are menu_volume, menu_level, song_level, and evening_out.
 -- The view has title, situation, tag, kind, folder, song or idle, time, progress, level, waiting, and waiting_share.
@@ -132,7 +135,7 @@ function DebugOverlay.view(snapshot)
 	if not situation or situation:find("^<") then
 		situation = snapshot.context
 	end
-	view.situation = situation or "No situation"
+	view.situation = situation or IDLE_NAMES[snapshot.idle] or "No situation"
 	view.tag = tostring(snapshot.status)
 	view.kind = kind_of(snapshot.status)
 

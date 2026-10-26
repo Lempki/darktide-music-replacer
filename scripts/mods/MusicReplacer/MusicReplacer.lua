@@ -422,6 +422,7 @@ local function overlay_snapshot()
 	return {
 		context = current_context,
 		situation = current_context and mod:localize("source_" .. current_context) or nil,
+		idle = not current_context and Context.idle_reason() or nil,
 		status = context_status,
 		hold = hold,
 		hold_seconds = hold_seconds,

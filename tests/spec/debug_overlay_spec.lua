@@ -203,6 +203,15 @@ describe("debug_overlay.lua view", function()
 		assert_equal(DebugOverlay.view(snapshot).situation, "combat")
 	end)
 
+	it("names a moment that resolves no situation by its reason", function()
+		local DebugOverlay = load_overlay(new_constant_elements())
+
+		assert_equal(DebugOverlay.view({ status = "Vanilla", idle = "cutscene" }).situation, "Cutscene")
+		assert_equal(DebugOverlay.view({ status = "Vanilla", idle = "intro" }).situation, "Mission Intro")
+		assert_equal(DebugOverlay.view({ status = "Vanilla", idle = "unknown_state" }).situation, "Unknown Music State")
+		assert_equal(DebugOverlay.view({ status = "Vanilla" }).situation, "No situation")
+	end)
+
 	it("says so while the mod is turned off", function()
 		local DebugOverlay = load_overlay(new_constant_elements())
 

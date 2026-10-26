@@ -580,6 +580,20 @@ function Context.current()
 	return resolved_context
 end
 
+-- Why no context resolves now, for the debug overlay: "cutscene", "intro", or "unknown_state", else nil.
+function Context.idle_reason()
+	if resolved_context then
+		return nil
+	elseif music_game_state == "cinematic" then
+		return "cutscene"
+	elseif music_game_state == "mission_intro" then
+		return "intro"
+	elseif music_combat ~= nil and not KNOWN_COMBAT_STATES[music_combat] then
+		return "unknown_state"
+	end
+	return nil
+end
+
 -- The name of the hold that keeps the current context, such as "combat", its seconds left, and its full length, or nil.
 function Context.hold()
 	if not active_hold then

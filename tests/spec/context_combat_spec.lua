@@ -159,6 +159,21 @@ describe("context.lua unknown combat states", function()
 		assert_equal(harness:current(), "last_stand")
 	end)
 
+	it("gives the debug overlay a reason while no situation resolves", function()
+		local harness = Harness.new()
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness:enter_mission("lm_cooling", "zone_3")
+		assert_equal(harness.Context.idle_reason(), nil)
+
+		harness:state("music_combat", "new_state")
+		assert_equal(harness.Context.idle_reason(), "unknown_state")
+
+		harness:state("music_combat", "None")
+		harness:state("music_game_state", "cinematic")
+		assert_equal(harness.Context.idle_reason(), "cutscene")
+	end)
+
 	it("knows every value the game sends today, the Expedition ones included", function()
 		local harness = Harness.new({ combat_hold_seconds = 0 })
 		harness:cold_start_to_hub()
