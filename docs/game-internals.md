@@ -68,6 +68,7 @@ The mission line names a mission by its code. These are the in-game names of the
 
 | Mission | Notes |
 |---|---|
+| `prologue` | Tancred Bastion, the prologue a new character plays, with `game_mode_name` and zone `prologue`. It scripts its music through `music_objective`, with `prologue_explore`, `prologue_combat`, and `prologue_end_event`, so most of it resolves `event`. The `event\prologue\` override folder covers the whole prologue, and `event\prologue_explore\`, `event\prologue_combat\`, and `event\prologue_end_event\` cover its parts. Its cutscenes start music events of their own, which the mod stops once a custom song takes over after one. |
 | `hub_ship` | The hub, the Mourningstar. `wwise_state` is `hub`. |
 | `tg_shooting_range` | The training area that Meat Grinder runs in. Its template has `game_mode_name = "shooting_range"`, `mechanism_name = "onboarding"`, and no `wwise_state`, so `music_zone` reads `None` there. The mod tells Meat Grinder apart from a mission by this name. With Meat Grinder set to Custom, it resolves like a mission, so the `explore` and `combat` folders play. |
 | `om_basic_combat_01` | The Psykhanium's Basic Training. Its template has `game_mode_name = "training_grounds"` and `mechanism_name = "onboarding"`. It runs in the same level as Meat Grinder and reports no zone. It resolves as a zoneless mission, so the `explore` and `combat` folders play. The Meat Grinder choice in Music per Situation does not cover it. |

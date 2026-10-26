@@ -350,6 +350,17 @@ describe("MusicReplacer.lua music events from the game", function()
 		assert_equal(source_id ~= nil, true)
 	end)
 
+	it("lets cutscene music play, and stops it once a custom song takes over", function()
+		local harness = in_mission({ source_explore = "game" })
+		local playing_id = CLASS.WwiseWorld.trigger_resource_event({}, "wwise/events/cinematics/play_cs03_music_116bpm")
+		assert_deep_equal(harness.engine.stopped_events, {})
+
+		harness:set_setting("source_explore", "custom")
+		harness:settle()
+
+		assert_deep_equal(harness.engine.stopped_events, { playing_id })
+	end)
+
 	it("lets the event play while the game's music plays", function()
 		local harness = in_mission({ source_explore = "game" })
 

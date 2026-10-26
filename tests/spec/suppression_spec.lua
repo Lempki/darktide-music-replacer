@@ -286,6 +286,32 @@ describe("suppression.lua last stand", function()
 	end)
 end)
 
+describe("suppression.lua cutscene music", function()
+	local CUTSCENE_MUSIC = "wwise/events/cinematics/play_cs03_music_116bpm"
+
+	it("stops cutscene music that may still play once a custom song takes over, and only once", function()
+		local engine, Suppression = load_suppression()
+		Suppression.watch_event({}, CUTSCENE_MUSIC, 7)
+		Suppression.watch_event({}, "wwise/events/cinematics/play_mission_intro_stinger_generic", 8)
+		Suppression.watch_event({}, "wwise/events/ui/play_ui_click", 9)
+
+		Suppression.engage("explore")
+		Suppression.engage("combat")
+
+		assert_deep_equal(engine.stopped_events, { 7 })
+	end)
+
+	it("forgets cutscene music at a loading screen, since its level and Wwise world are gone", function()
+		local engine, Suppression = load_suppression()
+		Suppression.watch_event({}, CUTSCENE_MUSIC, 7)
+
+		engine:set_state("music_game_state", "loading")
+		Suppression.engage("loading")
+
+		assert_deep_equal(engine.stopped_events, {})
+	end)
+end)
+
 describe("suppression.lua events", function()
 	it("stops the game's exploration music event only while engaged", function()
 		local _, Suppression = load_suppression()

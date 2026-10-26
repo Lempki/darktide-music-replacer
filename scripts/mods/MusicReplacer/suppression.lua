@@ -11,12 +11,23 @@ local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/
 -- Each is a plain substring, matched against the full event name.
 local SUPPRESSED_MUSIC_EVENT_PATTERNS = { "events/music/play_exploration" }
 
+-- A cutscene starts its own music through an event whose name has both of these, such as play_cs03_music_116bpm.
+-- That music can run on after the cutscene ends, under the custom song that takes over then.
+local CUTSCENE_EVENT_PREFIX = "events/cinematics/"
+local CUTSCENE_MUSIC_WORD = "music"
+
+-- At most this many cutscene music events are remembered, the newest ones, since a level only has a few cutscenes.
+local MAX_CUTSCENE_EVENTS = 8
+
 local log_detail = function() end -- It does nothing unless Suppression.init is given a real logger.
 
 local real_states = {} -- State group name -> the last value the game set, fed by Suppression.on_state_change.
 local forced_groups = {} -- State group name -> true while that group is forced to "None" and not yet restored.
 
 local events_suppressed = false
+
+-- Cutscene music events that started since the last loading screen, each { world, playing_id, name }, to stop once a custom song plays.
+local cutscene_events = {}
 
 -- State group name -> true while that group is suppressed and forced again after every real transition.
 -- It is for groups the game changes repeatedly while a context lasts.
@@ -138,10 +149,29 @@ function Suppression.should_stop_event(event_name)
 	return false
 end
 
+-- The trigger_resource_event hook calls this for every event that keeps playing, with its world and playing ID.
+-- Cutscene music is remembered, so it can be stopped once a custom song takes over.
+function Suppression.watch_event(wwise_world, event_name, playing_id)
+	if type(event_name) ~= "string" or not event_name:find(CUTSCENE_EVENT_PREFIX, 1, true)
+		or not event_name:find(CUTSCENE_MUSIC_WORD, 1, true) then
+		return
+	end
+
+	if #cutscene_events >= MAX_CUTSCENE_EVENTS then
+		table.remove(cutscene_events, 1)
+	end
+	cutscene_events[#cutscene_events + 1] = { world = wwise_world, playing_id = playing_id, name = event_name }
+end
+
 -- Register with Context.on_state_change so the levers see every real transition.
+-- A loading screen ends the level its cutscene music belonged to, along with that level's Wwise world, so the events are forgotten.
 -- Keeps the last real value of each group, and forces or releases a group again when the game replaces it.
 function Suppression.on_state_change(group_name, new_state)
 	real_states[group_name] = new_state
+
+	if group_name == "music_game_state" and new_state == "loading" then
+		cutscene_events = {}
+	end
 
 	if group_name == "music_zone" then
 		forced_groups.music_zone = false -- The game just set a real zone, which replaces any forced value.
@@ -153,6 +183,18 @@ function Suppression.on_state_change(group_name, new_state)
 	end
 end
 
+-- Stops the cutscene music that may still be playing, since a custom song takes over now.
+-- A cutscene's music already over has nothing left to stop, which Wwise ignores.
+local function stop_cutscene_music()
+	for _, event in ipairs(cutscene_events) do
+		local ok = pcall(WwiseWorld.stop_event, event.world, event.playing_id)
+		if ok then
+			log_detail(string.format("[suppress] stopped the cutscene's music event: %s", event.name))
+		end
+	end
+	cutscene_events = {}
+end
+
 -- Turns on the levers for a context that has a custom track available, or that is set to silence.
 -- Combat and event suppression apply to every context.
 -- A context whose own music comes from one more state group, as the catalog's `silences` names, has that group forced too.
@@ -162,6 +204,7 @@ function Suppression.engage(context_name)
 
 	set_combat(true)
 	set_events(true)
+	stop_cutscene_music()
 	set_zone(silences == "music_zone")
 	set_game_state(silences == "music_game_state")
 	set_objective(silences == "music_objective")

@@ -469,8 +469,12 @@ Context.init(mod, log_detail, log)
 -- Level flow hands an event's IDs on to later nodes, which pass them to the engine unchecked, so a nil ID can raise an error.
 -- So a game music event that Suppression silences still starts, and is stopped at once, which leaves the game valid IDs.
 local function stop_if_suppressed(wwise_world, event_name, playing_id, ...)
-	if playing_id and Suppression.should_stop_event(event_name) then
-		WwiseWorld.stop_event(wwise_world, playing_id)
+	if playing_id then
+		if Suppression.should_stop_event(event_name) then
+			WwiseWorld.stop_event(wwise_world, playing_id)
+		else
+			Suppression.watch_event(wwise_world, event_name, playing_id)
+		end
 	end
 
 	return playing_id, ...

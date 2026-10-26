@@ -54,6 +54,7 @@ Wwise events start sounds, and a few of them are music.
 * `wwise/events/music/play_exploration_music` and `wwise/events/music/play_exploration_the_machine_spiri_1`, `_3`, and `_4` fire during hordes and around mission event sequences, such as holding a position or minigames.
 * `wwise/events/cinematics/play_outro_win_generic_01` and `wwise/events/ui/play_ui_eor_start_stinger` fire during a mission's victory. Neither has "music" in its name.
 * `wwise/events/cinematics/play_mission_intro_stinger_generic` fires at the start of a mission's intro.
+* Events under `wwise/events/cinematics/` with `music` in their name, such as `play_cs01_cs02_music_combat` or `play_cs03_music_116bpm`, start a cutscene's music. It can run on after the cutscene ends, so the mod stops it once a custom song takes over.
 
 ## How the mod silences it
 
@@ -69,6 +70,7 @@ Each line below shows up in the log with Detailed Logging on. A context set to S
 | `[suppress] forcing music_game_state victory -> None` | The game's music for `title_screen`, `character_select`, `loading`, `mission_preparation`, `mission_briefing`, `victory`, or `defeat` is off while a custom song for that context plays. |
 | `[suppress] forcing music_objective fortification_event -> None` | The game's music for `event`, `last_stand`, or `mortis_trials_wave` is off while a custom song for that context plays. |
 | `[suppress] stopped the game's music event: wwise/events/music/play_exploration_music` | The mod stopped the game's exploration music event as it started, since a custom song plays. It stops every event whose name contains `events/music/play_exploration`. |
+| `[suppress] stopped the cutscene's music event: wwise/events/cinematics/play_cs03_music_116bpm` | A cutscene's music was still allowed to play after the cutscene, and a custom song took over, so the mod stopped it. A loading screen forgets the cutscene music of the level before. |
 | `[suppress] restoring music_zone to hub` | The group is back at the game's value, and the game's music with it. It shows when the custom song stops, or when the next context does not silence that group. Each restored group logs its own line. |
 
 A silenced state does not show up as a `[raw]` line, since the `[raw]` lines always show the game's values. An exploration music event that fires while no custom song plays is not stopped, so the game's music plays as usual.
