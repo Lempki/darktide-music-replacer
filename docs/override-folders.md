@@ -9,7 +9,7 @@ A folder can hold folders of its own, named after what the game reports, that ta
    * In `boss`, the kind of boss: for example `chaos_spawn`, `chaos_beast_of_nurgle`, `chaos_plague_ogryn`, or `chaos_ogryn_houndmaster`, and with their settings on, `renegade_twin_captain` or `chaos_daemonhost`.
    * In `hub`, `mission_ready`, while your party is matchmaking, from choosing a mission until it starts.
    * In `character_select`, `character_creation`, while you create a character.
-   * In `victory` and `defeat`, `game_score_win` and `game_score_lose`, the score screen after the mission.
+   * In `victory` and `defeat`, `game_score_win` and `game_score_lose`, the score screen after the mission. They take over from their parent folder once the score screen opens, so the parent folder then plays only the closing shot of the mission.
    * In `mortis_trials_wave`, the kind of round: `horde_mode_wave`, `horde_mode_objective` for an objective round, `horde_mode_wave_last` for the last wave, or `horde_mode_win` for the final win.
    * In `expedition_combat`, the fight's level: `low_combat`, `med_combat`, or `high_combat`. The level follows how alert the enemy is and can change during a fight, which switches the song.
 2. In any folder, the mission's code: for example `spillway` or `km_enforcer_twins`. [game-internals.md](game-internals.md) lists every mission's code with its in-game name.
