@@ -14,7 +14,7 @@ The game sets Wwise state groups all the time, and Wwise picks the music from th
 |---|---|
 | `music_combat` | `None`, `normal`, `horde_low`, `horde_high`, `boss`, and in Expeditions `no_combat`, `low_combat`, `med_combat`, `high_combat`, `safe_room`, `extraction` |
 | `music_zone` | `hub`, `None`, `prologue`, `zone_1` to `zone_6`, `zone_8`, `zone_2_depths`, `zone_twins`, `operations`, `horde_mode`, `expeditions` |
-| `music_game_state` | `title`, `main_menu`, `character_creation`, `loading`, `mission_loading`, `mission`, `mission_board`, `mission_ready`, `loadout`, `loadout_ready`, `mission_briefing`, `mission_intro`, `victory`, `defeat`, `game_score_win`, `game_score_lose`, `cinematic`, `None` |
+| `music_game_state` | `title`, `main_menu`, `character_creation`, `loading`, `mission_loading`, `mission`, `mission_board`, `mission_ready`, `loadout`, `loadout_ready`, `mission_briefing`, `mission_intro`, `victory`, `defeat`, `game_score_win`, `game_score_lose`, `cinematic`, `cinematic_pot`, `None` |
 | `music_objective` | `None`, `last_man_standing`, `kill_event`, `kill_event_2`, `kill_event_3`, `twins_event`, `fortification_event`, `hacking_event`, `scanning_event`, `collect_event`, `demolition_event`, `escape_event`, `gauntlet_event`, `operation_stage_1` to `_4`, `operation_2_stage_1` to `_4`, `progression_stage_1` to `_4`, `progression2_stage_1` to `_4`, and in Mortis Trials `horde_mode_wave`, `horde_mode_objective`, `horde_mode_wave_last`, `horde_mode_win` |
 
 Wwise reports "no value" as the word `None`.
@@ -39,7 +39,7 @@ What each `music_game_state` value plays, by the dropdowns in Music per Situatio
 | `mission_intro` | The game's music. This state is the mission's intro. |
 | `victory`, `game_score_win` | The Victory music, until the loading screen. |
 | `defeat`, `game_score_lose` | The Defeat music, until the loading screen. |
-| `cinematic` | The game's music. This state is a cutscene, which never gets custom music. |
+| `cinematic`, `cinematic_pot` | The game's music. These states are cutscenes, which never get custom music. Story cutscenes use `cinematic`, and the hub's own, such as Path of Trust and the hub location intros, use `cinematic_pot`. |
 
 A loading screen leads into a mission when it follows `mission_ready`, `loadout`, or `mission_briefing`. After a mission, a story mission can go straight from `game_score_win` to `cinematic`.
 

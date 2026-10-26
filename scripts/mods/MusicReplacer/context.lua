@@ -30,7 +30,8 @@
 --	  Below the last stand, Mortis Trials, the Expedition extraction, and events, it resolves no context.
 --	  So the game's music plays instead of an explore song silencing it.
 --	  Each such value is logged once, so a bug report names it.
---	* No context resolves while `music_game_state == "cinematic"`, so custom music stays off during cutscenes.
+--	* No context resolves during a cutscene, so custom music stays off there.
+--	  Story cutscenes set `music_game_state` to "cinematic", and the hub's own, such as Path of Trust, to "cinematic_pot".
 --	* The hub and mission contexts only resolve while the game state is in the world: "mission", "mission_board" or "mission_ready".
 --	  Loading screens and the briefing resolve "loading" or "mission_briefing" instead, even once the zone has arrived.
 --	  The game sends the hub zone about 10 seconds before the loading screen ends, and a mission zone partway through the briefing.
@@ -192,6 +193,10 @@ local IN_WORLD_GAME_STATES = { mission = true, mission_board = true, mission_rea
 -- Game states of a loading screen, and of the briefing before a mission.
 local LOADING_GAME_STATES = { loading = true, mission_loading = true, mission_briefing = true }
 
+-- Game states of a cutscene, which each cutscene names in its template.
+-- Story cutscenes use "cinematic", and the hub's own, such as Path of Trust and the hub location intros, use "cinematic_pot".
+local CUTSCENE_GAME_STATES = { cinematic = true, cinematic_pot = true }
+
 -- Game states that end a trip into a mission: the mission's intro, its end, a cutscene, the title screen, and character select.
 local ARRIVAL_GAME_STATES = {
 	mission_intro = true,
@@ -199,10 +204,12 @@ local ARRIVAL_GAME_STATES = {
 	defeat = true,
 	game_score_win = true,
 	game_score_lose = true,
-	cinematic = true,
 	main_menu = true,
 	title = true,
 }
+for state in pairs(CUTSCENE_GAME_STATES) do
+	ARRIVAL_GAME_STATES[state] = true
+end
 
 -- Game states of the mission preparation screen.
 local PREPARATION_GAME_STATES = { loadout = true, loadout_ready = true }
@@ -397,7 +404,7 @@ local function resolve(mod)
 	active_hold = nil
 
 	-- Cutscenes get no custom music, whatever zone or outcome is still set.
-	if music_game_state == "cinematic" then
+	if CUTSCENE_GAME_STATES[music_game_state] then
 		return nil
 	end
 
@@ -585,7 +592,7 @@ end
 function Context.idle_reason()
 	if resolved_context then
 		return nil
-	elseif music_game_state == "cinematic" then
+	elseif CUTSCENE_GAME_STATES[music_game_state] then
 		return "cutscene"
 	elseif music_game_state == "mission_intro" then
 		return "intro"

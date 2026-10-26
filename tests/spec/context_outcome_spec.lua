@@ -71,6 +71,21 @@ describe("context.lua mission endings", function()
 		assert_deep_equal(harness.changes, { "victory", "loading", "nil", "hub" })
 	end)
 
+	-- The hub's own cutscenes, such as Path of Trust and the hub location intros, set a game state of their own.
+	it("resolves no context during a hub cutscene and names it a cutscene, then hub once it ends", function()
+		local harness = Harness.new()
+		harness:cold_start_to_hub()
+		harness:clear_changes()
+
+		harness:state("music_game_state", "cinematic_pot")
+		assert_equal(harness.Context.idle_reason(), "cutscene")
+
+		harness:wait(43)
+		harness:state("music_game_state", "mission")
+
+		assert_deep_equal(harness.changes, { "nil", "hub" })
+	end)
+
 	-- A story mission's score screen goes straight into the cutscene, with no loading screen to clear the outcome.
 	it("does not carry victory into the hub after a story mission's cutscene", function()
 		local harness = in_mission()
