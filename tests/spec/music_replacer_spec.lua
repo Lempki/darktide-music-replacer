@@ -531,6 +531,17 @@ describe("MusicReplacer.lua loading", function()
 	end)
 end)
 
+describe("MusicReplacer.lua fade length", function()
+	it("gives the audio client the Fade Length at start and whenever it changes", function()
+		local harness = MainHarness.new({ files = { hub = { { name = "a.mp3", duration = 200 } } } })
+		assert_equal(harness.client.fade_seconds, 2)
+
+		harness:set_setting("fade_seconds", 4.5)
+
+		assert_equal(harness.client.fade_seconds, 4.5)
+	end)
+end)
+
 describe("MusicReplacer.lua debug overlay", function()
 	it("follows its settings", function()
 		local harness = in_hub()

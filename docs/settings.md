@@ -8,6 +8,7 @@ Every setting of Music Replacer, with its default. The settings are in the in-ga
 |---|---|---|
 | Rescan Audio Folders | (button) | Lists the audio folders again at once, and checks every song again. The mod notices added, removed, and replaced files by itself. It lists the folders again 3 seconds after files stop changing. Use this button on drives where Windows cannot report changes, such as some network drives, and to try a song again that would not play. It also lets the mod try playback again after it gave up. It does not measure loudness again. |
 | Resume Songs | On | Explore, combat, Mortis Trials, and Expedition fight and safe room songs continue where they stopped when their music comes back. Horde, boss, and event songs continue too after music that outranks them interrupts them, such as a boss during a horde or a last stand during an event, while that horde, fight, or event lasts. A new horde, boss fight, or event gets a new pick. A song that stopped in its last 10 seconds is not continued. A new song is picked once one ends on its own. Every mission and hub visit starts with fresh songs. |
+| Fade Length | 2 seconds | How long the music crossfades when the situation changes, and how long a song fades out at its end, from 0 to 10 seconds. A song that does not loop starts its end fade that long before it ends. Set it to 0 to switch at once. |
 
 ## Music per Situation
 

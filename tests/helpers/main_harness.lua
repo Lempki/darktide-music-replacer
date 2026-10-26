@@ -79,6 +79,7 @@ local function new_audio_client()
 	function client.update() end
 	function client.shutdown() client.shut_down = true end
 	function client.set_volume(scale) client.volume = scale end
+	function client.set_fade_seconds(seconds) client.fade_seconds = seconds end
 	function client.set_menu_volume(target) client.menu_volume = target end
 	function client.refresh_levels() client.levels_refreshed = (client.levels_refreshed or 0) + 1 end
 	function client.try_again() client.tries_again = (client.tries_again or 0) + 1 end

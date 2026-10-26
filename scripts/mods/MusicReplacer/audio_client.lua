@@ -12,8 +12,9 @@
 
 local AudioClient = {}
 
-local CROSSFADE_SECONDS = 2
-local NATURAL_END_FADE_SECONDS = 2 -- Also how long before the end a song that is not looping starts fading out.
+-- The Fade Length setting: how long a switch crossfades, and how long a song that is not looping fades out at its end.
+-- That end fade starts this long before the song's end, so the song is silent as it ends.
+local fade_seconds = 2
 local STOP_FADE_SECONDS = 0.5
 
 -- How long the music takes to go down to its menu volume, or back up.
@@ -185,6 +186,11 @@ local function move_menu_level(dt)
 end
 
 -- Sets the Custom Music Volume, as a linear amplitude scale, at once.
+-- Sets the Fade Length, in seconds. 0 switches at once.
+function AudioClient.set_fade_seconds(seconds)
+	fade_seconds = math.max(0, seconds)
+end
+
 function AudioClient.set_volume(scale)
 	if scale ~= volume then
 		volume = scale
@@ -307,7 +313,7 @@ function AudioClient.play(file_path, opts)
 
 	if current and current.stream then
 		if opts.fade_in then
-			fade_out(current, CROSSFADE_SECONDS)
+			fade_out(current, fade_seconds)
 		else
 			current.stream:destroy() -- A continuation follows a track that has already ended.
 		end
@@ -327,7 +333,7 @@ function AudioClient.play(file_path, opts)
 		stream = revived
 		stream:resume()
 		stream:set_gain(gain * level)
-		stream:fade_to(1, opts.fade_in and CROSSFADE_SECONDS or 0)
+		stream:fade_to(1, opts.fade_in and fade_seconds or 0)
 		log(string.format("[player] continuing %s from %.1fs, where it faded out", file_path, stream:position()))
 	else
 		local open_opts = {
@@ -357,7 +363,7 @@ function AudioClient.play(file_path, opts)
 
 		if stream then
 			if opts.fade_in then
-				stream:fade_to(1, CROSSFADE_SECONDS)
+				stream:fade_to(1, fade_seconds)
 			end
 		else
 			log(string.format("[player] %s could not be played: %s", file_path, tostring(err)))
@@ -474,7 +480,7 @@ local function update_current(dt)
 	-- It is also known when the library has not measured the file yet, as right after the folders are listed again.
 	-- A looping file never ends, so it never fades out.
 	local duration = not current.loop and (stream.duration or current.duration)
-	if duration and not current.end_fading and stream:position() >= duration - NATURAL_END_FADE_SECONDS then
+	if duration and not current.end_fading and stream:position() >= duration - fade_seconds then
 		current.end_fading = true
 		stream:fade_to(0, math.max(0.1, duration - stream:position()))
 	end

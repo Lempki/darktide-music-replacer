@@ -487,6 +487,7 @@ mod.on_all_mods_loaded = function()
 	Library.on_listed(Loudness.set_files)
 	AudioClient.init(log, { player = Player, disk_path = Library.disk_path, level_of = Loudness.level })
 	AudioClient.set_volume(custom_volume())
+	AudioClient.set_fade_seconds(mod:get("fade_seconds"))
 	DebugOverlay.init(log, { snapshot = overlay_snapshot, meter = AudioClient.meter, create_element = create_overlay_element })
 	apply_overlay_settings()
 
@@ -560,6 +561,8 @@ mod.on_setting_changed = function(setting_id)
 		apply_overlay_settings()
 	elseif setting_id == "custom_music_volume" then
 		AudioClient.set_volume(custom_volume())
+	elseif setting_id == "fade_seconds" then
+		AudioClient.set_fade_seconds(mod:get("fade_seconds"))
 	elseif setting_id == "normalize_loudness" then
 		Loudness.set_enabled(mod:get("normalize_loudness"))
 		AudioClient.refresh_levels()

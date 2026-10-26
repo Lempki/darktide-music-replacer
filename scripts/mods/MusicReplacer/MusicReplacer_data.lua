@@ -48,6 +48,15 @@ return {
 						tooltip = "resume_songs_tooltip",
 						default_value = true,
 					},
+					{
+						setting_id = "fade_seconds",
+						type = "numeric",
+						tooltip = "fade_seconds_tooltip",
+						default_value = 2,
+						range = { 0, 10 },
+						decimals_number = 1,
+						unit_text = "seconds_unit",
+					},
 				},
 			},
 			{

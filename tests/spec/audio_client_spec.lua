@@ -593,6 +593,37 @@ describe("audio_client.lua", function()
 	end)
 end)
 
+describe("audio_client.lua fade length", function()
+	it("crossfades a switch and fades a song's end over the Fade Length", function()
+		local AudioClient, _, streams = load_client()
+		AudioClient.set_fade_seconds(5)
+		AudioClient.play("hub/a.mp3", { fade_in = true, duration_seconds = 199 })
+		AudioClient.play("combat/b.mp3", { fade_in = true, duration_seconds = 199 })
+
+		assert_deep_equal(streams[1].fades[#streams[1].fades], { 0, 5 })
+		assert_deep_equal(streams[2].fades, { { 1, 5 } })
+
+		-- The fake stream's own length is 200 seconds, which wins over the library's.
+		streams[2].current_position = 194.5
+		AudioClient.update(0.1)
+		assert_deep_equal(streams[2].fades, { { 1, 5 } })
+
+		streams[2].current_position = 195.5
+		AudioClient.update(0.1)
+		assert_equal(streams[2].fades[2][1], 0)
+	end)
+
+	it("switches at once with a Fade Length of 0", function()
+		local AudioClient, _, streams = load_client()
+		AudioClient.set_fade_seconds(0)
+		AudioClient.play("hub/a.mp3", { fade_in = true })
+		AudioClient.play("combat/b.mp3", { fade_in = true })
+
+		assert_deep_equal(streams[1].fades[#streams[1].fades], { 0, 0 })
+		assert_deep_equal(streams[2].fades, { { 1, 0 } })
+	end)
+end)
+
 describe("audio_client.lua volume", function()
 	-- Loads a client with full sliders, so a stream's gain is the volume settings alone.
 	local function load_full_client()

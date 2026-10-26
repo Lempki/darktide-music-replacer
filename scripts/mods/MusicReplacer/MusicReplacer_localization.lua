@@ -35,6 +35,13 @@ local strings = {
 			"This button is for drives where Windows cannot report changes, such as some network drives, " ..
 			"and for trying a song again that would not play.",
 	},
+	fade_seconds = {
+		en = "Fade Length",
+	},
+	fade_seconds_tooltip = {
+		en = "How long the music crossfades when the situation changes, and how long a song fades out at its end.\n\n" ..
+			"Set to " .. highlight("0") .. " to switch at once.",
+	},
 	resume_songs = {
 		en = "Resume Songs",
 	},
