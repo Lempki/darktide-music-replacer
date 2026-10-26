@@ -163,18 +163,17 @@ darktide-music-replacer/
 
 ## Roadmap
 
-* Playback controls, in three layers. Manual control only steers the situation playing now, so a new situation still starts its own pick.
-  * Keybinds to skip to the next song, go back to the previous one or restart the current one, and pause. A paused situation stays silent instead of handing back to the game's music, and a skipped song gets no resume point. A keybind that removes the playing song from its folder's rotation for good, kept in a small file beside `loudness.txt`. A short message for each keybind, so the controls work without the widget.
-  * Settings for the order and repeat: shuffle on or off, where off plays a folder in name order, and repeating the folder or one song. An option to let a song finish before the next situation's music takes over belongs here too.
-  * A now-playing widget that shows the song and the shuffle, repeat, and pause state. Its look is up to the players, with settings of its own for the hub and for missions, since the hub shows almost no HUD. A few presets set its position, size, and opacity at once, and offset settings move it anywhere on the screen. It can be hidden completely, and the keybinds still work then. In missions it can show for a few seconds when a song starts or a keybind is pressed, and then fade out.
-* Translations of the mod options.
-* Contexts for new game modes and situations as the game adds them.
-* Settings per situation, such as its own volume.
-* User rules that refine which folder a situation plays, in three layers. A rule never creates a situation of its own, so each situation keeps its silencing, priority, resume rule, and fallback to the game's music.
-  * Richer override folder names: combined conditions, such as `boss\chaos_spawn+havoc\`, and more of what the game reports. Examples are a mission's circumstance and event intensity.
-  * A Vanilla marker, an empty file named `vanilla` that any folder can hold. Among other songs, the game's music becomes one more pick in the rotation, and it lasts until the situation changes. Alone in a folder, it keeps the game's music there, so `event\spillway\vanilla` keeps Spillway's own boss music while other events play your songs.
-  * An optional rules file for what folder names cannot express, such as several conditions, weights, or a chance to play the game's music instead. A bad rule is skipped and named in the log, and the debug overlay shows which rule matched.
-  * An in-game rule editor, only if players ask for one.
+* [ ] Playback controls, in three layers. Manual control only steers the situation playing now, so a new situation still starts its own pick.
+  * [ ] Keybinds to skip to the next song, go back to the previous one or restart the current one, and pause. A paused situation stays silent instead of handing back to the game's music, and a skipped song gets no resume point. A keybind that removes the playing song from its folder's rotation for good, kept in a small file beside `loudness.txt`. A short message for each keybind, so the controls work without the widget.
+  * [ ] Settings for the order and repeat: shuffle on or off, where off plays a folder in name order, and repeating the folder or one song. An option to let a song finish before the next situation's music takes over belongs here too.
+  * [ ] A now-playing widget that shows the song and the shuffle, repeat, and pause state. Its look is up to the players, with settings of its own for the hub and for missions, since the hub shows almost no HUD. A few presets set its position, size, and opacity at once, and offset settings move it anywhere on the screen. It can be hidden completely, and the keybinds still work then. In missions it can show for a few seconds when a song starts or a keybind is pressed, and then fade out.
+* [ ] Translations of the mod options, the debug overlay, and the now-playing widget. The overlay's own texts, such as its idle reasons and markers, are in English in its code today, so they need to move into `MusicReplacer_localization.lua` first.
+* [ ] More settings per situation, such as its own volume.
+* [ ] User rules that refine which folder a situation plays, in three layers. A rule never creates a situation of its own, so each situation keeps its silencing, priority, resume rule, and fallback to the game's music.
+  * [ ] Richer override folder names: combined conditions, such as `boss\chaos_spawn+havoc\`, and more of what the game reports. Examples are a mission's circumstance and event intensity.
+  * [ ] A Vanilla marker, an empty file named `vanilla` that any folder can hold. Among other songs, the game's music becomes one more pick in the rotation, and it lasts until the situation changes. Alone in a folder, it keeps the game's music there, so `event\spillway\vanilla` keeps Spillway's own boss music while other events play your songs.
+  * [ ] An optional rules file for what folder names cannot express, such as several conditions, weights, or a chance to play the game's music instead. A bad rule is skipped and named in the log, and the debug overlay shows which rule matched.
+  * [ ] An in-game rule editor (low-priority).
 
   The priorities between situations stay fixed, offered at most as a few vetted settings.
-* Any of the game's own tracks in any situation, after the Vanilla marker. The mod would force the game's music states into the combination that makes Wwise play a chosen track, the way it already forces them to silence the game. It needs a list of the tracks and their state combinations, built from the game's own source, and care with states that change other game audio, such as the mission intro's.
+* [ ] Any of the game's own tracks in any situation, after the Vanilla marker. The mod would force the game's music states into the combination that makes Wwise play a chosen track, the way it already forces them to silence the game. It needs a list of the tracks and their state combinations, built from the game's own source, and care with states that change other game audio, such as the mission intro's.
