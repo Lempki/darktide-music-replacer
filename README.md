@@ -60,8 +60,8 @@ Each folder plays in one situation. The music switches about half a second after
 | `boss` | While a monstrosity is near you, such as a Chaos Spawn, a Beast of Nurgle, a Plague Ogryn, or an Ogryn Houndmaster. This is when the game plays its own boss music. Captains and angered daemonhosts get boss music only with their settings on. A scripted boss, such as Rodin Karnak in Spillway, gets no boss music, since the game does not report it as a boss. |
 | `event` | While a mission event plays its music, such as a holdout, a hacking event, an escape, or a scripted boss fight like those in Spillway. It outranks boss, horde, combat, and explore music, as the game's event music does. In Operations, such as Rolling Steel and No Man's Land, it plays for the whole mission, since the game scripts their music from start to end. The prologue, Tancred Bastion, scripts its music the same way, so it mostly plays this folder too. |
 | `last_stand` | While only one player of the team is left alive. It outranks events, Mortis Trials waves and breaks, the Expedition extraction, bosses, hordes, combat, and explore. Victory and defeat still take over. |
-| `victory` | From the moment a mission is won until the loading screen or a cutscene. |
-| `defeat` | From the moment a mission is lost until the loading screen or a cutscene. |
+| `victory` | From the moment a mission is won until the loading screen or a cutscene. It covers the closing shot of the mission and the score screen after it. |
+| `defeat` | From the moment a mission is lost until the loading screen or a cutscene. It covers the closing shot of the mission and the score screen after it. |
 | `mortis_trials_wave` | In Mortis Trials, during a wave or an objective round, through to the final win. Bosses, hordes, and fights do not interrupt it, since nearly every wave brings bosses. A last stand still takes over. |
 | `mortis_trials_break` | In Mortis Trials, between waves. |
 | `expedition_combat` | During a fight in an Expedition. Expeditions play this folder in place of `combat` and `horde`. |
