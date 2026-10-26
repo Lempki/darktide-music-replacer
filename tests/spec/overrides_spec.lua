@@ -81,6 +81,87 @@ describe("context.lua override names", function()
 		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "boss"), { "renegade_captain", "fm_cargo" })
 	end)
 
+	-- The game state returns to "mission" for up to a second between matchmaking and the loading screen.
+	it("offers matchmaking in the hub by the game's name for it, and nothing 2 seconds after it ends", function()
+		local harness = Harness.new()
+		harness:cold_start_to_hub()
+
+		harness:state("music_game_state", "mission_ready")
+		assert_equal(harness:current(), "hub")
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "hub"), { "mission_ready" })
+
+		harness:state("music_game_state", "mission")
+		harness:wait(1.9)
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "hub"), { "mission_ready" })
+
+		harness:wait(0.2)
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "hub"), {})
+	end)
+
+	it("offers character creation inside character select", function()
+		local harness = Harness.new()
+		harness:state("music_game_state", "title")
+		harness:state("music_game_state", "main_menu")
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "character_select"), {})
+
+		harness:state("music_game_state", "character_creation")
+		assert_equal(harness:current(), "character_select")
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "character_select"), { "character_creation" })
+	end)
+
+	it("offers the score screen inside victory and defeat, but not the moment of the win or loss", function()
+		local won = in_mission()
+		won:state("music_game_state", "victory")
+		assert_deep_equal(won.Context.override_keys(won.engine.mod, "victory"), { "fm_cargo" })
+
+		won:state("music_game_state", "mission")
+		won:state("music_zone", "None")
+		won:state("music_game_state", "game_score_win")
+		assert_equal(won:current(), "victory")
+		assert_deep_equal(won.Context.override_keys(won.engine.mod, "victory"), { "game_score_win", "fm_cargo" })
+
+		local lost = in_mission()
+		lost:state("music_game_state", "defeat")
+		lost:state("music_game_state", "mission")
+		lost:state("music_zone", "None")
+		lost:state("music_game_state", "game_score_lose")
+		assert_equal(lost:current(), "defeat")
+		assert_deep_equal(lost.Context.override_keys(lost.engine.mod, "defeat"), { "game_score_lose", "fm_cargo" })
+	end)
+
+	it("offers the kind of Mortis Trials wave first", function()
+		local harness = Harness.new()
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness.engine:set_mechanism_mission("psykhanium", { game_mode_name = "survival" })
+		harness:enter_mission("psykhanium", "horde_mode")
+
+		harness:state("music_objective", "horde_mode_wave_last")
+
+		assert_equal(harness:current(), "mortis_trials_wave")
+		assert_equal(harness.Context.override_keys(harness.engine.mod, "mortis_trials_wave")[1], "horde_mode_wave_last")
+	end)
+
+	it("offers an Expedition fight's level first, keeps it through the combat hold, and drops it once the fight is over", function()
+		local harness = Harness.new({ combat_hold_seconds = 8 })
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness:enter_mission("exp_wastes", "expeditions")
+
+		harness:state("music_combat", "low_combat")
+		assert_equal(harness.Context.override_keys(harness.engine.mod, "expedition_combat")[1], "low_combat")
+
+		harness:state("music_combat", "high_combat")
+		harness:state("music_combat", "no_combat")
+		harness:wait(2)
+		assert_equal(harness:current(), "expedition_combat")
+		assert_equal(harness.Context.override_keys(harness.engine.mod, "expedition_combat")[1], "high_combat")
+
+		harness:wait(7)
+		assert_equal(harness:current(), "explore")
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "expedition_combat"), { "exp_wastes" })
+	end)
+
 	it("offers expeditions during an Expedition, by its game mode", function()
 		local harness = Harness.new()
 		harness:cold_start_to_hub()
@@ -109,7 +190,7 @@ describe("context.lua override names", function()
 		harness:state("music_game_state", "mission_board")
 		harness:state("music_game_state", "mission_ready")
 		harness:tick(0)
-		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "hub"), {})
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "hub"), { "mission_ready" })
 
 		harness:leave_hub()
 		harness.engine:set_mechanism_mission("psykhanium", { game_mode_name = "survival" })

@@ -67,7 +67,12 @@
 --	  The game state returns to "mission" in between, so the outcome is tracked in `mission_outcome`.
 --	  A loading screen or a real zone clears it, since a story mission's cutscene can skip the loading screen.
 --	* Context.override_keys() names the override folders a context may use, most specific first.
+--	  The first is the game's own name for the moment, where the game tells moments inside the context apart.
 --	  An event's kind is its `music_objective` value, kept through its hold, and a boss's kind is its breed.
+--	  A Mortis Trials wave's kind is its `music_objective` value, and an Expedition fight's is its level, kept through its hold.
+--	  Matchmaking in the hub, character creation, and the score screens are named by their `music_game_state` value.
+--	  Those names last MOMENT_GRACE_SECONDS after the state moves on, which covers the second it passes through on the way out.
+--	  Hordes are left out, since every horde starts at "horde_high" and drops to "horde_low" as it thins out.
 --	  The mission is its code, and the game mode is "havoc", "expeditions", or "mortis_trials".
 --	  The level names its mission only seconds before the briefing ends.
 --	  So on the way into a mission, both come from the game's mechanism data.
@@ -98,6 +103,9 @@ local upcoming_mission = nil -- The mission a trip into a mission leads to, befo
 local upcoming_mode = nil -- That mission's game mode, else nil.
 local heading_to_mission = false -- True from the mission board's "mission_ready" until the trip into a mission ends.
 local event_kind = nil -- The music_objective value of the event playing now, kept through its hold, or nil.
+local expedition_fight_level = nil -- The music_combat value of the Expedition fight playing now, kept through its hold, or nil.
+local state_moment = nil -- The moment music_game_state names now, or named less than MOMENT_GRACE_SECONDS ago, else nil.
+local state_moment_grace = 0 -- Seconds left of state_moment once the game state has moved on, else 0.
 local mission_outcome = nil -- "victory" or "defeat" from that game state until the next level starts, else nil.
 local open_bosses = {} -- Boss unit -> { breed = name, order = n } for every open encounter window.
 local boss_open_order = 0 -- Counts up with every newly opened window, so the latest one can be found.
@@ -217,6 +225,27 @@ local PREPARATION_GAME_STATES = { loadout = true, loadout_ready = true }
 -- Game states of the menus before the hub, by the context each resolves.
 -- Character creation is a step inside character select, so it keeps character select's music.
 local MENU_CONTEXTS = { title = "title_screen", main_menu = "character_select", character_creation = "character_select" }
+
+-- Game states that name a moment inside a context, by that context, for its override folders.
+-- "mission_ready" is matchmaking, from choosing a mission until it starts, and the score screens follow a mission's end.
+local MOMENT_GAME_STATES = {
+	hub = { mission_ready = true },
+	character_select = { character_creation = true },
+	victory = { game_score_win = true },
+	defeat = { game_score_lose = true },
+}
+
+local MOMENT_GAME_STATE_NAMES = {}
+for _, moments in pairs(MOMENT_GAME_STATES) do
+	for state in pairs(moments) do
+		MOMENT_GAME_STATE_NAMES[state] = true
+	end
+end
+
+-- How long a moment named by the game state outlasts it.
+-- The game state passes through another value for up to a second before the next context, as from matchmaking to the loading screen.
+-- Without it, the context's main folder would take over for that second.
+local MOMENT_GRACE_SECONDS = 2
 
 -- The mission name of the training area where Meat Grinder runs.
 -- Its template has no wwise_state, so music_zone reads "None" there.
@@ -550,6 +579,10 @@ local function recompute(mod)
 	if not is_event_active() and hold_named.event.remaining == 0 then
 		event_kind = nil
 	end
+	-- An Expedition fight's level lasts through its hold the same way, so a lull does not switch to the main folder.
+	if not is_expedition_fight_active() and hold_named.expedition_combat.remaining == 0 then
+		expedition_fight_level = nil
+	end
 
 	if new_context == resolved_context then
 		return
@@ -611,17 +644,32 @@ function Context.hold()
 	return active_hold, hold.remaining, hold.length or hold.remaining
 end
 
+-- The game's own name for the moment `context_name` plays in now, or nil where the game names none.
+local function moment_kind(mod, context_name)
+	if context_name == "event" then
+		return event_kind
+	elseif context_name == "boss" then
+		return current_boss_breed(mod)
+	elseif context_name == "mortis_trials_wave" then
+		return music_objective
+	elseif context_name == "expedition_combat" then
+		return expedition_fight_level
+	end
+
+	local moments = MOMENT_GAME_STATES[context_name]
+	if moments and state_moment and moments[state_moment] then
+		return state_moment
+	end
+	return nil
+end
+
 -- The override folder names `context_name` may use right now, most specific first.
--- They are the event's or the boss's kind, then the mission's code, then the game mode.
+-- They are the moment's kind, then the mission's code, then the game mode.
 -- MusicReplacer.lua plays the first one that has songs.
 function Context.override_keys(mod, context_name)
 	local keys = {}
 
-	if context_name == "event" and event_kind then
-		keys[#keys + 1] = event_kind
-	elseif context_name == "boss" then
-		keys[#keys + 1] = current_boss_breed(mod)
-	end
+	keys[#keys + 1] = moment_kind(mod, context_name)
 
 	if mission_name and not mission_is_hub then
 		keys[#keys + 1] = mission_name
@@ -676,6 +724,9 @@ local function track_transition(mod, group_name, current, new_state)
 	if group_name == "music_combat" then
 		music_combat = new_state
 		log_detail(describe_transition(group_name, current, new_state))
+		if EXPEDITION_FIGHT_STATES[new_state] then
+			expedition_fight_level = new_state
+		end
 	elseif group_name == "music_zone" then
 		log_detail(describe_transition(group_name, music_zone, new_state))
 
@@ -703,6 +754,13 @@ local function track_transition(mod, group_name, current, new_state)
 	elseif group_name == "music_game_state" then
 		log_detail(describe_transition(group_name, current, new_state))
 		music_game_state = new_state
+
+		if MOMENT_GAME_STATE_NAMES[new_state] then
+			state_moment = new_state
+			state_moment_grace = 0
+		elseif state_moment and state_moment_grace == 0 then
+			state_moment_grace = MOMENT_GRACE_SECONDS
+		end
 
 		-- A loading screen that ends in "mission" has reached its level, such as when joining a mission in progress.
 		-- Catching up inside a level ends the trip too, since its arrival may have passed while the mod was off.
@@ -895,6 +953,14 @@ function Context.update(mod, dt)
 			if hold.remaining == 0 then
 				recompute(mod)
 			end
+		end
+	end
+
+	if state_moment_grace > 0 then
+		state_moment_grace = state_moment_grace - dt
+		if state_moment_grace <= 0 then
+			state_moment_grace = 0
+			state_moment = nil
 		end
 	end
 

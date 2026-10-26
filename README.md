@@ -90,7 +90,7 @@ The settings are in the in-game mod options under Music Replacer, in six groups:
 
 ## Override folders
 
-Override folders are optional and for advanced use. A folder can hold folders of its own, which play for a kind of event, a kind of boss, a mission, or a game mode. They are explained in [docs/override-folders.md](docs/override-folders.md).
+Override folders are optional and for advanced use. A folder can hold folders of its own, which play for a moment inside its situation, such as a kind of boss or the score screen, for a mission, or for a game mode. They are explained in [docs/override-folders.md](docs/override-folders.md).
 
 ## Safe by design
 
@@ -141,7 +141,7 @@ To report a problem, attach these two files:
 
 * For players:
   * [Settings](docs/settings.md): every setting, its default, and the debug overlay's lines.
-  * [Override folders](docs/override-folders.md): songs for a kind of event, a kind of boss, a mission, or a game mode.
+  * [Override folders](docs/override-folders.md): songs for a moment inside a situation, such as a kind of boss or the score screen, for a mission, or for a game mode.
   * [Troubleshooting](docs/troubleshooting.md): fixes, reporting a problem, the files the mod writes, and a lost audio device.
 * For reading the log:
   * [Wwise music states and events](docs/wwise-events.md): the game's music states, how the mod silences them, and tracing a sound.

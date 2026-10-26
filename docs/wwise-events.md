@@ -19,7 +19,7 @@ The game sets Wwise state groups all the time, and Wwise picks the music from th
 
 Wwise reports "no value" as the word `None`.
 
-* `music_combat` is `normal` while enemies are attacking you. It flips back to `None` every few seconds in a fight, and the Combat Music Hold setting bridges those gaps. `horde_low` and `horde_high` mean a horde is on you. The game reports a horde only while at least 5 enemies are aggroed, and the Horde Music Hold setting bridges the moments it drops out. `boss` means a monstrosity is near. It can drop out for a second or two while the boss is still alive, and the Boss Music Hold setting bridges that until the boss's encounter ends. In an Expedition, the group carries the Expedition values in place of the others. These values follow how alert the enemy is, not how hard the fight is. The mod resolves `low_combat`, `med_combat`, and `high_combat` as `expedition_combat`, `safe_room` as `expedition_safe_room`, `extraction` as `expedition_extraction`, and `no_combat` as `explore`. The Combat Music Hold setting covers `expedition_combat` too.
+* `music_combat` is `normal` while enemies are attacking you. It flips back to `None` every few seconds in a fight, and the Combat Music Hold setting bridges those gaps. `horde_low` and `horde_high` mean a horde is on you. Every horde starts at `horde_high` and drops to `horde_low` as it thins out. The game reports a horde only while at least 5 enemies are aggroed, and the Horde Music Hold setting bridges the moments it drops out. `boss` means a monstrosity is near. It can drop out for a second or two while the boss is still alive, and the Boss Music Hold setting bridges that until the boss's encounter ends. In an Expedition, the group carries the Expedition values in place of the others. These values follow how alert the enemy is, not how hard the fight is. The mod resolves `low_combat`, `med_combat`, and `high_combat` as `expedition_combat`, `safe_room` as `expedition_safe_room`, `extraction` as `expedition_extraction`, and `no_combat` as `explore`. The Combat Music Hold setting covers `expedition_combat` too.
 * `music_zone` names the hub or the mission's area. It arrives before the music can start. The hub zone arrives about 10 seconds before the loading screen ends, and a mission zone partway through the briefing.
 * `music_game_state` says where the player is, as the table below lays out.
 * `music_objective` carries the last stand and mission event music. Some events set it to `None` for a few seconds between their stages, which the Event Music Hold setting bridges.
@@ -32,13 +32,13 @@ What each `music_game_state` value plays, by the dropdowns in Music per Situatio
 |---|---|
 | `title` | The Title Screen music. |
 | `main_menu`, `character_creation` | The Character Select music. Character creation is a step inside character select. |
-| `mission`, `mission_board`, `mission_ready` | The hub and mission music, picked by the other groups. It plays in these states only. |
+| `mission`, `mission_board`, `mission_ready` | The hub and mission music, picked by the other groups. It plays in these states only. `mission_board` is the mission board's screen, and `mission_ready` is matchmaking, from choosing a mission until it starts. |
 | `loadout`, `loadout_ready` | The Mission Preparation music. These states are the mission preparation screen. |
 | `mission_briefing` | The Mission Briefing music. |
 | `loading`, `mission_loading` | The Mission Briefing music on the way into a mission, else the Loading music. |
 | `mission_intro` | The game's music. This state is the mission's intro. |
-| `victory`, `game_score_win` | The Victory music, until the loading screen. |
-| `defeat`, `game_score_lose` | The Defeat music, until the loading screen. |
+| `victory`, `game_score_win` | The Victory music, until the loading screen. `game_score_win` is the score screen. |
+| `defeat`, `game_score_lose` | The Defeat music, until the loading screen. `game_score_lose` is the score screen. |
 | `cinematic`, `cinematic_pot` | The game's music. These states are cutscenes, which never get custom music. Story cutscenes use `cinematic`, and the hub's own, such as Path of Trust and the hub location intros, use `cinematic_pot`. |
 
 A loading screen leads into a mission when it follows `mission_ready`, `loadout`, or `mission_briefing`. After a mission, a story mission can go straight from `game_score_win` to `cinematic`.

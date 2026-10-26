@@ -171,7 +171,7 @@ darktide-music-replacer/
 * Contexts for new game modes and situations as the game adds them.
 * Settings per situation, such as its own volume.
 * User rules that refine which folder a situation plays, in three layers. A rule never creates a situation of its own, so each situation keeps its silencing, priority, resume rule, and fallback to the game's music.
-  * Richer override folder names: combined conditions, such as `boss\chaos_spawn+havoc\`, and more of what the game reports. Examples are an Expedition's fight level, which follows how alert the enemy is, a mission's circumstance, and event intensity.
+  * Richer override folder names: combined conditions, such as `boss\chaos_spawn+havoc\`, and more of what the game reports. Examples are a mission's circumstance and event intensity.
   * A Vanilla marker, an empty file named `vanilla` that any folder can hold. Among other songs, the game's music becomes one more pick in the rotation, and it lasts until the situation changes. Alone in a folder, it keeps the game's music there, so `event\spillway\vanilla` keeps Spillway's own boss music while other events play your songs.
   * An optional rules file for what folder names cannot express, such as several conditions, weights, or a chance to play the game's music instead. A bad rule is skipped and named in the log, and the debug overlay shows which rule matched.
   * An in-game rule editor, only if players ask for one.
