@@ -38,7 +38,7 @@
 --	  The briefing, and every loading screen after the mission board's "mission_ready", lead into a mission and resolve "mission_briefing".
 --	  A plain loading screen does not say where it leads, so "mission_ready" tells joining a mission apart from leaving one.
 --	  Matchmaking that ends without a mission leaves the game state on "mission", which ends the trip after a few seconds.
---	  The mission preparation screen, where the party stands together before a mission, resolves "mission_preparation".
+--	  The mission preparation screen, where the party gathers before a mission, resolves "mission_preparation".
 --	  The game reports it as "loadout" in every game mode.
 --	  The mission's intro resolves no context and keeps the game's stinger.
 --	* The title screen, "title", resolves "title_screen", and character select, "main_menu", resolves "character_select".

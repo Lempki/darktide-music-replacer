@@ -20,7 +20,7 @@ The mod does not create these folders, so make the ones you want. Their names ar
 
 ## Folder names
 
-Any folder can hold these:
+Every folder except `title_screen`, `character_select`, `hub`, and `loading` can hold these:
 
 * The mission's code, such as `spillway` or `km_enforcer_twins`. [game-internals.md](game-internals.md) lists every mission's code with its in-game name.
 * The game mode: `havoc`, `expeditions`, or `mortis_trials`.

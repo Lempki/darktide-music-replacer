@@ -44,7 +44,7 @@ The formats that work are `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, and `.wma`. O
 
 ## Where your music plays
 
-Each folder plays in one situation. The music switches about half a second after the situation changes, or 3 seconds for a loading screen, so a moment that flickers does not restart the song. The Music Holds settings also keep combat, horde, boss, and event music going for a few seconds, so a short lull does not switch the music at once.
+Each folder plays in one situation. The music switches about half a second after the situation changes, or 3 seconds into and out of a loading screen, so a moment that flickers does not restart the song. The Music Holds settings also keep combat, horde, boss, and event music going for a few seconds, so a short lull does not switch the music at once.
 
 | Folder | When it plays |
 |---|---|

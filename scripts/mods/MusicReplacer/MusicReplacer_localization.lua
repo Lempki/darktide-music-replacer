@@ -47,7 +47,7 @@ local strings = {
 		en = "Resume Songs",
 	},
 	resume_songs_tooltip = {
-		en = "Explore, combat, Expedition, and Mortis Trials songs continue where they stopped when their music comes back.\n\n" ..
+		en = "Explore, combat, Mortis Trials, and Expedition fight and safe room songs continue where they stopped when their music comes back.\n\n" ..
 			"Horde, boss, and event songs also continue after an interruption, as long as that horde, fight, or event lasts. " ..
 			"Every mission and hub visit starts with fresh songs.",
 	},
@@ -92,7 +92,7 @@ local strings = {
 		en = "Mission Preparation",
 	},
 	source_mission_preparation_tooltip = {
-		en = source_tooltip("on the mission preparation screen, where the party stands together before a mission and can still change loadouts"),
+		en = source_tooltip("on the mission preparation screen, where the party gathers before a mission and can still change loadouts"),
 	},
 	source_mission_briefing = {
 		en = "Mission Briefing",
@@ -100,7 +100,7 @@ local strings = {
 	source_mission_briefing_tooltip = {
 		en = source_tooltip(
 			"on the loading screens and the briefing on the way into a mission, also when joining a mission in progress",
-			"The intro itself keeps the game's music, and a song interrupted by the preparation screen continues in the briefing."
+			"The intro itself keeps the game's music. With Resume Songs on, a song interrupted by the preparation screen continues in the briefing."
 		),
 	},
 	source_explore = {
