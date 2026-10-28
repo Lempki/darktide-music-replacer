@@ -361,6 +361,47 @@ describe("MusicReplacer.lua music events from the game", function()
 		assert_deep_equal(harness.engine.stopped_events, { playing_id })
 	end)
 
+	-- A story mission's score screen leads through its debrief cutscene into the hub, with no loading screen in between.
+	it("forgets a level's cutscene music once the level ends, even with no loading screen after it", function()
+		local harness = MainHarness.new({
+			files = { explore = { { name = "x.mp3", duration = 300 } }, hub = TWO_HUB_SONGS.hub },
+		})
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness:enter_mission("lm_cooling", "zone_3")
+		harness:settle()
+		CLASS.WwiseWorld.trigger_resource_event({}, "wwise/events/cinematics/play_cs03_music_116bpm")
+
+		harness:state("music_game_state", "victory")
+		harness:wait(8)
+		harness:state("music_game_state", "mission")
+		harness:state("music_zone", "None")
+		harness:state("music_game_state", "game_score_win")
+		harness:wait(56)
+		harness.engine.wwise_game_sync:on_gameplay_shutdown()
+		harness:mission(nil)
+		harness:debrief_cutscene_to_hub()
+		harness:settle()
+
+		assert_equal(harness:playing():match("^hub/") ~= nil, true)
+		assert_deep_equal(harness.engine.stopped_events, {})
+	end)
+
+	-- DMF disables the mod's hooks while it is off, so the level the cutscene music belonged to may have ended unseen.
+	it("forgets cutscene music when the mod is turned off", function()
+		local harness = in_mission({ source_explore = "game" })
+		CLASS.WwiseWorld.trigger_resource_event({}, "wwise/events/cinematics/play_cs03_music_116bpm")
+
+		harness.mod.on_disabled(false)
+		harness.mod.on_enabled(false)
+		harness.engine:reassert_states({ "music_game_state", "music_zone", "music_combat", "music_objective" })
+		harness:set_setting("source_explore", "custom")
+		harness:settle()
+
+		assert_equal(harness:playing() ~= nil, true)
+		assert_deep_equal(harness.engine.stopped_events, {})
+	end)
+
 	it("lets the event play while the game's music plays", function()
 		local harness = in_mission({ source_explore = "game" })
 

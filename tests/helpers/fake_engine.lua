@@ -24,6 +24,9 @@ local function new_wwise_game_sync_manager(engine)
 		end
 	end
 
+	-- The game calls it as a level ends. Here it only gives the mod's hook something to run after.
+	function Manager.on_gameplay_shutdown() end
+
 	local states = setmetatable({}, { __index = function() return DEFAULT_GROUP_STATE end })
 
 	engine.wwise_game_sync = setmetatable({ _wwise_state_group_states = states }, { __index = Manager })

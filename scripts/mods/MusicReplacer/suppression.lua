@@ -26,7 +26,7 @@ local forced_groups = {} -- State group name -> true while that group is forced 
 
 local events_suppressed = false
 
--- Cutscene music events that started since the last loading screen, each { world, playing_id, name }, to stop once a custom song plays.
+-- Cutscene music events that started in this level, each { world, playing_id, name }, to stop once a custom song plays.
 local cutscene_events = {}
 
 -- State group name -> true while that group is suppressed and forced again after every real transition.
@@ -163,14 +163,20 @@ function Suppression.watch_event(wwise_world, event_name, playing_id)
 	cutscene_events[#cutscene_events + 1] = { world = wwise_world, playing_id = playing_id, name = event_name }
 end
 
+-- Forgets the cutscene music of the level that is ending.
+-- The level's Wwise world goes with it, and stopping an event in a world the game has destroyed reaches freed memory.
+function Suppression.forget_cutscene_music()
+	cutscene_events = {}
+end
+
 -- Register with Context.on_state_change so the levers see every real transition.
--- A loading screen ends the level its cutscene music belonged to, along with that level's Wwise world, so the events are forgotten.
+-- A loading screen ends the level its cutscene music belonged to, so the events are forgotten there too.
 -- Keeps the last real value of each group, and forces or releases a group again when the game replaces it.
 function Suppression.on_state_change(group_name, new_state)
 	real_states[group_name] = new_state
 
 	if group_name == "music_game_state" and new_state == "loading" then
-		cutscene_events = {}
+		Suppression.forget_cutscene_music()
 	end
 
 	if group_name == "music_zone" then

@@ -20,6 +20,8 @@ local Loudness = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/loudnes
 local DiagnosticLog = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/diagnostic_log")
 local DebugOverlay = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/debug_overlay")
 
+local WwiseGameSyncManager = require("scripts/managers/wwise_game_sync/wwise_game_sync_manager")
+
 DiagnosticLog.init(mod, NativeFfi)
 local log = DiagnosticLog.write
 local log_detail = DiagnosticLog.detail
@@ -466,6 +468,13 @@ Context.on_state_change(Suppression.on_state_change)
 Context.on_state_change(ResumePoints.on_state_change)
 Context.init(mod, log_detail, log)
 
+-- The game stops every mission sound as a level ends, and the level's Wwise world goes with it.
+-- A level can end without a loading screen, as a story mission does when its debrief cutscene leads into the hub.
+-- So the cutscene music to stop is forgotten here, not only at a loading screen.
+mod:hook_safe(WwiseGameSyncManager, "on_gameplay_shutdown", function()
+	Suppression.forget_cutscene_music()
+end)
+
 -- Level flow hands an event's IDs on to later nodes, which pass them to the engine unchecked, so a nil ID can raise an error.
 -- So a game music event that Suppression silences still starts, and is stopped at once, which leaves the game valid IDs.
 local function stop_if_suppressed(wwise_world, event_name, playing_id, ...)
@@ -544,6 +553,8 @@ mod.on_disabled = function(initial_call)
 	current_context = nil
 	playing_track = nil
 	hand_back()
+	-- DMF disables the hooks while the mod is off, so a level can end unseen, and its cutscene music with it.
+	Suppression.forget_cutscene_music()
 	log("[mod] turned off, the game's own music plays")
 end
 
