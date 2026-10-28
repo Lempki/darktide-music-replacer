@@ -613,8 +613,11 @@ local function recompute(mod)
 	local old_context = resolved_context
 	resolved_context = new_context
 
+	-- A boss window can stay open under other music, such as an event, where its breed says nothing about what plays.
+	local boss_breed = resolved_context == "boss" and current_boss_breed(mod) or nil
+
 	for _, listener in ipairs(change_listeners) do
-		local ok, err = pcall(listener, resolved_context, old_context, current_boss_breed(mod))
+		local ok, err = pcall(listener, resolved_context, old_context, boss_breed)
 		if not ok then
 			mod:error("Music Replacer could not switch the music for a change in the game: %s", tostring(err))
 		end
@@ -635,6 +638,7 @@ end
 -- ###########################################################################
 
 -- The listener receives (new_context, old_context, boss_breed_or_nil) whenever the resolved context changes.
+-- The breed is only given when the new context is boss.
 function Context.on_change(listener)
 	change_listeners[#change_listeners + 1] = listener
 end

@@ -95,6 +95,21 @@ describe("context.lua boss signals", function()
 		assert_equal(harness:current(), "boss")
 		assert_equal(harness.Context.override_keys(harness.engine.mod, "boss")[1], "chaos_spawn")
 	end)
+
+	-- The log names the breed of a change, and a window left open under an event says nothing about the event's music.
+	it("names the boss's breed only for a change to boss, not for an event while its window is open", function()
+		local harness = in_mission("zone_3")
+		local breeds = {}
+		harness.Context.on_change(function(new_context, _, boss_breed)
+			breeds[#breeds + 1] = tostring(new_context) .. "=" .. tostring(boss_breed)
+		end)
+
+		harness:boss_start(harness:new_boss("chaos_spawn"))
+		harness:state("music_combat", "boss")
+		harness:state("music_objective", "kill_event")
+
+		assert_deep_equal(breeds, { "boss=chaos_spawn", "event=nil" })
+	end)
 end)
 
 describe("context.lua boss hold", function()
