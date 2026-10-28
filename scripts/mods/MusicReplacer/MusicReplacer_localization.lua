@@ -285,6 +285,12 @@ local strings = {
 	diagnostic_mode = {
 		en = "Detailed Logging",
 	},
+	diagnostic_mode_tooltip = {
+		en = "Writes much more to " .. highlight("diagnostic.log") .. ": every change in the game's music, " ..
+			"each time the mod silences it, and the game's sound events.\n\n" ..
+			"The important events are always logged, which is enough for most bug reports. " ..
+			"The extra lines add up quickly, so turn this on only while tracking down a problem.",
+	},
 	debug_overlay = {
 		en = "Debug Overlay",
 	},
@@ -306,12 +312,6 @@ local strings = {
 	debug_overlay_opacity_tooltip = {
 		en = "How dark the backdrop behind the debug overlay is. The text always stays fully visible.\n\n" ..
 			highlight("0%%") .. " leaves out the backdrop.",
-	},
-	diagnostic_mode_tooltip = {
-		en = "Writes much more to " .. highlight("diagnostic.log") .. ": every change in the game's music, " ..
-			"each time the mod silences it, and the game's sound events.\n\n" ..
-			"The important events are always logged, which is enough for most bug reports. " ..
-			"The extra lines add up quickly, so turn this on only while tracking down a problem.",
 	},
 }
 

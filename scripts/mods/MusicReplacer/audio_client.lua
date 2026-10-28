@@ -185,12 +185,12 @@ local function move_menu_level(dt)
 	return true
 end
 
--- Sets the Custom Music Volume, as a linear amplitude scale, at once.
 -- Sets the Fade Length, in seconds. 0 switches at once.
 function AudioClient.set_fade_seconds(seconds)
 	fade_seconds = math.max(0, seconds)
 end
 
+-- Sets the Custom Music Volume, as a linear amplitude scale, at once.
 function AudioClient.set_volume(scale)
 	if scale ~= volume then
 		volume = scale

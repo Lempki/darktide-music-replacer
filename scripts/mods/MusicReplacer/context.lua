@@ -188,7 +188,8 @@ local EXPEDITION_ONLY_COMBAT_STATES = {
 -- The level follows how alert the enemy is, not how hard the fight is.
 local EXPEDITION_FIGHT_STATES = { low_combat = true, med_combat = true, high_combat = true }
 
--- Every music_combat value the game's wwise_game_sync_settings.lua lists, the standard ones and an Expedition's.
+-- The values the game's wwise_game_sync_settings.lua lists for music_combat, and those it lists for music_expedition_combat.
+-- Every Expedition sets the second ones in music_combat too.
 local KNOWN_COMBAT_STATES = { None = true, normal = true, horde_low = true, horde_high = true, boss = true }
 for state in pairs(EXPEDITION_ONLY_COMBAT_STATES) do
 	KNOWN_COMBAT_STATES[state] = true

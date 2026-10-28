@@ -145,7 +145,7 @@ describe("resume_points.lua", function()
 		assert_equal(ResumePoints.take("explore"), nil)
 	end)
 
-	it("keeps a mission loading song that the preparation screen interrupts through the loading state of the briefing", function()
+	it("keeps a Mission Briefing song that the preparation screen interrupts through the loading state of the briefing", function()
 		local ResumePoints = load_resume_points()
 		ResumePoints.on_state_change("music_game_state", "loading")
 		ResumePoints.enter("mission_briefing")
