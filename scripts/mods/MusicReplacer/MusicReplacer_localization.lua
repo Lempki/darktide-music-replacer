@@ -6,7 +6,7 @@ local function highlight(text)
 end
 
 -- Each tooltip says what its setting does, then gives the notes that matter in a second paragraph.
--- The README keeps the full explanations.
+-- docs/settings.md keeps the full explanations.
 
 -- Builds the English tooltip of a situation dropdown, since every one offers the same choices.
 -- `note`, if given, is one more sentence about that situation.

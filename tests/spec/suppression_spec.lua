@@ -1,4 +1,4 @@
--- Pins how suppression.lua silences and restores the game's own music.
+-- Pins how suppression.lua silences and restores the game's music.
 -- context.lua feeds it every real state transition, wired the same way as in MusicReplacer.lua.
 -- The assertions read the value Wwise last received, which is what the player hears.
 

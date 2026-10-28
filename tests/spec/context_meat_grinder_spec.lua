@@ -25,7 +25,7 @@ describe("context.lua Meat Grinder", function()
 		assert_deep_equal(harness.changes, { "title_screen", "character_select", "loading", "hub", "nil", "loading", "meat_grinder" })
 	end)
 
-	it("resolves meat_grinder when set to the game's own music", function()
+	it("resolves meat_grinder when set to the game's music", function()
 		local harness = in_meat_grinder("game")
 
 		assert_equal(harness:current(), "meat_grinder")

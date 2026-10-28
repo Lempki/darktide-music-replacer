@@ -126,7 +126,7 @@ describe("context.lua combat", function()
 end)
 
 describe("context.lua unknown combat states", function()
-	-- A value the game adds later must not be silenced under an explore song, so the game's own music for it plays.
+	-- A value the game adds later must not be silenced under an explore song, so the game's music for it plays.
 	it("hands an unknown music_combat value to the game's music, and logs it once", function()
 		local lines = {}
 		local harness = Harness.new({ combat_hold_seconds = 0 }, function(line) lines[#lines + 1] = line end)

@@ -86,7 +86,7 @@ describe("MusicReplacer.lua context changes", function()
 		assert_equal(played_combat, true)
 	end)
 
-	it("leaves the game's own music alone for a context with no songs", function()
+	it("leaves the game's music alone for a context with no songs", function()
 		local harness = MainHarness.new({ files = TWO_HUB_SONGS })
 		harness:cold_start_to_hub()
 		harness:settle()
@@ -592,7 +592,7 @@ describe("MusicReplacer.lua loading", function()
 		assert_equal(harness:playing(), "explore/x.mp3")
 	end)
 
-	it("leaves loading screens to the game's own music while the loading folder is empty", function()
+	it("leaves loading screens to the game's music while the loading folder is empty", function()
 		local harness = in_hub_with({ hub = FILES.hub })
 
 		harness:leave_hub()
@@ -792,7 +792,7 @@ describe("MusicReplacer.lua override folders", function()
 		assert_equal(harness:playing(), "event/escape_event/escape.mp3")
 	end)
 
-	it("looks for no override while a context is set to the game's own music", function()
+	it("looks for no override while a context is set to the game's music", function()
 		local harness = in_cooling({
 			["boss/chaos_spawn"] = { { name = "spawn.mp3", duration = 300 } },
 		}, { source_boss = "game" })

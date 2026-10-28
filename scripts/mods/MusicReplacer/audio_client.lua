@@ -476,9 +476,9 @@ local function update_current(dt)
 		return
 	end
 
-	-- The decoder's own duration matches its positions, while the library's can differ by a second or more for the same file.
-	-- It is also known when the library has not measured the file yet, as right after the folders are listed again.
-	-- A looping file never ends, so it never fades out.
+	-- The decoder's duration matches its positions, while the library's can be off by a second or more.
+	-- It is also there before the library has measured the file.
+	-- A looping file never fades out.
 	-- A song shorter than two fades starts its end fade halfway, since an earlier one would cut off its fade-in and play it silent.
 	local duration = not current.loop and (stream.duration or current.duration)
 	if duration and not current.end_fading and stream:position() >= duration - math.min(fade_seconds, duration / 2) then

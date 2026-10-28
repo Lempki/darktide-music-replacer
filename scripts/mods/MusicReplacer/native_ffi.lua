@@ -149,13 +149,10 @@ function NativeFfi.kernel32()
 	return kernel32
 end
 
--- CoInitializeEx would change how the calling thread runs COM for the whole game, so it is never called.
--- If this thread has no COM yet, CoIncrementMTAUsage keeps the process-wide multithreaded apartment alive.
--- The thread then runs in it implicitly, without initializing COM itself.
--- Its cookie is never passed to CoDecrementMTAUsage, so the apartment outlives every COM object the mod creates.
--- That holds across a mod reload too, which reruns this file and would lose a stored cookie anyway.
--- The reloaded file finds the thread in the implicit apartment already, so it never adds a second count.
--- The apartment ends with the game's process.
+-- CoInitializeEx would change how the game's thread runs COM, so it is never called.
+-- If the thread has no COM yet, CoIncrementMTAUsage keeps the process-wide multithreaded apartment alive for it to run in implicitly.
+-- The cookie is never released, so the apartment outlives every COM object the mod creates, and ends with the game's process.
+-- A reloaded mod finds the thread in the apartment already, so it adds no second count.
 function NativeFfi.ensure_com()
 	if com_ready then
 		return

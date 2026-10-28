@@ -98,7 +98,7 @@ end
 
 -- Remembers `position` seconds into `file_path` for `context_name`, which is giving way to `next_context_name`.
 -- Returns the position it kept, or nil.
--- `duration` may be nil. With it, a single file's loop is wrapped back into the file, and a song near its end is not kept.
+-- `duration` may be nil.
 function ResumePoints.remember(context_name, file_path, position, duration, is_only_file, next_context_name)
 	if not (mod and mod:get("resume_songs")) then
 		return nil

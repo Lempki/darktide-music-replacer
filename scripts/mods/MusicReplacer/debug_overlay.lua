@@ -110,13 +110,8 @@ local function level_words(snapshot)
 end
 
 -- What the overlay shows for a snapshot from MusicReplacer.lua, as plain fields for the element to draw.
--- The snapshot's fields are turned_off, context, situation, idle, status, folder, overrides, and menu_open.
--- Its timing fields are hold, hold_seconds, hold_length, pending, pending_seconds, and pending_length.
--- The song's are song, position, and duration, and the volume's are menu_volume, menu_level, song_level, and evening_out.
--- The view has title, situation, tag, kind, folder, song or idle, time, progress, level, waiting, and waiting_share.
--- Each is only set when shown, and idle says what plays while no song of yours does.
--- For the element, menu is true while a menu is open, evening_out while Even Out Loudness is on, and loudness is the song's level.
--- The meter itself shows the menu lowering's fade, so the marker follows the menu, not the fade.
+-- A field of the view is only set when it is shown, and idle says what plays while no song of yours does.
+-- The meter itself shows the menu lowering's fade, so the Menu marker follows the menu, not the fade.
 function DebugOverlay.view(snapshot)
 	local view = { title = "Music Replacer" }
 

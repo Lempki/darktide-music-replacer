@@ -180,13 +180,12 @@ end
 
 -- Call once, after all mods have loaded, with an initialized audio_folders.lua.
 -- Creates any missing folder at once, and lists them on the first update.
--- `logger`, if given, receives a line for each listing and the total measuring time.
--- It also receives one for each file Windows cannot open, and the first time a listed file turns out to be missing.
+-- `logger`, if given, receives the library's log lines.
 function Library.init(logger, audio_folders)
 	log = logger or log
 
 	if not (audio_folders and audio_folders.available()) then
-		return -- No way to list the folders. pick_file() below correctly returns nil.
+		return -- Without a way to list the folders, pick_file() returns nil, so the game's music plays.
 	end
 	AudioFolders = audio_folders
 
