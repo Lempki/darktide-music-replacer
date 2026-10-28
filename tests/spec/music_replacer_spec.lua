@@ -237,7 +237,7 @@ describe("MusicReplacer.lua music per situation", function()
 
 		assert_equal(harness:last_play(), nil)
 		assert_equal(harness.engine:wwise_state("music_zone"), "hub")
-		assert_equal(harness:logged("[playback] hub: set to the game's own music"), true)
+		assert_equal(harness:logged("[playback] hub: set to the game's music"), true)
 	end)
 
 	it("silences a context set to Silence, playing nothing", function()
@@ -273,7 +273,7 @@ describe("MusicReplacer.lua music per situation", function()
 
 		harness:set_setting("source_meat_grinder", "game")
 
-		assert_equal(harness:logged("[playback] meat_grinder: set to the game's own music"), true)
+		assert_equal(harness:logged("[playback] meat_grinder: set to the game's music"), true)
 	end)
 end)
 
@@ -872,7 +872,7 @@ describe("MusicReplacer.lua during a change that is still settling", function()
 		harness:wait(0.7)
 
 		assert_equal(harness:playing(), nil)
-		assert_equal(harness:logged("[playback] explore: set to the game's own music"), true)
+		assert_equal(harness:logged("[playback] explore: set to the game's music"), true)
 	end)
 end)
 

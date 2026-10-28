@@ -188,7 +188,7 @@ local function play_context(context_name, is_new_context)
 	-- Meat Grinder only resolves to its own context for "game" and "silence", since "custom" plays the mission contexts there.
 	if source == "game" then
 		hand_back()
-		log(string.format("[playback] %s: set to the game's own music", context_name))
+		log(string.format("[playback] %s: set to the game's music", context_name))
 		return
 	end
 
@@ -558,7 +558,7 @@ mod.on_disabled = function(initial_call)
 	hand_back()
 	-- DMF disables the hooks while the mod is off, so a level can end unseen, and its cutscene music with it.
 	Suppression.forget_cutscene_music()
-	log("[mod] turned off, the game's own music plays")
+	log("[mod] turned off, the game's music plays")
 end
 
 mod.on_enabled = function(initial_call)
