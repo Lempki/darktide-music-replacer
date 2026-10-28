@@ -12,6 +12,6 @@ concurrency:
 
 jobs:
   ci:
-    uses: Lempki/dev-standards/.github/workflows/lua-ci.yml@v0.5.2
+    uses: Lempki/dev-standards/.github/workflows/lua-ci.yml@v0.7.0
     with:
       test-command: luajit tests/run.lua
