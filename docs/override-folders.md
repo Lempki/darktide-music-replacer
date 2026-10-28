@@ -44,3 +44,5 @@ When several apply, the first one that has songs wins: the moment's name, then t
 On the way into a mission, the mission's code and its game mode apply during the loading screens, the preparation screen, and the briefing. So `mission_briefing\mortis_trials\` plays during the Mortis Trials briefing. Havoc applies only once the mission has loaded, so a `havoc` folder does not apply on the preparation screen or during most of the briefing.
 
 The music switches within half a second once another override applies, for example when the game names a boss a few seconds after the boss music started, or when an event moves on to its escape. A moment the game names by its screen, such as matchmaking, character creation, or the score screen, keeps its folder for 2 seconds after it ends, since the game passes through another state on the way out. With Debug Overlay on, its Folder line shows the folder that plays and the override names the moment looks for.
+
+To try out an override folder, set Meat Grinder's Music to One Situation and pick its situation. A boss dummy names the `boss` folder's override, such as `boss\chaos_spawn\`.

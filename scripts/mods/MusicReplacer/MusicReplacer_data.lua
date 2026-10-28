@@ -5,12 +5,12 @@
 local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/contexts")
 
 -- What a context plays. Custom keeps the mod's plain behavior: custom songs where there are files, the game's music elsewhere.
-local function source_widget(context_name, default_value)
+local function source_widget(context_name)
 	return {
 		setting_id = "source_" .. context_name,
 		type = "dropdown",
 		tooltip = "source_" .. context_name .. "_tooltip",
-		default_value = default_value or "custom",
+		default_value = "custom",
 		options = {
 			{ text = "source_custom", value = "custom" },
 			{ text = "source_game", value = "game" },
@@ -19,10 +19,14 @@ local function source_widget(context_name, default_value)
 	}
 end
 
--- One dropdown per context, in the catalog's order.
+-- One dropdown per context, in the catalog's order, and Meat Grinder's situations to choose from.
 local source_widgets = {}
+local meat_grinder_situations = {}
 for _, context in ipairs(Contexts.list) do
-	source_widgets[#source_widgets + 1] = source_widget(context.id, context.default_source)
+	if not context.own_settings then
+		source_widgets[#source_widgets + 1] = source_widget(context.id)
+		meat_grinder_situations[#meat_grinder_situations + 1] = { text = "source_" .. context.id, value = context.id }
+	end
 end
 
 return {
@@ -63,6 +67,42 @@ return {
 				setting_id = "music_per_situation",
 				type = "group",
 				sub_widgets = source_widgets,
+			},
+			{
+				setting_id = "meat_grinder",
+				type = "group",
+				sub_widgets = {
+					{
+						-- Its id fits source_of() in MusicReplacer.lua, which reads "silence" and "custom" as for any context.
+						setting_id = "source_meat_grinder",
+						title = "meat_grinder_music",
+						type = "dropdown",
+						tooltip = "source_meat_grinder_tooltip",
+						-- The game plays no music in Meat Grinder, so it starts silent like an unmodified game.
+						default_value = "silence",
+						options = {
+							{ text = "source_silence", value = "silence" },
+							{ text = "meat_grinder_folder", value = "custom" },
+							{ text = "meat_grinder_one_situation", value = "situation", show_widgets = { 1 } },
+							{ text = "meat_grinder_like_a_mission", value = "mission", show_widgets = { 2 } },
+						},
+						sub_widgets = {
+							{
+								setting_id = "meat_grinder_situation",
+								type = "dropdown",
+								tooltip = "meat_grinder_situation_tooltip",
+								default_value = "explore",
+								options = meat_grinder_situations,
+							},
+							{
+								setting_id = "meat_grinder_boss_dummies",
+								type = "checkbox",
+								tooltip = "meat_grinder_boss_dummies_tooltip",
+								default_value = true,
+							},
+						},
+					},
+				},
 			},
 			{
 				setting_id = "volume",

@@ -259,8 +259,9 @@ describe("MusicReplacer.lua music per situation", function()
 		assert_equal(harness.engine:wwise_state("music_zone"), "None")
 	end)
 
-	it("follows a Meat Grinder change between Silence and Vanilla at once, during the visit", function()
-		local harness = MainHarness.new({ settings = { source_meat_grinder = "silence" }, files = {} })
+	-- Walks from the hub into Meat Grinder, with `settings` over the defaults and `files` in the library.
+	local function in_meat_grinder(settings, files)
+		local harness = MainHarness.new({ settings = settings, files = files })
 		harness:cold_start_to_hub()
 		harness:state("music_zone", "None")
 		harness:state("music_game_state", "loading")
@@ -268,12 +269,50 @@ describe("MusicReplacer.lua music per situation", function()
 		harness:wait(3)
 		harness:mission("tg_shooting_range")
 		harness:state("music_game_state", "mission")
-		harness:settle()
+		harness:wait(4)
+		return harness
+	end
+
+	local MEAT_GRINDER_FILES = {
+		meat_grinder = { { name = "m.mp3", duration = 300 } },
+		event = { { name = "e.mp3", duration = 300 } },
+		explore = { { name = "x.mp3", duration = 300 } },
+		combat = { { name = "c.mp3", duration = 200 } },
+	}
+
+	-- Players try loadouts there for long stretches, so the dummies' fights must not switch the song.
+	it("plays the Meat Grinder folder once chosen, keeps it through the dummies' fights, and silences it again at once", function()
+		local harness = in_meat_grinder({ source_meat_grinder = "silence" }, MEAT_GRINDER_FILES)
+		assert_equal(harness:playing(), nil)
+
+		harness:set_setting("source_meat_grinder", "custom")
+		assert_equal(harness:playing(), "meat_grinder/m.mp3")
+
+		harness:state("music_combat", "normal")
+		harness:state("music_combat", "boss")
+		harness:wait(10)
+		assert_equal(harness:playing(), "meat_grinder/m.mp3")
+
+		harness:set_setting("source_meat_grinder", "silence")
+		assert_equal(harness:playing(), nil)
 		assert_equal(harness:logged("[playback] meat_grinder: set to silence"), true)
+	end)
 
-		harness:set_setting("source_meat_grinder", "game")
+	it("plays the situation One Situation picks, and switches once another is picked", function()
+		local harness = in_meat_grinder({ source_meat_grinder = "situation", meat_grinder_situation = "event" }, MEAT_GRINDER_FILES)
+		assert_equal(harness:playing(), "event/e.mp3")
 
-		assert_equal(harness:logged("[playback] meat_grinder: set to the game's music"), true)
+		harness:set_setting("meat_grinder_situation", "explore")
+		harness:settle()
+
+		assert_equal(harness:playing(), "explore/x.mp3")
+	end)
+
+	it("plays One Situation's pick by that situation's own choice in Music per Situation", function()
+		local harness = in_meat_grinder({ source_meat_grinder = "situation", meat_grinder_situation = "event", source_event = "game" }, MEAT_GRINDER_FILES)
+
+		assert_equal(harness:playing(), nil)
+		assert_equal(harness:logged("[playback] event: set to the game's music"), true)
 	end)
 end)
 

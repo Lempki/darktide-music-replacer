@@ -25,7 +25,7 @@ $SourceItems = @("$ModName.mod", 'info.json', 'scripts')
 $AudioContexts = @(
     'title_screen', 'character_select', 'hub', 'loading', 'mission_preparation', 'mission_briefing',
     'explore', 'combat', 'horde', 'boss', 'event', 'last_stand', 'victory', 'defeat',
-    'mortis_trials_wave', 'mortis_trials_break', 'expedition_combat', 'expedition_safe_room', 'expedition_extraction'
+    'mortis_trials_wave', 'mortis_trials_break', 'expedition_combat', 'expedition_safe_room', 'expedition_extraction', 'meat_grinder'
 )
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot

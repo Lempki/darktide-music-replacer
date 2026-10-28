@@ -183,7 +183,6 @@ local function play_context(context_name, is_new_context)
 	local source = source_of(context_name)
 	context_status = SOURCE_NAMES[source]
 
-	-- Meat Grinder only resolves to its own context for "game" and "silence", since "custom" plays the mission contexts there.
 	if source == "game" then
 		hand_back()
 		log(string.format("[playback] %s: set to the game's music", context_name))
@@ -410,7 +409,7 @@ local function overlay_snapshot()
 	local volume, menu_level, song_level = AudioClient.levels()
 	local song = AudioClient.is_playing() and playing_track and playing_track.file_path or nil
 
-	-- A situation set to Vanilla or Silence, and Meat Grinder, play no folder, so they look for no override either.
+	-- A situation set to Vanilla or Silence plays no folder, so it looks for no override either.
 	local overrides = current_folder and table.concat(Context.override_keys(mod, current_context), ", ") or nil
 
 	local pending_seconds = nil
@@ -565,15 +564,22 @@ mod.on_enabled = function(initial_call)
 	log("[mod] turned on, catching up with the game's music states")
 end
 
-mod.on_setting_changed = function(setting_id)
-	if setting_id == "source_meat_grinder" or setting_id == "daemonhost_boss_music" or setting_id == "captain_boss_music" then
-		Context.refresh(mod)
+-- Settings that decide how the context resolves, so it resolves again when one changes.
+local RESOLVING_SETTINGS = {
+	captain_boss_music = true,
+	daemonhost_boss_music = true,
+	source_meat_grinder = true,
+	meat_grinder_situation = true,
+	meat_grinder_boss_dummies = true,
+}
 
-		-- Vanilla and Silence both resolve meat_grinder, so switching between them changes no context and needs a replay here.
-		if enabled and setting_id == "source_meat_grinder" and current_context == "meat_grinder" and Context.current() == "meat_grinder" then
-			play_context(current_context, true)
-		end
-	elseif setting_id == "debug_overlay" or setting_id == "debug_overlay_scale" or setting_id == "debug_overlay_opacity" then
+mod.on_setting_changed = function(setting_id)
+	-- Meat Grinder's own choice also reaches the last branch below, since Silence and its folder both resolve meat_grinder.
+	if RESOLVING_SETTINGS[setting_id] then
+		Context.refresh(mod)
+	end
+
+	if setting_id == "debug_overlay" or setting_id == "debug_overlay_scale" or setting_id == "debug_overlay_opacity" then
 		apply_overlay_settings()
 	elseif setting_id == "custom_music_volume" then
 		AudioClient.set_volume(custom_volume())

@@ -4,8 +4,8 @@
 --
 -- Fields:
 --	* id: the context's name, which is also its audio folder's name and its setting's "source_" suffix.
---	* folder: true when it plays songs from an audio folder of its own. Meat Grinder plays the mission folders instead.
---	* default_source: what its dropdown starts at, when that is not "custom".
+--	* folder: true when it plays songs from an audio folder of its own.
+--	* own_settings: true when its choice lives in a settings group of its own, not in Music per Situation.
 --	* silences: the game's state group that plays this context's own music, forced to "None" while a custom song plays.
 --	  Combat music and the exploration music events are silenced for every context, so they are not listed.
 --	* priority: its rank among the mission contexts, lowest first, matching the order context.lua resolves them in.
@@ -37,8 +37,8 @@ Contexts.list = {
 	{ id = "expedition_combat", folder = true, priority = 2, resume = "always" },
 	{ id = "expedition_safe_room", folder = true, priority = 1, resume = "always" },
 	{ id = "expedition_extraction", folder = true, priority = 5 },
-	-- The game plays no music in Meat Grinder, so it starts silent like an unmodified game.
-	{ id = "meat_grinder", default_source = "silence" },
+	-- Meat Grinder is where players try out loadouts and songs, so it has a settings group of its own.
+	{ id = "meat_grinder", folder = true, own_settings = true },
 }
 
 local by_id = {}

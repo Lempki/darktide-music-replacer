@@ -23,7 +23,7 @@ end
 -- Every name the options look up in the localization, from every widget below `widgets`.
 local function collect_names(widgets, names)
 	for _, widget in ipairs(widgets) do
-		names[#names + 1] = widget.setting_id
+		names[#names + 1] = widget.title or widget.setting_id
 		names[#names + 1] = widget.tooltip
 		names[#names + 1] = widget.unit_text
 		names[#names + 1] = widget.button_text

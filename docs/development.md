@@ -43,7 +43,7 @@ Pull requests and [issues](https://github.com/Lempki/darktide-music-replacer/iss
 All player-facing text is in `scripts/mods/MusicReplacer/MusicReplacer_localization.lua`. Each string is a table with one entry per language, keyed by the game's language ID, such as `en` for English and `de` for German. DMF shows a string in the game's language, and falls back to `en` when that language has none.
 
 * To add a language, add an entry next to `en` in every string, for example `de = "..."`.
-* The situation dropdowns, except Meat Grinder's, build their English tooltips with `source_tooltip()`. A translation writes each tooltip as its own full text instead, since the sentence order differs between languages.
+* The situation dropdowns build their English tooltips with `source_tooltip()`. A translation writes each tooltip as its own full text instead, since the sentence order differs between languages.
 * `highlight()` colors the key words in a tooltip, such as the names of the choices, so keep it around the translated words.
 * DMF formats every string, so `%%` shows as a single percent sign.
 

@@ -181,15 +181,49 @@ local strings = {
 	source_expedition_extraction_tooltip = {
 		en = source_tooltip("while an Expedition's extraction runs"),
 	},
+
+	meat_grinder = {
+		en = "Meat Grinder",
+	},
+	-- The situation's name, which the debug overlay shows.
 	source_meat_grinder = {
 		en = "Meat Grinder",
 	},
+	meat_grinder_music = {
+		en = "Music",
+	},
 	source_meat_grinder_tooltip = {
 		en = "What plays in the Meat Grinder training area.\n\n" ..
-			highlight("Custom") .. " plays your explore and combat songs, which is a quick way to test them. " ..
-			highlight("Vanilla") .. " plays the game's music there, which is none, so it sounds the same as " ..
-			highlight("Silence") .. ".\n\n" ..
-			"With " .. highlight("Custom") .. ", empty explore and combat folders play the game's music.",
+			highlight("Silence") .. " plays nothing, as in the game. " ..
+			highlight("Meat Grinder Folder") .. " plays your songs from its folder all through the visit, whatever the dummies do. " ..
+			highlight("One Situation") .. " plays the situation you choose, to try out its songs. " ..
+			highlight("Like a Mission") .. " follows the game as a mission does, with explore, combat, horde, and boss music.\n\n" ..
+			"Every situation keeps its own choice in Music per Situation. " ..
+			"With " .. highlight("Meat Grinder Folder") .. ", an empty folder plays the game's music, which is none there.",
+	},
+	meat_grinder_folder = {
+		en = "Meat Grinder Folder",
+	},
+	meat_grinder_one_situation = {
+		en = "One Situation",
+	},
+	meat_grinder_like_a_mission = {
+		en = "Like a Mission",
+	},
+	meat_grinder_situation = {
+		en = "Situation",
+	},
+	meat_grinder_situation_tooltip = {
+		en = "The situation that " .. highlight("One Situation") .. " plays in Meat Grinder, as if it were happening.\n\n" ..
+			"It plays as it does everywhere else, with its choice in Music per Situation and its override folders.",
+	},
+	meat_grinder_boss_dummies = {
+		en = "Boss Dummies Count as Bosses",
+	},
+	meat_grinder_boss_dummies_tooltip = {
+		en = "Whether the boss dummies get boss music with " .. highlight("Like a Mission") .. ".\n\n" ..
+			highlight("Off") .. " plays explore music while a boss dummy is alive, even while you hit other dummies, " ..
+			"since the game then reports only the boss.",
 	},
 
 	volume = {

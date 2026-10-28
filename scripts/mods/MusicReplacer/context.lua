@@ -40,8 +40,8 @@
 --	  The game reports it as "loadout" in every game mode.
 --	  The mission's intro resolves no context and keeps the game's stinger.
 --	* Meat Grinder has no `wwise_state`, so it is recognized by its mission name instead.
---	  It resolves to "meat_grinder", whose own setting picks silence or the game's music there.
---	  With that setting on "custom", it resolves like a mission instead, so the explore and combat music plays.
+--	  Its own setting decides what it resolves: "meat_grinder" through every fight, one situation the player picks, or the mission contexts.
+--	  Played like a mission, its boss dummies can be left out, so explore plays while one is alive.
 --	* Some missions never report a zone.
 --	  No zone plus `music_game_state == "mission"` counts as a mission until a victory or defeat state ends it.
 --	  It does not count while the hub is still loaded, since leaving the hub clears the zone a moment before the game state changes.
@@ -67,6 +67,7 @@
 
 local Context = {}
 
+local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/contexts")
 local WwiseGameSyncManager = require("scripts/managers/wwise_game_sync/wwise_game_sync_manager")
 local WwiseStateGroupCombat = require("scripts/managers/wwise_game_sync/wwise_state_groups/wwise_state_group_combat")
 
@@ -243,6 +244,12 @@ local MOMENT_GRACE_SECONDS = 2
 -- Its template has no wwise_state, so music_zone reads "None" there.
 local MEAT_GRINDER_MISSION = "tg_shooting_range"
 
+-- The situations Meat Grinder's One Situation can play: every context but those with a settings group of their own.
+local MEAT_GRINDER_SITUATIONS = {}
+for _, context in ipairs(Contexts.list) do
+	MEAT_GRINDER_SITUATIONS[context.id] = not context.own_settings or nil
+end
+
 -- The music_zone value the game sets for Mortis Trials.
 local MORTIS_TRIALS_ZONE = "horde_mode"
 
@@ -261,7 +268,18 @@ local function counts_as_boss(mod, boss)
 	return not OPT_IN_BOSS_SETTINGS[boss.breed] or opted_in(mod, boss)
 end
 
+-- True in Meat Grinder played like a mission, with its boss dummies left out by their setting.
+-- The game reports only the boss while a boss dummy is alive, so explore plays through it then.
+local function boss_dummies_ignored(mod)
+	return mission_name == MEAT_GRINDER_MISSION and mod:get("source_meat_grinder") == "mission"
+		and mod:get("meat_grinder_boss_dummies") == false
+end
+
 local function is_boss_active(mod)
+	if boss_dummies_ignored(mod) then
+		return false
+	end
+
 	if music_combat == "boss" then
 		return true
 	end
@@ -279,6 +297,10 @@ end
 -- Breed name of the most recently opened encounter window that counts as a boss, or nil when none does.
 -- So a captain or daemonhost with its setting off does not name the folder during another boss's fight.
 local function current_boss_breed(mod)
+	if boss_dummies_ignored(mod) then
+		return nil
+	end
+
 	local latest = nil
 
 	for _, boss in pairs(open_bosses) do
@@ -454,10 +476,17 @@ local function resolve(mod)
 		return nil
 	end
 
-	-- An unknown stored value plays as "custom", the same as in MusicReplacer.lua's source_of.
-	local meat_grinder_source = mission_name == MEAT_GRINDER_MISSION and mod:get("source_meat_grinder")
-	if meat_grinder_source == "game" or meat_grinder_source == "silence" then
-		return "meat_grinder"
+	-- Meat Grinder is where players try out loadouts and songs, so its own setting decides what it resolves.
+	if mission_name == MEAT_GRINDER_MISSION then
+		local mode = mod:get("source_meat_grinder")
+		if mode == "situation" then
+			-- A stored situation the catalog no longer has resolves none, so the game's music plays.
+			local situation = mod:get("meat_grinder_situation")
+			return MEAT_GRINDER_SITUATIONS[situation] and situation or nil
+		elseif mode ~= "mission" then
+			-- Silence and the Meat Grinder folder last through every fight with the dummies.
+			return "meat_grinder"
+		end
 	end
 
 	-- No zone outside a zoneless mission means the player is between levels, as when leaving the hub clears its zone first.

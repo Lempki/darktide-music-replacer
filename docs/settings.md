@@ -1,6 +1,6 @@
 # Settings
 
-Every setting of Music Replacer, with its default. The settings are in the in-game mod options under Music Replacer, in six groups, in the order the menu shows them.
+Every setting of Music Replacer, with its default. The settings are in the in-game mod options under Music Replacer, in seven groups, in the order the menu shows them.
 
 ## Playback
 
@@ -12,7 +12,15 @@ Every setting of Music Replacer, with its default. The settings are in the in-ga
 
 ## Music per Situation
 
-One dropdown per situation, with the choices Custom, Vanilla, and Silence. See [Choosing what plays](../README.md#choosing-what-plays) in the README for what each choice does.
+One dropdown per situation except Meat Grinder, which has a group of its own below, with the choices Custom, Vanilla, and Silence. See [Choosing what plays](../README.md#choosing-what-plays) in the README for what each choice does.
+
+## Meat Grinder
+
+| Setting | Default | What it does |
+|---|---|---|
+| Music | Silence | What plays in the Meat Grinder training area: Silence, Meat Grinder Folder, One Situation, or Like a Mission. [Meat Grinder](../README.md#meat-grinder) in the README explains each one. |
+| Situation | Explore | The situation One Situation plays, shown while One Situation is chosen. Every situation but Meat Grinder itself is offered. |
+| Boss Dummies Count as Bosses | On | Whether a boss dummy plays boss music with Like a Mission, shown while Like a Mission is chosen. With it off, explore plays while a boss dummy is alive, even while you hit other dummies, since the game then reports only the boss. |
 
 ## Volume
 

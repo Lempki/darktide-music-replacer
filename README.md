@@ -4,7 +4,7 @@ Music Replacer is a mod for Warhammer 40,000: Darktide that plays your own music
 
 ## What it does
 
-* Plays your songs by situation: the title screen, character select, the hub, loading screens, exploring, combat, hordes, bosses, events, last stands, victory, defeat, Mortis Trials, and Expeditions.
+* Plays your songs by situation: the title screen, character select, the hub, loading screens, exploring, combat, hordes, bosses, events, last stands, victory, defeat, Mortis Trials, Expeditions, and Meat Grinder.
 * Picks a random song from a folder with several, never the one that just played.
 * Loops a folder's only song seamlessly, with no gap added between its end and its start.
 * Keeps a song playing when the next situation's folder holds only that same song, instead of starting it over.
@@ -12,6 +12,7 @@ Music Replacer is a mod for Warhammer 40,000: Darktide that plays your own music
 * Continues a song from where it stopped once its situation comes back, such as explore music after a fight.
 * Follows the game's master and music volume sliders at once, without restarting the song.
 * Lets you choose Custom, Vanilla, or Silence for each situation.
+* Lets you try out any situation's songs in Meat Grinder, or play a folder of its own there.
 * Can even out the loudness of your songs, without changing your files.
 * Lowers your music while a menu is open.
 * Has a debug overlay that shows which situation the mod sees and what it plays.
@@ -67,26 +68,36 @@ Each folder plays in one situation. The music switches about half a second after
 | `expedition_combat` | During a fight in an Expedition. Expeditions play this folder in place of `combat` and `horde`. |
 | `expedition_safe_room` | In an Expedition's safe room. |
 | `expedition_extraction` | While an Expedition's extraction runs, until the mission is won or lost. Only a last stand takes over. |
+| `meat_grinder` | In the Meat Grinder training area, with Meat Grinder Folder chosen, as [Meat Grinder](#meat-grinder) explains. |
 
-In Mortis Trials, the two Mortis Trials folders replace the mission folders from `explore` to `event`. In an Expedition, quiet moments play `explore`. Meat Grinder has no folder of its own, as [Choosing what plays](#choosing-what-plays) explains.
+In Mortis Trials, the two Mortis Trials folders replace the mission folders from `explore` to `event`. In an Expedition, quiet moments play `explore`.
 
 ## Choosing what plays
 
-The Music per Situation group has one dropdown per folder above, named after it, and one for Meat Grinder. Each offers the same three choices:
+The Music per Situation group has one dropdown per folder above, named after it, except `meat_grinder`. Each offers the same three choices:
 
 | Choice | What plays |
 |---|---|
-| Custom | Your songs from the situation's folder. With an empty folder, the game's music plays. This is the default everywhere except Meat Grinder. |
+| Custom | Your songs from the situation's folder. With an empty folder, the game's music plays. This is the default. |
 | Vanilla | Always the game's music, even with songs in the folder, so you can turn one situation off without moving files. |
 | Silence | Nothing. The game's music is silenced too. |
 
-Meat Grinder starts at Silence. There, Custom plays your `explore` and `combat` songs, which is a quick way to test them, and empty folders play the game's music. Vanilla plays the game's music there, which is none, so it sounds the same as Silence.
-
 A changed choice applies at once, even to the situation that is playing.
+
+## Meat Grinder
+
+Meat Grinder is a good place to try out your songs, so it has a settings group of its own. Its Music setting offers four choices:
+
+| Choice | What plays |
+|---|---|
+| Silence | Nothing, as in the game. This is the default. |
+| Meat Grinder Folder | Your songs from the `meat_grinder` folder, through every fight with the dummies, so trying out loadouts does not switch the song. With an empty folder, the game's music plays, which is none there. |
+| One Situation | The situation you pick under Situation, as if it were happening, to try out its songs. It plays by its own choice in Music per Situation, with its override folders, so a boss dummy names the `boss` folder's override. |
+| Like a Mission | The mission situations, as the game reports them: explore, combat while you hit the dummies, and boss for a boss dummy. With Boss Dummies Count as Bosses off, explore plays while a boss dummy is alive, since the game then reports only the boss. |
 
 ## Settings
 
-The settings are in the in-game mod options under Music Replacer, in six groups: Playback, Music per Situation, Volume, Boss Music, Music Holds, and Debug. Every setting and its default is explained in [docs/settings.md](docs/settings.md).
+The settings are in the in-game mod options under Music Replacer, in seven groups: Playback, Music per Situation, Meat Grinder, Volume, Boss Music, Music Holds, and Debug. Every setting and its default is explained in [docs/settings.md](docs/settings.md).
 
 ## Override folders
 

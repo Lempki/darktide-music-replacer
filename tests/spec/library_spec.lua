@@ -85,7 +85,8 @@ describe("library.lua listing", function()
 
 		assert_equal(folders.created[1], ROOT)
 		assert_equal(folders.created[2], ROOT .. "/title_screen")
-		assert_equal(#folders.created, 20)
+		assert_equal(folders.created[21], ROOT .. "/meat_grinder")
+		assert_equal(#folders.created, 21)
 	end)
 
 	it("lists every folder on the first update, and logs how many files each has", function()

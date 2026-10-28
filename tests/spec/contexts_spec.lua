@@ -42,6 +42,38 @@ describe("contexts.lua", function()
 		assert_equal(Contexts.get(nil), nil)
 	end)
 
+	it("gives Meat Grinder's choice a group of its own, and offers every other situation to its One Situation", function()
+		local engine = FakeEngine.new()
+		local Contexts = engine:load("contexts")
+		local data = engine:load("MusicReplacer_data")
+		local groups = {}
+		for _, group in ipairs(data.options.widgets) do
+			groups[group.setting_id] = group
+		end
+
+		local dropdowns = {}
+		for _, widget in ipairs(groups.music_per_situation.sub_widgets) do
+			dropdowns[#dropdowns + 1] = widget.setting_id
+		end
+		local situations = {}
+		for _, option in ipairs(groups.meat_grinder.sub_widgets[1].sub_widgets[1].options) do
+			situations[#situations + 1] = option.value
+		end
+
+		local expected_dropdowns = {}
+		local expected_situations = {}
+		for _, context in ipairs(Contexts.list) do
+			if context.id ~= "meat_grinder" then
+				expected_dropdowns[#expected_dropdowns + 1] = "source_" .. context.id
+				expected_situations[#expected_situations + 1] = context.id
+			end
+		end
+
+		assert_equal(groups.meat_grinder.sub_widgets[1].setting_id, "source_meat_grinder")
+		assert_deep_equal(dropdowns, expected_dropdowns)
+		assert_deep_equal(situations, expected_situations)
+	end)
+
 	it("ranks every context that resumes, since the resume rules compare ranks", function()
 		for _, context in ipairs(load_contexts().list) do
 			if context.resume then
