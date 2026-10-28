@@ -37,6 +37,7 @@
 --	  The game sends the hub zone about 10 seconds before the loading screen ends, and a mission zone partway through the briefing.
 --	  The briefing, and every loading screen after the mission board's "mission_ready", lead into a mission and resolve "mission_briefing".
 --	  A plain loading screen does not say where it leads, so "mission_ready" tells joining a mission apart from leaving one.
+--	  Matchmaking that ends without a mission leaves the game state on "mission", which ends the trip after a few seconds.
 --	  The mission preparation screen, where the party stands together before a mission, resolves "mission_preparation".
 --	  The game reports it as "loadout" in every game mode.
 --	  The mission's intro resolves no context and keeps the game's stinger.
@@ -102,6 +103,7 @@ local mission_mode = nil -- "havoc", "expeditions", or "mortis_trials" while one
 local upcoming_mission = nil -- The mission a trip into a mission leads to, before its level names it, else nil.
 local upcoming_mode = nil -- That mission's game mode, else nil.
 local heading_to_mission = false -- True from the mission board's "mission_ready" until the trip into a mission ends.
+local matchmaking_pass_seconds = 0 -- Seconds left for "mission" after matchmaking to give way to the trip's loading screen, else 0.
 local event_kind = nil -- The music_objective value of the event playing now, kept through its hold, or nil.
 local expedition_fight_level = nil -- The music_combat value of the Expedition fight playing now, kept through its hold, or nil.
 local state_moment = nil -- The moment music_game_state names now, or named less than MOMENT_GRACE_SECONDS ago, else nil.
@@ -218,6 +220,12 @@ local ARRIVAL_GAME_STATES = {
 for state in pairs(CUTSCENE_GAME_STATES) do
 	ARRIVAL_GAME_STATES[state] = true
 end
+
+-- Matchmaking that finds a mission returns the game state to "mission" for about a second before the loading screen.
+-- Matchmaking that ends without one returns it there for good, as after a declined party vote, maybe with the mission board closed.
+-- So "mission" that outlasts this after matchmaking ends the trip, as a return to the mission board does.
+-- Ending a real trip early only costs its first loading screen the briefing folder, so the margin is generous.
+local MATCHMAKING_PASS_SECONDS = 5
 
 -- Game states of the mission preparation screen.
 local PREPARATION_GAME_STATES = { loadout = true, loadout_ready = true }
@@ -772,6 +780,13 @@ local function track_transition(mod, group_name, current, new_state)
 			heading_to_mission = false
 		end
 
+		-- Any next state, such as the loading screen, shows how the matchmaking ended, so the wait stops.
+		if current == "mission_ready" and new_state == "mission" then
+			matchmaking_pass_seconds = MATCHMAKING_PASS_SECONDS
+		else
+			matchmaking_pass_seconds = 0
+		end
+
 		-- The state returns to "mission" between victory or defeat and the next loading screen.
 		-- So within this group, only a loading screen or a mission intro clears the outcome.
 		if new_state == "victory" or new_state == "game_score_win" then
@@ -909,6 +924,14 @@ function Context.update(mod, dt)
 	if current_mode ~= mission_mode then
 		log_detail(string.format("[mission] game mode: %s", tostring(current_mode or "ordinary")))
 		mission_mode = current_mode
+	end
+
+	if matchmaking_pass_seconds > 0 then
+		matchmaking_pass_seconds = math.max(matchmaking_pass_seconds - dt, 0)
+		if matchmaking_pass_seconds == 0 and heading_to_mission then
+			heading_to_mission = false
+			log_detail("[mission] matchmaking ended without a mission")
+		end
 	end
 
 	-- The upcoming mission is only read on the way into a mission, before its level names it.

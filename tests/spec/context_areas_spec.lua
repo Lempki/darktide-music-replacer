@@ -113,6 +113,43 @@ describe("context.lua areas", function()
 		assert_deep_equal(harness.changes, { "nil", "mission_briefing", "explore" })
 	end)
 
+	-- Matchmaking that finds a mission returns the game state to "mission" for about a second before the loading screen.
+	it("keeps the trip into a mission through the second between matchmaking and its loading screen", function()
+		local harness = Harness.new()
+		harness:cold_start_to_hub()
+		harness:clear_changes()
+
+		harness:state("music_game_state", "mission_ready")
+		harness:wait(16)
+		harness:state("music_game_state", "mission")
+		harness:wait(1)
+		harness:state("music_zone", "None")
+		harness:state("music_game_state", "loading")
+		harness:mission(nil)
+
+		assert_deep_equal(harness.changes, { "nil", "mission_briefing" })
+	end)
+
+	-- Matchmaking can end without a mission while the mission board is closed, as after a declined party vote.
+	it("ends the trip once matchmaking ends without a mission, so the next plain loading screen resolves loading", function()
+		local harness = Harness.new()
+		harness:cold_start_to_hub()
+
+		harness:state("music_game_state", "mission_board")
+		harness:state("music_game_state", "mission")
+		harness:state("music_game_state", "mission_ready")
+		harness:wait(30)
+		harness:state("music_game_state", "mission")
+		harness:wait(60)
+		harness:clear_changes()
+
+		harness:state("music_zone", "None")
+		harness:state("music_game_state", "loading")
+		harness:mission(nil)
+
+		assert_deep_equal(harness.changes, { "nil", "loading" })
+	end)
+
 	-- Going back to character select leaves about a second between the two, longer than the debounce.
 	it("resolves no context while leaving the hub, then character_select once character select opens", function()
 		local harness = Harness.new()
