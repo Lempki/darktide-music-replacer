@@ -30,8 +30,6 @@
 --	  Below the last stand, Mortis Trials, the Expedition extraction, and events, it resolves no context.
 --	  So the game's music plays instead of an explore song silencing it.
 --	  Each such value is logged once, so a bug report names it.
---	* No context resolves during a cutscene, so custom music stays off there.
---	  Story cutscenes set `music_game_state` to "cinematic", and the hub's own, such as Path of Trust, to "cinematic_pot".
 --	* The hub and mission contexts only resolve while the game state is in the world: "mission", "mission_board" or "mission_ready".
 --	  Loading screens and the briefing resolve "loading" or "mission_briefing" instead, even once the zone has arrived.
 --	  The game sends the hub zone about 10 seconds before the loading screen ends, and a mission zone partway through the briefing.
@@ -41,13 +39,9 @@
 --	  The mission preparation screen, where the party gathers before a mission, resolves "mission_preparation".
 --	  The game reports it as "loadout" in every game mode.
 --	  The mission's intro resolves no context and keeps the game's stinger.
---	* The title screen, "title", resolves "title_screen", and character select, "main_menu", resolves "character_select".
---	  Character creation, "character_creation", is a step inside character select and resolves "character_select" too.
 --	* Meat Grinder has no `wwise_state`, so it is recognized by its mission name instead.
 --	  It resolves to "meat_grinder", whose own setting picks silence or the game's music there.
 --	  With that setting on "custom", it resolves like a mission instead, so the explore and combat music plays.
---	* Wwise reports "no zone" as the string "None". Meat Grinder and the loading screens both report it.
---	  It is treated like nil, so neither plays mission music.
 --	* Some missions never report a zone.
 --	  No zone plus `music_game_state == "mission"` counts as a mission until a victory or defeat state ends it.
 --	  It does not count while the hub is still loaded, since leaving the hub clears the zone a moment before the game state changes.
@@ -67,20 +61,9 @@
 --	* Victory and defeat resolve to their own contexts, from their state until the next level starts.
 --	  The game state returns to "mission" in between, so the outcome is tracked in `mission_outcome`.
 --	  A loading screen or a real zone clears it, since a story mission's cutscene can skip the loading screen.
---	* Context.override_keys() names the override folders a context may use, most specific first.
---	  The first is the game's own name for the moment, where the game tells moments inside the context apart.
---	  An event's kind is its `music_objective` value, kept through its hold, and a boss's kind is its breed.
---	  A Mortis Trials wave's kind is its `music_objective` value, and an Expedition fight's is its level, kept through its hold.
---	  Matchmaking in the hub, character creation, and the score screens are named by their `music_game_state` value.
---	  Those names last MOMENT_GRACE_SECONDS after the state moves on, which covers the second it passes through on the way out.
---	  Hordes are left out, since every horde starts at "horde_high" and drops to "horde_low" as it thins out.
---	  The mission is its code, and the game mode is "havoc", "expeditions", or "mortis_trials".
---	  The level names its mission only seconds before the briefing ends.
---	  So on the way into a mission, both come from the game's mechanism data.
---	  Havoc is told apart by its Havoc data in the difficulty manager, since it changes no music state.
---	  So Havoc is only known once the mission has loaded.
---	* Every menu screen sets the `options` group, for example to "ingame_menu" in the Esc menu or "vendor_menu" at a vendor.
---	  It decides no context. It only tells MusicReplacer.lua that a menu is open, so the music can be lowered.
+--	* Context.override_keys() names the override folders a context may use: the moment, then the mission, then the game mode.
+--	  A moment is the game's own name for what happens inside the context, such as an event's kind or a boss's breed.
+--	  On the way into a mission, the mission and its game mode come from the game's mechanism data, since the level names them late.
 
 local Context = {}
 
@@ -91,11 +74,12 @@ local WwiseStateGroupCombat = require("scripts/managers/wwise_game_sync/wwise_st
 -- State
 -- ###########################################################################
 
-local music_combat = nil -- Current value of the "music_combat" state group.
-local music_zone = nil -- Current value of the "music_zone" state group.
-local music_game_state = nil -- Current value of the "music_game_state" state group.
-local music_objective = nil -- Current value of the "music_objective" state group.
-local menu_state = nil -- Current value of the "options" state group, which names the kind of menu open.
+-- The game's current value of each state group, as the hook last saw it.
+local music_combat = nil
+local music_zone = nil
+local music_game_state = nil
+local music_objective = nil
+local menu_state = nil -- The "options" group, which names the kind of menu open.
 local mission_name = nil -- Name of the current mission, or nil while none is loaded.
 local mission_is_hub = false -- True while the loaded mission's template is the hub.
 local mission_is_operation = false -- True while the loaded mission is an Operation.
@@ -173,8 +157,7 @@ local LOGGED_ONLY_STATE_GROUPS = {
 	circumstance = true,
 }
 
--- expeditions_intensity copies music_combat everywhere, so it is only logged on the values it has of its own.
--- Every Expedition sets them, in music_combat too, in place of the standard combat states.
+-- expeditions_intensity copies music_combat, so it is only logged on the Expedition values.
 local EXPEDITION_ONLY_COMBAT_STATES = {
 	no_combat = true,
 	low_combat = true,
@@ -223,9 +206,9 @@ for state in pairs(CUTSCENE_GAME_STATES) do
 end
 
 -- Matchmaking that finds a mission returns the game state to "mission" for about a second before the loading screen.
--- Matchmaking that ends without one returns it there for good, as after a declined party vote, maybe with the mission board closed.
--- So "mission" that outlasts this after matchmaking ends the trip, as a return to the mission board does.
--- Ending a real trip early only costs its first loading screen the briefing folder, so the margin is generous.
+-- Matchmaking that ends without one, as after a declined party vote, leaves it there.
+-- So "mission" that outlasts this after matchmaking ends the trip.
+-- Ending a real trip early only costs its first loading screen the briefing folder, hence the wide margin.
 local MATCHMAKING_PASS_SECONDS = 5
 
 -- Game states of the mission preparation screen.
@@ -363,6 +346,7 @@ local function template_mode(template)
 end
 
 -- The template's game mode, or "havoc" during a Havoc run, else nil.
+-- Havoc changes no music state, so it is told apart by its data in the difficulty manager, which arrives with the level.
 local function read_mode(template)
 	local mode = template_mode(template)
 	if mode then
@@ -654,6 +638,7 @@ function Context.hold()
 end
 
 -- The game's own name for the moment `context_name` plays in now, or nil where the game names none.
+-- Hordes get none, since every horde starts at "horde_high" and drops to "horde_low" as it thins out.
 local function moment_kind(mod, context_name)
 	if context_name == "event" then
 		return event_kind
@@ -751,8 +736,7 @@ local function track_transition(mod, group_name, current, new_state)
 			end
 
 			-- A real zone change clears both boss signals, since either can get stuck on its own.
-			-- The tracked combat state is only this module's copy, so it corrects itself on the next real transition.
-			-- A boss encounter that is still open keeps is_boss_active() true anyway.
+			-- The tracked combat state corrects itself on the next transition, and a boss window still open keeps the boss active.
 			music_combat = nil
 			open_bosses = {}
 			-- A new zone starts fresh, not partway through the last hold.
@@ -848,16 +832,14 @@ end
 
 -- Call once from the main mod file's top level.
 -- `detail_logger`, if given, receives a line for every raw state transition and boss event.
--- That is much more output than Context.on_change, so it is meant for diagnosing state issues.
 -- `logger`, if given, receives the important lines, such as a music_combat value the mod does not know.
 function Context.init(mod, detail_logger, logger)
 	log_detail = detail_logger or log_detail
 	log = logger or log
 
-	-- The game's combat group decides only once per launch whether it runs an Expedition, on the first mission it sees.
-	-- Without this, every mission after an Expedition reports Expedition states to the mod, with no horde or boss, until the game restarts.
-	-- The same holds the other way: an Expedition after any other mission reports the standard states, and resolves no Expedition context.
-	-- Clearing that decision as each mission ends makes the next mission decide again.
+	-- The game's combat group decides once per launch, on its first mission, whether it runs an Expedition.
+	-- Every later mission of the other kind then reports the wrong combat states until the game restarts.
+	-- Clearing the decision as each mission ends makes the next mission decide again.
 	mod:hook_safe(WwiseStateGroupCombat, "on_gameplay_shutdown", function(self)
 		self._is_expedition_init = nil
 	end)
