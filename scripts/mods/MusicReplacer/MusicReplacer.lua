@@ -416,6 +416,9 @@ local function overlay_snapshot()
 	local volume, menu_level, song_level = AudioClient.levels()
 	local song = AudioClient.is_playing() and playing_track and playing_track.file_path or nil
 
+	-- A situation set to Vanilla or Silence, and Meat Grinder, play no folder, so they look for no override either.
+	local overrides = current_folder and table.concat(Context.override_keys(mod, current_context), ", ") or nil
+
 	local pending_seconds = nil
 	if has_pending_change then
 		pending_seconds = math.max(0, math.min(debounce_seconds() - debounce_elapsed, MAX_DEBOUNCE_SECONDS - pending_elapsed))
@@ -432,7 +435,7 @@ local function overlay_snapshot()
 		pending = has_pending_change and (pending_context or "none") or nil,
 		pending_length = has_pending_change and debounce_seconds() or nil,
 		folder = current_folder,
-		overrides = current_context and table.concat(Context.override_keys(mod, current_context), ", ") or nil,
+		overrides = overrides,
 		pending_seconds = pending_seconds,
 		song = song and song:match("[^/]+$"),
 		position = AudioClient.position(),

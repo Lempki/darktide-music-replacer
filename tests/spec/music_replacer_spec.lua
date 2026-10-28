@@ -672,6 +672,18 @@ describe("MusicReplacer.lua debug overlay", function()
 		assert_equal(math.abs(snapshot.pending_seconds - 0.4) < 1e-9, true)
 	end)
 
+	-- A mission always offers its code as an override name, but a situation that plays no folder looks for none.
+	it("reports override names only while the situation plays from a folder", function()
+		local harness = in_mission()
+		assert_equal(harness.overlay.options.snapshot().overrides, "lm_cooling")
+
+		harness:set_setting("source_explore", "game")
+		assert_equal(harness.overlay.options.snapshot().overrides, nil)
+
+		harness:set_setting("source_explore", "silence")
+		assert_equal(harness.overlay.options.snapshot().overrides, nil)
+	end)
+
 	it("reports that the mod is turned off", function()
 		local harness = in_hub()
 		harness.mod.on_disabled(false)
