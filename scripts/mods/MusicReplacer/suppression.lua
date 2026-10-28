@@ -1,4 +1,4 @@
--- Silences the game's own music while a custom track plays.
+-- Silences the game's music while a custom track plays.
 -- The game's music comes from Wwise state groups and from Wwise events, and each source has its own lever below.
 -- See docs/wwise-events.md for what each lever silences.
 -- It knows nothing about audio files or playback, only which of the game's sources to silence for a context.
@@ -133,7 +133,6 @@ end
 
 -- The single trigger_resource_event hook in MusicReplacer.lua calls this for every Wwise event.
 -- Returns true if the caller should stop the event it just started.
--- A mod can only install one hook per method on itself, so this does not hook anything on its own.
 function Suppression.should_stop_event(event_name)
 	if not events_suppressed or type(event_name) ~= "string" then
 		return false

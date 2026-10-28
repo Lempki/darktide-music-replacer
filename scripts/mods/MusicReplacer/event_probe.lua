@@ -43,7 +43,6 @@ function EventProbe.init(detail_logger)
 end
 
 -- The single trigger_resource_event hook in MusicReplacer.lua calls this for every Wwise event.
--- A mod can only install one hook per method on itself, so this does not hook anything on its own.
 function EventProbe.observe(event_name, extra_arg_count)
 	if type(event_name) ~= "string" then
 		return

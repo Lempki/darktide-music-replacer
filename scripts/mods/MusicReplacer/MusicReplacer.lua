@@ -1,7 +1,6 @@
 local mod = get_mod("MusicReplacer")
 
 -- mod:io_dofile paths are relative to "mods/" and include this mod's own folder name.
--- MusicReplacer.mod's own paths follow the same rule.
 local Contexts = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/contexts")
 local Context = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/context")
 local Suppression = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/suppression")
@@ -138,7 +137,6 @@ local function folders_for(context_name)
 	return folders
 end
 
--- The folder `context_name` plays from: the first of its override folders that has songs, else its own.
 local function folder_for(context_name)
 	return folders_for(context_name)[1]
 end
@@ -157,7 +155,7 @@ local function choose_file(folder, resume_path, resume_position)
 	return Library.pick_file(folder)
 end
 
--- Stops any custom song and lets the game's own music play, as wherever no custom song plays.
+-- Stops any custom song and hands the music back to the game.
 -- `status`, when given, is the reason the debug overlay shows.
 local function hand_back(status)
 	if status then
@@ -244,7 +242,6 @@ local function play_context(context_name, is_new_context)
 
 	if not file_path then
 		-- No replacement is available, as with no folder, an empty folder, or a scan that has not finished.
-		-- The game's music is left alone.
 		hand_back("Vanilla, no songs")
 		log(string.format("[playback] %s: no file available, playing the game's music", context_name))
 		return
@@ -266,10 +263,9 @@ local function play_context(context_name, is_new_context)
 			end
 
 			-- A file that could not be played always counts.
-			-- Otherwise a track counts when it ended within QUICK_END_SECONDS and before half its length.
-			-- So a short file that plays through does not count.
-			-- A file the library has not measured yet has its decoder's length instead.
-			-- Without either, ending within QUICK_END_SECONDS is enough, so files that end at once cannot reopen every frame.
+			-- Any other track counts when it ended within QUICK_END_SECONDS and before half its length, so a short song that plays through does not.
+			-- An unmeasured file has its decoder's length instead, and without either, ending within QUICK_END_SECONDS is enough.
+			-- So a file that ends at once cannot reopen every frame.
 			local elapsed = AudioClient.elapsed()
 			local length = duration or AudioClient.duration()
 			local quick = failed or (elapsed < QUICK_END_SECONDS and (not length or elapsed < length / 2))
@@ -326,13 +322,11 @@ local DEBOUNCE_SECONDS = 0.6
 -- A pending change commits after this long anyway.
 local MAX_DEBOUNCE_SECONDS = 3
 
--- Leaving the hub for a mission reports a loading screen for about 2 seconds before the mission preparation screen.
--- So a change to a loading context waits LOADING_DEBOUNCE_SECONDS, which outlasts that.
--- The hub song then carries straight on into the preparation screen's song.
--- Nothing that brief follows the preparation screen, so the briefing after it takes the normal wait.
--- A level reached straight from a loading screen can start with an intro or a cutscene a moment later, as the prologue does.
--- So the first situation after a loading screen waits as long too.
--- The hub and the preparation screen are left out, since nothing replaces them a moment after they arrive.
+-- Leaving the hub reports a loading screen for about 2 seconds before the preparation screen.
+-- So a change to a loading context waits LOADING_DEBOUNCE_SECONDS, and the hub song carries on into the preparation screen's.
+-- The briefing after the preparation screen takes the normal wait, since nothing that brief comes between them.
+-- A level reached from a loading screen can start an intro or a cutscene a moment later, as the prologue does.
+-- So the first situation after a loading screen waits as long, except the hub and the preparation screen, which nothing replaces.
 local SETTLED_ARRIVALS = { hub = true, mission_preparation = true }
 local LOADING_DEBOUNCE_SECONDS = 3
 local LOADING_CONTEXTS = {}
@@ -461,7 +455,7 @@ local function apply_overlay_settings()
 	DebugOverlay.set_enabled(mod:get("debug_overlay") == true, mod:get("debug_overlay_scale") / 100, mod:get("debug_overlay_opacity") / 100)
 end
 
--- Raw state transitions, suppression, and sound events are detailed lines. The rest of the log is the important events.
+-- Raw state transitions, the silencing, and sound events go to the detailed log.
 Suppression.init(log_detail)
 EventProbe.init(log_detail)
 MissionProbe.init(log)
@@ -471,9 +465,8 @@ Context.on_state_change(Suppression.on_state_change)
 Context.on_state_change(ResumePoints.on_state_change)
 Context.init(mod, log_detail, log)
 
--- The game stops every mission sound as a level ends, and the level's Wwise world goes with it.
 -- A level can end without a loading screen, as a story mission does when its debrief cutscene leads into the hub.
--- So the cutscene music to stop is forgotten here, not only at a loading screen.
+-- The game stops every mission sound there and destroys the level's Wwise world, so the cutscene music is forgotten too.
 mod:hook_safe(WwiseGameSyncManager, "on_gameplay_shutdown", function()
 	Suppression.forget_cutscene_music()
 end)
@@ -515,10 +508,8 @@ mod.on_all_mods_loaded = function()
 	DebugOverlay.init(log, { snapshot = overlay_snapshot, meter = AudioClient.meter, create_element = create_overlay_element })
 	apply_overlay_settings()
 
-	-- A mod can only install one hook per method on itself.
-	-- So Suppression and EventProbe cannot each hook WwiseWorld.trigger_resource_event on their own.
-	-- This one hook serves both instead.
-	-- EventProbe always sees the event first, including one Suppression is about to stop.
+	-- A mod can hook a method only once, so this one hook serves both Suppression and EventProbe.
+	-- EventProbe sees every event first, even one Suppression stops.
 	mod:hook(CLASS.WwiseWorld, "trigger_resource_event", function(func, wwise_world, event_name, ...)
 		EventProbe.observe(event_name, select("#", ...))
 
@@ -576,7 +567,6 @@ end
 
 mod.on_setting_changed = function(setting_id)
 	if setting_id == "source_meat_grinder" or setting_id == "daemonhost_boss_music" or setting_id == "captain_boss_music" then
-		-- These settings decide how the context resolves, so it resolves again.
 		Context.refresh(mod)
 
 		-- Vanilla and Silence both resolve meat_grinder, so switching between them changes no context and needs a replay here.
