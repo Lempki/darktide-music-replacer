@@ -13,7 +13,7 @@
 local AudioClient = {}
 
 -- The Fade Length setting: how long a switch crossfades, and how long a song that is not looping fades out at its end.
--- That end fade starts this long before the song's end, so the song is silent as it ends.
+-- That end fade starts this long before the song's end, or halfway through a shorter song, so the song is silent as it ends.
 local fade_seconds = 2
 local STOP_FADE_SECONDS = 0.5
 
@@ -479,8 +479,9 @@ local function update_current(dt)
 	-- The decoder's own duration matches its positions, while the library's can differ by a second or more for the same file.
 	-- It is also known when the library has not measured the file yet, as right after the folders are listed again.
 	-- A looping file never ends, so it never fades out.
+	-- A song shorter than two fades starts its end fade halfway, since an earlier one would cut off its fade-in and play it silent.
 	local duration = not current.loop and (stream.duration or current.duration)
-	if duration and not current.end_fading and stream:position() >= duration - fade_seconds then
+	if duration and not current.end_fading and stream:position() >= duration - math.min(fade_seconds, duration / 2) then
 		current.end_fading = true
 		stream:fade_to(0, math.max(0.1, duration - stream:position()))
 	end

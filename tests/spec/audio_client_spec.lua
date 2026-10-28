@@ -613,6 +613,22 @@ describe("audio_client.lua fade length", function()
 		assert_equal(streams[2].fades[2][1], 0)
 	end)
 
+	-- An end fade that started before the fade-in finished would keep a song shorter than the Fade Length silent throughout.
+	it("starts a short song's end fade no earlier than halfway through it", function()
+		local AudioClient, _, streams = load_client()
+		AudioClient.set_fade_seconds(10)
+		AudioClient.play("hub/a.mp3", { fade_in = true, duration_seconds = 6 })
+		streams[1].duration = 6
+
+		streams[1].current_position = 2.9
+		AudioClient.update(0.1)
+		assert_deep_equal(streams[1].fades, { { 1, 10 } })
+
+		streams[1].current_position = 3
+		AudioClient.update(0.1)
+		assert_deep_equal(streams[1].fades[2], { 0, 3 })
+	end)
+
 	it("switches at once with a Fade Length of 0", function()
 		local AudioClient, _, streams = load_client()
 		AudioClient.set_fade_seconds(0)
