@@ -577,6 +577,11 @@ mod.on_setting_changed = function(setting_id)
 	-- Meat Grinder's own choice also reaches the last branch below, since Silence and its folder both resolve meat_grinder.
 	if RESOLVING_SETTINGS[setting_id] then
 		Context.refresh(mod)
+
+		-- The change is the player's own, so it takes over at once, without the waits meant for the game's flickers.
+		if enabled and has_pending_change then
+			commit_pending_context()
+		end
 	end
 
 	if setting_id == "debug_overlay" or setting_id == "debug_overlay_scale" or setting_id == "debug_overlay_opacity" then

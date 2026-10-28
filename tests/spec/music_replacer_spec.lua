@@ -276,6 +276,7 @@ describe("MusicReplacer.lua music per situation", function()
 	local MEAT_GRINDER_FILES = {
 		meat_grinder = { { name = "m.mp3", duration = 300 } },
 		event = { { name = "e.mp3", duration = 300 } },
+		mission_briefing = { { name = "b.mp3", duration = 300 } },
 		explore = { { name = "x.mp3", duration = 300 } },
 		combat = { { name = "c.mp3", duration = 200 } },
 	}
@@ -298,12 +299,23 @@ describe("MusicReplacer.lua music per situation", function()
 		assert_equal(harness:logged("[playback] meat_grinder: set to silence"), true)
 	end)
 
-	it("plays the situation One Situation picks, and switches once another is picked", function()
+	-- A setting change is the player's own, so neither the short wait nor a loading screen's longer one applies.
+	it("plays the situation One Situation picks, and switches at once to another, a loading screen's included", function()
 		local harness = in_meat_grinder({ source_meat_grinder = "situation", meat_grinder_situation = "event" }, MEAT_GRINDER_FILES)
 		assert_equal(harness:playing(), "event/e.mp3")
 
+		harness:set_setting("meat_grinder_situation", "mission_briefing")
+		assert_equal(harness:playing(), "mission_briefing/b.mp3")
+
 		harness:set_setting("meat_grinder_situation", "explore")
-		harness:settle()
+		assert_equal(harness:playing(), "explore/x.mp3")
+	end)
+
+	it("switches at once to the mission situations when Like a Mission is picked", function()
+		local harness = in_meat_grinder({ source_meat_grinder = "custom" }, MEAT_GRINDER_FILES)
+		assert_equal(harness:playing(), "meat_grinder/m.mp3")
+
+		harness:set_setting("source_meat_grinder", "mission")
 
 		assert_equal(harness:playing(), "explore/x.mp3")
 	end)
