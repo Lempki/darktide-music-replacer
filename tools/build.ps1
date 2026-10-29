@@ -21,7 +21,7 @@ $ErrorActionPreference = 'Stop'
 
 $ModName = 'MusicReplacer'
 $SourceItems = @("$ModName.mod", 'info.json', 'scripts')
-# The same folders as the contexts with a folder in contexts.lua, which tests/spec/contexts_spec.lua checks.
+# One folder per context in contexts.lua, in its order, which tests/spec/contexts_spec.lua checks.
 $AudioContexts = @(
     'title_screen', 'character_select', 'hub', 'loading', 'mission_preparation', 'mission_briefing',
     'explore', 'combat', 'horde', 'boss', 'event', 'last_stand', 'victory', 'defeat',

@@ -11,9 +11,7 @@ describe("contexts.lua", function()
 		local Contexts = load_contexts()
 		local folders = {}
 		for _, context in ipairs(Contexts.list) do
-			if context.folder then
-				folders[#folders + 1] = context.id
-			end
+			folders[#folders + 1] = context.id
 		end
 
 		local file = assert(io.open("tools/build.ps1", "r"))

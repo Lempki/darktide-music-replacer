@@ -16,12 +16,10 @@ local Library = {}
 
 local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/contexts")
 
--- The contexts with an audio folder of their own, in the catalog's order.
+-- Every context's audio folder, named after the context, in the catalog's order.
 local CONTEXTS = {}
 for _, context in ipairs(Contexts.list) do
-	if context.folder then
-		CONTEXTS[#CONTEXTS + 1] = context.id
-	end
+	CONTEXTS[#CONTEXTS + 1] = context.id
 end
 
 -- The path is relative to the game's own working directory.
