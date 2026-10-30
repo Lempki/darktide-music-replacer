@@ -177,3 +177,4 @@ darktide-music-replacer/
 
   The priorities between situations stay fixed, offered at most as a few vetted settings.
 * [ ] Any of the game's own tracks in any situation, after the Vanilla marker. The mod would force the game's music states into the combination that makes Wwise play a chosen track, the way it already forces them to silence the game. It needs a list of the tracks and their state combinations, built from the game's own source, and care with states that change other game audio, such as the mission intro's.
+* [ ] Explore playing music streamed from the internet, such as from YouTube. Whether it can work is an open question. Media Foundation starts with its network support uninitialized, YouTube offers no plain audio file to open, and the mod ships no program of its own to fetch one.
