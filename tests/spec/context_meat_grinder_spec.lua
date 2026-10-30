@@ -101,6 +101,15 @@ describe("context.lua Meat Grinder with One Situation", function()
 		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "boss"), { "chaos_spawn", "tg_shooting_range" })
 	end)
 
+	-- Boss Dummies Count as Bosses only shows with Like a Mission, so it must not hide a breed from One Situation.
+	it("offers the boss dummy's breed whatever Boss Dummies Count as Bosses says", function()
+		local harness = in_meat_grinder({ source_meat_grinder = "situation", meat_grinder_situation = "boss", meat_grinder_boss_dummies = false })
+
+		fight_dummies(harness)
+
+		assert_equal(harness.Context.override_keys(harness.engine.mod, "boss")[1], "chaos_spawn")
+	end)
+
 	it("resolves no situation for a stored situation the mod does not know, so the game's music plays", function()
 		local harness = in_meat_grinder({ source_meat_grinder = "situation", meat_grinder_situation = "not_a_situation" })
 
@@ -147,5 +156,19 @@ describe("context.lua Meat Grinder like a mission", function()
 		harness:set_setting("meat_grinder_boss_dummies", false)
 
 		assert_deep_equal(harness.changes, { "explore" })
+	end)
+
+	-- Without the mission name check, a player who left the boss dummies out would lose boss music in every mission.
+	it("keeps boss music in a real mission while boss dummies do not count", function()
+		local harness = Harness.new({ source_meat_grinder = "mission", meat_grinder_boss_dummies = false })
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness:enter_mission("lm_cooling", "zone_3")
+
+		harness:boss_start(harness:new_boss("chaos_spawn"))
+		harness:state("music_combat", "boss")
+
+		assert_equal(harness:current(), "boss")
+		assert_equal(harness.Context.override_keys(harness.engine.mod, "boss")[1], "chaos_spawn")
 	end)
 end)
