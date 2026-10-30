@@ -57,7 +57,7 @@ local function load_loudness(songs, cache_text)
 	local RealMeter = engine:load("loudness_meter")
 	local test = { fs = fs, lines = {}, details = {}, opened = {}, reads = 0 }
 
-	local media_decoder = { available = function() return true end }
+	local media_decoder = { available = function() return not test.decoder_unavailable end }
 	function media_decoder.open(path)
 		fs.now = fs.now + OPEN_SECONDS
 		test.opened[#test.opened + 1] = path
@@ -340,6 +340,132 @@ describe("loudness.lua cache", function()
 		assert_deep_equal(test.opened, { "audio/hub/a.mp3", "audio/hub/a.mp3" })
 		assert_equal(test.details[1]:match("^%[loudness%] hub/a.mp3: %-100.0 LUFS") ~= nil, true)
 		assert_equal(#test.details, 1)
+	end)
+end)
+
+describe("loudness.lua progress", function()
+	-- Runs updates until `count` songs are measured or given up on, each of which logs a detail line.
+	local function measure_songs(Loudness, test, count)
+		for _ = 1, 100 do
+			if #test.details >= count then
+				return
+			end
+			Loudness.update("hub")
+		end
+	end
+
+	local function progress(Loudness)
+		return { Loudness.progress() }
+	end
+
+	local function ten_frames(names)
+		local songs = {}
+		for _, name in ipairs(names) do
+			songs["audio/hub/" .. name .. ".mp3"] = 10
+		end
+		return songs
+	end
+
+	it("shows nothing while evening out is off", function()
+		local Loudness = load_loudness(ten_frames({ "a", "b" }))
+		Loudness.set_files(entries({ { "hub/a.mp3" }, { "hub/b.mp3" } }))
+
+		assert_equal(Loudness.progress(), nil)
+	end)
+
+	it("shows nothing while the decoder is unavailable, since nothing is measured then", function()
+		local Loudness, test = load_loudness(ten_frames({ "a" }))
+		test.decoder_unavailable = true
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3" } }))
+
+		assert_equal(Loudness.progress(), nil)
+	end)
+
+	it("counts from 0 up to every listed song, and shows nothing once all are measured", function()
+		local Loudness, test = load_loudness(ten_frames({ "a", "b", "c" }))
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3" }, { "hub/b.mp3" }, { "hub/c.mp3" } }))
+		assert_deep_equal(progress(Loudness), { 0, 3 })
+
+		Loudness.update("hub")
+		assert_deep_equal(progress(Loudness), { 0, 3 })
+
+		measure_songs(Loudness, test, 1)
+		assert_deep_equal(progress(Loudness), { 1, 3 })
+		measure_songs(Loudness, test, 2)
+		assert_deep_equal(progress(Loudness), { 2, 3 })
+		measure_songs(Loudness, test, 3)
+		assert_equal(Loudness.progress(), nil)
+	end)
+
+	it("leaves out songs that loudness.txt already has", function()
+		local Loudness = load_loudness(ten_frames({ "a", "b", "c" }), "1\t-12.00\t0.50000\thub/a.mp3\n")
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3" }, { "hub/b.mp3" }, { "hub/c.mp3" } }))
+
+		assert_deep_equal(progress(Loudness), { 0, 2 })
+	end)
+
+	it("counts a song it cannot open as done", function()
+		local Loudness = load_loudness({ ["audio/hub/a.mp3"] = false, ["audio/hub/b.mp3"] = 10 })
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3" }, { "hub/b.mp3" } }))
+
+		Loudness.update("hub")
+
+		assert_deep_equal(progress(Loudness), { 1, 2 })
+	end)
+
+	it("keeps the done count when a listing during measuring adds a song", function()
+		local Loudness, test = load_loudness(ten_frames({ "a", "b", "c" }))
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3" }, { "hub/b.mp3" } }))
+		measure_songs(Loudness, test, 1)
+		Loudness.update("hub")
+
+		Loudness.set_files(entries({ { "hub/a.mp3" }, { "hub/b.mp3" }, { "hub/c.mp3" } }))
+
+		assert_deep_equal(progress(Loudness), { 1, 3 })
+	end)
+
+	it("keeps the count when evening out is turned off and on during measuring", function()
+		local Loudness, test = load_loudness({ ["audio/hub/a.mp3"] = 10, ["audio/hub/b.mp3"] = 100 })
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3" }, { "hub/b.mp3" } }))
+		measure_songs(Loudness, test, 1)
+		Loudness.update("hub")
+		Loudness.update("hub")
+
+		Loudness.set_enabled(false)
+		Loudness.set_enabled(true)
+
+		assert_deep_equal(progress(Loudness), { 1, 2 })
+	end)
+
+	it("starts again from 0 when a later listing brings new songs", function()
+		local Loudness = load_loudness(ten_frames({ "a", "b", "c" }))
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3" }, { "hub/b.mp3" } }))
+		measure_all(Loudness, "hub")
+		assert_equal(Loudness.progress(), nil)
+
+		Loudness.set_files(entries({ { "hub/a.mp3" }, { "hub/b.mp3" }, { "hub/c.mp3" } }))
+
+		assert_deep_equal(progress(Loudness), { 0, 1 })
+	end)
+
+	it("tells a measured song, one with no measurable loudness among them, from one not measured yet or changed since", function()
+		local cache = "1\t-12.00\t0.50000\thub/a.mp3\n1\tsilent\t0.00000\thub/silent.mp3\n"
+		local Loudness = load_loudness({}, cache)
+		Loudness.set_files(entries({ { "hub/a.mp3" }, { "hub/silent.mp3" }, { "hub/b.mp3" } }))
+
+		assert_equal(Loudness.is_measured("hub/a.mp3"), true)
+		assert_equal(Loudness.is_measured("hub/silent.mp3"), true)
+		assert_equal(Loudness.is_measured("hub/b.mp3"), false)
+
+		Loudness.set_files(entries({ { "hub/a.mp3", "2" } }))
+		assert_equal(Loudness.is_measured("hub/a.mp3"), false)
 	end)
 end)
 

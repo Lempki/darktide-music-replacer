@@ -157,6 +157,15 @@ local function new_loudness()
 		return loudness.levels[file_path] and string.format("level %.2f", loudness.levels[file_path]) or "loudness not measured yet"
 	end
 
+	function loudness.is_measured(file_path)
+		return loudness.levels[file_path] ~= nil
+	end
+
+	-- A spec sets progress_done and progress_total to show measuring in progress.
+	function loudness.progress()
+		return loudness.progress_done, loudness.progress_total
+	end
+
 	return loudness
 end
 

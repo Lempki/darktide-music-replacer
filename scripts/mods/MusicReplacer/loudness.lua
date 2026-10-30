@@ -46,6 +46,8 @@ local stamps = {} -- file_path -> its stamp at the last listing.
 local failed = {} -- file_path -> the stamp it could not be opened at, so it is tried again only once the file changes.
 local pending = {} -- Files still to measure, in listing order.
 local active = nil -- The song being measured: file_path, stamp, decoder, meter, buffer, samples, capacity, block_align.
+-- Songs of this batch that left the queue for good: measured, or dropped because opening them or allocating their buffer failed.
+local batch_done = 0
 local measured_count = 0 -- Songs measured since the last summary line.
 local unsaved_count = 0 -- Songs measured since loudness.txt was last written.
 
@@ -120,6 +122,20 @@ local function save_cache()
 	file:close()
 end
 
+-- Songs still to measure, the one being measured included.
+local function remaining_count()
+	return #pending + (active and 1 or 0)
+end
+
+-- `file_path`'s result for its stamp at the last listing, or nil while it is not measured yet.
+local function current_result(file_path)
+	local result = results[file_path]
+	if not result or result.stamp ~= stamps[file_path] then
+		return nil
+	end
+	return result
+end
+
 local function decibels(scale)
 	return scale > 0 and 20 * math.log10(scale) or -math.huge
 end
@@ -141,6 +157,7 @@ local function finish_active()
 	log_detail(string.format("[loudness] %s: %s, peak %.1f dBFS, %.0f ms",
 		active.file_path, loudness and string.format("%.1f LUFS", loudness) or "no measurable loudness", decibels(peak), active.ms))
 
+	batch_done = batch_done + 1
 	measured_count = measured_count + 1
 	measured_ms = measured_ms + active.ms
 	unsaved_count = unsaved_count + 1
@@ -178,6 +195,7 @@ local function start(file_path)
 	if not decoder then
 		log_detail(string.format("[loudness] %s could not be measured: %s", file_path, tostring(err)))
 		failed[file_path] = stamps[file_path]
+		batch_done = batch_done + 1
 		return
 	end
 
@@ -186,6 +204,7 @@ local function start(file_path)
 	local buffer = NativeFfi.alloc(capacity)
 	if not buffer then
 		decoder:close()
+		batch_done = batch_done + 1
 		return
 	end
 
@@ -226,7 +245,12 @@ end
 
 -- Takes a listing from Library.on_listed: every file as { file_path, stamp }.
 -- Files with no result for their current stamp are measured, and a file that changed while it was measured starts over.
+-- A listing that brings songs to measure once nothing is left starts a new batch, whose progress counts from 0.
 function Loudness.set_files(entries)
+	if remaining_count() == 0 then
+		batch_done = 0
+	end
+
 	stamps = {}
 	pending = {}
 
@@ -290,8 +314,8 @@ function Loudness.level(file_path)
 		return 1
 	end
 
-	local result = results[file_path]
-	if not result or result.stamp ~= stamps[file_path] then
+	local result = current_result(file_path)
+	if not result then
 		return 1
 	end
 
@@ -304,8 +328,8 @@ function Loudness.describe(file_path)
 		return nil
 	end
 
-	local result = results[file_path]
-	if not result or result.stamp ~= stamps[file_path] then
+	local result = current_result(file_path)
+	if not result then
 		return "loudness not measured yet"
 	end
 	if not result.loudness then
@@ -313,6 +337,28 @@ function Loudness.describe(file_path)
 	end
 
 	return string.format("%.1f LUFS, %+.1f dB", result.loudness, decibels(Loudness.level(file_path)))
+end
+
+-- Whether `file_path` has a result for its current file, which a song with no measurable loudness also has.
+function Loudness.is_measured(file_path)
+	return current_result(file_path) ~= nil
+end
+
+-- The current batch's progress as done, total: songs measured or given up on, and those plus the songs still to measure.
+-- Songs measured before the batch began are not counted, and a listing during a batch keeps the done count.
+-- It is nil while evening out is off or the decoder is unavailable, since the count cannot move then.
+-- It is also nil once nothing is left to measure.
+function Loudness.progress()
+	if not enabled or not (MediaDecoder and MediaDecoder.available()) then
+		return nil
+	end
+
+	local remaining = remaining_count()
+	if remaining == 0 then
+		return nil
+	end
+
+	return batch_done, batch_done + remaining
 end
 
 -- Call from the main mod file's mod.on_unload.
