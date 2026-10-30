@@ -289,7 +289,7 @@ local function take_outgoing(file_path, loop)
 	return nil
 end
 
--- The length a song's end fade goes by, or nil for a looping song, which never fades out, or one whose length is not known.
+-- The length a song's fades go by, or nil for a looping song, which never fades out, or one whose length is not known.
 -- The decoder's duration matches its positions, while the library's can be off by a second or more.
 -- It is also there before the library has measured the file.
 local function song_duration(stream, loop, library_duration)
@@ -299,8 +299,8 @@ local function song_duration(stream, loop, library_duration)
 	return stream.duration or library_duration
 end
 
--- How long a song fades out at its end: the Fade Length, or half the song when it is shorter than two fades.
--- An earlier end fade would cut off its fade-in and play it silent.
+-- How long a song fades in, and out at its end: the Fade Length, or half the song when it is shorter than two fades.
+-- Longer fades would overlap, so the song would never reach full level, or play silent throughout.
 local function song_fade_seconds(duration)
 	if duration then
 		return math.min(fade_seconds, duration / 2)
@@ -352,7 +352,7 @@ function AudioClient.play(file_path, opts)
 		stream = revived
 		stream:resume()
 		stream:set_gain(gain * level)
-		stream:fade_to(1, opts.fade_in and fade_seconds or 0)
+		stream:fade_to(1, opts.fade_in and song_fade_seconds(song_duration(stream, loop, opts.duration_seconds)) or 0)
 		log(string.format("[player] continuing %s from %.1fs, where it faded out", file_path, stream:position()))
 	else
 		local open_opts = {
@@ -382,7 +382,7 @@ function AudioClient.play(file_path, opts)
 
 		if stream then
 			if opts.fade_in then
-				stream:fade_to(1, fade_seconds)
+				stream:fade_to(1, song_fade_seconds(song_duration(stream, loop, opts.duration_seconds)))
 			end
 		else
 			log(string.format("[player] %s could not be played: %s", file_path, tostring(err)))

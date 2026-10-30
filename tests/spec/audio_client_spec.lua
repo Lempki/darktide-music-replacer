@@ -50,7 +50,8 @@ local function load_client(levels)
 	-- `output` is false while Windows has no audio output. Like XAudio2, a failed start stays failed until reset.
 	-- `engine_failure_reason` is a failure left behind by a stream.
 	-- `refuse` maps a path to why it cannot be opened, and `refuse_voice` maps a path to how many voices XAudio2 refuses it.
-	local player = { resets = 0, refuse = {}, refuse_voice = {}, output = true, start_failed = false, engine_failure_reason = nil }
+	-- `durations` maps a path on disk to the length its decoder finds, which is 200 seconds for any other.
+	local player = { resets = 0, refuse = {}, refuse_voice = {}, durations = {}, output = true, start_failed = false, engine_failure_reason = nil }
 
 	function player.available()
 		if not player.start_failed and not player.output then
@@ -70,6 +71,7 @@ local function load_client(levels)
 			return nil, "creating a voice failed", true
 		end
 		local stream = new_stream(path, opts)
+		stream.duration = player.durations[path] or stream.duration
 		streams[#streams + 1] = stream
 		return stream
 	end
@@ -613,20 +615,42 @@ describe("audio_client.lua fade length", function()
 		assert_equal(streams[2].fades[2][1], 0)
 	end)
 
-	-- An end fade that started before the fade-in finished would keep a song shorter than the Fade Length silent throughout.
-	it("starts a short song's end fade no earlier than halfway through it", function()
-		local AudioClient, _, streams = load_client()
+	-- Fades longer than half a song would overlap, and the song would never reach full level.
+	it("fades a song shorter than two fades in over its first half and out over its second", function()
+		local AudioClient, player, streams = load_client()
 		AudioClient.set_fade_seconds(10)
+		player.durations["audio/hub/a.mp3"] = 6
 		AudioClient.play("hub/a.mp3", { fade_in = true, duration_seconds = 6 })
-		streams[1].duration = 6
 
 		streams[1].current_position = 2.9
 		AudioClient.update(0.1)
-		assert_deep_equal(streams[1].fades, { { 1, 10 } })
+		assert_deep_equal(streams[1].fades, { { 1, 3 } })
 
 		streams[1].current_position = 3
 		AudioClient.update(0.1)
 		assert_deep_equal(streams[1].fades[2], { 0, 3 })
+	end)
+
+	it("fades a short song that continues where it faded out in over its first half too", function()
+		local AudioClient, player, streams = load_client()
+		AudioClient.set_fade_seconds(10)
+		player.durations["audio/hub/a.mp3"] = 6
+		AudioClient.play("hub/a.mp3", { fade_in = true, duration_seconds = 6 })
+		AudioClient.play("combat/b.mp3", { fade_in = true, duration_seconds = 199 })
+
+		AudioClient.play("hub/a.mp3", { fade_in = true, start_position = 1, duration_seconds = 6 })
+
+		assert_equal(#streams, 2)
+		assert_deep_equal(streams[1].fades[#streams[1].fades], { 1, 3 })
+	end)
+
+	it("fades a looping song in over the whole Fade Length, since it never fades out", function()
+		local AudioClient, player, streams = load_client()
+		AudioClient.set_fade_seconds(10)
+		player.durations["audio/hub/a.mp3"] = 6
+		AudioClient.play("hub/a.mp3", { fade_in = true, loop = true })
+
+		assert_deep_equal(streams[1].fades, { { 1, 10 } })
 	end)
 
 	it("switches at once with a Fade Length of 0", function()
