@@ -320,6 +320,20 @@ describe("MusicReplacer.lua music per situation", function()
 		assert_equal(harness:playing(), "explore/x.mp3")
 	end)
 
+	it("plays Meat Grinder once when Like a Mission gives way to Silence", function()
+		local harness = in_meat_grinder({ source_meat_grinder = "mission" }, MEAT_GRINDER_FILES)
+
+		harness:set_setting("source_meat_grinder", "silence")
+
+		local silence_lines = 0
+		for _, line in ipairs(harness.lines) do
+			if line:find("[playback] meat_grinder: set to silence", 1, true) then
+				silence_lines = silence_lines + 1
+			end
+		end
+		assert_equal(silence_lines, 1)
+	end)
+
 	it("plays One Situation's pick by that situation's own choice in Music per Situation", function()
 		local harness = in_meat_grinder({ source_meat_grinder = "situation", meat_grinder_situation = "event", source_event = "game" }, MEAT_GRINDER_FILES)
 
