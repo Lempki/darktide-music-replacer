@@ -92,7 +92,7 @@ Meat Grinder is a good place to try out your songs, so it has a settings group o
 |---|---|
 | Silence | Nothing, as in the game. This is the default. |
 | Meat Grinder Folder | Your songs from the `meat_grinder` folder, through every fight with the dummies, so trying out loadouts does not switch the song. With an empty folder, the game's music plays, which is none there. |
-| One Situation | The situation you pick under Situation, as if it were happening, to try out its songs. It plays by its own choice in Music per Situation, with its override folders, so a boss dummy names the `boss` folder's override. |
+| One Situation | The situation you pick under Situation, as if it were happening, to try out its songs. It plays by its own choice in Music per Situation, and with Boss, a boss dummy plays the `boss` override folder named after its breed. |
 | Like a Mission | The mission situations, as the game reports them: explore, combat while you hit the dummies, and boss for a boss dummy. With Boss Dummies Count as Bosses off, explore plays while a boss dummy is alive, since the game then reports only the boss. |
 
 ## Settings

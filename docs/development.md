@@ -121,7 +121,7 @@ darktide-music-replacer/
 ├── info.json                            # Version and author metadata, read by DMF at mod init.
 ├── scripts/mods/MusicReplacer/
 │   ├── MusicReplacer.lua                # Wires everything together and debounces context changes.
-│   ├── contexts.lua                     # The catalog of contexts: their folders, defaults, silencing, priorities, and resume rules.
+│   ├── contexts.lua                     # The catalog of contexts: their settings group, silencing, priorities, resume rules, and loading screens.
 │   ├── context.lua                      # Tracks Wwise music state and boss encounters, resolves one context string.
 │   ├── suppression.lua                  # Silences the game's music while a custom track plays.
 │   ├── library.lua                      # Keeps each context's file list and picks a file for a context.

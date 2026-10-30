@@ -62,7 +62,7 @@ Wwise events start sounds, and a few of them are music.
 
 ## How the mod silences it
 
-The mod only silences the game's music once it has a custom song for the current context, so a context with no songs keeps the game's music. A context set to Silence in Music per Situation is the one exception. It silences the game's music with no song at all, by forcing the same groups as a custom song for that context does. Meat Grinder is set to Silence by default. A context set to Vanilla never silences the game's music.
+The mod only silences the game's music once it has a custom song for the current context, so a context with no songs keeps the game's music. A context set to Silence is the one exception. It silences the game's music with no song at all, by forcing the same groups as a custom song for that context does. Meat Grinder is set to Silence by default. A context set to Vanilla never silences the game's music.
 
 Each line below shows up in the log with Detailed Logging on.
 

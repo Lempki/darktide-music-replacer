@@ -197,7 +197,7 @@ local strings = {
 			highlight("Silence") .. " plays nothing, as in the game. " ..
 			highlight("Meat Grinder Folder") .. " plays your songs from its folder all through the visit, whatever the dummies do. " ..
 			highlight("One Situation") .. " plays the situation you choose, to try out its songs. " ..
-			highlight("Like a Mission") .. " follows the game as a mission does, with explore, combat, horde, and boss music.\n\n" ..
+			highlight("Like a Mission") .. " follows the game as a mission does, with explore, combat, and boss music.\n\n" ..
 			"Every situation keeps its own choice in Music per Situation. " ..
 			"With " .. highlight("Meat Grinder Folder") .. ", an empty folder plays the game's music, which is none there.",
 	},
@@ -215,7 +215,7 @@ local strings = {
 	},
 	meat_grinder_situation_tooltip = {
 		en = "The situation that " .. highlight("One Situation") .. " plays in Meat Grinder, as if it were happening.\n\n" ..
-			"It plays as it does everywhere else, with its choice in Music per Situation and its override folders.",
+			"It plays by its choice in Music per Situation. With " .. highlight("Boss") .. ", a boss dummy plays the override folder named after its breed.",
 	},
 	meat_grinder_boss_dummies = {
 		en = "Boss Dummies Count as Bosses",
