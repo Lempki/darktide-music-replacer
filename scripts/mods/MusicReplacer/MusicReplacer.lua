@@ -576,10 +576,12 @@ local RESOLVING_SETTINGS = {
 mod.on_setting_changed = function(setting_id)
 	-- Meat Grinder's own choice also reaches the last branch below, since Silence and its folder both resolve meat_grinder.
 	if RESOLVING_SETTINGS[setting_id] then
+		local previous_context = Context.current()
 		Context.refresh(mod)
 
-		-- The change is the player's own, so it takes over at once, without the waits meant for the game's flickers.
-		if enabled and has_pending_change then
+		-- A change the setting made is the player's own, so it takes over at once, without the waits meant for the game's flickers.
+		-- A change the game made before keeps its wait.
+		if enabled and has_pending_change and Context.current() ~= previous_context then
 			commit_pending_context()
 		end
 	end

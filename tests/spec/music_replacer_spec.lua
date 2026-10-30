@@ -563,6 +563,24 @@ describe("MusicReplacer.lua loading", function()
 		assert_equal(harness.engine:wwise_state("music_game_state"), "None")
 	end)
 
+	-- Only a change the setting makes itself skips the wait, so the game's own change keeps it.
+	it("keeps the loading screen's wait through a setting change that leaves the situation as it is", function()
+		local harness = in_hub_with(FILES)
+		local plays = #harness.client.plays
+
+		harness:leave_hub()
+		harness:wait(0.5)
+		harness:set_setting("captain_boss_music", true)
+		assert_equal(harness:playing(), "hub/h.mp3")
+
+		harness:wait(1.5)
+		harness:state("music_game_state", "loadout")
+		harness:settle()
+
+		assert_equal(#harness.client.plays, plays + 1)
+		assert_equal(harness:playing(), "mission_preparation/p.mp3")
+	end)
+
 	it("continues a Mission Briefing song the preparation screen interrupted in the briefing, then plays the game's stinger, then explore", function()
 		local harness = in_hub_with(FILES)
 		harness:leave_hub()
