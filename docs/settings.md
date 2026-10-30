@@ -20,7 +20,6 @@ One dropdown per situation except Meat Grinder, which has a group of its own bel
 |---|---|---|
 | Music | Silence | What plays in the Meat Grinder training area: Silence, Meat Grinder Folder, One Situation, or Like a Mission. [Meat Grinder](../README.md#meat-grinder) in the README explains each one. |
 | Situation | Explore | The situation One Situation plays, shown while One Situation is chosen. Every situation but Meat Grinder itself is offered. |
-| Boss Dummies Count as Bosses | On | Whether a boss dummy plays boss music with Like a Mission, shown while Like a Mission is chosen. With it off, explore plays while a boss dummy is alive, even while you hit other dummies, since the game then reports only the boss. |
 
 ## Volume
 

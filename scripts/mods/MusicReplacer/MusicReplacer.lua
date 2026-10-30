@@ -571,7 +571,6 @@ local RESOLVING_SETTINGS = {
 	daemonhost_boss_music = true,
 	source_meat_grinder = true,
 	meat_grinder_situation = true,
-	meat_grinder_boss_dummies = true,
 }
 
 mod.on_setting_changed = function(setting_id)

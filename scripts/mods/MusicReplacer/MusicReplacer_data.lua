@@ -84,7 +84,7 @@ return {
 							{ text = "source_silence", value = "silence" },
 							{ text = "meat_grinder_folder", value = "custom" },
 							{ text = "meat_grinder_one_situation", value = "situation", show_widgets = { 1 } },
-							{ text = "meat_grinder_like_a_mission", value = "mission", show_widgets = { 2 } },
+							{ text = "meat_grinder_like_a_mission", value = "mission" },
 						},
 						sub_widgets = {
 							{
@@ -93,12 +93,6 @@ return {
 								tooltip = "meat_grinder_situation_tooltip",
 								default_value = "explore",
 								options = meat_grinder_situations,
-							},
-							{
-								setting_id = "meat_grinder_boss_dummies",
-								type = "checkbox",
-								tooltip = "meat_grinder_boss_dummies_tooltip",
-								default_value = true,
 							},
 						},
 					},

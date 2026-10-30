@@ -101,15 +101,6 @@ describe("context.lua Meat Grinder with One Situation", function()
 		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "boss"), { "chaos_spawn", "tg_shooting_range" })
 	end)
 
-	-- Boss Dummies Count as Bosses only shows with Like a Mission, so it must not hide a breed from One Situation.
-	it("offers the boss dummy's breed whatever Boss Dummies Count as Bosses says", function()
-		local harness = in_meat_grinder({ source_meat_grinder = "situation", meat_grinder_situation = "boss", meat_grinder_boss_dummies = false })
-
-		fight_dummies(harness)
-
-		assert_equal(harness.Context.override_keys(harness.engine.mod, "boss")[1], "chaos_spawn")
-	end)
-
 	-- Meat Grinder runs no wave, so its music_objective is "None", which names no moment.
 	it("offers no moment for a Mortis Trials wave while no wave runs", function()
 		local harness = in_meat_grinder({ source_meat_grinder = "situation", meat_grinder_situation = "mortis_trials_wave" })
@@ -136,43 +127,8 @@ describe("context.lua Meat Grinder like a mission", function()
 		assert_equal(harness:current(), "combat")
 	end)
 
-	it("resolves boss for a boss dummy while boss dummies count as bosses", function()
+	it("resolves boss for a boss dummy, with its breed as the override name", function()
 		local harness = in_meat_grinder({ source_meat_grinder = "mission" })
-
-		harness:boss_start(harness:new_boss("chaos_spawn"))
-		harness:state("music_combat", "boss")
-
-		assert_equal(harness:current(), "boss")
-	end)
-
-	-- The game reports only the boss while a boss dummy is alive, so combat cannot show through it.
-	it("resolves explore while a boss dummy is alive once boss dummies do not count", function()
-		local harness = in_meat_grinder({ source_meat_grinder = "mission", meat_grinder_boss_dummies = false })
-
-		harness:boss_start(harness:new_boss("chaos_spawn"))
-		harness:state("music_combat", "boss")
-
-		assert_equal(harness:current(), "explore")
-		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "explore"), { "tg_shooting_range" })
-	end)
-
-	it("ends the boss music at once when boss dummies stop counting during the fight", function()
-		local harness = in_meat_grinder({ source_meat_grinder = "mission" })
-		harness:boss_start(harness:new_boss("chaos_spawn"))
-		harness:state("music_combat", "boss")
-		harness:clear_changes()
-
-		harness:set_setting("meat_grinder_boss_dummies", false)
-
-		assert_deep_equal(harness.changes, { "explore" })
-	end)
-
-	-- Without the mission name check, a player who left the boss dummies out would lose boss music in every mission.
-	it("keeps boss music in a real mission while boss dummies do not count", function()
-		local harness = Harness.new({ source_meat_grinder = "mission", meat_grinder_boss_dummies = false })
-		harness:cold_start_to_hub()
-		harness:leave_hub()
-		harness:enter_mission("lm_cooling", "zone_3")
 
 		harness:boss_start(harness:new_boss("chaos_spawn"))
 		harness:state("music_combat", "boss")

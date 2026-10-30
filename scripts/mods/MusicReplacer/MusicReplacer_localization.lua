@@ -219,14 +219,6 @@ local strings = {
 		en = "The situation that " .. highlight("One Situation") .. " plays in Meat Grinder, as if it were happening.\n\n" ..
 			"It plays by its choice in Music per Situation. With " .. highlight("Boss") .. ", a boss dummy plays the override folder named after its breed.",
 	},
-	meat_grinder_boss_dummies = {
-		en = "Boss Dummies Count as Bosses",
-	},
-	meat_grinder_boss_dummies_tooltip = {
-		en = "Whether the boss dummies get boss music with " .. highlight("Like a Mission") .. ".\n\n" ..
-			highlight("Off") .. " plays explore music while a boss dummy is alive, even while you hit other dummies, " ..
-			"since the game then reports only the boss.",
-	},
 
 	volume = {
 		en = "Volume",

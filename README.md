@@ -93,7 +93,7 @@ Meat Grinder is a good place to try out your songs, so it has a settings group o
 | Silence | Nothing, as in the game. This is the default. |
 | Meat Grinder Folder | Your songs from the `meat_grinder` folder, through every fight with the dummies, so trying out loadouts does not switch the song. With an empty folder, the game's music plays, which is none there. |
 | One Situation | The situation you pick under Situation, as if it were happening, to try out its songs. It plays by its own choice in Music per Situation, and with Boss, a boss dummy plays the `boss` override folder named after its breed. |
-| Like a Mission | The mission situations, as the game reports them: explore, combat while you hit the dummies, and boss while a boss dummy is alive. Since Darktide 1.13.0, the boss dummies stand in Meat Grinder from the start, so boss music plays for as long as one of them is still alive. With Boss Dummies Count as Bosses off, explore plays then, even while you hit other dummies, since the game reports only the boss. It is recommended to use it with a mod that gives you control over the dummies. |
+| Like a Mission | The mission situations, as the game reports them: explore, combat while you hit the dummies, and boss while a boss dummy is alive. Since Darktide 1.13.0, the boss dummies stand in Meat Grinder from the start, so boss music plays for as long as one of them is still alive. It is recommended to use it with a mod that gives you control over the dummies. |
 
 ## Settings
 

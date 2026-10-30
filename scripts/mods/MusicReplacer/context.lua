@@ -42,7 +42,6 @@
 --	  The mission's intro resolves no context and keeps the game's stinger.
 --	* Meat Grinder has no `wwise_state`, so it is recognized by its mission name instead.
 --	  Its own setting decides what it resolves: "meat_grinder" through every fight, one situation the player picks, or the mission contexts.
---	  Played like a mission, its boss dummies can be left out, so explore plays while one is alive.
 --	* Some missions never report a zone.
 --	  No zone plus `music_game_state == "mission"` counts as a mission until a victory or defeat state ends it.
 --	  It does not count while the hub is still loaded, since leaving the hub clears the zone a moment before the game state changes.
@@ -269,18 +268,7 @@ local function counts_as_boss(mod, boss)
 	return not OPT_IN_BOSS_SETTINGS[boss.breed] or opted_in(mod, boss)
 end
 
--- True in Meat Grinder played like a mission, with its boss dummies left out by their setting.
--- The game reports only the boss while a boss dummy is alive, so explore plays through it then.
-local function boss_dummies_ignored(mod)
-	return mission_name == MEAT_GRINDER_MISSION and mod:get("source_meat_grinder") == "mission"
-		and mod:get("meat_grinder_boss_dummies") == false
-end
-
 local function is_boss_active(mod)
-	if boss_dummies_ignored(mod) then
-		return false
-	end
-
 	if music_combat == "boss" then
 		return true
 	end
@@ -298,10 +286,6 @@ end
 -- Breed name of the most recently opened encounter window that counts as a boss, or nil when none does.
 -- So a captain or daemonhost with its setting off does not name the folder during another boss's fight.
 local function current_boss_breed(mod)
-	if boss_dummies_ignored(mod) then
-		return nil
-	end
-
 	local latest = nil
 
 	for _, boss in pairs(open_bosses) do
