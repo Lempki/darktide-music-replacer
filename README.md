@@ -138,11 +138,10 @@ To report a problem, open an [issue](https://github.com/Lempki/darktide-music-re
 
 A bug report on the mod's Nexus Mods page works too, but its form takes no files, so share them through a link instead.
 
-## Languages and contributing
+## Contributing
 
-* The mod options and their tooltips are in English. With the game set to another language, they show in English too.
-* Translations are welcome as pull requests. [docs/development.md](docs/development.md) explains where the texts live and how to add a language.
-* Fixes, ideas, and bug reports are welcome too, as pull requests or [issues](https://github.com/Lempki/darktide-music-replacer/issues). For a bug, attach the files listed under [Troubleshooting](#troubleshooting).
+* Fixes, ideas, and bug reports are welcome, as pull requests or [issues](https://github.com/Lempki/darktide-music-replacer/issues). For a bug, attach the files listed under [Troubleshooting](#troubleshooting).
+* Translations are very welcome too, as pull requests. [docs/development.md](docs/development.md) explains where the texts live and how to add a language.
 
 ## Credits
 
