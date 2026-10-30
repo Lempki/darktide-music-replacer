@@ -678,7 +678,8 @@ local function moment_kind(mod, context_name)
 	elseif context_name == "boss" then
 		return current_boss_breed(mod)
 	elseif context_name == "mortis_trials_wave" then
-		return music_objective
+		-- Meat Grinder's One Situation plays a wave while none runs, when the group is "None".
+		return music_objective ~= "None" and music_objective or nil
 	elseif context_name == "expedition_combat" then
 		return expedition_fight_level
 	end

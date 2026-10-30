@@ -110,6 +110,15 @@ describe("context.lua Meat Grinder with One Situation", function()
 		assert_equal(harness.Context.override_keys(harness.engine.mod, "boss")[1], "chaos_spawn")
 	end)
 
+	-- Meat Grinder runs no wave, so its music_objective is "None", which names no moment.
+	it("offers no moment for a Mortis Trials wave while no wave runs", function()
+		local harness = in_meat_grinder({ source_meat_grinder = "situation", meat_grinder_situation = "mortis_trials_wave" })
+		harness:state("music_objective", "None")
+
+		assert_equal(harness:current(), "mortis_trials_wave")
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "mortis_trials_wave"), { "tg_shooting_range" })
+	end)
+
 	it("resolves no situation for a stored situation the mod does not know, so the game's music plays", function()
 		local harness = in_meat_grinder({ source_meat_grinder = "situation", meat_grinder_situation = "not_a_situation" })
 
