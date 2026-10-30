@@ -201,7 +201,7 @@ local strings = {
 			"Every situation keeps its own choice in Music per Situation. " ..
 			"With " .. highlight("Meat Grinder Folder") .. ", an empty folder plays the game's music, which is none there. " ..
 			"Since Darktide 1.13.0, the boss dummies stand there from the start, so " .. highlight("Like a Mission") ..
-			" plays boss music for as long as one of them is alive. It works best with a mod that gives you control over the dummies.",
+			" plays boss music for as long as one of them is still alive. It is recommended to use it with a mod that gives you control over the dummies.",
 	},
 	meat_grinder_folder = {
 		en = "Meat Grinder Folder",
