@@ -131,10 +131,12 @@ Uninstalling the mod leaves its own files in `%APPDATA%\Fatshark\Darktide\MusicR
 
 Fixes for common problems are in [docs/troubleshooting.md](docs/troubleshooting.md).
 
-To report a problem, attach these two files:
+To report a problem, open an [issue](https://github.com/Lempki/darktide-music-replacer/issues) and attach these two files:
 
 * The mod's log from `%APPDATA%\Fatshark\Darktide\MusicReplacer\`. That is `diagnostic.log` if the problem happened in the current or last game session, or `diagnostic-prev.log` if it happened in the session before that.
 * The newest file in `%APPDATA%\Fatshark\Darktide\console_logs\`.
+
+A bug report on the mod's Nexus Mods page works too, but its form takes no files, so share them through a link instead.
 
 ## Languages and contributing
 

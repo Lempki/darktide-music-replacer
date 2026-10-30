@@ -12,10 +12,12 @@ Fixes for common problems, how to report one, and what the mod writes where.
 
 ## Reporting a problem
 
-Attach these two files:
+Open an [issue](https://github.com/Lempki/darktide-music-replacer/issues) on GitHub and attach these two files:
 
 * The mod's log from `%APPDATA%\Fatshark\Darktide\MusicReplacer\`. That is `diagnostic.log` if the problem happened in the current or last game session, or `diagnostic-prev.log` if it happened in the session before that.
 * The newest file in `%APPDATA%\Fatshark\Darktide\console_logs\`.
+
+A bug report on the mod's Nexus Mods page works too, but its form takes no files, so share them through a link instead.
 
 The mod always logs the important events, such as which music plays and why, and any file it could not play. If you are asked for more detail, turn on Detailed Logging in the Debug group of the mod options and play until the problem happens again. What the detailed lines mean is explained in [wwise-events.md](wwise-events.md) and [game-internals.md](game-internals.md).
 
