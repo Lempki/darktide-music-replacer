@@ -35,7 +35,8 @@
 --	  The game sends the hub zone about 10 seconds before the loading screen ends, and a mission zone partway through the briefing.
 --	  The briefing, and every loading screen after the mission board's "mission_ready", lead into a mission and resolve "mission_briefing".
 --	  A plain loading screen does not say where it leads, so "mission_ready" tells joining a mission apart from leaving one.
---	  Matchmaking that ends without a mission leaves the game state on "mission", which ends the trip after a few seconds.
+--	  With the board closed, matchmaking that ends without a mission leaves the game state on "mission".
+--	  That ends the trip after a few seconds.
 --	  The mission preparation screen, where the party gathers before a mission, resolves "mission_preparation".
 --	  The game reports it as "loadout" in every game mode.
 --	  The mission's intro resolves no context and keeps the game's stinger.
@@ -207,7 +208,7 @@ for state in pairs(CUTSCENE_GAME_STATES) do
 end
 
 -- Matchmaking that finds a mission returns the game state to "mission" for about a second before the loading screen.
--- Matchmaking that ends without one, as after a declined party vote, leaves it there.
+-- Matchmaking that ends without one with the mission board closed, as after a declined party vote, leaves it there.
 -- So "mission" that outlasts this after matchmaking ends the trip.
 -- Ending a real trip early only costs its first loading screen the briefing folder, hence the wide margin.
 local MATCHMAKING_PASS_SECONDS = 5
