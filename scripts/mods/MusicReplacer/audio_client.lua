@@ -289,6 +289,25 @@ local function take_outgoing(file_path, loop)
 	return nil
 end
 
+-- The length a song's end fade goes by, or nil for a looping song, which never fades out, or one whose length is not known.
+-- The decoder's duration matches its positions, while the library's can be off by a second or more.
+-- It is also there before the library has measured the file.
+local function song_duration(stream, loop, library_duration)
+	if loop then
+		return nil
+	end
+	return stream.duration or library_duration
+end
+
+-- How long a song fades out at its end: the Fade Length, or half the song when it is shorter than two fades.
+-- An earlier end fade would cut off its fade-in and play it silent.
+local function song_fade_seconds(duration)
+	if duration then
+		return math.min(fade_seconds, duration / 2)
+	end
+	return fade_seconds
+end
+
 -- Plays file_path, crossfading with whatever was playing.
 -- opts: fade_in, loop, start_position, duration_seconds, and on_finished(failed).
 -- Returns false when playback is unavailable.
@@ -476,12 +495,8 @@ local function update_current(dt)
 		return
 	end
 
-	-- The decoder's duration matches its positions, while the library's can be off by a second or more.
-	-- It is also there before the library has measured the file.
-	-- A looping file never fades out.
-	-- A song shorter than two fades starts its end fade halfway, since an earlier one would cut off its fade-in and play it silent.
-	local duration = not current.loop and (stream.duration or current.duration)
-	if duration and not current.end_fading and stream:position() >= duration - math.min(fade_seconds, duration / 2) then
+	local duration = song_duration(stream, current.loop, current.duration)
+	if duration and not current.end_fading and stream:position() >= duration - song_fade_seconds(duration) then
 		current.end_fading = true
 		stream:fade_to(0, math.max(0.1, duration - stream:position()))
 	end
