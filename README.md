@@ -35,7 +35,7 @@ On a Windows "N" edition, install Microsoft's free Media Feature Pack, which pro
 
 ## Quickstart
 
-1. Install Music Replacer like any other Darktide mod, for example through Vortex. Check that `MusicReplacer` is listed below `dmf` in `mod_load_order.txt`, as described under [Requirements](#requirements) above.
+1. Install Music Replacer like any other Darktide mod, by hand or through a mod manager such as Vortex. Check that `MusicReplacer` is listed below `dmf` in `mod_load_order.txt`, as described under [Requirements](#requirements) above.
 2. Put your audio files into the folders inside the **installed** mod folder: `...\Warhammer 40,000 DARKTIDE\mods\MusicReplacer\audio\<folder>\`. For example, songs in `audio\hub\` play in the Mourningstar. Every folder is listed under [Where your music plays](#where-your-music-plays).
 3. Start the game and play.
 
@@ -117,7 +117,7 @@ What the mod writes where, and how it handles a lost audio device, are covered i
 
 ## Updating and uninstalling
 
-Update or reinstall the mod through Vortex as usual. Your songs survive that. Vortex only removes files it deployed itself, and the mod archive holds only the empty audio folders, never songs. Renaming the mod folder leaves your songs behind, so move `audio\` across by hand if that ever happens.
+Your songs survive updates, even through Vortex, since the mod archive holds only the empty audio folders, never songs, and Vortex only removes files it deployed itself. To update by hand, extract the new version over the old mod folder instead of deleting it first. Renaming the mod folder leaves your songs behind, so move `audio\` across by hand if that ever happens.
 
 Uninstalling the mod leaves its own files in `%APPDATA%\Fatshark\Darktide\MusicReplacer\` behind. Delete that folder by hand if you want them gone. Check `mods\MusicReplacer\audio\` in the game folder too, since your songs were never part of the mod archive.
 
