@@ -163,6 +163,13 @@ function DebugOverlay.view(snapshot)
 		view.waiting_share = share and math.max(0, math.min(1, share)) or 1
 	end
 
+	-- Even Out Loudness measures songs whatever plays, so this row shows with or without a song.
+	if snapshot.measuring_done and snapshot.measuring_total then
+		view.measuring = string.format("%d / %d", snapshot.measuring_done, snapshot.measuring_total)
+		local measuring_share = snapshot.measuring_total > 0 and snapshot.measuring_done / snapshot.measuring_total or 0
+		view.measuring_share = math.max(0, math.min(1, measuring_share))
+	end
+
 	if not snapshot.song then
 		view.idle = view.kind == "silence" and "Nothing plays" or view.kind == "game" and "The game's music plays" or "No song playing"
 	else
@@ -196,6 +203,9 @@ function DebugOverlay.text(snapshot)
 	end
 	if view.waiting then
 		rows[#rows + 1] = "Waiting: " .. view.waiting
+	end
+	if view.measuring then
+		rows[#rows + 1] = "Measuring: " .. view.measuring
 	end
 	rows[#rows + 1] = "Song: " .. (view.song and (view.song .. "  " .. view.time) or "none")
 	if view.level ~= "" then

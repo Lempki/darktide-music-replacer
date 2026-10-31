@@ -147,6 +147,66 @@ describe("debug_overlay.lua view", function()
 		assert_equal(DebugOverlay.text(snapshot):match("Waiting: [^\n]+"), "Waiting: combat hold 6.0s, boss in 0.4s")
 	end)
 
+	it("adds a row for the measuring progress, with or without a song", function()
+		local DebugOverlay = load_overlay(new_constant_elements())
+		local snapshot = full_snapshot()
+		snapshot.measuring_done = 12
+		snapshot.measuring_total = 40
+
+		local view = DebugOverlay.view(snapshot)
+		assert_equal(view.measuring, "12 / 40")
+		assert_equal(view.measuring_share, 0.3)
+		assert_equal(DebugOverlay.text(snapshot):match("Measuring: [^\n]+"), "Measuring: 12 / 40")
+
+		local idle = { context = "event", status = "Vanilla, no songs", measuring_done = 0, measuring_total = 5 }
+		assert_equal(DebugOverlay.view(idle).measuring, "0 / 5")
+	end)
+
+	it("puts the measuring row after the waiting row", function()
+		local DebugOverlay = load_overlay(new_constant_elements())
+		local snapshot = full_snapshot()
+		snapshot.hold = "combat"
+		snapshot.hold_seconds = 6
+		snapshot.hold_length = 8
+		snapshot.measuring_done = 1
+		snapshot.measuring_total = 2
+
+		assert_equal(DebugOverlay.text(snapshot),
+			"Combat (Custom)\n" ..
+			"Folder: combat\n" ..
+			"Waiting: combat hold 6.0s\n" ..
+			"Measuring: 1 / 2\n" ..
+			"Song: Antagonist - Valfaris.mp3  1:23 / 4:25\n" ..
+			"Level: -7.9 dB")
+	end)
+
+	it("leaves out the measuring row without both counts", function()
+		local DebugOverlay = load_overlay(new_constant_elements())
+		local snapshot = full_snapshot()
+		assert_equal(DebugOverlay.view(snapshot).measuring, nil)
+		assert_equal(DebugOverlay.text(snapshot):find("Measuring"), nil)
+
+		snapshot.measuring_done = 3
+		local view = DebugOverlay.view(snapshot)
+		assert_equal(view.measuring, nil)
+		assert_equal(view.measuring_share, nil)
+	end)
+
+	it("keeps the measuring bar's share between 0 and 1", function()
+		local DebugOverlay = load_overlay(new_constant_elements())
+		local snapshot = full_snapshot()
+		snapshot.measuring_done = 50
+		snapshot.measuring_total = 40
+		assert_equal(DebugOverlay.view(snapshot).measuring_share, 1)
+
+		snapshot.measuring_done = -1
+		assert_equal(DebugOverlay.view(snapshot).measuring_share, 0)
+
+		snapshot.measuring_done = 0
+		snapshot.measuring_total = 0
+		assert_equal(DebugOverlay.view(snapshot).measuring_share, 0)
+	end)
+
 	it("says what plays while no song of yours does, with no folder or song level, and cuts long names short", function()
 		local DebugOverlay = load_overlay(new_constant_elements())
 

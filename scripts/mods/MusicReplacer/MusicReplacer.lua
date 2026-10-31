@@ -413,6 +413,8 @@ local function overlay_snapshot()
 	-- A situation set to Vanilla or Silence plays no folder, so it looks for no override either.
 	local overrides = current_folder and table.concat(Context.override_keys(mod, current_context), ", ") or nil
 
+	local measuring_done, measuring_total = Loudness.progress()
+
 	local pending_seconds = nil
 	if has_pending_change then
 		pending_seconds = math.max(0, math.min(debounce_seconds() - debounce_elapsed, MAX_DEBOUNCE_SECONDS - pending_elapsed))
@@ -440,6 +442,8 @@ local function overlay_snapshot()
 		menu_volume = mod:get("menu_volume") / 100,
 		song_level = song_level,
 		evening_out = mod:get("normalize_loudness") == true,
+		measuring_done = measuring_done,
+		measuring_total = measuring_total,
 	}
 end
 

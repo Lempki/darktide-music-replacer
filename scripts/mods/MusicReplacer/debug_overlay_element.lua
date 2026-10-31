@@ -21,7 +21,8 @@ local GAP = 10
 local ROW_GAP = 4
 local MIN_WIDTH = 380
 local FADE_WIDTH = 120
-local LABEL_WIDTH = 58
+-- Wide enough for the longest row label, Measuring, with room before the bar after it.
+local LABEL_WIDTH = 78
 local WAITING_BAR_WIDTH = 90
 
 -- The game measures text a little narrower than it draws it, so measured widths get this much extra.
@@ -139,6 +140,10 @@ local passes = {
 	rect_pass("waiting_track", WAITING_TRACK_COLOR, 1),
 	rect_pass("waiting_bar", TITLE_COLOR, 2),
 	text_pass("waiting", "proxima_nova_medium", 13, TITLE_COLOR),
+	text_pass("measuring_label", "proxima_nova_medium", 13, TITLE_COLOR),
+	rect_pass("measuring_track", WAITING_TRACK_COLOR, 1),
+	rect_pass("measuring_bar", TITLE_COLOR, 2),
+	text_pass("measuring", "proxima_nova_medium", 13, TITLE_COLOR),
 }
 for index = 1, METER_SEGMENTS do
 	passes[#passes + 1] = rect_pass("segment_" .. index, TRACK_COLOR, 1)
@@ -245,6 +250,8 @@ return function(DebugOverlay)
 		content.loudness = view.loudness or ""
 		content.waiting_label = "Waiting"
 		content.waiting = view.waiting or ""
+		content.measuring_label = "Measuring"
+		content.measuring = view.measuring or ""
 
 		local tag_colors = TAG_COLORS[view.kind] or TAG_COLORS.game
 		style.tag_background.color = tag_colors.background
@@ -278,7 +285,8 @@ return function(DebugOverlay)
 			view.folder and self:_text_width(ui_renderer, "folder", content.folder) or 0,
 			self:_text_width(ui_renderer, "song", content.song),
 			view.song and markers_end + gap + column_width or 0,
-			view.waiting and label_width + waiting_bar_width + gap + self:_text_width(ui_renderer, "waiting", content.waiting) or 0)
+			view.waiting and label_width + waiting_bar_width + gap + self:_text_width(ui_renderer, "waiting", content.waiting) or 0,
+			view.measuring and label_width + waiting_bar_width + gap + self:_text_width(ui_renderer, "measuring", content.measuring) or 0)
 		local width = math.ceil(inner + 2 * padding)
 
 		local x = padding
@@ -343,6 +351,14 @@ return function(DebugOverlay)
 			self:_box("waiting_track", x + label_width, y, row, waiting_bar_width, 3 * s)
 			self:_box("waiting_bar", x + label_width, y, row, math.floor(waiting_bar_width * view.waiting_share + 0.5), 3 * s)
 			self:_text("waiting", x + label_width + waiting_bar_width + gap, y, row)
+			next_row(row)
+		end
+
+		if view.measuring then
+			self:_text("measuring_label", x, y, row)
+			self:_box("measuring_track", x + label_width, y, row, waiting_bar_width, 3 * s)
+			self:_box("measuring_bar", x + label_width, y, row, math.floor(waiting_bar_width * view.measuring_share + 0.5), 3 * s)
+			self:_text("measuring", x + label_width + waiting_bar_width + gap, y, row)
 			next_row(row)
 		end
 

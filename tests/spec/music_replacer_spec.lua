@@ -767,8 +767,30 @@ describe("MusicReplacer.lua debug overlay", function()
 		assert_equal(harness.overlay.options.snapshot().overrides, nil)
 	end)
 
+	it("reports the measuring progress while songs are left to measure", function()
+		local harness = in_hub()
+		harness.loudness.progress_done = 12
+		harness.loudness.progress_total = 40
+
+		local snapshot = harness.overlay.options.snapshot()
+
+		assert_equal(snapshot.measuring_done, 12)
+		assert_equal(snapshot.measuring_total, 40)
+	end)
+
+	it("leaves out the measuring progress while nothing is measured", function()
+		local harness = in_hub()
+
+		local snapshot = harness.overlay.options.snapshot()
+
+		assert_equal(snapshot.measuring_done, nil)
+		assert_equal(snapshot.measuring_total, nil)
+	end)
+
 	it("reports that the mod is turned off", function()
 		local harness = in_hub()
+		harness.loudness.progress_done = 12
+		harness.loudness.progress_total = 40
 		harness.mod.on_disabled(false)
 
 		assert_deep_equal(harness.overlay.options.snapshot(), { turned_off = true })
