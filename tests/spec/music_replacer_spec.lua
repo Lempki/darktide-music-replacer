@@ -1282,6 +1282,156 @@ describe("MusicReplacer.lua the Restart Song key", function()
 	end)
 end)
 
+describe("MusicReplacer.lua the Pause / Resume key", function()
+	local function press(harness, control)
+		harness.mod[control]()
+		harness:tick(0.1)
+	end
+
+	-- Returns a harness in the hub whose song is `position` seconds in when the key pauses it.
+	local function paused_in_hub(position)
+		local harness = in_hub()
+		harness.client.position = position
+		harness:tick(0.1)
+		press(harness, "pause_song")
+		return harness
+	end
+
+	it("stops the song playing now, keeps the game's music silent, and names the song", function()
+		local harness = in_hub()
+		local stops = harness.client.stops
+		harness.client.position = 50
+		harness:tick(0.1)
+
+		press(harness, "pause_song")
+
+		assert_equal(harness:playing(), nil)
+		assert_equal(harness.client.stops, stops + 1)
+		assert_equal(harness.engine:wwise_state("music_zone"), "None")
+		assert_equal(harness:last_notification(), "<control_paused: a.mp3>")
+	end)
+
+	it("shows the paused song, where it stopped, and a paused status in the debug overlay", function()
+		local harness = paused_in_hub(50)
+		harness.client.position = 0
+
+		local snapshot = harness.overlay.options.snapshot()
+		assert_equal(snapshot.status, "Custom, paused")
+		assert_equal(snapshot.song, "a.mp3")
+		assert_equal(snapshot.position, 50)
+		assert_equal(snapshot.duration, 200)
+	end)
+
+	it("resumes the song where it stopped on the next press, fading in, and names it", function()
+		local harness = paused_in_hub(50)
+
+		press(harness, "pause_song")
+
+		local play = harness:last_play()
+		assert_equal(play.file_path, "hub/a.mp3")
+		assert_equal(play.opts.start_position, 50)
+		assert_equal(play.opts.fade_in, true)
+		assert_equal(harness:last_notification(), "<control_resumed: a.mp3>")
+		assert_equal(harness.overlay.options.snapshot().status, "Custom")
+	end)
+
+	it("stays paused through a rescan and while time passes", function()
+		local harness = paused_in_hub(50)
+		local plays = #harness.client.plays
+
+		harness.mod.rescan_audio()
+		harness:wait(2)
+
+		assert_equal(harness:playing(), nil)
+		assert_equal(#harness.client.plays, plays)
+	end)
+
+	it("stays paused and silences the game's music again once playback works again", function()
+		local harness = paused_in_hub(50)
+		local plays = #harness.client.plays
+
+		harness.client.available = false
+		harness:tick(0.1)
+		assert_equal(harness.engine:wwise_state("music_zone"), "hub")
+		harness.client.available = true
+		harness:tick(0.1)
+
+		assert_equal(#harness.client.plays, plays)
+		assert_equal(harness.engine:wwise_state("music_zone"), "None")
+	end)
+
+	it("switches to a boss's override folder only once the paused song resumes", function()
+		local harness = MainHarness.new({ files = {
+			boss = { { name = "b.mp3", duration = 300 } },
+			["boss/chaos_spawn"] = { { name = "spawn.mp3", duration = 300 } },
+		} })
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness:enter_mission("lm_cooling", "zone_3")
+		harness:state("music_combat", "boss")
+		harness:settle()
+		press(harness, "pause_song")
+
+		harness:boss_start(harness:new_boss("chaos_spawn"))
+		harness:wait(0.6)
+		assert_equal(harness:playing(), nil)
+
+		press(harness, "pause_song")
+		assert_equal(harness:playing(), "boss/b.mp3")
+		harness:wait(0.6)
+		assert_equal(harness:playing(), "boss/chaos_spawn/spawn.mp3")
+	end)
+
+	it("ends the pause when Next Song plays another song", function()
+		local harness = paused_in_hub(50)
+
+		press(harness, "next_song")
+
+		assert_equal(harness:playing(), "hub/b.mp3")
+		assert_equal(harness:last_play().opts.start_position, nil)
+		assert_equal(harness.overlay.options.snapshot().status, "Custom")
+	end)
+
+	it("lets Previous Song go back from a song paused within its first 3 seconds", function()
+		local harness = in_hub()
+		press(harness, "next_song")
+		harness.client.position = 1
+		harness:tick(0.1)
+		press(harness, "pause_song")
+		harness.client.position = 0
+
+		press(harness, "previous_song")
+
+		assert_equal(harness:playing(), "hub/a.mp3")
+	end)
+
+	it("ends the pause at a situation change, and the paused song continues later where it stopped", function()
+		local harness = in_mission()
+		harness.client.position = 42
+		harness:tick(0.1)
+		press(harness, "pause_song")
+
+		harness:state("music_combat", "normal")
+		harness:settle()
+		assert_equal(harness:playing(), "combat/c.mp3")
+		assert_equal(harness.overlay.options.snapshot().status, "Custom")
+
+		harness:state("music_combat", "None")
+		harness:wait(8)
+		harness:settle()
+		assert_equal(harness:playing(), "explore/x.mp3")
+		assert_equal(harness:last_play().opts.start_position, 42)
+	end)
+
+	it("says no song of yours is playing in a situation set to Vanilla", function()
+		local harness = in_hub(nil, { settings = { source_hub = "game" } })
+
+		press(harness, "pause_song")
+
+		assert_equal(harness:last_notification(), "<control_no_song>")
+	end)
+end)
+
 describe("MusicReplacer.lua turned off and on", function()
 	it("lets playback try again after giving up when turned back on or when Rescan is pressed", function()
 		local harness = in_hub()

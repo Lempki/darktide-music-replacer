@@ -78,6 +78,15 @@ local strings = {
 	restart_song_keybind_tooltip = {
 		en = "Crossfades to the start of the song playing now.",
 	},
+	pause_song_keybind = {
+		en = "Pause / Resume",
+	},
+	pause_song_keybind_tooltip = {
+		en = "Pauses the song playing now, and the next press resumes it where it stopped. " ..
+			"The game's music stays silent while it is paused.\n\n" ..
+			"Next Song, Previous Song, and Restart Song also end the pause. " ..
+			"A new situation ends it too, and the paused song continues later like any song that was playing.",
+	},
 	-- The messages a key press shows. %s is the name of the song file.
 	control_next_song = {
 		en = "Next song: %s",
@@ -87,6 +96,12 @@ local strings = {
 	},
 	control_restart_song = {
 		en = "Restarted: %s",
+	},
+	control_paused = {
+		en = "Paused: %s",
+	},
+	control_resumed = {
+		en = "Resumed: %s",
 	},
 	control_no_song = {
 		en = "No song of yours is playing",

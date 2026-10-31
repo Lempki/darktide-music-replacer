@@ -96,6 +96,15 @@ return {
 						keybind_type = "function_call",
 						function_name = "restart_song",
 					},
+					{
+						setting_id = "pause_song_keybind",
+						type = "keybind",
+						tooltip = "pause_song_keybind_tooltip",
+						default_value = {},
+						keybind_trigger = "pressed",
+						keybind_type = "function_call",
+						function_name = "pause_song",
+					},
 				},
 			},
 			{

@@ -67,6 +67,10 @@ local playing_track = nil -- Its fields are context_name, file_path, duration, i
 -- The songs that played earlier in the current situation, oldest first, which the Previous Song key goes back through.
 local played_before = {}
 
+-- True while the Pause / Resume key holds the song in playing_track, at its `position`.
+-- AudioClient has stopped it, but the game's music stays silenced, so the situation is quiet until the song resumes.
+local paused = false
+
 -- The song that was playing when playback stopped working, as when the only headset is unplugged: context_name, file_path, position.
 -- It continues where it was once playback works again, if its context is still the one playing.
 local lost_track = nil
@@ -115,12 +119,22 @@ local function menu_volume(dt)
 end
 
 local function remember_playing_track(next_context_name)
-	if not playing_track or playing_track.context_name == next_context_name or not AudioClient.is_playing() then
+	if not playing_track or playing_track.context_name == next_context_name then
+		return
+	end
+
+	-- AudioClient no longer holds a paused song, so it is remembered where it was paused.
+	local stopped_at
+	if paused then
+		stopped_at = playing_track.position
+	elseif AudioClient.is_playing() then
+		stopped_at = AudioClient.position()
+	else
 		return
 	end
 
 	local position = ResumePoints.remember(playing_track.context_name, playing_track.file_path,
-		AudioClient.position(), playing_track.duration, playing_track.is_only_file, next_context_name)
+		stopped_at, playing_track.duration, playing_track.is_only_file, next_context_name)
 
 	if position then
 		log(string.format("[resume] %s: remembering %s at %.1fs", playing_track.context_name, playing_track.file_path, position))
@@ -251,6 +265,8 @@ play_context = function(context_name, is_new_context)
 		played_before = {}
 	end
 
+	-- Whatever the context plays now replaces a paused song.
+	paused = false
 	current_folder = nil
 
 	if not context_name then
@@ -437,9 +453,20 @@ local function notify_control(text_id, ...)
 	mod:notify("%s", mod:localize(text_id, ...))
 end
 
--- True while one of the player's songs plays for the current situation, the only music the keys act on.
-local function custom_song_playing()
-	return enabled and current_folder ~= nil and playing_track ~= nil and AudioClient.available() and AudioClient.is_playing()
+-- True while one of the player's songs plays for the current situation, or is paused, the only music the keys act on.
+local function has_song_to_control()
+	if not enabled or current_folder == nil or playing_track == nil or not AudioClient.available() then
+		return false
+	end
+	return paused or AudioClient.is_playing()
+end
+
+-- Seconds into the song playing now, or into the paused song.
+local function song_position()
+	if paused then
+		return playing_track.position
+	end
+	return AudioClient.position()
 end
 
 local function song_name(file_path)
@@ -452,10 +479,13 @@ local function say_no_song(control)
 	notify_control("control_no_song")
 end
 
--- Crossfades to `file_path` from the folder playing now.
--- No start position, so even the song playing now starts over in a fresh stream instead of reviving the copy that fades out.
-local function play_manual_pick(file_path, duration, is_only_file)
-	play_track(current_context, current_folder, { file_path = file_path, duration = duration, is_only_file = is_only_file, fade_in = true })
+-- Crossfades to `file_path` from the folder playing now, which ends a pause.
+-- Without `start_position`, even the song playing now starts over in a fresh stream instead of reviving the copy that fades out.
+local function play_manual_pick(file_path, duration, is_only_file, start_position)
+	paused = false
+	context_status = SOURCE_NAMES.custom
+	play_track(current_context, current_folder,
+		{ file_path = file_path, duration = duration, is_only_file = is_only_file, start_position = start_position, fade_in = true })
 end
 
 local function restart_playing_song()
@@ -479,7 +509,7 @@ end
 -- The skipped song keeps no resume point, since the song that replaces it is the one a later context change remembers.
 mod.next_song = function()
 	local file_path, duration, is_only_file = nil, nil, nil
-	if custom_song_playing() then
+	if has_song_to_control() then
 		file_path, duration, is_only_file = Library.pick_file(current_folder, playing_track.file_path)
 	end
 
@@ -495,7 +525,7 @@ mod.next_song = function()
 end
 
 mod.restart_song = function()
-	if not custom_song_playing() then
+	if not has_song_to_control() then
 		say_no_song("restart song")
 		return
 	end
@@ -510,13 +540,13 @@ local PREVIOUS_SONG_SECONDS = 3
 -- The Previous Song key: goes back to the song that played before in this situation, or starts the song playing now over.
 -- Going back does not add the song it leaves to the list, so pressing it again keeps going back.
 mod.previous_song = function()
-	if not custom_song_playing() then
+	if not has_song_to_control() then
 		say_no_song("previous song")
 		return
 	end
 
 	local file_path, duration, is_only_file = nil, nil, nil
-	if AudioClient.position() < PREVIOUS_SONG_SECONDS then
+	if song_position() < PREVIOUS_SONG_SECONDS then
 		file_path, duration, is_only_file = take_previous_song()
 	end
 
@@ -531,6 +561,32 @@ mod.previous_song = function()
 	notify_control("control_previous_song", song_name(file_path))
 end
 
+-- What the overlay's status tag reads while a song is paused. It starts with "Custom", so the tag keeps Custom's color.
+local PAUSED_STATUS = "Custom, paused"
+
+-- The Pause / Resume key: stops the song playing now while the game's music stays silent, and the next press resumes it where it stopped.
+-- A context change ends the pause, and the paused song keeps its resume point like any song that was playing.
+mod.pause_song = function()
+	if not has_song_to_control() then
+		say_no_song("pause")
+		return
+	end
+
+	if paused then
+		log(string.format("[control] %s: resume", current_context))
+		play_manual_pick(playing_track.file_path, playing_track.duration, playing_track.is_only_file, playing_track.position)
+		notify_control("control_resumed", song_name(playing_track.file_path))
+		return
+	end
+
+	log(string.format("[control] %s: pause", current_context))
+	playing_track.position = AudioClient.position()
+	AudioClient.stop()
+	paused = true
+	context_status = PAUSED_STATUS
+	notify_control("control_paused", song_name(playing_track.file_path))
+end
+
 -- ###########################################################################
 -- Wiring
 -- ###########################################################################
@@ -543,7 +599,13 @@ local function overlay_snapshot()
 
 	local hold, hold_seconds, hold_length = Context.hold()
 	local volume, menu_level, song_level, song_measured = AudioClient.levels()
-	local song = AudioClient.is_playing() and playing_track and playing_track.file_path or nil
+	local song = (AudioClient.is_playing() or paused) and playing_track and playing_track.file_path or nil
+
+	-- AudioClient no longer holds a paused song, so its length comes from the library.
+	local duration = AudioClient.duration()
+	if paused then
+		duration = playing_track.duration
+	end
 
 	-- A situation set to Vanilla or Silence plays no folder, so it looks for no override either.
 	local overrides = current_folder and table.concat(Context.override_keys(mod, current_context), ", ") or nil
@@ -569,8 +631,8 @@ local function overlay_snapshot()
 		overrides = overrides,
 		pending_seconds = pending_seconds,
 		song = song and song:match("[^/]+$"),
-		position = AudioClient.position(),
-		duration = AudioClient.duration(),
+		position = song_position(),
+		duration = duration,
 		volume = volume,
 		menu_level = menu_level,
 		menu_open = Context.menu_open(),
@@ -686,6 +748,7 @@ mod.on_disabled = function(initial_call)
 	replay_requested = false
 	current_context = nil
 	playing_track = nil
+	paused = false
 	hand_back()
 	-- DMF disables the hooks while the mod is off, so a level can end unseen, and its cutscene music with it.
 	Suppression.forget_cutscene_music()
@@ -773,8 +836,8 @@ mod.update = function(dt)
 		emptied = {}
 
 		-- A context that played the game's music for lack of files starts its new track now, not at its next change.
-		-- A custom track that is playing keeps playing, and the next pick uses the new list.
-		if enabled and not AudioClient.is_playing() then
+		-- A custom track that is playing or paused keeps playing or paused, and the next pick uses the new list.
+		if enabled and not AudioClient.is_playing() and not paused then
 			replay_current_context()
 		end
 	end
@@ -802,17 +865,21 @@ mod.update = function(dt)
 		Suppression.release()
 	elseif playback_lost and available then
 		playback_lost = false
-		if enabled then
+		if paused then
+			-- A paused situation stays quiet until the song resumes, so the game's music is silenced again.
+			Suppression.engage(current_context)
+		elseif enabled then
 			replay_current_context()
 		end
 	end
 	was_playing = AudioClient.is_playing()
 
 	-- An override folder can start to apply while the context stays the same, as when the game names a boss after its music started.
+	-- A paused song resumes first, and the switch follows on the next check.
 	override_check_elapsed = override_check_elapsed + dt
 	if override_check_elapsed >= OVERRIDE_CHECK_SECONDS then
 		override_check_elapsed = 0
-		if enabled and current_folder and not has_pending_change then
+		if enabled and current_folder and not has_pending_change and not paused then
 			local folder = folder_for(current_context)
 			if folder ~= current_folder then
 				log(string.format("[playback] %s: switching from the %s folder to the %s folder", current_context, current_folder, folder))
