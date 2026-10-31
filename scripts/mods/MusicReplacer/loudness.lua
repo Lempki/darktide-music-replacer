@@ -44,9 +44,13 @@ local enabled = false
 local results = {} -- file_path -> { stamp, loudness, peak }. loudness is false for a song with no measurable loudness.
 local stamps = {} -- file_path -> its stamp at the last listing.
 local failed = {} -- file_path -> the stamp it could not be opened at, so it is tried again only once the file changes.
+-- File name and stamp -> the file_path whose result they came with.
+-- A song copied into several folders keeps its name, size, and write time, so it is measured once.
+local same_songs = {}
 local pending = {} -- Files still to measure, in listing order.
 local active = nil -- The song being measured: file_path, stamp, decoder, meter, buffer, samples, capacity, block_align.
--- Songs of this batch that left the queue for good: measured, or dropped because opening them or allocating their buffer failed.
+-- Songs of this batch that left the queue for good: measured, or taken over from the same file in another folder.
+-- A song also leaves for good when opening it or allocating its buffer fails.
 local batch_done = 0
 local measured_count = 0 -- Songs measured since the last summary line.
 local unsaved_count = 0 -- Songs measured since loudness.txt was last written.
@@ -60,6 +64,21 @@ local measured_ms = 0
 -- It is nil where there is no clock, which measures one chunk per update.
 local function clock()
 	return _os and _os.clock and _os.clock() or nil
+end
+
+-- A file listed without a stamp could be any file, so it matches no other.
+local function same_song_key(file_path, stamp)
+	if not stamp or stamp == "" then
+		return nil
+	end
+	return file_path:match("[^/]+$") .. "|" .. stamp
+end
+
+local function remember_song(file_path)
+	local key = same_song_key(file_path, results[file_path].stamp)
+	if key then
+		same_songs[key] = file_path
+	end
 end
 
 local function load_cache()
@@ -93,6 +112,7 @@ local function load_cache()
 			and (loudness_text == "silent" or (loudness and loudness >= MIN_LUFS and loudness <= MAX_LUFS and peak > 0))
 		if file_path and usable then
 			results[file_path] = { stamp = stamp, loudness = loudness, peak = peak }
+			remember_song(file_path)
 		end
 	end
 end
@@ -147,6 +167,22 @@ local function current_result(file_path)
 	return result
 end
 
+-- Takes over the result of the same file in another folder, and tells whether there was one.
+local function reuse_same_song(file_path)
+	local stamp = stamps[file_path]
+	local key = same_song_key(file_path, stamp)
+	local source = key and same_songs[key]
+	local result = source and results[source]
+	if not result or result.stamp ~= stamp then
+		return false
+	end
+
+	results[file_path] = { stamp = stamp, loudness = result.loudness, peak = result.peak }
+	unsaved_count = unsaved_count + 1
+	log_detail(string.format("[loudness] %s: the same file as %s", file_path, source))
+	return true
+end
+
 local function decibels(scale)
 	return scale > 0 and 20 * math.log10(scale) or -math.huge
 end
@@ -159,31 +195,38 @@ local function stop_active()
 	end
 end
 
+-- Counts a song that left the queue for good, whether measured, taken over from the same file, or given up on.
+-- The last one of a batch writes loudness.txt and the summary line, however it ended.
+local function song_done()
+	batch_done = batch_done + 1
+
+	if unsaved_count > 0 and (unsaved_count >= SAVE_EVERY_SONGS or #pending == 0) then
+		unsaved_count = 0
+		save_cache()
+	end
+
+	if #pending == 0 and measured_count > 0 then
+		log(string.format("[loudness] measured %d song(s), %.1f s of measuring spread over the updates", measured_count, measured_ms / 1000))
+		measured_count = 0
+		measured_ms = 0
+	end
+end
+
 local function finish_active()
 	local meter = active.meter
 	local loudness = meter:loudness()
 	local peak = meter:peak()
 	results[active.file_path] = { stamp = active.stamp, loudness = loudness or false, peak = peak }
+	remember_song(active.file_path)
 
 	log_detail(string.format("[loudness] %s: %s, peak %.1f dBFS, %.0f ms",
 		active.file_path, loudness and string.format("%.1f LUFS", loudness) or "no measurable loudness", decibels(peak), active.ms))
 
-	batch_done = batch_done + 1
 	measured_count = measured_count + 1
 	measured_ms = measured_ms + active.ms
 	unsaved_count = unsaved_count + 1
 	stop_active()
-
-	if unsaved_count >= SAVE_EVERY_SONGS or #pending == 0 then
-		unsaved_count = 0
-		save_cache()
-	end
-
-	if #pending == 0 then
-		log(string.format("[loudness] measured %d song(s), %.1f s of measuring spread over the updates", measured_count, measured_ms / 1000))
-		measured_count = 0
-		measured_ms = 0
-	end
+	song_done()
 end
 
 -- Takes the next file to measure out of `pending`, preferring the folder of `preferred_context`.
@@ -202,11 +245,17 @@ local function take_next(preferred_context)
 end
 
 local function start(file_path)
+	-- The same file in another folder can have been measured since this one was queued.
+	if reuse_same_song(file_path) then
+		song_done()
+		return
+	end
+
 	local decoder, err = MediaDecoder.open(disk_path(file_path))
 	if not decoder then
 		log_detail(string.format("[loudness] %s could not be measured: %s", file_path, tostring(err)))
 		failed[file_path] = stamps[file_path]
-		batch_done = batch_done + 1
+		song_done()
 		return
 	end
 
@@ -215,7 +264,7 @@ local function start(file_path)
 	local buffer = NativeFfi.alloc(capacity)
 	if not buffer then
 		decoder:close()
-		batch_done = batch_done + 1
+		song_done()
 		return
 	end
 
@@ -269,7 +318,8 @@ function Loudness.set_files(entries)
 		stamps[entry.file_path] = entry.stamp
 		local result = results[entry.file_path]
 		local measuring = active and active.file_path == entry.file_path and active.stamp == entry.stamp
-		if not measuring and not (result and result.stamp == entry.stamp) and failed[entry.file_path] ~= entry.stamp then
+		local is_new = not measuring and not (result and result.stamp == entry.stamp) and failed[entry.file_path] ~= entry.stamp
+		if is_new and not reuse_same_song(entry.file_path) then
 			pending[#pending + 1] = entry.file_path
 		end
 	end

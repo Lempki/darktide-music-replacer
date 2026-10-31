@@ -179,6 +179,60 @@ describe("loudness.lua measuring", function()
 	end)
 end)
 
+describe("loudness.lua same songs", function()
+	it("measures a song copied into two folders once, and gives both its result", function()
+		local Loudness, test = load_loudness({ ["audio/hub/a.mp3"] = 12, ["audio/combat/a.mp3"] = 12 })
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3", "10:1:2" }, { "combat/a.mp3", "10:1:2" } }))
+		assert_deep_equal({ Loudness.progress() }, { 0, 2 })
+
+		measure_all(Loudness, "hub")
+
+		assert_deep_equal(test.opened, { "audio/hub/a.mp3" })
+		assert_equal(Loudness.describe("combat/a.mp3"), Loudness.describe("hub/a.mp3"))
+		assert_equal(test.details[2], "[loudness] combat/a.mp3: the same file as hub/a.mp3")
+		assert_equal(test.lines[1]:match("^%[loudness%] measured 1 song%(s%)") ~= nil, true)
+		assert_equal(test.fs.files[CACHE]:find("combat/a.mp3", 1, true) ~= nil, true)
+	end)
+
+	it("gives a new copy of a measured song its result at once, without queueing it", function()
+		local Loudness, test = load_loudness({ ["audio/combat/a.mp3"] = 12 }, "10:1:2\t-12.00\t0.50000\thub/a.mp3\n")
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3", "10:1:2" }, { "combat/a.mp3", "10:1:2" } }))
+
+		assert_equal(Loudness.progress(), nil)
+		assert_equal(Loudness.describe("combat/a.mp3"), "-12.0 LUFS, -2.0 dB")
+		measure_all(Loudness, "combat")
+		assert_deep_equal(test.opened, {})
+	end)
+
+	it("measures songs with the same name separately when their size or write time differs, or is unknown", function()
+		local Loudness, test = load_loudness({
+			["audio/hub/a.mp3"] = 12, ["audio/combat/a.mp3"] = 16, ["audio/hub/b.mp3"] = 10, ["audio/combat/b.mp3"] = 10,
+		})
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({
+			{ "hub/a.mp3", "10:1:2" }, { "combat/a.mp3", "11:1:2" }, { "hub/b.mp3", "" }, { "combat/b.mp3", "" },
+		}))
+
+		measure_all(Loudness, "hub")
+
+		assert_equal(#test.opened, 4)
+		assert_equal(Loudness.describe("combat/a.mp3"):match("^%-16.0 LUFS") ~= nil, true)
+	end)
+
+	it("writes loudness.txt and the summary line when the last song of a batch cannot be opened", function()
+		local Loudness, test = load_loudness({ ["audio/hub/a.mp3"] = 12, ["audio/hub/b.mp3"] = false })
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3" }, { "hub/b.mp3" } }))
+
+		measure_all(Loudness, "hub")
+
+		assert_equal(test.fs.files[CACHE]:find("hub/a.mp3", 1, true) ~= nil, true)
+		assert_equal(test.lines[1]:match("^%[loudness%] measured 1 song%(s%)") ~= nil, true)
+	end)
+end)
+
 describe("loudness.lua cache", function()
 	-- Counts how often loudness.txt is written, which rewrites the whole file each time.
 	local function count_writes(test)

@@ -11,6 +11,7 @@ What changes for players in each release of Music Replacer. The format follows [
 
 ### Changes
 
+* Even Out Loudness measures a song copied into several folders only once, so measuring a library with shared songs takes less time.
 * The debug overlay's label column is a little wider, so the Level row's meter and markers sit further right.
 
 ## [1.0.0] - 2026-10-30
