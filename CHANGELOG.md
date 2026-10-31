@@ -18,4 +18,4 @@ What changes for players in each release of Music Replacer. The format follows [
 First public release.
 
 [Unreleased]: https://github.com/Lempki/darktide-music-replacer/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/Lempki/darktide-music-replacer/tree/v1.0.0
+[1.0.0]: https://github.com/Lempki/darktide-music-replacer/releases/tag/v1.0.0

@@ -2,6 +2,8 @@
 
 Music Replacer is a mod for Warhammer 40,000: Darktide that plays your own music in place of the game's, chosen by what is happening in the hub or a mission. You put audio files into folders, one folder per situation, and the mod picks the right one as you play. Wherever you add no songs, the game's music plays as usual.
 
+Download it from [Nexus Mods](https://www.nexusmods.com/warhammer40kdarktide/mods/1464).
+
 ## What it does
 
 * Plays your songs by situation: the title screen, character select, the hub, loading screens, exploring, combat, hordes, bosses, events, last stands, victory, defeat, Mortis Trials, Expeditions, and Meat Grinder.
