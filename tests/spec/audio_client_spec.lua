@@ -664,6 +664,43 @@ describe("audio_client.lua fade length", function()
 		assert_deep_equal(streams[1].fades[#streams[1].fades], { 0, 0 })
 		assert_deep_equal(streams[2].fades, { { 1, 0 } })
 	end)
+
+	it("crossfades over a play's own fade length, while the song's end still fades over the Fade Length", function()
+		local AudioClient, _, streams = load_client()
+		AudioClient.set_fade_seconds(5)
+		AudioClient.play("hub/a.mp3", { fade_in = true, duration_seconds = 199 })
+		AudioClient.play("hub/b.mp3", { fade_in = true, fade_seconds = 0.5, duration_seconds = 199 })
+
+		assert_deep_equal(streams[1].fades[#streams[1].fades], { 0, 0.5 })
+		assert_deep_equal(streams[2].fades, { { 1, 0.5 } })
+
+		streams[2].current_position = 195.5
+		AudioClient.update(0.1)
+		assert_equal(streams[2].fades[2][1], 0)
+		assert_equal(streams[2].fades[2][2] > 4, true)
+	end)
+
+	it("fades a continued song back in over a play's own fade length", function()
+		local AudioClient, _, streams = load_client()
+		AudioClient.set_fade_seconds(5)
+		AudioClient.play("hub/a.mp3", { fade_in = true, duration_seconds = 199 })
+		AudioClient.stop(0.5)
+
+		AudioClient.play("hub/a.mp3", { fade_in = true, fade_seconds = 0.5, start_position = 40, duration_seconds = 199 })
+
+		assert_equal(#streams, 1)
+		assert_deep_equal(streams[1].fades[#streams[1].fades - 1], { 0, 0.5 })
+		assert_deep_equal(streams[1].fades[#streams[1].fades], { 1, 0.5 })
+	end)
+
+	it("fades out over a stop's own fade length", function()
+		local AudioClient, _, streams = load_client()
+		AudioClient.play("hub/a.mp3", { fade_in = true })
+
+		AudioClient.stop(3)
+
+		assert_deep_equal(streams[1].fades[#streams[1].fades], { 0, 3 })
+	end)
 end)
 
 describe("audio_client.lua volume", function()

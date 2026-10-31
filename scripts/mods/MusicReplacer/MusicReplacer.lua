@@ -185,7 +185,7 @@ end
 local play_context
 
 -- The AudioClient.play options for `track` from `folder`, whose on_finished plays the context's next song.
--- `track` holds file_path, duration, is_only_file, start_position, and fade_in.
+-- `track` holds file_path, duration, is_only_file, start_position, fade_in, and fade_seconds, which only the keys set.
 local function track_opts(context_name, folder, track)
 	local duration = track.duration
 
@@ -193,6 +193,7 @@ local function track_opts(context_name, folder, track)
 	return {
 		duration_seconds = not track.is_only_file and duration or nil,
 		fade_in = track.fade_in,
+		fade_seconds = track.fade_seconds,
 		loop = track.is_only_file,
 		start_position = track.start_position,
 		on_finished = function(failed)
@@ -479,13 +480,22 @@ local function say_no_song(control)
 	notify_control("control_no_song")
 end
 
--- Crossfades to `file_path` from the folder playing now, which ends a pause.
+-- How long a key's switch from the song playing now to its own start takes.
+-- Two copies of one song crossfading sound like an echo, so this is just long enough to avoid a click.
+local SAME_SONG_FADE_SECONDS = 0.1
+
+-- Crossfades to `file_path` from the folder playing now over the Key Fade Length, which ends a pause.
 -- Without `start_position`, even the song playing now starts over in a fresh stream instead of reviving the copy that fades out.
 local function play_manual_pick(file_path, duration, is_only_file, start_position)
+	local fade_seconds = mod:get("key_fade_seconds")
+	if not start_position and AudioClient.is_playing() and file_path == playing_track.file_path then
+		fade_seconds = math.min(fade_seconds, SAME_SONG_FADE_SECONDS)
+	end
+
 	paused = false
 	context_status = SOURCE_NAMES.custom
-	play_track(current_context, current_folder,
-		{ file_path = file_path, duration = duration, is_only_file = is_only_file, start_position = start_position, fade_in = true })
+	play_track(current_context, current_folder, { file_path = file_path, duration = duration, is_only_file = is_only_file,
+		start_position = start_position, fade_in = true, fade_seconds = fade_seconds })
 end
 
 local function restart_playing_song()
@@ -581,7 +591,7 @@ mod.pause_song = function()
 
 	log(string.format("[control] %s: pause", current_context))
 	playing_track.position = AudioClient.position()
-	AudioClient.stop()
+	AudioClient.stop(mod:get("key_fade_seconds"))
 	paused = true
 	context_status = PAUSED_STATUS
 	notify_control("control_paused", song_name(playing_track.file_path))

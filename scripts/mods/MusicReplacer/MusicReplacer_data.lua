@@ -105,6 +105,15 @@ return {
 						keybind_type = "function_call",
 						function_name = "pause_song",
 					},
+					{
+						setting_id = "key_fade_seconds",
+						type = "numeric",
+						tooltip = "key_fade_seconds_tooltip",
+						default_value = 0.5,
+						range = { 0, 10 },
+						decimals_number = 1,
+						unit_text = "seconds_unit",
+					},
 				},
 			},
 			{

@@ -77,7 +77,7 @@ Music Replacer decodes the files with Media Foundation, Windows' own media frame
 
 ### Fades and parked songs
 
-* A context change is a crossfade on an equal-power curve, as long as the Fade Length setting, 2 seconds by default. A song that does not loop fades out over its last stretch of that length. One shorter than two fades fades in over its first half and out over its second. A stop fades out over half a second.
+* A context change is a crossfade on an equal-power curve, as long as the Fade Length setting, 2 seconds by default. A song that does not loop fades out over its last stretch of that length. One shorter than two fades fades in over its first half and out over its second. A stop fades out over half a second. A playback key's switch, pause, and resume take the Key Fade Length instead, and a key that starts the song playing now over jumps to its start in a tenth of a second.
 * A song that fades out is paused and parked rather than freed. If the mod resumes it, the same stream fades back in from exactly where it stopped, with nothing reopened or sought.
 * Each parked song keeps its buffer pool and its file open. It is freed after 60 seconds, and beyond 4 parked songs the oldest is freed first.
 * The master and music sliders, Custom Music Volume, and the menu fade set every stream's gain directly, so no volume change restarts a song.

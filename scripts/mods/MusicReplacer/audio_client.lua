@@ -304,17 +304,20 @@ local function song_duration(stream, loop, library_duration)
 	return stream.duration or library_duration
 end
 
--- How long a song fades in, and out at its end: the Fade Length, or half the song when it is shorter than two fades.
+-- How long a song fades in, and out at its end: `seconds`, the Fade Length by default, or half the song when it is shorter than two fades.
 -- Longer fades would overlap, so the song would never reach full level, or play silent throughout.
-local function song_fade_seconds(duration)
+local function song_fade_seconds(duration, seconds)
+	seconds = seconds or fade_seconds
 	if duration then
-		return math.min(fade_seconds, duration / 2)
+		return math.min(seconds, duration / 2)
 	end
-	return fade_seconds
+	return seconds
 end
 
 -- Plays file_path, crossfading with whatever was playing.
--- opts: fade_in, loop, start_position, duration_seconds, and on_finished(failed).
+-- opts: fade_in, fade_seconds, loop, start_position, duration_seconds, and on_finished(failed).
+-- fade_seconds sets this switch's crossfade instead of the Fade Length, as for the playback keys.
+-- The song's own fade at its end still takes the Fade Length.
 -- Returns false when playback is unavailable.
 function AudioClient.play(file_path, opts)
 	if not AudioClient.available() then
@@ -334,10 +337,11 @@ function AudioClient.play(file_path, opts)
 
 	-- Only a resume continues a parked song. A fresh pick of the same file starts it over, as the resume rules want.
 	local revived = opts.start_position and take_outgoing(file_path, opts.loop == true)
+	local switch_seconds = opts.fade_seconds or fade_seconds
 
 	if current and current.stream then
 		if opts.fade_in then
-			fade_out(current, fade_seconds)
+			fade_out(current, switch_seconds)
 		else
 			current.stream:destroy() -- A continuation follows a track that has already ended.
 		end
@@ -358,7 +362,7 @@ function AudioClient.play(file_path, opts)
 		stream = revived
 		stream:resume()
 		stream:set_gain(gain * level)
-		stream:fade_to(1, opts.fade_in and song_fade_seconds(song_duration(stream, loop, opts.duration_seconds)) or 0)
+		stream:fade_to(1, opts.fade_in and song_fade_seconds(song_duration(stream, loop, opts.duration_seconds), switch_seconds) or 0)
 		log(string.format("[player] continuing %s from %.1fs, where it faded out", file_path, stream:position()))
 	else
 		local open_opts = {
@@ -388,7 +392,7 @@ function AudioClient.play(file_path, opts)
 
 		if stream then
 			if opts.fade_in then
-				stream:fade_to(1, song_fade_seconds(song_duration(stream, loop, opts.duration_seconds)))
+				stream:fade_to(1, song_fade_seconds(song_duration(stream, loop, opts.duration_seconds), switch_seconds))
 			end
 		else
 			log(string.format("[player] %s could not be played: %s", file_path, tostring(err)))
@@ -424,9 +428,10 @@ function AudioClient.retarget(file_path, opts)
 end
 
 -- Fades the current track out quickly, for falling back to the game's music and for contexts without music.
-function AudioClient.stop()
+-- `seconds` sets the fade instead, as for the Pause key.
+function AudioClient.stop(seconds)
 	if current and current.stream then
-		fade_out(current, STOP_FADE_SECONDS)
+		fade_out(current, seconds or STOP_FADE_SECONDS)
 	end
 	current = nil
 	finished_elapsed = 0

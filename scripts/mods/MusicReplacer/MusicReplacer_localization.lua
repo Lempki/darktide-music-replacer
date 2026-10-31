@@ -76,7 +76,7 @@ local strings = {
 		en = "Restart Song",
 	},
 	restart_song_keybind_tooltip = {
-		en = "Crossfades to the start of the song playing now.",
+		en = "Jumps back to the start of the song playing now.",
 	},
 	pause_song_keybind = {
 		en = "Pause / Resume",
@@ -86,6 +86,16 @@ local strings = {
 			"The game's music stays silent while it is paused.\n\n" ..
 			"Next Song, Previous Song, and Restart Song also end the pause. " ..
 			"A new situation ends it too, and the paused song continues later like any song that was playing.",
+	},
+	key_fade_seconds = {
+		en = "Key Fade Length",
+	},
+	key_fade_seconds_tooltip = {
+		en = "How long the music crossfades when one of these keys changes the song, pauses it, or resumes it. " ..
+			"Fade Length still sets the fades when the situation changes and when a song ends by itself.\n\n" ..
+			"A key that starts the song playing now over always jumps to its start in a tenth of a second, " ..
+			"so two copies of the song never play over each other.\n\n" ..
+			"Set to " .. highlight("0") .. " to switch at once.",
 	},
 	-- The messages a key press shows. %s is the name of the song file.
 	control_next_song = {

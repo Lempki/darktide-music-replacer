@@ -1432,6 +1432,72 @@ describe("MusicReplacer.lua the Pause / Resume key", function()
 	end)
 end)
 
+describe("MusicReplacer.lua the Key Fade Length", function()
+	local function press(harness, control)
+		harness.mod[control]()
+		harness:tick(0.1)
+	end
+
+	it("crossfades a key's switch to another song over the Key Fade Length, 0.5 seconds by default", function()
+		local harness = in_hub()
+
+		press(harness, "next_song")
+		assert_equal(harness:last_play().opts.fade_seconds, 0.5)
+
+		harness:set_setting("key_fade_seconds", 3)
+		press(harness, "previous_song")
+		assert_equal(harness:last_play().opts.fade_seconds, 3)
+	end)
+
+	it("jumps to the start of the song playing now in a tenth of a second, whatever the Key Fade Length", function()
+		local harness = in_hub(nil, { settings = { key_fade_seconds = 5 } })
+
+		press(harness, "restart_song")
+
+		assert_equal(harness:last_play().opts.fade_seconds, 0.1)
+	end)
+
+	it("jumps to the start of a folder's only song on Next Song too", function()
+		local harness = in_hub({ hub = { { name = "only.mp3", duration = 200 } } })
+
+		press(harness, "next_song")
+
+		assert_equal(harness:last_play().opts.fade_seconds, 0.1)
+	end)
+
+	it("switches at once with a Key Fade Length of 0, also when starting the song over", function()
+		local harness = in_hub(nil, { settings = { key_fade_seconds = 0 } })
+
+		press(harness, "restart_song")
+		assert_equal(harness:last_play().opts.fade_seconds, 0)
+
+		press(harness, "next_song")
+		assert_equal(harness:last_play().opts.fade_seconds, 0)
+	end)
+
+	it("pauses and resumes over the Key Fade Length", function()
+		local harness = in_hub(nil, { settings = { key_fade_seconds = 2 } })
+		harness.client.position = 50
+		harness:tick(0.1)
+
+		press(harness, "pause_song")
+		assert_equal(harness.client.stop_seconds, 2)
+
+		press(harness, "pause_song")
+		assert_equal(harness:last_play().opts.fade_seconds, 2)
+		assert_equal(harness:last_play().opts.start_position, 50)
+	end)
+
+	it("leaves a situation change and a song's own end to the Fade Length", function()
+		local harness = in_hub(nil, { settings = { key_fade_seconds = 3 } })
+		assert_equal(harness:last_play().opts.fade_seconds, nil)
+
+		harness:finish_song(200, false)
+
+		assert_equal(harness:last_play().opts.fade_seconds, nil)
+	end)
+end)
+
 describe("MusicReplacer.lua turned off and on", function()
 	it("lets playback try again after giving up when turned back on or when Rescan is pressed", function()
 		local harness = in_hub()

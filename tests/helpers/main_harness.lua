@@ -117,9 +117,11 @@ local function new_audio_client()
 		return true
 	end
 
-	function module.stop()
+	-- `stop_seconds` keeps the last stop's own fade length, or nil for the default.
+	function module.stop(seconds)
 		client.current = nil
 		client.stops = client.stops + 1
+		client.stop_seconds = seconds
 	end
 
 	function module.duration()
