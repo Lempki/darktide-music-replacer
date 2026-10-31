@@ -234,16 +234,16 @@ describe("loudness.lua cache", function()
 	it("keeps the results in loudness.txt, so the next launch measures nothing again", function()
 		local Loudness, test = load_loudness({ ["audio/hub/a.mp3"] = 12, ["audio/hub/b.mp3"] = 0 })
 		Loudness.set_enabled(true)
-		Loudness.set_files(entries({ { "hub/a.mp3", "10:1:2" }, { "hub/b.mp3", "20:1:2" } }))
+		Loudness.set_files(entries({ { "hub/a.mp3", "10:1:2" }, { "hub/b.mp3", "200:1:2" } }))
 		measure_all(Loudness, "hub")
 
 		local cache = test.fs.files[CACHE]
-		assert_equal(cache:find("10:1:2\t-12.00\t0.50000\thub/a.mp3\n", 1, true) ~= nil, true)
-		assert_equal(cache:find("20:1:2\tsilent\t0.50000\thub/b.mp3\n", 1, true) ~= nil, true)
+		assert_equal(cache:find("10:1:2   -12.00  0.50000  hub/a.mp3\n", 1, true) ~= nil, true)
+		assert_equal(cache:find("200:1:2  silent  0.50000  hub/b.mp3\n", 1, true) ~= nil, true)
 
 		local Reloaded, retest = load_loudness({ ["audio/hub/a.mp3"] = 12, ["audio/hub/b.mp3"] = 0 }, cache)
 		Reloaded.set_enabled(true)
-		Reloaded.set_files(entries({ { "hub/a.mp3", "10:1:2" }, { "hub/b.mp3", "20:1:2" } }))
+		Reloaded.set_files(entries({ { "hub/a.mp3", "10:1:2" }, { "hub/b.mp3", "200:1:2" } }))
 		measure_all(Reloaded, "hub")
 
 		assert_deep_equal(retest.opened, {})
@@ -261,8 +261,26 @@ describe("loudness.lua cache", function()
 		measure_all(Loudness, "hub")
 
 		assert_deep_equal(test.opened, { "audio/hub/a.mp3" })
-		assert_equal(test.fs.files[CACHE]:find("11:1:3\t-16.00\t0.50000\thub/a.mp3\n", 1, true) ~= nil, true)
+		assert_equal(test.fs.files[CACHE]:find("11:1:3  -16.00  0.50000  hub/a.mp3\n", 1, true) ~= nil, true)
 		assert_equal(test.fs.files[CACHE]:find("hub/b.mp3", 1, true), nil)
+	end)
+
+	it("keeps a file name that starts with a space, and a song listed without a stamp, through loudness.txt", function()
+		local songs = { ["audio/hub/ a.mp3"] = 12, ["audio/hub/b.mp3"] = 12 }
+		local listed = entries({ { "hub/ a.mp3", "10:1:2" }, { "hub/b.mp3", "" } })
+		local Loudness, test = load_loudness(songs)
+		Loudness.set_enabled(true)
+		Loudness.set_files(listed)
+		measure_all(Loudness, "hub")
+
+		local Reloaded, retest = load_loudness(songs, test.fs.files[CACHE])
+		Reloaded.set_enabled(true)
+		Reloaded.set_files(listed)
+		measure_all(Reloaded, "hub")
+
+		assert_deep_equal(retest.opened, {})
+		assert_equal(Reloaded.is_measured("hub/ a.mp3"), true)
+		assert_equal(Reloaded.is_measured("hub/b.mp3"), true)
 	end)
 
 	it("measures a song again when its line in loudness.txt is broken or out of range", function()

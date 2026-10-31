@@ -40,7 +40,8 @@ local function new_stream(path, opts)
 end
 
 -- Returns a loaded audio_client.lua, the fake player, the streams it opened, the fake sliders, and the logged lines.
--- `levels` maps a file path to its own level, which is 1 for any other.
+-- `levels` maps a file path to its own measured level.
+-- Any other path is not measured and plays at level 1.
 local function load_client(levels)
 	local sliders = { option_master_slider = 80, options_music_slider = 50 }
 	local engine = FakeEngine.new({ user_settings = sliders })
@@ -88,6 +89,7 @@ local function load_client(levels)
 		player = player,
 		disk_path = function(file_path) return "audio/" .. file_path end,
 		level_of = function(file_path) return levels and levels[file_path] or 1 end,
+		is_measured = function(file_path) return levels ~= nil and levels[file_path] ~= nil end,
 	})
 
 	return AudioClient, player, streams, sliders, lines
@@ -736,6 +738,68 @@ describe("audio_client.lua volume", function()
 		AudioClient.refresh_levels()
 
 		assert_deep_equal(streams[1].gains, { 1, 0.5, 0.25 })
+	end)
+
+	it("reports whether the playing song's level came from a measurement, and nothing while no song plays", function()
+		local AudioClient = load_client({ ["hub/a.mp3"] = 0.5 })
+		assert_equal(select(4, AudioClient.levels()), nil)
+
+		AudioClient.play("hub/a.mp3", { fade_in = true })
+		assert_equal(select(4, AudioClient.levels()), true)
+
+		AudioClient.play("hub/b.mp3", { fade_in = true })
+		assert_equal(select(4, AudioClient.levels()), false)
+
+		AudioClient.stop()
+		assert_equal(select(4, AudioClient.levels()), nil)
+	end)
+
+	it("keeps a song not measured at its start reported as such until the levels are refreshed", function()
+		local levels = {}
+		local AudioClient = load_client(levels)
+		AudioClient.play("hub/a.mp3", { fade_in = true })
+
+		levels["hub/a.mp3"] = 0.5
+		local _, _, level, measured = AudioClient.levels()
+		assert_equal(level, 1)
+		assert_equal(measured, false)
+
+		AudioClient.refresh_levels()
+		_, _, level, measured = AudioClient.levels()
+		assert_equal(level, 0.5)
+		assert_equal(measured, true)
+	end)
+
+	it("keeps the song's level and whether it was measured when it plays on for another context", function()
+		local levels = {}
+		local AudioClient = load_client(levels)
+		AudioClient.play("hub/a.mp3", { fade_in = true })
+
+		levels["explore/a.mp3"] = 0.5
+		AudioClient.retarget("explore/a.mp3", {})
+
+		local _, _, level, measured = AudioClient.levels()
+		assert_equal(level, 1)
+		assert_equal(measured, false)
+	end)
+
+	it("gives a parked song that continues the level it has by then, and reports it as measured", function()
+		local levels = {}
+		local AudioClient, _, streams, sliders = load_client(levels)
+		sliders.option_master_slider = 100
+		sliders.options_music_slider = 100
+		AudioClient.play("explore/a.mp3", { fade_in = true })
+		AudioClient.play("combat/b.mp3", { fade_in = true })
+		AudioClient.update(2.1)
+
+		levels["explore/a.mp3"] = 0.5
+		AudioClient.play("explore/a.mp3", { fade_in = true, start_position = 93 })
+
+		local _, _, level, measured = AudioClient.levels()
+		assert_equal(#streams, 2)
+		assert_equal(level, 0.5)
+		assert_equal(measured, true)
+		assert_equal(streams[1].gains[#streams[1].gains], 0.5)
 	end)
 
 	it("opens a song during a menu at the menu volume", function()

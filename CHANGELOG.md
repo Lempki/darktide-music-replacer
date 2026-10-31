@@ -7,6 +7,7 @@ What changes for players in each release of Music Replacer. The format follows [
 ### Features
 
 * The debug overlay shows a Measuring row while Even Out Loudness has songs left to measure, with a bar and a count such as `12 / 40`. It counts only the songs that need measuring, not those measured before.
+* The debug overlay's Level row shows `not measured` instead of the song's level while Even Out Loudness is on and the song was not yet measured when it started. Such a song plays at its own level until its next start.
 
 ### Changes
 

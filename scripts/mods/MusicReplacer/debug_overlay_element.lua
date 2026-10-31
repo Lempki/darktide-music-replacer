@@ -42,7 +42,7 @@ local SEGMENT_GAP = 3
 
 -- The longest the song's time and level get, so the column they share keeps its width whatever they read.
 local LONGEST_TIME = "00:00 / 00:00"
-local LONGEST_LOUDNESS = "-00.0 dB"
+local LONGEST_LOUDNESS = "not measured"
 
 -- Building the view makes strings, so it is refreshed a few times a second, and only the meter moves every frame.
 local REFRESH_SECONDS = 0.25

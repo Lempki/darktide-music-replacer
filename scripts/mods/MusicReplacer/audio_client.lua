@@ -43,9 +43,10 @@ local STATS_LOG_SECONDS = 300
 local Player = nil
 local disk_path = function(file_path) return file_path end
 local level_of = function() return 1 end
+local is_measured = function() return true end
 local log = function() end
 
-local current = nil -- Fields: stream, file_path, loop, level, duration, on_finished, elapsed, end_fading.
+local current = nil -- Fields: stream, file_path, loop, level, measured, duration, on_finished, elapsed, end_fading.
 local outgoing = {} -- { stream, file_path, loop, level, parked_elapsed } for songs fading out or parked, after a switch or a stop.
 local finished_elapsed = 0 -- The last finished track's elapsed time, which on_finished reads through elapsed().
 local finished_duration = nil -- The last finished track's length, which on_finished reads through duration().
@@ -68,11 +69,13 @@ local used = false -- Set by the first play, so the stats only show once music h
 -- `options.player` is an initialized player.lua.
 -- `options.disk_path(file_path)` turns a library path into a path on disk.
 -- `options.level_of(file_path)` gives a song's own volume scale, 1 by default.
+-- `options.is_measured(file_path)` tells whether that scale comes from a measurement, true by default.
 function AudioClient.init(logger, options)
 	log = logger or log
 	Player = options.player
 	disk_path = options.disk_path or disk_path
 	level_of = options.level_of or level_of
+	is_measured = options.is_measured or is_measured
 end
 
 function AudioClient.available()
@@ -127,8 +130,9 @@ function AudioClient.duration()
 end
 
 -- The Custom Music Volume, the menu lowering where its fade is now, and the current song's own level, as linear scales.
+-- The fourth value tells whether the current song's level came from a measurement, and is nil while no song plays.
 function AudioClient.levels()
-	return volume, menu_level, current and current.level or 1
+	return volume, menu_level, current and current.level or 1, current and current.measured
 end
 
 -- How loud the music sounds now, as a share of full scale, for the debug overlay's meter.
@@ -202,6 +206,7 @@ end
 function AudioClient.refresh_levels()
 	if current then
 		current.level = level_of(current.file_path)
+		current.measured = is_measured(current.file_path)
 	end
 	for _, entry in ipairs(outgoing) do
 		entry.level = level_of(entry.file_path)
@@ -344,6 +349,7 @@ function AudioClient.play(file_path, opts)
 	current_master_slider, current_music_slider = read_sliders()
 	gain = current_gain()
 	local level = level_of(file_path)
+	local measured = is_measured(file_path)
 
 	local loop = opts.loop == true
 	local stream, err
@@ -394,6 +400,7 @@ function AudioClient.play(file_path, opts)
 		file_path = file_path,
 		loop = loop,
 		level = level,
+		measured = measured,
 		duration = opts.duration_seconds,
 		on_finished = opts.on_finished,
 		elapsed = 0,

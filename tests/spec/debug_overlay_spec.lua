@@ -130,6 +130,28 @@ describe("debug_overlay.lua view", function()
 		assert_equal(view.loudness, nil)
 	end)
 
+	it("says the song is not measured instead of its level while evening out plays it at its own level", function()
+		local DebugOverlay = load_overlay(new_constant_elements())
+		local snapshot = full_snapshot()
+		snapshot.song_level = 1
+		snapshot.song_measured = false
+
+		assert_equal(DebugOverlay.view(snapshot).loudness, "not measured")
+		assert_equal(DebugOverlay.text(snapshot),
+			"Combat (Custom)\n" ..
+			"Folder: combat\n" ..
+			"Song: Antagonist - Valfaris.mp3  1:23 / 4:25\n" ..
+			"Level: not measured")
+
+		snapshot.evening_out = false
+		assert_equal(DebugOverlay.view(snapshot).loudness, nil)
+		assert_equal(DebugOverlay.view(snapshot).level, "")
+
+		snapshot.evening_out = true
+		snapshot.song_measured = true
+		assert_equal(DebugOverlay.view(snapshot).loudness, "+0.0 dB")
+	end)
+
 	it("adds a row for the hold and the pending change, with how much of the hold is left", function()
 		local DebugOverlay = load_overlay(new_constant_elements())
 		local snapshot = full_snapshot()

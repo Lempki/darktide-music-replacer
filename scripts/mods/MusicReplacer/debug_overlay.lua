@@ -91,6 +91,18 @@ local function kind_of(status)
 	return "game"
 end
 
+-- The song's own level while Even Out Loudness is on, or nil.
+-- A song not measured when its level was set plays at its own level, and +0.0 dB would read as measured, so it says so instead.
+local function song_loudness(snapshot)
+	if not (snapshot.evening_out and snapshot.song) then
+		return nil
+	end
+	if snapshot.song_measured == false then
+		return "not measured"
+	end
+	return string.format("%+.1f dB", decibels(snapshot.song_level or 1))
+end
+
 -- The menu lowering while it is under way or done, and the song's own level while Even Out Loudness is on.
 -- The settings that stay the same are left out, so the line only speaks when something changes what you hear.
 local function level_words(snapshot)
@@ -103,8 +115,9 @@ local function level_words(snapshot)
 			words[#words + 1] = string.format("menu %d%%", percent(menu_level))
 		end
 	end
-	if snapshot.evening_out and snapshot.song then
-		words[#words + 1] = string.format("%+.1f dB", decibels(snapshot.song_level or 1))
+	local loudness = song_loudness(snapshot)
+	if loudness then
+		words[#words + 1] = loudness
 	end
 	return table.concat(words, ", ")
 end
@@ -183,9 +196,7 @@ function DebugOverlay.view(snapshot)
 	view.level = level_words(snapshot)
 	view.menu = snapshot.menu_open == true
 	view.evening_out = snapshot.evening_out == true
-	if snapshot.evening_out and snapshot.song then
-		view.loudness = string.format("%+.1f dB", decibels(snapshot.song_level or 1))
-	end
+	view.loudness = song_loudness(snapshot)
 
 	return view
 end

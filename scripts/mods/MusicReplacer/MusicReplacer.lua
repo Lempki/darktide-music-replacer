@@ -407,7 +407,7 @@ local function overlay_snapshot()
 	end
 
 	local hold, hold_seconds, hold_length = Context.hold()
-	local volume, menu_level, song_level = AudioClient.levels()
+	local volume, menu_level, song_level, song_measured = AudioClient.levels()
 	local song = AudioClient.is_playing() and playing_track and playing_track.file_path or nil
 
 	-- A situation set to Vanilla or Silence plays no folder, so it looks for no override either.
@@ -441,6 +441,7 @@ local function overlay_snapshot()
 		menu_open = Context.menu_open(),
 		menu_volume = mod:get("menu_volume") / 100,
 		song_level = song_level,
+		song_measured = song_measured,
 		evening_out = mod:get("normalize_loudness") == true,
 		measuring_done = measuring_done,
 		measuring_total = measuring_total,
@@ -506,7 +507,7 @@ mod.on_all_mods_loaded = function()
 	})
 	Loudness.set_enabled(mod:get("normalize_loudness"))
 	Library.on_listed(Loudness.set_files)
-	AudioClient.init(log, { player = Player, disk_path = Library.disk_path, level_of = Loudness.level })
+	AudioClient.init(log, { player = Player, disk_path = Library.disk_path, level_of = Loudness.level, is_measured = Loudness.is_measured })
 	AudioClient.set_volume(custom_volume())
 	AudioClient.set_fade_seconds(mod:get("fade_seconds"))
 	DebugOverlay.init(log, { snapshot = overlay_snapshot, meter = AudioClient.meter, create_element = create_overlay_element })

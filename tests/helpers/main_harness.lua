@@ -70,6 +70,7 @@ end
 
 -- A stand-in for audio_client.lua that records every play and stop, and the volume levels it was given.
 -- `available` turns playback off and on, and `position` is what AudioClient.position() reports.
+-- `song_measured` is what AudioClient.levels() reports about the song's level.
 local function new_audio_client()
 	local client = { plays = {}, stops = 0, available = true, position = 0, elapsed = 0, current = nil, shut_down = false, volume = nil, menu_volume = nil }
 
@@ -125,7 +126,7 @@ local function new_audio_client()
 	end
 
 	function module.levels()
-		return client.volume or 1, client.menu_volume or 1, 1
+		return client.volume or 1, client.menu_volume or 1, 1, client.song_measured
 	end
 
 	function module.meter()

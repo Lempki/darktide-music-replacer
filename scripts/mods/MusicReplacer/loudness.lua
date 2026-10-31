@@ -80,7 +80,10 @@ local function load_cache()
 	end
 
 	for line in text:gmatch("[^\r\n]+") do
-		local stamp, loudness_text, peak_text, file_path = line:match("^([^\t]*)\t([^\t]+)\t([^\t]+)\t(.+)$")
+		-- Columns are padded with spaces, and older files separate them with tabs.
+		-- The file name is taken after exactly one separator, so a name that starts with a space keeps it.
+		local stamp, loudness_text, peak_text, rest = line:match("^(%S*)%s+(%S+)%s+(%S+)(.*)$")
+		local file_path = rest and (rest:match("^\t(.+)$") or rest:match("^  (.+)$"))
 		local loudness = loudness_text ~= "silent" and tonumber(loudness_text) or false
 		local peak = tonumber(peak_text)
 
@@ -113,11 +116,19 @@ local function save_cache()
 	end
 	table.sort(file_paths)
 
+	-- Every column but the last has a fixed width, so the file reads as a table.
+	-- The file name comes last, since its length varies the most.
+	local stamp_width = 0
+	for _, file_path in ipairs(file_paths) do
+		stamp_width = math.max(stamp_width, #results[file_path].stamp)
+	end
+	local line_format = "%-" .. stamp_width .. "s  %6s  %.5f  %s\n"
+
 	file:write(CACHE_HEADER)
 	for _, file_path in ipairs(file_paths) do
 		local result = results[file_path]
 		local loudness = result.loudness and string.format("%.2f", result.loudness) or "silent"
-		file:write(string.format("%s\t%s\t%.5f\t%s\n", result.stamp, loudness, result.peak, file_path))
+		file:write(string.format(line_format, result.stamp, loudness, result.peak, file_path))
 	end
 	file:close()
 end

@@ -778,6 +778,13 @@ describe("MusicReplacer.lua debug overlay", function()
 		assert_equal(snapshot.measuring_total, 40)
 	end)
 
+	it("reports whether the playing song's level came from a measurement", function()
+		local harness = in_hub()
+		harness.client.song_measured = false
+
+		assert_equal(harness.overlay.options.snapshot().song_measured, false)
+	end)
+
 	it("leaves out the measuring progress while nothing is measured", function()
 		local harness = in_hub()
 
