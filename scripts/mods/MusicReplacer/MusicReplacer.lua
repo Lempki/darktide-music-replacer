@@ -64,6 +64,9 @@ local emptied = {}
 -- The custom track AudioClient was last asked to play, so a context change can remember where it stopped.
 local playing_track = nil -- Its fields are context_name, file_path, duration, is_only_file, and position, its last known position.
 
+-- The songs that played earlier in the current situation, oldest first, which the Previous Song key goes back through.
+local played_before = {}
+
 -- The song that was playing when playback stopped working, as when the only headset is unplugged: context_name, file_path, position.
 -- It continues where it was once playback works again, if its context is still the one playing.
 local lost_track = nil
@@ -213,6 +216,11 @@ local function track_opts(context_name, folder, track)
 				quick_ends[folder] = 0
 			end
 
+			-- A file that could not play is left out, so Previous Song never goes back to it.
+			if not failed then
+				played_before[#played_before + 1] = track.file_path
+			end
+
 			play_context(context_name, false)
 		end,
 	}
@@ -239,6 +247,8 @@ play_context = function(context_name, is_new_context)
 	if is_new_context then
 		remember_playing_track(context_name)
 		ResumePoints.enter(context_name)
+		-- Previous Song stays within one situation, and a switch to an override folder or a replay starts the situation afresh too.
+		played_before = {}
 	end
 
 	current_folder = nil
@@ -429,7 +439,40 @@ end
 
 -- True while one of the player's songs plays for the current situation, the only music the keys act on.
 local function custom_song_playing()
-	return enabled and current_folder ~= nil and AudioClient.available() and AudioClient.is_playing()
+	return enabled and current_folder ~= nil and playing_track ~= nil and AudioClient.available() and AudioClient.is_playing()
+end
+
+local function song_name(file_path)
+	return file_path:match("[^/]+$")
+end
+
+-- `control` names the key in the log.
+local function say_no_song(control)
+	log(string.format("[control] %s: none of your songs plays", control))
+	notify_control("control_no_song")
+end
+
+-- Crossfades to `file_path` from the folder playing now.
+-- No start position, so even the song playing now starts over in a fresh stream instead of reviving the copy that fades out.
+local function play_manual_pick(file_path, duration, is_only_file)
+	play_track(current_context, current_folder, { file_path = file_path, duration = duration, is_only_file = is_only_file, fade_in = true })
+end
+
+local function restart_playing_song()
+	play_manual_pick(playing_track.file_path, playing_track.duration, playing_track.is_only_file)
+	notify_control("control_restart_song", song_name(playing_track.file_path))
+end
+
+-- The latest earlier song of this situation that its folder still holds, taken off the list, or nil.
+-- Songs a rescan removed since they played are passed over.
+local function take_previous_song()
+	while #played_before > 0 do
+		local file_path, duration, is_only_file = Library.find_file(current_folder, table.remove(played_before))
+		if file_path then
+			return file_path, duration, is_only_file
+		end
+	end
+	return nil
 end
 
 -- The Next Song key: crossfades to another song from the folder playing now, or starts a folder's only song over.
@@ -437,20 +480,55 @@ end
 mod.next_song = function()
 	local file_path, duration, is_only_file = nil, nil, nil
 	if custom_song_playing() then
-		file_path, duration, is_only_file = Library.pick_file(current_folder, playing_track and playing_track.file_path)
+		file_path, duration, is_only_file = Library.pick_file(current_folder, playing_track.file_path)
 	end
 
 	if not file_path then
-		log("[control] next song: none of your songs plays")
-		notify_control("control_no_song")
+		say_no_song("next song")
 		return
 	end
 
 	log(string.format("[control] %s: next song", current_context))
+	played_before[#played_before + 1] = playing_track.file_path
+	play_manual_pick(file_path, duration, is_only_file)
+	notify_control("control_next_song", song_name(file_path))
+end
 
-	-- No start position, so even a folder's only song starts over in a fresh stream instead of reviving the copy that fades out.
-	play_track(current_context, current_folder, { file_path = file_path, duration = duration, is_only_file = is_only_file, fade_in = true })
-	notify_control("control_next_song", file_path:match("[^/]+$"))
+mod.restart_song = function()
+	if not custom_song_playing() then
+		say_no_song("restart song")
+		return
+	end
+
+	log(string.format("[control] %s: restart song", current_context))
+	restart_playing_song()
+end
+
+-- Previous Song goes back only within this many seconds into a song, and later starts the song over, as most music players do.
+local PREVIOUS_SONG_SECONDS = 3
+
+-- The Previous Song key: goes back to the song that played before in this situation, or starts the song playing now over.
+-- Going back does not add the song it leaves to the list, so pressing it again keeps going back.
+mod.previous_song = function()
+	if not custom_song_playing() then
+		say_no_song("previous song")
+		return
+	end
+
+	local file_path, duration, is_only_file = nil, nil, nil
+	if AudioClient.position() < PREVIOUS_SONG_SECONDS then
+		file_path, duration, is_only_file = take_previous_song()
+	end
+
+	if not file_path then
+		log(string.format("[control] %s: previous song, starting this one over", current_context))
+		restart_playing_song()
+		return
+	end
+
+	log(string.format("[control] %s: previous song", current_context))
+	play_manual_pick(file_path, duration, is_only_file)
+	notify_control("control_previous_song", song_name(file_path))
 end
 
 -- ###########################################################################

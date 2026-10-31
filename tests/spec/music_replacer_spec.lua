@@ -1110,6 +1110,178 @@ describe("MusicReplacer.lua the Next Song key", function()
 	end)
 end)
 
+describe("MusicReplacer.lua the Previous Song key", function()
+	local THREE_HUB_SONGS = { hub = { { name = "a.mp3", duration = 200 }, { name = "b.mp3", duration = 180 }, { name = "c.mp3", duration = 160 } } }
+
+	local function press(harness, control)
+		harness.mod[control]()
+		harness:tick(0.1)
+	end
+
+	it("crossfades back to the song Next Song skipped, from its start, and names it", function()
+		local harness = in_hub()
+		press(harness, "next_song")
+		assert_equal(harness:playing(), "hub/b.mp3")
+
+		press(harness, "previous_song")
+
+		local play = harness:last_play()
+		assert_equal(play.file_path, "hub/a.mp3")
+		assert_equal(play.opts.fade_in, true)
+		assert_equal(play.opts.start_position, nil)
+		assert_equal(play.opts.duration_seconds, 200)
+		assert_equal(harness:last_notification(), "<control_previous_song: a.mp3>")
+	end)
+
+	it("goes back to the song that played through before the song playing now", function()
+		local harness = in_hub()
+		harness:finish_song(200, false)
+		assert_equal(harness:playing(), "hub/b.mp3")
+
+		press(harness, "previous_song")
+
+		assert_equal(harness:playing(), "hub/a.mp3")
+	end)
+
+	it("keeps going back on each press, then starts the situation's first song over", function()
+		local harness = in_hub(THREE_HUB_SONGS)
+		press(harness, "next_song")
+		press(harness, "next_song")
+		assert_equal(harness:playing(), "hub/c.mp3")
+
+		press(harness, "previous_song")
+		assert_equal(harness:playing(), "hub/b.mp3")
+		press(harness, "previous_song")
+		assert_equal(harness:playing(), "hub/a.mp3")
+
+		local plays = #harness.client.plays
+		press(harness, "previous_song")
+		assert_equal(#harness.client.plays, plays + 1)
+		assert_equal(harness:playing(), "hub/a.mp3")
+		assert_equal(harness:last_notification(), "<control_restart_song: a.mp3>")
+	end)
+
+	it("starts the song playing now over once it is 3 seconds in, and goes back on the next press", function()
+		local harness = in_hub()
+		press(harness, "next_song")
+		harness.client.position = 3
+
+		press(harness, "previous_song")
+		assert_equal(harness:last_play().file_path, "hub/b.mp3")
+		assert_equal(harness:last_play().opts.start_position, nil)
+		assert_equal(harness:last_notification(), "<control_restart_song: b.mp3>")
+
+		harness.client.position = 0
+		press(harness, "previous_song")
+		assert_equal(harness:playing(), "hub/a.mp3")
+	end)
+
+	it("starts the song over when it is the situation's first", function()
+		local harness = in_hub()
+		local plays = #harness.client.plays
+
+		press(harness, "previous_song")
+
+		assert_equal(#harness.client.plays, plays + 1)
+		assert_equal(harness:last_play().file_path, "hub/a.mp3")
+		assert_equal(harness:last_play().opts.fade_in, true)
+		assert_equal(harness:last_notification(), "<control_restart_song: a.mp3>")
+	end)
+
+	it("does not go back past a situation change", function()
+		local harness = in_mission()
+		press(harness, "next_song")
+		harness:state("music_combat", "normal")
+		harness:settle()
+		assert_equal(harness:playing(), "combat/c.mp3")
+
+		press(harness, "previous_song")
+
+		assert_equal(harness:playing(), "combat/c.mp3")
+		assert_equal(harness:last_notification(), "<control_restart_song: c.mp3>")
+	end)
+
+	it("passes over an earlier song that a rescan removed", function()
+		local harness = in_hub(THREE_HUB_SONGS)
+		press(harness, "next_song")
+		press(harness, "next_song")
+		table.remove(harness.library.files.hub, 2)
+
+		press(harness, "previous_song")
+
+		assert_equal(harness:playing(), "hub/a.mp3")
+	end)
+
+	it("never goes back to a song that could not play", function()
+		local harness = in_hub()
+		harness:finish_song(0, true)
+		assert_equal(harness:playing(), "hub/b.mp3")
+
+		press(harness, "previous_song")
+
+		assert_equal(harness:playing(), "hub/b.mp3")
+		assert_equal(harness:last_notification(), "<control_restart_song: b.mp3>")
+	end)
+
+	it("says no song of yours is playing, and plays nothing, in a situation set to Vanilla", function()
+		local harness = in_hub(nil, { settings = { source_hub = "game" } })
+
+		press(harness, "previous_song")
+
+		assert_equal(harness:last_play(), nil)
+		assert_equal(harness:last_notification(), "<control_no_song>")
+	end)
+end)
+
+describe("MusicReplacer.lua the Restart Song key", function()
+	local function press_restart(harness)
+		harness.mod.restart_song()
+		harness:tick(0.1)
+	end
+
+	it("crossfades to the start of the song playing now, however far in it is, and names it", function()
+		local harness = in_hub()
+		harness.client.position = 120
+		local plays = #harness.client.plays
+
+		press_restart(harness)
+
+		assert_equal(#harness.client.plays, plays + 1)
+		local play = harness:last_play()
+		assert_equal(play.file_path, "hub/a.mp3")
+		assert_equal(play.opts.fade_in, true)
+		assert_equal(play.opts.start_position, nil)
+		assert_equal(play.opts.duration_seconds, 200)
+		assert_equal(harness:last_notification(), "<control_restart_song: a.mp3>")
+	end)
+
+	it("keeps a folder's only song looping", function()
+		local harness = in_hub({ hub = { { name = "only.mp3", duration = 200 } } })
+
+		press_restart(harness)
+
+		assert_equal(harness:last_play().opts.loop, true)
+	end)
+
+	it("adds nothing for Previous Song to go back to", function()
+		local harness = in_hub()
+		press_restart(harness)
+
+		harness.mod.previous_song()
+
+		assert_equal(harness:last_notification(), "<control_restart_song: a.mp3>")
+	end)
+
+	it("says no song of yours is playing, and plays nothing, in a situation set to Silence", function()
+		local harness = in_hub(nil, { settings = { source_hub = "silence" } })
+
+		press_restart(harness)
+
+		assert_equal(harness:last_play(), nil)
+		assert_equal(harness:last_notification(), "<control_no_song>")
+	end)
+end)
+
 describe("MusicReplacer.lua turned off and on", function()
 	it("lets playback try again after giving up when turned back on or when Rescan is pressed", function()
 		local harness = in_hub()

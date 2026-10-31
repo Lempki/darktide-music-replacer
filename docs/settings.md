@@ -17,6 +17,8 @@ Keys that control the song playing now. Every key starts unbound. DMF runs keybi
 | Setting | Default | What it does |
 |---|---|---|
 | Next Song | Unbound | Crossfades to another song from the folder playing now, and the message names it. With one song in the folder, it starts that song over. It only changes the song of the situation playing now, so the next situation still starts its own pick, and the skipped song does not continue later. |
+| Previous Song | Unbound | Within the first 3 seconds of a song, crossfades back to the song that played before it in this situation, and each further press goes back one more. Later into a song, or with no earlier song, it starts the song playing now over. A new situation starts with no earlier songs, and a song that could not play or that a rescan removed is passed over. |
+| Restart Song | Unbound | Crossfades to the start of the song playing now. |
 
 ## Music per Situation
 

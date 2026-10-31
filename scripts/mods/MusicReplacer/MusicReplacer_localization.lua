@@ -63,9 +63,30 @@ local strings = {
 			"The next situation still starts its own pick, and the skipped song does not continue later. " ..
 			"DMF runs keybinds even while you type in chat, so a key that is not a letter, such as one on the numpad or an F-key, works best.",
 	},
+	previous_song_keybind = {
+		en = "Previous Song",
+	},
+	previous_song_keybind_tooltip = {
+		en = "Within the first 3 seconds of a song, crossfades back to the song that played before it in this situation. " ..
+			"Pressing it again keeps going back.\n\n" ..
+			"Later into a song, or with no earlier song, it starts the song playing now over. " ..
+			"A new situation starts with no earlier songs.",
+	},
+	restart_song_keybind = {
+		en = "Restart Song",
+	},
+	restart_song_keybind_tooltip = {
+		en = "Crossfades to the start of the song playing now.",
+	},
 	-- The messages a key press shows. %s is the name of the song file.
 	control_next_song = {
 		en = "Next song: %s",
+	},
+	control_previous_song = {
+		en = "Previous song: %s",
+	},
+	control_restart_song = {
+		en = "Restarted: %s",
 	},
 	control_no_song = {
 		en = "No song of yours is playing",
