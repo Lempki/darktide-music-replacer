@@ -34,6 +34,8 @@ The build stamps the packaged `info.json` with the commit and build time, and th
 
 The repository follows the shared conventions in [dev-standards](https://github.com/Lempki/dev-standards). Its hooks keep the managed blocks in `.editorconfig`, `.gitattributes`, and `.gitignore` in sync, and check comments and Markdown against the prose rules. They recognize this as a Lua repository by its `.luacheckrc`, so it needs no settings file. Install the hooks once per clone with `uvx pre-commit install`. CI runs dev-standards' Lua workflow on every push to `main` and every pull request: the hooks, luacheck, and the specs under LuaJIT.
 
+A change that players notice adds a line under Unreleased in [CHANGELOG.md](../CHANGELOG.md), in its commit. A release renames Unreleased to its version and date, and the same text goes to the mod's Nexus changelog.
+
 ## Contributing
 
 Pull requests and [issues](https://github.com/Lempki/darktide-music-replacer/issues) are welcome. Before you open a pull request, run the checks under [Building and testing](#building-and-testing).
@@ -116,6 +118,7 @@ darktide-music-replacer/
 ├── .gitignore                           # Its managed block is synced from dev-standards.
 ├── .luacheckrc                          # luacheck settings: LuaJIT, and the globals the game and DMF provide.
 ├── .pre-commit-config.yaml              # The dev-standards hooks and file hygiene checks.
+├── CHANGELOG.md                         # What changes for players in each release.
 ├── LICENSE                              # GPLv3. It stays in the repository and is not packaged into the ZIP.
 ├── MusicReplacer.mod
 ├── README.md                            # The player guide, with links to these docs.
