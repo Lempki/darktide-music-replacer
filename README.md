@@ -25,13 +25,17 @@ Music Replacer is a mod for Warhammer 40,000: Darktide that plays your own music
 * It does not play your music during mission intros and cutscenes. The game's music plays there.
 * It does not download or stream anything. It plays only the files in its own audio folders.
 
+## How it plays your music
+
+Music Replacer needs no FFmpeg, no extra program, and no other mod beyond the mod loader and DMF. It plays your songs inside the game itself, through two parts of Windows: Media Foundation, Windows' own media framework, decodes the files, and XAudio2, the audio engine Windows provides for games, plays them. That is what lets it crossfade, follow the volume sliders, and lower the music in menus without ever restarting a song. The [development notes](docs/development.md#why-the-mod-uses-windows-own-audio) explain why.
+
 ## Requirements
 
 * [Darktide Mod Loader](https://www.nexusmods.com/warhammer40kdarktide/mods/19).
 * [Darktide Mod Framework](https://www.nexusmods.com/warhammer40kdarktide/mods/8) (DMF).
 * `MusicReplacer` listed below `dmf` in `mod_load_order.txt`, in the game's `mods` folder.
 
-On a Windows "N" edition, install Microsoft's free Media Feature Pack, which provides the audio decoder the mod uses. Without it, the mod cannot play your songs, and the game's music plays as usual.
+Windows "N" editions leave out Media Foundation, so on one, install Microsoft's free Media Feature Pack, which adds it. Without it, the mod cannot play your songs, and the game's music plays as usual.
 
 ## Quickstart
 
