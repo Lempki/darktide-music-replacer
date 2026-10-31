@@ -52,6 +52,25 @@ local strings = {
 			"Every mission and hub visit starts with fresh songs.",
 	},
 
+	playback_controls = {
+		en = "Playback Controls",
+	},
+	next_song_keybind = {
+		en = "Next Song",
+	},
+	next_song_keybind_tooltip = {
+		en = "Crossfades to another song from the folder playing now. With one song in the folder, it starts that song over.\n\n" ..
+			"The next situation still starts its own pick, and the skipped song does not continue later. " ..
+			"DMF runs keybinds even while you type in chat, so a key that is not a letter, such as one on the numpad or an F-key, works best.",
+	},
+	-- The messages a key press shows. %s is the name of the song file.
+	control_next_song = {
+		en = "Next song: %s",
+	},
+	control_no_song = {
+		en = "No song of yours is playing",
+	},
+
 	music_per_situation = {
 		en = "Music per Situation",
 	},

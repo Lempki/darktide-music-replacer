@@ -1,5 +1,5 @@
 -- The mod options, grouped and ordered by how often players need them.
--- Their songs come first, then what plays where and how loud, then fine timing, and troubleshooting last.
+-- Their songs and the keys that control them come first, then what plays where and how loud, then fine timing, and troubleshooting last.
 -- Every setting names its tooltip: DMF formats named strings, turning "%%" into "%", but shows an implicit description's "%%" as it is.
 
 local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/contexts")
@@ -60,6 +60,23 @@ return {
 						range = { 0, 10 },
 						decimals_number = 1,
 						unit_text = "seconds_unit",
+					},
+				},
+			},
+			{
+				-- An empty default leaves a key unbound, since DMF does not check whether another mod already uses a key.
+				-- DMF calls each key's function once per press.
+				setting_id = "playback_controls",
+				type = "group",
+				sub_widgets = {
+					{
+						setting_id = "next_song_keybind",
+						type = "keybind",
+						tooltip = "next_song_keybind_tooltip",
+						default_value = {},
+						keybind_trigger = "pressed",
+						keybind_type = "function_call",
+						function_name = "next_song",
 					},
 				},
 			},

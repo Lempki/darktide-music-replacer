@@ -367,6 +367,32 @@ describe("library.lua file selection", function()
 		end
 	end)
 
+	it("never picks the song playing now, even a resumed one that was not the last pick", function()
+		local Library = listed_library({ hub = { "a.mp3", "b.mp3" } })
+		local first = Library.pick_file("hub")
+		local resumed = first == "hub/a.mp3" and "hub/b.mp3" or "hub/a.mp3"
+
+		assert_equal(Library.pick_file("hub", resumed), first)
+	end)
+
+	it("avoids both the song playing now and the last pick when a third file is left", function()
+		math.randomseed(1)
+		local Library = listed_library({ hub = { "a.mp3", "b.mp3", "c.mp3" } })
+
+		for _ = 1, 20 do
+			local last = Library.pick_file("hub")
+			local playing = last == "hub/a.mp3" and "hub/b.mp3" or "hub/a.mp3"
+			local file_path = Library.pick_file("hub", playing)
+			assert_equal(file_path ~= playing and file_path ~= last, true, "picked " .. file_path)
+		end
+	end)
+
+	it("still picks a folder's only song while it plays", function()
+		local Library = listed_library({ hub = { "a.mp3" } })
+
+		assert_deep_equal({ Library.pick_file("hub", "hub/a.mp3") }, { "hub/a.mp3", nil, true })
+	end)
+
 	it("alternates between two files", function()
 		local Library = listed_library({ hub = { "a.mp3", "b.mp3" } })
 		local picks = {}

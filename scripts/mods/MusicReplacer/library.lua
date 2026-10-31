@@ -318,30 +318,32 @@ local function usable_entries(context_name)
 	return usable
 end
 
+-- `entries` without `file_path`, or `entries` itself when that would leave none.
+local function without_file(entries, file_path)
+	local kept = {}
+	for _, entry in ipairs(entries) do
+		if entry.file_path ~= file_path then
+			kept[#kept + 1] = entry
+		end
+	end
+	return #kept > 0 and kept or entries
+end
+
 -- Returns file_path, duration_seconds and is_only_file, or nil if no file is available.
 -- Nil means the folder is missing, empty or not yet listed, or no listed file exists any more.
 -- The caller should fall back to the game's music on nil.
 -- duration is nil until the file has been measured, or when it could not be.
 -- is_only_file flags a folder with exactly one usable file, which loops.
--- With two or more usable files, the pick is random and never the file returned last time.
-function Library.pick_file(context_name)
+-- With two or more usable files, the pick is random and never `playing`, the song that plays now.
+-- It is also never the file returned last time, as long as another file is left.
+-- A resumed song is found rather than picked, so `playing` is what keeps a pick from starting it over.
+function Library.pick_file(context_name, playing)
 	local usable = usable_entries(context_name)
 	if not usable then
 		return nil
 	end
 
-	local previous = last_picked[context_name]
-	local pool = usable
-
-	if #usable > 1 then
-		pool = {}
-		for _, entry in ipairs(usable) do
-			if entry.file_path ~= previous then
-				pool[#pool + 1] = entry
-			end
-		end
-	end
-
+	local pool = without_file(without_file(usable, playing), last_picked[context_name])
 	local picked = pool[math.random(1, #pool)]
 
 	last_picked[context_name] = picked.file_path

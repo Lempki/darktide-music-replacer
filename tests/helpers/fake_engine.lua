@@ -93,9 +93,18 @@ local function new_mod(engine)
 		return value
 	end
 
-	-- DMF returns the string in the game's language. The fake marks the ID instead, so a spec can see which was asked for.
-	function mod:localize(text_id)
-		return "<" .. text_id .. ">"
+	-- DMF returns the string in the game's language, formatted with any arguments.
+	-- The fake marks the ID and the arguments instead, so a spec can see which was asked for.
+	function mod:localize(text_id, ...)
+		if select("#", ...) == 0 then
+			return "<" .. text_id .. ">"
+		end
+
+		local arguments = {}
+		for index = 1, select("#", ...) do
+			arguments[index] = tostring(select(index, ...))
+		end
+		return "<" .. text_id .. ": " .. table.concat(arguments, ", ") .. ">"
 	end
 
 	function mod:get_metadata(key)
@@ -124,7 +133,8 @@ local function new_mod(engine)
 	end
 
 	-- Like DMF, formats the message with its arguments, and replaces a message that fails to format with the formatting error.
-	for _, level in ipairs({ "echo", "info", "warning", "error" }) do
+	-- notify is DMF's toast notification, which it formats the same way.
+	for _, level in ipairs({ "echo", "info", "warning", "error", "notify" }) do
 		mod[level] = function(_, message, ...)
 			local ok, text = pcall(string.format, tostring(message), ...)
 			engine.messages[#engine.messages + 1] = { level = level, text = ok and text or "(logging) string.format: " .. text }

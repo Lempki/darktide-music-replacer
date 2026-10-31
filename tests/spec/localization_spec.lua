@@ -40,8 +40,9 @@ describe("MusicReplacer_localization.lua", function()
 		local strings = load_strings()
 		local failures = {}
 
+		-- The key messages take a song name, which the format ignores for every other string.
 		for text_id, translations in pairs(strings) do
-			local ok, err = pcall(string.format, translations.en)
+			local ok, err = pcall(string.format, translations.en, "song.mp3")
 			if not ok then
 				failures[#failures + 1] = text_id .. ": " .. tostring(err)
 			end

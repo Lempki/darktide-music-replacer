@@ -988,6 +988,128 @@ describe("MusicReplacer.lua during a change that is still settling", function()
 	end)
 end)
 
+describe("MusicReplacer.lua the Next Song key", function()
+	-- Presses the key the way DMF does, then lets the mod update once.
+	local function press_next(harness)
+		harness.mod.next_song()
+		harness:tick(0.1)
+	end
+
+	it("crossfades to another song from the folder playing now, from its start, and names it", function()
+		local harness = in_hub()
+		assert_equal(harness:playing(), "hub/a.mp3")
+
+		press_next(harness)
+
+		local play = harness:last_play()
+		assert_equal(play.file_path, "hub/b.mp3")
+		assert_equal(play.opts.fade_in, true)
+		assert_equal(play.opts.start_position, nil)
+		assert_equal(play.opts.duration_seconds, 180)
+		assert_equal(harness:last_notification(), "<control_next_song: b.mp3>")
+		assert_equal(harness.overlay.options.snapshot().song, "b.mp3")
+	end)
+
+	it("starts a folder's only song over in a fresh stream", function()
+		local harness = in_hub({ hub = { { name = "only.mp3", duration = 200 } } })
+		local plays = #harness.client.plays
+
+		press_next(harness)
+
+		assert_equal(#harness.client.plays, plays + 1)
+		local play = harness:last_play()
+		assert_equal(play.file_path, "hub/only.mp3")
+		assert_equal(play.opts.start_position, nil)
+		assert_equal(play.opts.loop, true)
+		assert_equal(play.opts.fade_in, true)
+		assert_equal(harness:last_notification(), "<control_next_song: only.mp3>")
+	end)
+
+	it("moves on to the folder's next song as usual once the new song ends", function()
+		local harness = in_hub()
+		press_next(harness)
+
+		harness:finish_song(170, false)
+
+		local play = harness:last_play()
+		assert_equal(play.file_path, "hub/a.mp3")
+		assert_equal(play.opts.fade_in, false)
+	end)
+
+	it("keeps no resume point for the skipped song, so the situation resumes the song that replaced it", function()
+		local harness = in_mission()
+		assert_equal(harness:playing(), "explore/x.mp3")
+		press_next(harness)
+		assert_equal(harness:playing(), "explore/y.mp3")
+		harness.client.position = 42
+
+		harness:state("music_combat", "normal")
+		harness:settle()
+		harness:state("music_combat", "None")
+		harness:wait(8)
+		harness:settle()
+
+		assert_equal(harness:playing(), "explore/y.mp3")
+		assert_equal(harness:last_play().opts.start_position, 42)
+	end)
+
+	it("leaves a later situation change its own pick", function()
+		local harness = in_mission()
+		press_next(harness)
+
+		harness:state("music_combat", "normal")
+		harness:settle()
+
+		local play = harness:last_play()
+		assert_equal(play.file_path, "combat/c.mp3")
+		assert_equal(play.opts.fade_in, true)
+		assert_equal(play.opts.start_position, nil)
+	end)
+
+	it("acts on the song playing now while a change is still settling", function()
+		local harness = in_mission({ combat_hold_seconds = 0 })
+		harness:state("music_combat", "normal")
+
+		harness.mod.next_song()
+		assert_equal(harness:playing(), "explore/y.mp3")
+
+		harness:settle()
+		assert_equal(harness:playing(), "combat/c.mp3")
+	end)
+
+	it("says no song of yours is playing, and plays nothing, in a situation set to Vanilla or Silence", function()
+		for _, source in ipairs({ "game", "silence" }) do
+			local harness = in_hub(nil, { settings = { source_hub = source } })
+
+			press_next(harness)
+
+			assert_equal(harness:last_play(), nil)
+			assert_equal(harness:last_notification(), "<control_no_song>")
+		end
+	end)
+
+	it("says no song of yours is playing, and plays nothing, while the situation's folder has no songs", function()
+		local harness = in_hub({ hub = {} })
+
+		press_next(harness)
+
+		assert_equal(harness:last_play(), nil)
+		assert_equal(harness:last_notification(), "<control_no_song>")
+	end)
+
+	it("says no song of yours is playing, and changes nothing, while playback does not work", function()
+		local harness = in_hub()
+		local plays = #harness.client.plays
+		harness.client.available = false
+		harness:tick(0.1)
+
+		press_next(harness)
+
+		assert_equal(#harness.client.plays, plays)
+		assert_equal(harness:last_notification(), "<control_no_song>")
+	end)
+end)
+
 describe("MusicReplacer.lua turned off and on", function()
 	it("lets playback try again after giving up when turned back on or when Rescan is pressed", function()
 		local harness = in_hub()

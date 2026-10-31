@@ -1,6 +1,6 @@
 # Settings
 
-Every setting of Music Replacer, with its default. The settings are in the in-game mod options under Music Replacer, in seven groups, in the order the menu shows them.
+Every setting of Music Replacer, with its default. The settings are in the in-game mod options under Music Replacer, in eight groups, in the order the menu shows them.
 
 ## Playback
 
@@ -9,6 +9,14 @@ Every setting of Music Replacer, with its default. The settings are in the in-ga
 | Rescan Audio Folders | (button) | Lists the audio folders again at once, and checks every song again. The mod notices added, removed, and replaced files by itself, and lists the folders again 3 seconds after files stop changing. Use this button on drives where Windows cannot report changes, such as some network drives, and to retry a song that would not play. It also lets the mod try playback again after it has given up. It does not measure loudness again. |
 | Resume Songs | On | Explore, combat, Mortis Trials, and Expedition fight and safe room songs continue where they stopped when their music comes back. Horde, boss, and event songs also continue after an interruption by music that outranks them, such as a boss during a horde or a last stand during an event, as long as that horde, fight, or event lasts. A new horde, boss fight, or event gets a new pick. A song that stopped in its last 10 seconds is not continued. A new song is picked once one ends on its own. Every mission and hub visit starts with fresh songs. A Mission Briefing song that the preparation screen interrupts continues in the briefing after it. |
 | Fade Length | 2 seconds | How long the music crossfades when the situation changes, and how long a song fades out at its end, from 0 to 10 seconds. A song that does not loop, which is any song not alone in its folder, starts its end fade that long before it ends. A song shorter than two fades fades in over its first half and out over its second. A song that gives way to the game's music or to silence always fades out over half a second. Set it to 0 to switch at once. |
+
+## Playback Controls
+
+Keys that control the song playing now. Every key starts unbound. DMF runs keybinds even while you type in chat, so a key that is not a letter, such as one on the numpad or an F-key, works best. Each press shows a short message. A press while none of your songs plays, as in a situation set to Vanilla or Silence or with an empty folder, says so and changes nothing.
+
+| Setting | Default | What it does |
+|---|---|---|
+| Next Song | Unbound | Crossfades to another song from the folder playing now, and the message names it. With one song in the folder, it starts that song over. It only changes the song of the situation playing now, so the next situation still starts its own pick, and the skipped song does not continue later. |
 
 ## Music per Situation
 

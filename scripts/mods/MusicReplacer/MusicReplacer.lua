@@ -152,7 +152,7 @@ local function choose_file(folder, resume_path, resume_position)
 		end
 	end
 
-	return Library.pick_file(folder)
+	return Library.pick_file(folder, playing_track and playing_track.file_path)
 end
 
 -- Stops any custom song and hands the music back to the game.
@@ -165,9 +165,77 @@ local function hand_back(status)
 	Suppression.release()
 end
 
+local play_context
+
+-- The AudioClient.play options for `track` from `folder`, whose on_finished plays the context's next song.
+-- `track` holds file_path, duration, is_only_file, start_position, and fade_in.
+local function track_opts(context_name, folder, track)
+	local duration = track.duration
+
+	-- A single file loops from its first play, with no seam, so it needs no end fade.
+	return {
+		duration_seconds = not track.is_only_file and duration or nil,
+		fade_in = track.fade_in,
+		loop = track.is_only_file,
+		start_position = track.start_position,
+		on_finished = function(failed)
+			-- A loop only gets here if its file could not be played.
+			-- After a context change, whatever triggered it already called play_context for the new context.
+			if current_context ~= context_name then
+				return
+			end
+
+			-- A file that could not be played always counts.
+			-- Any other track counts when it ended within QUICK_END_SECONDS and before half its length, so a short song that plays through does not.
+			-- An unmeasured file has its decoder's length instead, and without either, ending within QUICK_END_SECONDS is enough.
+			-- So a file that ends at once cannot reopen every frame.
+			local elapsed = AudioClient.elapsed()
+			local length = duration or AudioClient.duration()
+			local quick = failed or (elapsed < QUICK_END_SECONDS and (not length or elapsed < length / 2))
+			if quick then
+				quick_ends[folder] = (quick_ends[folder] or 0) + 1
+
+				if quick_ends[folder] >= MAX_QUICK_ENDS then
+					gave_up[folder] = true
+
+					-- An override folder gives way to the next folder, which play_context picks below.
+					if folder ~= context_name then
+						log(string.format("[playback] %s: %d tracks in a row from the %s folder ended within %ds, trying the next folder until the folders are rescanned",
+							context_name, MAX_QUICK_ENDS, folder, QUICK_END_SECONDS))
+					else
+						log(string.format("[playback] %s: %d tracks in a row ended within %ds, playing the game's music until the game restarts or the folders are rescanned",
+							context_name, MAX_QUICK_ENDS, QUICK_END_SECONDS))
+						hand_back("Vanilla, its songs would not play")
+						return
+					end
+				end
+			else
+				quick_ends[folder] = 0
+			end
+
+			play_context(context_name, false)
+		end,
+	}
+end
+
+-- Starts `track` from `folder` for `context_name`, as track_opts() describes it.
+local function play_track(context_name, folder, track)
+	local file_path, start_position = track.file_path, track.start_position
+
+	local loudness = Loudness.describe(file_path)
+	log(string.format("[playback] %s: %s %s%s (duration=%s%s%s)",
+		context_name, start_position and "resuming" or "playing", file_path,
+		start_position and string.format(" at %.1fs", start_position) or "",
+		tostring(track.duration), track.is_only_file and ", looping" or "", loudness and (", " .. loudness) or ""))
+
+	playing_track = { context_name = context_name, file_path = file_path, duration = track.duration, is_only_file = track.is_only_file }
+
+	AudioClient.play(file_path, track_opts(context_name, folder, track))
+end
+
 -- is_new_context separates a real context change from advancing within the same context.
 -- Advancing means a playlist continuation, and only a real change should fade in again.
-local function play_context(context_name, is_new_context)
+play_context = function(context_name, is_new_context)
 	if is_new_context then
 		remember_playing_track(context_name)
 		ResumePoints.enter(context_name)
@@ -248,70 +316,19 @@ local function play_context(context_name, is_new_context)
 
 	Suppression.engage(context_name)
 
-	-- A single file loops from its first play, with no seam, so it needs no end fade.
-	local opts = {
-		duration_seconds = not is_only_file and duration or nil,
-		fade_in = is_new_context,
-		loop = is_only_file,
-		start_position = start_position,
-		on_finished = function(failed)
-			-- A loop only gets here if its file could not be played.
-			-- After a context change, whatever triggered it already called play_context for the new context.
-			if current_context ~= context_name then
-				return
-			end
-
-			-- A file that could not be played always counts.
-			-- Any other track counts when it ended within QUICK_END_SECONDS and before half its length, so a short song that plays through does not.
-			-- An unmeasured file has its decoder's length instead, and without either, ending within QUICK_END_SECONDS is enough.
-			-- So a file that ends at once cannot reopen every frame.
-			local elapsed = AudioClient.elapsed()
-			local length = duration or AudioClient.duration()
-			local quick = failed or (elapsed < QUICK_END_SECONDS and (not length or elapsed < length / 2))
-			if quick then
-				quick_ends[folder] = (quick_ends[folder] or 0) + 1
-
-				if quick_ends[folder] >= MAX_QUICK_ENDS then
-					gave_up[folder] = true
-
-					-- An override folder gives way to the next folder, which play_context picks below.
-					if folder ~= context_name then
-						log(string.format("[playback] %s: %d tracks in a row from the %s folder ended within %ds, trying the next folder until the folders are rescanned",
-							context_name, MAX_QUICK_ENDS, folder, QUICK_END_SECONDS))
-					else
-						log(string.format("[playback] %s: %d tracks in a row ended within %ds, playing the game's music until the game restarts or the folders are rescanned",
-							context_name, MAX_QUICK_ENDS, QUICK_END_SECONDS))
-						hand_back("Vanilla, its songs would not play")
-						return
-					end
-				end
-			else
-				quick_ends[folder] = 0
-			end
-
-			play_context(context_name, false)
-		end,
-	}
+	local track = { file_path = file_path, duration = duration, is_only_file = is_only_file, start_position = start_position, fade_in = is_new_context }
 
 	-- A lone song that the new context's folder holds alone too keeps playing instead of starting over.
 	-- The player put the same song in both folders, so it is one piece of music across both contexts.
 	local previous = playing_track
 	if is_new_context and is_only_file and previous and previous.is_only_file and AudioClient.is_playing()
-		and Library.same_song(previous.file_path, file_path) and AudioClient.retarget(file_path, opts) then
+		and Library.same_song(previous.file_path, file_path) and AudioClient.retarget(file_path, track_opts(context_name, folder, track)) then
 		log(string.format("[playback] %s: continuing %s, the same song as %s", context_name, file_path, previous.file_path))
 		playing_track = { context_name = context_name, file_path = file_path, duration = duration, is_only_file = true, position = previous.position }
 		return
 	end
 
-	local loudness = Loudness.describe(file_path)
-	log(string.format("[playback] %s: %s %s%s (duration=%s%s%s)",
-		context_name, start_position and "resuming" or "playing", file_path,
-		start_position and string.format(" at %.1fs", start_position) or "",
-		tostring(duration), is_only_file and ", looping" or "", loudness and (", " .. loudness) or ""))
-
-	playing_track = { context_name = context_name, file_path = file_path, duration = duration, is_only_file = is_only_file }
-
-	AudioClient.play(file_path, opts)
+	play_track(context_name, folder, track)
 end
 
 -- Context changes are debounced, so a state that flickers and returns does not restart the track.
@@ -395,6 +412,46 @@ Context.on_change(function(new_context, old_context, boss_breed)
 	debounce_elapsed = 0
 	has_pending_change = true
 end)
+
+-- ###########################################################################
+-- Playback Controls
+-- ###########################################################################
+-- The keys in the Playback Controls group, which DMF calls once per press.
+-- Manual control only steers the situation playing now, so it does none of a context change's work.
+-- The next context change still starts its own pick.
+-- While a change is still settling, a key acts on what plays now.
+
+-- Shows a key's message as the game's toast notification.
+-- DMF formats the notification, so the localized text goes in as an argument, and a song name with a percent sign in it shows as it is.
+local function notify_control(text_id, ...)
+	mod:notify("%s", mod:localize(text_id, ...))
+end
+
+-- True while one of the player's songs plays for the current situation, the only music the keys act on.
+local function custom_song_playing()
+	return enabled and current_folder ~= nil and AudioClient.available() and AudioClient.is_playing()
+end
+
+-- The Next Song key: crossfades to another song from the folder playing now, or starts a folder's only song over.
+-- The skipped song keeps no resume point, since the song that replaces it is the one a later context change remembers.
+mod.next_song = function()
+	local file_path, duration, is_only_file = nil, nil, nil
+	if custom_song_playing() then
+		file_path, duration, is_only_file = Library.pick_file(current_folder, playing_track and playing_track.file_path)
+	end
+
+	if not file_path then
+		log("[control] next song: none of your songs plays")
+		notify_control("control_no_song")
+		return
+	end
+
+	log(string.format("[control] %s: next song", current_context))
+
+	-- No start position, so even a folder's only song starts over in a fresh stream instead of reviving the copy that fades out.
+	play_track(current_context, current_folder, { file_path = file_path, duration = duration, is_only_file = is_only_file, fade_in = true })
+	notify_control("control_next_song", file_path:match("[^/]+$"))
+end
 
 -- ###########################################################################
 -- Wiring

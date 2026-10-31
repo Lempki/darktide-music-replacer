@@ -30,13 +30,17 @@ local function new_library(files)
 		return rescanned
 	end
 
-	function library.pick_file(context_name)
+	-- Picks the folder's files in turn, passing over `playing` like the real library does.
+	function library.pick_file(context_name, playing)
 		local list = library.files[context_name]
 		if not list or #list == 0 or library.gone[context_name] then
 			return nil
 		end
 
 		local index = (last_index[context_name] or 0) % #list + 1
+		if #list > 1 and context_name .. "/" .. list[index].name == playing then
+			index = index % #list + 1
+		end
 		last_index[context_name] = index
 		return context_name .. "/" .. list[index].name, list[index].duration, #list == 1
 	end
@@ -273,6 +277,17 @@ end
 -- Waits until the context settles, since MusicReplacer.lua's debounce needs 0.6 seconds of quiet.
 function MainHarness:settle()
 	self:wait(0.7)
+end
+
+-- The text of the last toast notification the mod showed, or nil.
+function MainHarness:last_notification()
+	for index = #self.engine.messages, 1, -1 do
+		local message = self.engine.messages[index]
+		if message.level == "notify" then
+			return message.text
+		end
+	end
+	return nil
 end
 
 -- True when a logged line contains `text`.
