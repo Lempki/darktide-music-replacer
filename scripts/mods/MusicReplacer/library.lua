@@ -11,6 +11,7 @@
 -- Where Windows cannot watch the folders, as on some network drives, only the Rescan Audio Folders button lists them again.
 -- A missing or empty folder resolves to nil here, which is the caller's signal to fall back to the game's music.
 -- Every listing is passed on to the Library.on_listed listeners, which is how the loudness measurements learn of changed files.
+-- A song the player removed from rotation stays on disk, but no listing holds it, so nothing picks, finds, or measures it.
 
 local Library = {}
 
@@ -47,6 +48,7 @@ local unplayable = {} -- file_path -> true once Windows could not open the file.
 local stamps = {} -- file_path -> its size and write time at the last listing.
 local previous_stamps = {} -- The stamps of the listing before, so an unchanged file keeps what was measured of it.
 local listed_listeners = {}
+local is_removed = function() return false end -- file_path -> true for a song removed from rotation.
 
 -- file_path -> seconds, or false when the file could not be measured.
 local durations = {}
@@ -65,17 +67,19 @@ local function list_folder(folder_key)
 
 	for _, name in ipairs(names or {}) do
 		local file_path = folder_key .. "/" .. name
-		file_paths[#file_paths + 1] = file_path
-		stamps[file_path] = name_stamps and name_stamps[name] or ""
+		if not is_removed(file_path) then
+			file_paths[#file_paths + 1] = file_path
+			stamps[file_path] = name_stamps and name_stamps[name] or ""
 
-		-- A new or changed file is measured again. An empty stamp says nothing about a change, so it counts as changed.
-		if stamps[file_path] == "" or stamps[file_path] ~= previous_stamps[file_path] then
-			durations[file_path] = nil
-			unplayable[file_path] = nil
-		end
+			-- A new or changed file is measured again. An empty stamp says nothing about a change, so it counts as changed.
+			if stamps[file_path] == "" or stamps[file_path] ~= previous_stamps[file_path] then
+				durations[file_path] = nil
+				unplayable[file_path] = nil
+			end
 
-		if durations[file_path] == nil then
-			measure_queue[#measure_queue + 1] = file_path
+			if durations[file_path] == nil then
+				measure_queue[#measure_queue + 1] = file_path
+			end
 		end
 	end
 
@@ -179,8 +183,12 @@ end
 -- Call once, after all mods have loaded, with an initialized audio_folders.lua.
 -- Creates any missing folder at once, and lists them on the first update.
 -- `logger`, if given, receives the library's log lines.
-function Library.init(logger, audio_folders)
+-- `options.is_removed(file_path)`, if given, is true for a song removed from rotation, which the listings leave out.
+function Library.init(logger, audio_folders, options)
 	log = logger or log
+	if options and options.is_removed then
+		is_removed = options.is_removed
+	end
 
 	if not (audio_folders and audio_folders.available()) then
 		return -- Without a way to list the folders, pick_file() returns nil, so the game's music plays.
@@ -235,6 +243,25 @@ function Library.request_rescan()
 	if AudioFolders then
 		rescan_requested = true
 		full_rescan_requested = true
+	end
+end
+
+-- Asks for every folder to be listed again on the next update, keeping what was measured, as after the removed songs changed.
+function Library.request_listing()
+	if AudioFolders then
+		rescan_requested = true
+	end
+end
+
+-- Takes `file_path` out of its folder's listing at once, so the very next pick cannot choose it.
+-- Later listings leave it out through `options.is_removed`.
+function Library.remove_file(file_path)
+	local folder_key = file_path:match("^(.*)/[^/]+$")
+	local file_paths = lists[folder_key] or {}
+	for index = #file_paths, 1, -1 do
+		if file_paths[index] == file_path then
+			table.remove(file_paths, index)
+		end
 	end
 end
 

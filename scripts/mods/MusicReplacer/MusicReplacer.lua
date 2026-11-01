@@ -5,6 +5,7 @@ local Contexts = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/context
 local Context = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/context")
 local Suppression = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/suppression")
 local Library = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/library")
+local RemovedSongs = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/removed_songs")
 local ResumePoints = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/resume_points")
 local EventProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/event_probe")
 local MissionProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/mission_probe")
@@ -597,6 +598,74 @@ mod.pause_song = function()
 	notify_control("control_paused", song_name(playing_track.file_path))
 end
 
+-- How long after its first press the Remove from Rotation key waits for the second, which removes the song.
+-- Removing takes two presses, so a stray key press cannot take a song out of rotation.
+local REMOVE_CONFIRM_SECONDS = 3
+
+-- The song the first press of Remove from Rotation asked about: file_path, and the seconds since that press.
+local removal_asked = nil
+
+-- Forgets the first press once REMOVE_CONFIRM_SECONDS have passed. Call on every update.
+local function expire_removal(dt)
+	if not removal_asked then
+		return
+	end
+
+	removal_asked.seconds = removal_asked.seconds + dt
+	if removal_asked.seconds >= REMOVE_CONFIRM_SECONDS then
+		removal_asked = nil
+	end
+end
+
+-- Takes the song playing now out of its folder's rotation and moves on, as Next Song does.
+-- After the folder's last song, the situation plays again, which falls back as for an empty folder.
+local function remove_playing_song()
+	local file_path = playing_track.file_path
+	RemovedSongs.add(file_path)
+	Library.remove_file(file_path)
+	log(string.format("[control] %s: removed %s from rotation", current_context, file_path))
+	notify_control("control_removed_song", song_name(file_path))
+
+	local next_path, duration, is_only_file = Library.pick_file(current_folder, file_path)
+	if next_path then
+		play_manual_pick(next_path, duration, is_only_file)
+	else
+		replay_current_context()
+	end
+end
+
+-- The Remove from Rotation key: the first press asks, and a second press within REMOVE_CONFIRM_SECONDS removes the song.
+-- The file stays on disk. Restore Removed Songs puts every removed song back.
+mod.remove_song = function()
+	if not has_song_to_control() then
+		say_no_song("remove song")
+		return
+	end
+
+	if removal_asked and removal_asked.file_path == playing_track.file_path then
+		removal_asked = nil
+		remove_playing_song()
+		return
+	end
+
+	removal_asked = { file_path = playing_track.file_path, seconds = 0 }
+	notify_control("control_remove_confirm", song_name(playing_track.file_path))
+end
+
+-- The Restore Removed Songs button. Listing the folders again brings the songs back into every rotation.
+mod.restore_removed_songs = function()
+	local count = RemovedSongs.clear()
+	log(string.format("[control] restored %d removed song(s)", count))
+
+	if count == 0 then
+		notify_control("control_nothing_removed")
+		return
+	end
+
+	Library.request_listing()
+	notify_control("control_restored_songs", count)
+end
+
 -- ###########################################################################
 -- Wiring
 -- ###########################################################################
@@ -700,7 +769,8 @@ end
 mod.on_all_mods_loaded = function()
 	MediaDecoder.init(NativeFfi)
 	AudioFolders.init(NativeFfi, MediaDecoder)
-	Library.init(log, AudioFolders)
+	RemovedSongs.init(log, DiagnosticLog.folder())
+	Library.init(log, AudioFolders, { is_removed = RemovedSongs.contains })
 	XAudio.init(NativeFfi)
 	Player.init(NativeFfi, MediaDecoder, XAudio)
 	Loudness.init({
@@ -826,6 +896,8 @@ end
 mod.rescan_audio = function()
 	-- Pressing it is also the player's way to ask for another try after playback gave up.
 	AudioClient.try_again()
+	-- It also picks up lines a player deleted from removed.txt by hand.
+	RemovedSongs.load()
 	Library.request_rescan()
 end
 
@@ -838,6 +910,7 @@ mod.update = function(dt)
 	end
 
 	Context.update(mod, dt)
+	expire_removal(dt)
 
 	if Library.update(dt) then
 		-- A replaced file deserves another try, so contexts that gave up retry after a rescan.

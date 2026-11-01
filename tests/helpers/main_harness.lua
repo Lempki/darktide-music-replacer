@@ -14,14 +14,33 @@ MainHarness.__index = MainHarness
 -- Picks go through each folder in order, so the specs know which file comes next.
 local function new_library(files)
 	-- `gone` marks a folder whose files the listing still has but which are gone from disk, so nothing can be picked.
-	local library = { files = files, rescan_requested = false, listed_listeners = {}, gone = {} }
+	local library = { files = files, rescan_requested = false, listed_listeners = {}, gone = {}, removed_files = {} }
 	local last_index = {}
+	local is_removed = function() return false end
 
-	function library.init() end
+	function library.init(_, _, options)
+		if options and options.is_removed then
+			is_removed = options.is_removed
+		end
+	end
+
+	-- The folder's entries that are not removed from rotation, the way the real listing leaves removed songs out.
+	local function listed(folder_key)
+		local kept = {}
+		for _, entry in ipairs(library.files[folder_key] or {}) do
+			if not is_removed(folder_key .. "/" .. entry.name) then
+				kept[#kept + 1] = entry
+			end
+		end
+		return kept
+	end
+
+	function library.remove_file(file_path) library.removed_files[#library.removed_files + 1] = file_path end
+	function library.request_listing() library.rescan_requested = true end
 	function library.shutdown() end
 	function library.on_listed(listener) library.listed_listeners[#library.listed_listeners + 1] = listener end
 	function library.request_rescan() library.rescan_requested = true end
-	function library.has_files(folder_key) return library.files[folder_key] ~= nil and #library.files[folder_key] > 0 end
+	function library.has_files(folder_key) return #listed(folder_key) > 0 end
 	function library.disk_path(file_path) return file_path end
 
 	function library.update()
@@ -32,8 +51,8 @@ local function new_library(files)
 
 	-- Picks the folder's files in turn, passing over `playing` like the real library does.
 	function library.pick_file(context_name, playing)
-		local list = library.files[context_name]
-		if not list or #list == 0 or library.gone[context_name] then
+		local list = listed(context_name)
+		if #list == 0 or library.gone[context_name] then
 			return nil
 		end
 
@@ -60,7 +79,7 @@ local function new_library(files)
 	end
 
 	function library.find_file(context_name, file_path)
-		local list = library.files[context_name] or {}
+		local list = listed(context_name)
 		for _, entry in ipairs(list) do
 			if context_name .. "/" .. entry.name == file_path then
 				return file_path, entry.duration, #list == 1

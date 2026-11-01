@@ -1498,6 +1498,130 @@ describe("MusicReplacer.lua the Key Fade Length", function()
 	end)
 end)
 
+describe("MusicReplacer.lua the Remove from Rotation key", function()
+	local THREE_HUB_SONGS = { hub = { { name = "a.mp3", duration = 200 }, { name = "b.mp3", duration = 180 }, { name = "c.mp3", duration = 160 } } }
+
+	local function press(harness, control)
+		harness.mod[control]()
+		harness:tick(0.1)
+	end
+
+	it("asks on the first press, naming the song, and changes nothing", function()
+		local harness = in_hub(THREE_HUB_SONGS)
+		local plays = #harness.client.plays
+
+		press(harness, "remove_song")
+
+		assert_equal(#harness.client.plays, plays)
+		assert_deep_equal(harness.library.removed_files, {})
+		assert_equal(harness:last_notification(), "<control_remove_confirm: a.mp3>")
+	end)
+
+	it("removes the song on a second press within 3 seconds, and crossfades to another song over the Key Fade Length", function()
+		local harness = in_hub(THREE_HUB_SONGS)
+
+		press(harness, "remove_song")
+		harness:wait(2.5)
+		press(harness, "remove_song")
+
+		assert_deep_equal(harness.library.removed_files, { "hub/a.mp3" })
+		assert_equal(harness:last_notification(), "<control_removed_song: a.mp3>")
+		local play = harness:last_play()
+		assert_equal(play.file_path ~= "hub/a.mp3", true)
+		assert_equal(play.opts.fade_seconds, 0.5)
+		assert_equal(harness:logged("[control] hub: removed hub/a.mp3 from rotation"), true)
+	end)
+
+	it("never picks a removed song again", function()
+		local harness = in_hub(THREE_HUB_SONGS)
+		press(harness, "remove_song")
+		press(harness, "remove_song")
+
+		for _ = 1, 6 do
+			harness:finish_song(200, false)
+			assert_equal(harness:playing() ~= "hub/a.mp3", true)
+		end
+	end)
+
+	it("only asks again when the second press comes 3 seconds or more after the first", function()
+		local harness = in_hub(THREE_HUB_SONGS)
+
+		press(harness, "remove_song")
+		harness:wait(3)
+		press(harness, "remove_song")
+
+		assert_deep_equal(harness.library.removed_files, {})
+		assert_equal(harness:last_notification(), "<control_remove_confirm: a.mp3>")
+	end)
+
+	it("asks again when the song changed between the presses", function()
+		local harness = in_hub(THREE_HUB_SONGS)
+
+		press(harness, "remove_song")
+		press(harness, "next_song")
+		press(harness, "remove_song")
+
+		assert_deep_equal(harness.library.removed_files, {})
+		assert_equal(harness:last_notification(), "<control_remove_confirm: b.mp3>")
+	end)
+
+	it("hands the music back to the game once a folder's last song is removed", function()
+		local harness = in_hub({ hub = { { name = "only.mp3", duration = 200 } } })
+
+		press(harness, "remove_song")
+		press(harness, "remove_song")
+
+		assert_equal(harness:playing(), nil)
+		assert_equal(harness.engine:wwise_state("music_zone"), "hub")
+		assert_equal(harness:logged("[playback] hub: no file available, playing the game's music"), true)
+	end)
+
+	it("removes a paused song and plays another one", function()
+		local harness = in_hub(THREE_HUB_SONGS)
+		press(harness, "pause_song")
+
+		press(harness, "remove_song")
+		press(harness, "remove_song")
+
+		assert_equal(harness:playing() ~= nil, true)
+		assert_equal(harness:playing() ~= "hub/a.mp3", true)
+		assert_equal(harness.overlay.options.snapshot().status, "Custom")
+	end)
+
+	it("says no song of yours is playing in a situation set to Vanilla", function()
+		local harness = in_hub(nil, { settings = { source_hub = "game" } })
+
+		press(harness, "remove_song")
+
+		assert_equal(harness:last_notification(), "<control_no_song>")
+	end)
+end)
+
+describe("MusicReplacer.lua the Restore Removed Songs button", function()
+	it("puts every removed song back, and a situation left without songs plays again", function()
+		local harness = in_hub({ hub = { { name = "only.mp3", duration = 200 } } })
+		harness.mod.remove_song()
+		harness.mod.remove_song()
+		harness:tick(0.1)
+		assert_equal(harness:playing(), nil)
+
+		harness.mod.restore_removed_songs()
+		harness:tick(0.1)
+
+		assert_equal(harness:last_notification(), "<control_restored_songs: 1>")
+		assert_equal(harness:playing(), "hub/only.mp3")
+	end)
+
+	it("says no songs are removed when there are none", function()
+		local harness = in_hub()
+
+		harness.mod.restore_removed_songs()
+
+		assert_equal(harness:last_notification(), "<control_nothing_removed>")
+		assert_equal(harness.library.rescan_requested, false)
+	end)
+end)
+
 describe("MusicReplacer.lua turned off and on", function()
 	it("lets playback try again after giving up when turned back on or when Rescan is pressed", function()
 		local harness = in_hub()

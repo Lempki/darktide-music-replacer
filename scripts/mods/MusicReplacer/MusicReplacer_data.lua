@@ -106,6 +106,22 @@ return {
 						function_name = "pause_song",
 					},
 					{
+						setting_id = "remove_song_keybind",
+						type = "keybind",
+						tooltip = "remove_song_keybind_tooltip",
+						default_value = {},
+						keybind_trigger = "pressed",
+						keybind_type = "function_call",
+						function_name = "remove_song",
+					},
+					{
+						setting_id = "restore_removed_songs",
+						type = "button",
+						tooltip = "restore_removed_songs_tooltip",
+						button_text = "restore_removed_songs_button",
+						function_name = "restore_removed_songs",
+					},
+					{
 						setting_id = "key_fade_seconds",
 						type = "numeric",
 						tooltip = "key_fade_seconds_tooltip",

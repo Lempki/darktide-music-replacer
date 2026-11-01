@@ -28,6 +28,7 @@ The mod writes these files to `%APPDATA%\Fatshark\Darktide\MusicReplacer\`:
 * `diagnostic.log`, the log of the current or last game session. Every launch starts a fresh one. A runaway log stops growing at 10 MB.
 * `diagnostic-prev.log`, the log of the session before that.
 * `loudness.txt`, the remembered results of Even Out Loudness, so each song is measured only once, and again after its file changes. Deleting it measures every song again.
+* `removed.txt`, the songs Remove from Rotation took out of their folder's rotation, one per line, such as `hub/Song.mp3`. The song files themselves stay where they are. Deleting a line, or the whole file, and then pressing Rescan Audio Folders puts those songs back.
 
 ## A lost audio device
 

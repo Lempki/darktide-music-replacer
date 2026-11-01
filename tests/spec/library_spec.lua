@@ -444,3 +444,64 @@ describe("library.lua file selection", function()
 		assert_equal(Library.pick_file("hub") ~= first, true)
 	end)
 end)
+
+describe("library.lua songs removed from rotation", function()
+	-- Returns a library that has listed `disk` with `removed` as its removed songs, the fake folders, and every listing it passed on.
+	local function library_with_removed(disk, removed)
+		local engine = FakeEngine.new()
+		local Library = engine:load("library")
+		local folders = new_audio_folders(disk, { ["hub/a.mp3"] = 100, ["hub/b.mp3"] = 100 })
+		local listings = {}
+		Library.on_listed(function(entries) listings[#listings + 1] = entries end)
+		Library.init(nil, folders, { is_removed = function(file_path) return removed[file_path] == true end })
+		Library.update(0.016)
+		return Library, folders, listings
+	end
+
+	it("leaves a removed song out of the listing, the picks, and what it passes on", function()
+		local Library, folders, listings = library_with_removed({ hub = { "a.mp3", "b.mp3" } }, { ["hub/a.mp3"] = true })
+
+		for _ = 1, 5 do
+			assert_equal(Library.pick_file("hub"), "hub/b.mp3")
+		end
+		assert_equal(Library.find_file("hub", "hub/a.mp3"), nil)
+		assert_equal(#listings[1], 1)
+		assert_equal(listings[1][1].file_path, "hub/b.mp3")
+
+		Library.update(0.016)
+		Library.update(0.016)
+		assert_deep_equal(folders.measured, { "hub/b.mp3" })
+	end)
+
+	it("leaves a folder whose every song is removed with no files", function()
+		local Library = library_with_removed({ hub = { "a.mp3" } }, { ["hub/a.mp3"] = true })
+
+		assert_equal(Library.has_files("hub"), false)
+		assert_equal(Library.pick_file("hub"), nil)
+	end)
+
+	it("takes a removed song out of its folder at once, before the next listing", function()
+		local Library = library_with_removed({ hub = { "a.mp3", "b.mp3" } }, {})
+
+		Library.remove_file("hub/a.mp3")
+
+		for _ = 1, 5 do
+			assert_equal(Library.pick_file("hub"), "hub/b.mp3")
+		end
+	end)
+
+	it("brings a song back on the next listing once it is no longer removed, keeping what was measured", function()
+		local removed = { ["hub/a.mp3"] = true }
+		local Library, folders = library_with_removed({ hub = { "a.mp3", "b.mp3" } }, removed)
+		Library.update(0.016)
+		local measured = #folders.measured
+
+		removed["hub/a.mp3"] = nil
+		Library.request_listing()
+		assert_equal(Library.update(0.016), true)
+		Library.update(0.016)
+
+		assert_equal(Library.find_file("hub", "hub/a.mp3"), "hub/a.mp3")
+		assert_deep_equal({ unpack(folders.measured, measured + 1) }, { "hub/a.mp3" })
+	end)
+end)

@@ -87,6 +87,24 @@ local strings = {
 			"Next Song, Previous Song, and Restart Song also end the pause. " ..
 			"A new situation ends it too, and the paused song continues later like any song that was playing.",
 	},
+	remove_song_keybind = {
+		en = "Remove from Rotation",
+	},
+	remove_song_keybind_tooltip = {
+		en = "Press twice within 3 seconds to stop the song playing now from ever being picked in its folder again, " ..
+			"and move on to another song. The file stays where it is, and a copy in another folder still plays there.\n\n" ..
+			"Removed songs are listed in removed.txt, beside the mod's log. " ..
+			"Restore Removed Songs puts them all back, and deleting a line from the file, then pressing Rescan, puts one back.",
+	},
+	restore_removed_songs = {
+		en = "Restore Removed Songs",
+	},
+	restore_removed_songs_button = {
+		en = "Restore",
+	},
+	restore_removed_songs_tooltip = {
+		en = "Puts every song that Remove from Rotation took out back into its folder's rotation.",
+	},
 	key_fade_seconds = {
 		en = "Key Fade Length",
 	},
@@ -97,7 +115,7 @@ local strings = {
 			"so two copies of the song never play over each other.\n\n" ..
 			"Set to " .. highlight("0") .. " to switch at once.",
 	},
-	-- The messages a key press shows. %s is the name of the song file.
+	-- The messages a key press shows. %s is the name of the song file, or for control_restored_songs the number of songs.
 	control_next_song = {
 		en = "Next song: %s",
 	},
@@ -115,6 +133,18 @@ local strings = {
 	},
 	control_no_song = {
 		en = "No song of yours is playing",
+	},
+	control_remove_confirm = {
+		en = "Press again to remove from rotation: %s",
+	},
+	control_removed_song = {
+		en = "Removed from rotation: %s",
+	},
+	control_restored_songs = {
+		en = "Songs back in rotation: %s",
+	},
+	control_nothing_removed = {
+		en = "No songs are removed",
 	},
 
 	music_per_situation = {

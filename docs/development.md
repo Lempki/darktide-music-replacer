@@ -132,6 +132,7 @@ darktide-music-replacer/
 │   ├── library.lua                      # Keeps each context's file list and picks a file for a context.
 │   ├── audio_folders.lua                # Lists, checks, and creates the audio folders through Windows, and measures durations.
 │   ├── resume_points.lua                # Remembers where interrupted songs stopped, until the next loading screen.
+│   ├── removed_songs.lua                # Keeps the songs removed from rotation in removed.txt, which the library leaves out.
 │   ├── audio_client.lua                 # Plays the music: crossfades, end fades, volumes, parked songs, and recovery.
 │   ├── loudness.lua                     # Measures every song's loudness in the background and keeps the results in loudness.txt.
 │   ├── loudness_meter.lua               # Measures loudness in LUFS following ITU-R BS.1770.
