@@ -617,6 +617,17 @@ local function expire_removal(dt)
 	end
 end
 
+-- The folder playing now as the player knows it: the situation's name, and an override folder's name after it.
+-- An example is "Boss (chaos_spawn)".
+-- A removal lasts beyond this situation, so its messages say where the song was taken out.
+local function folder_label()
+	local label = mod:localize("source_" .. current_context)
+	if current_folder ~= current_context then
+		label = string.format("%s (%s)", label, current_folder:match("[^/]+$"))
+	end
+	return label
+end
+
 -- Takes the song playing now out of its folder's rotation and moves on, as Next Song does.
 -- After the folder's last song, the situation plays again, which falls back as for an empty folder.
 local function remove_playing_song()
@@ -624,7 +635,7 @@ local function remove_playing_song()
 	RemovedSongs.add(file_path)
 	Library.remove_file(file_path)
 	log(string.format("[control] %s: removed %s from rotation", current_context, file_path))
-	notify_control("control_removed_song", song_name(file_path))
+	notify_control("control_removed_song", folder_label(), song_name(file_path))
 
 	local next_path, duration, is_only_file = Library.pick_file(current_folder, file_path)
 	if next_path then
@@ -649,7 +660,7 @@ mod.remove_song = function()
 	end
 
 	removal_asked = { file_path = playing_track.file_path, seconds = 0 }
-	notify_control("control_remove_confirm", song_name(playing_track.file_path))
+	notify_control("control_remove_confirm", folder_label(), song_name(playing_track.file_path))
 end
 
 -- The Restore Removed Songs button. Listing the folders again brings the songs back into every rotation.
@@ -663,7 +674,11 @@ mod.restore_removed_songs = function()
 	end
 
 	Library.request_listing()
-	notify_control("control_restored_songs", count)
+	if count == 1 then
+		notify_control("control_restored_song")
+	else
+		notify_control("control_restored_songs", count)
+	end
 end
 
 -- ###########################################################################

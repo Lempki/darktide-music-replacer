@@ -1514,7 +1514,7 @@ describe("MusicReplacer.lua the Remove from Rotation key", function()
 
 		assert_equal(#harness.client.plays, plays)
 		assert_deep_equal(harness.library.removed_files, {})
-		assert_equal(harness:last_notification(), "<control_remove_confirm: a.mp3>")
+		assert_equal(harness:last_notification(), "<control_remove_confirm: <source_hub>, a.mp3>")
 	end)
 
 	it("removes the song on a second press within 3 seconds, and crossfades to another song over the Key Fade Length", function()
@@ -1525,7 +1525,7 @@ describe("MusicReplacer.lua the Remove from Rotation key", function()
 		press(harness, "remove_song")
 
 		assert_deep_equal(harness.library.removed_files, { "hub/a.mp3" })
-		assert_equal(harness:last_notification(), "<control_removed_song: a.mp3>")
+		assert_equal(harness:last_notification(), "<control_removed_song: <source_hub>, a.mp3>")
 		local play = harness:last_play()
 		assert_equal(play.file_path ~= "hub/a.mp3", true)
 		assert_equal(play.opts.fade_seconds, 0.5)
@@ -1551,7 +1551,7 @@ describe("MusicReplacer.lua the Remove from Rotation key", function()
 		press(harness, "remove_song")
 
 		assert_deep_equal(harness.library.removed_files, {})
-		assert_equal(harness:last_notification(), "<control_remove_confirm: a.mp3>")
+		assert_equal(harness:last_notification(), "<control_remove_confirm: <source_hub>, a.mp3>")
 	end)
 
 	it("asks again when the song changed between the presses", function()
@@ -1562,7 +1562,7 @@ describe("MusicReplacer.lua the Remove from Rotation key", function()
 		press(harness, "remove_song")
 
 		assert_deep_equal(harness.library.removed_files, {})
-		assert_equal(harness:last_notification(), "<control_remove_confirm: b.mp3>")
+		assert_equal(harness:last_notification(), "<control_remove_confirm: <source_hub>, b.mp3>")
 	end)
 
 	it("hands the music back to the game once a folder's last song is removed", function()
@@ -1588,6 +1588,22 @@ describe("MusicReplacer.lua the Remove from Rotation key", function()
 		assert_equal(harness.overlay.options.snapshot().status, "Custom")
 	end)
 
+	it("names an override folder after its situation", function()
+		local harness = MainHarness.new({ files = {
+			explore = { { name = "x.mp3", duration = 300 } },
+			["explore/lm_cooling"] = { { name = "cooling.mp3", duration = 300 }, { name = "cooling2.mp3", duration = 300 } },
+		} })
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness:enter_mission("lm_cooling", "zone_3")
+		harness:settle()
+
+		press(harness, "remove_song")
+		assert_equal(harness:last_notification(), "<control_remove_confirm: <source_explore> (lm_cooling), cooling.mp3>")
+		press(harness, "remove_song")
+		assert_equal(harness:last_notification(), "<control_removed_song: <source_explore> (lm_cooling), cooling.mp3>")
+	end)
+
 	it("says no song of yours is playing in a situation set to Vanilla", function()
 		local harness = in_hub(nil, { settings = { source_hub = "game" } })
 
@@ -1608,8 +1624,21 @@ describe("MusicReplacer.lua the Restore Removed Songs button", function()
 		harness.mod.restore_removed_songs()
 		harness:tick(0.1)
 
-		assert_equal(harness:last_notification(), "<control_restored_songs: 1>")
+		assert_equal(harness:last_notification(), "<control_restored_song>")
 		assert_equal(harness:playing(), "hub/only.mp3")
+	end)
+
+	it("says how many songs it restored when there were several", function()
+		local harness = in_hub({ hub = { { name = "a.mp3", duration = 200 }, { name = "b.mp3", duration = 180 }, { name = "c.mp3", duration = 160 } } })
+		for _ = 1, 2 do
+			harness.mod.remove_song()
+			harness.mod.remove_song()
+			harness:tick(0.1)
+		end
+
+		harness.mod.restore_removed_songs()
+
+		assert_equal(harness:last_notification(), "<control_restored_songs: 2>")
 	end)
 
 	it("says no songs are removed when there are none", function()

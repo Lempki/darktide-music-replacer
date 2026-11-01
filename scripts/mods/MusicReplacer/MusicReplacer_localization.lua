@@ -115,7 +115,7 @@ local strings = {
 			"so two copies of the song never play over each other.\n\n" ..
 			"Set to " .. highlight("0") .. " to switch at once.",
 	},
-	-- The messages a key press shows. %s is the name of the song file, or for control_restored_songs the number of songs.
+	-- The messages a key press shows. %s is the name of the song file unless a comment below says otherwise.
 	control_next_song = {
 		en = "Next song: %s",
 	},
@@ -134,14 +134,19 @@ local strings = {
 	control_no_song = {
 		en = "No song of yours is playing",
 	},
+	-- The first %s is where the song plays, such as "Hub" or "Boss (chaos_spawn)", and the second is the song.
 	control_remove_confirm = {
-		en = "Press again to remove from rotation: %s",
+		en = "Press again to remove from %s: %s",
 	},
 	control_removed_song = {
-		en = "Removed from rotation: %s",
+		en = "Removed from %s: %s",
 	},
+	control_restored_song = {
+		en = "Restored 1 song in every situation",
+	},
+	-- %s is the number of songs, always more than one.
 	control_restored_songs = {
-		en = "Songs back in rotation: %s",
+		en = "Restored %s songs in every situation",
 	},
 	control_nothing_removed = {
 		en = "No songs are removed",
