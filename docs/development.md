@@ -141,7 +141,8 @@ darktide-music-replacer/
 │   ├── xaudio.lua                       # Plays PCM through XAudio2 voices with live volume control.
 │   ├── native_ffi.lua                   # Shared ffi plumbing for Windows APIs: GUIDs, COM calls and setup, UTF-16 strings, heap memory, files.
 │   ├── diagnostic_log.lua               # Writes diagnostic.log, keeping the previous launch's, with detailed lines on request.
-│   ├── debug_overlay.lua                # Builds the debug overlay's text and adds its element to the game's always-visible UI.
+│   ├── constant_element_slot.lua        # Adds one of the mod's elements to the game's always-visible UI, and removes it.
+│   ├── debug_overlay.lua                # Builds the debug overlay's text and keeps its element on screen.
 │   ├── debug_overlay_element.lua        # The debug overlay's on-screen element.
 │   ├── event_probe.lua                  # Logs the game's Wwise event names, and changes nothing.
 │   ├── mission_probe.lua                # Logs the current mission's name and type, and changes nothing.

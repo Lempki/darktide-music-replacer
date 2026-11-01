@@ -1,31 +1,16 @@
 -- Shows what the mod is doing in the top left corner of the screen: the situation, the song, and how loud it plays.
 -- It is a debug aid behind the Debug Overlay setting, so it is off by default.
 --
--- The text is drawn by an element added to the game's constant UI, which is drawn on every screen, loading screens included.
--- A HUD element would only exist in the hub and in missions, and miss the loading and mission preparation contexts.
--- The constant UI has no API for mods, so the element is added and removed the way the game sets up its own constant elements.
+-- The text is drawn by an element in the game's constant UI, which constant_element_slot.lua keeps there.
+
+local ConstantElementSlot = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/constant_element_slot")
 
 local DebugOverlay = {}
-
-local CLASS_NAME = "ConstantElementMusicReplacerOverlay"
 
 -- Above most constant elements, such as the subtitles, so the text stays readable.
 local DRAW_LAYER = 900
 
--- Every group the game's own always-visible elements use, so the overlay shows on every screen but the disabled ones.
-local VISIBILITY_GROUPS = {
-	"tactical_overlay",
-	"cutscene",
-	"mission_lobby",
-	"end_of_round",
-	"in_view",
-	"in_hub_view",
-	"in_hub",
-	"in_loading",
-	"skippable_cinematic",
-	"in_mission",
-	"default",
-}
+local slot = ConstantElementSlot.new("ConstantElementMusicReplacerOverlay", DRAW_LAYER)
 
 -- Song names are cut to this many characters, so the overlay keeps its size.
 local MAX_SONG_CHARACTERS = 48
@@ -37,8 +22,6 @@ local log = function() end
 local enabled = false
 local scale = 1 -- The Overlay Size setting, as a factor.
 local opacity = 0.7 -- The Backdrop Opacity setting, as a share.
-local installed_into = nil -- The constant UI the element was added to, or nil.
-local install_failed = false
 
 local function minutes(seconds)
 	seconds = math.max(0, math.floor(seconds or 0))
@@ -254,81 +237,15 @@ function DebugOverlay.init(logger, options)
 	create_element = options.create_element
 end
 
-local function remove()
-	local constant_elements = installed_into
-	installed_into = nil
-
-	-- The game destroys every element of a constant UI it tears down, ours included, and then drops its element list.
-	-- So a torn-down UI has nothing left to remove, and destroying the element again would act on a dead object.
-	if not constant_elements or not constant_elements._elements_array then
-		return
-	end
-
-	local elements = constant_elements._elements
-	local element = elements and elements[CLASS_NAME]
-	if element then
-		elements[CLASS_NAME] = nil
-
-		local elements_array = constant_elements._elements_array
-		for index = #elements_array, 1, -1 do
-			if elements_array[index] == element then
-				table.remove(elements_array, index)
-			end
-		end
-
-		if element.destroy then
-			element:destroy(constant_elements:ui_renderer())
-		end
-	end
-
-	for _, group in ipairs(constant_elements._visibility_groups or {}) do
-		if group.visible_elements then
-			group.visible_elements[CLASS_NAME] = nil
-		end
-	end
-	for _, parameters in pairs(constant_elements._visibility_group_parameters or {}) do
-		parameters[CLASS_NAME] = nil
-	end
-end
-
-local function install(constant_elements)
-	-- Set first, so a failure below still has its partial setup removed.
-	installed_into = constant_elements
-
-	-- Fills in the visibility groups the same way the game does for its own elements. The misspelled name is the game's own.
-	constant_elements:_setup_visiblity_groups({ { class_name = CLASS_NAME, visibility_groups = VISIBILITY_GROUPS } })
-
-	local element = create_element(constant_elements, DRAW_LAYER)
-	constant_elements._elements[CLASS_NAME] = element
-	constant_elements._elements_array[#constant_elements._elements_array + 1] = element
-
-	-- The next update works out the element's visibility again, as after the game adds an element.
-	constant_elements._current_group_name = nil
-end
-
-local function constant_elements_now()
-	local ui = Managers and Managers.ui
-	return ui and ui.ui_constant_elements and ui:ui_constant_elements()
-end
-
 -- Call every update. Adds the element once the game's UI exists, and adds it again if the UI was rebuilt.
 function DebugOverlay.update()
-	if not enabled or install_failed or not create_element then
+	if not enabled or not create_element then
 		return
 	end
 
-	local constant_elements = constant_elements_now()
-	if not constant_elements or constant_elements == installed_into then
-		return
-	end
-
-	remove()
-
-	local ok, err = pcall(install, constant_elements)
-	if not ok then
-		install_failed = true
-		remove()
-		log("[overlay] could not be shown: " .. tostring(err))
+	local err = slot:update(create_element)
+	if err then
+		log("[overlay] could not be shown: " .. err)
 	end
 end
 
@@ -339,11 +256,11 @@ function DebugOverlay.set_enabled(on, new_scale, new_opacity)
 	opacity = new_opacity or opacity
 
 	if not enabled then
-		remove()
+		slot:remove()
 		return
 	end
 
-	local element = installed_into and installed_into._elements and installed_into._elements[CLASS_NAME]
+	local element = slot:element()
 	if element and element.set_layout then
 		element:set_layout(scale, opacity)
 	end
@@ -353,7 +270,7 @@ end
 
 -- Call from the main mod file's mod.on_unload.
 function DebugOverlay.shutdown()
-	remove()
+	slot:remove()
 end
 
 return DebugOverlay
