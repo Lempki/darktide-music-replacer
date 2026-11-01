@@ -19,6 +19,10 @@ What changes for players in each release of Music Replacer. The format follows [
 * Even Out Loudness measures a song copied into several folders only once, so measuring a library with shared songs takes less time.
 * The debug overlay's label column is a little wider, so the Level row's meter and markers sit further right.
 
+### Fixes
+
+* A song that resumes after it was started over, or picked again within a minute of fading out, continues from where it stopped, instead of from where its earlier play faded out.
+
 ## [1.0.0] - 2026-10-30
 
 First public release.

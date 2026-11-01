@@ -283,8 +283,10 @@ end
 
 -- Takes the fading or parked stream of `file_path` out of the outgoing list, or returns nil.
 -- A stream that loops is only taken back to loop again, since one that does not loop must end for the next pick to follow.
+-- The newest match is taken, since a song started over leaves its older copy in the list, at a position the mod no longer means.
 local function take_outgoing(file_path, loop)
-	for index, entry in ipairs(outgoing) do
+	for index = #outgoing, 1, -1 do
+		local entry = outgoing[index]
 		local stream = entry.stream
 		if entry.file_path == file_path and entry.loop == loop and not stream:ended() and not stream:failure() and not stream:file_failure() then
 			table.remove(outgoing, index)

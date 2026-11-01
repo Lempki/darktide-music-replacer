@@ -149,6 +149,25 @@ describe("audio_client.lua", function()
 		assert_equal(lines[#lines], "[player] continuing explore/a.mp3 from 95.0s, where it faded out")
 	end)
 
+	it("continues the newest parked copy of a song that was started over, not an older one", function()
+		local AudioClient, _, streams, _, lines = load_client()
+		AudioClient.play("loading/a.mp3", { fade_in = true, loop = true })
+		streams[1].current_position = 23
+		AudioClient.play("loading/a.mp3", { fade_in = true, fade_seconds = 0.1, loop = true })
+		AudioClient.update(0.2)
+		streams[2].current_position = 2.5
+		AudioClient.stop(0.5)
+		AudioClient.update(0.6)
+
+		AudioClient.play("loading/a.mp3", { fade_in = true, loop = true, start_position = 2.5 })
+
+		assert_equal(#streams, 2)
+		assert_equal(streams[2].paused, false)
+		assert_equal(streams[1].paused, true)
+		assert_equal(AudioClient.position(), 2.5)
+		assert_equal(lines[#lines], "[player] continuing loading/a.mp3 from 2.5s, where it faded out")
+	end)
+
 	it("does not take back a parked song whose loop setting differs, and opens it afresh instead", function()
 		local AudioClient, _, streams = load_client()
 		AudioClient.play("explore/a.mp3", { fade_in = true, loop = true })
