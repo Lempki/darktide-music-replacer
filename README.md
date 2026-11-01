@@ -17,6 +17,7 @@ Download it from [Nexus Mods](https://www.nexusmods.com/warhammer40kdarktide/mod
 * Follows the game's master and music volume sliders at once, without restarting the song.
 * Lets you choose Custom, Vanilla, or Silence for each situation.
 * Lets you try out any situation's songs in Meat Grinder, or play a folder of its own there.
+* Has optional keys to skip to the next or previous song, restart or pause the song playing now, or remove it from rotation.
 * Can even out the loudness of your songs, without changing your files.
 * Lowers your music while a menu is open.
 * Has a debug overlay that shows which situation the mod sees and what it plays.
@@ -105,7 +106,7 @@ Meat Grinder is a good place to try out your songs, so it has a settings group o
 
 ## Settings
 
-The settings are in the in-game mod options under Music Replacer, in seven groups: Playback, Music per Situation, Meat Grinder, Volume, Boss Music, Music Holds, and Debug. Every setting and its default is explained in [docs/settings.md](docs/settings.md).
+The settings are in the in-game mod options under Music Replacer, in eight groups: Playback, Playback Controls, Music per Situation, Meat Grinder, Volume, Boss Music, Music Holds, and Debug. Every setting and its default is explained in [docs/settings.md](docs/settings.md).
 
 ## Override folders
 
