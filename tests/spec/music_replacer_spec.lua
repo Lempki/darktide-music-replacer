@@ -515,14 +515,14 @@ describe("MusicReplacer.lua volume", function()
 end)
 
 describe("MusicReplacer.lua evening out loudness", function()
-	it("measures in the background only while the mod is on, starting with the context playing now", function()
+	it("measures in the background only while the mod is on, starting with the song playing now", function()
 		local harness = in_hub()
-		assert_equal(harness.loudness.preferred_contexts[#harness.loudness.preferred_contexts], "hub")
+		assert_deep_equal(harness.loudness.updates[#harness.loudness.updates], { file_path = harness:playing(), folder = "hub", context = "hub" })
 
-		local updates = #harness.loudness.preferred_contexts
+		local updates = #harness.loudness.updates
 		harness.mod.on_disabled(false)
 		harness:wait(1)
-		assert_equal(#harness.loudness.preferred_contexts, updates)
+		assert_equal(#harness.loudness.updates, updates)
 	end)
 
 	it("turns evening out on and off with its setting, applying it to the songs playing now", function()
@@ -919,6 +919,16 @@ describe("MusicReplacer.lua override folders", function()
 		})
 
 		assert_equal(harness:playing(), "explore/lm_cooling/cooling.mp3")
+	end)
+
+	it("measures the override folder's songs before the rest of the context's", function()
+		local harness = in_cooling({
+			explore = { { name = "x.mp3", duration = 300 } },
+			["explore/lm_cooling"] = { { name = "cooling.mp3", duration = 300 } },
+		})
+
+		assert_deep_equal(harness.loudness.updates[#harness.loudness.updates],
+			{ file_path = "explore/lm_cooling/cooling.mp3", folder = "explore/lm_cooling", context = "explore" })
 	end)
 
 	it("plays the context's own folder while no override folder has songs", function()

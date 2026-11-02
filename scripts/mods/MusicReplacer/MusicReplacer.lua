@@ -1033,7 +1033,7 @@ mod.update = function(dt)
 	end
 
 	if enabled then
-		Loudness.update(current_context)
+		Loudness.update(playing_track and playing_track.file_path, current_folder, current_context)
 	end
 
 	AudioClient.set_menu_volume(menu_volume(dt))

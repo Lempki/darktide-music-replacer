@@ -229,19 +229,30 @@ local function finish_active()
 	song_done()
 end
 
--- Takes the next file to measure out of `pending`, preferring the folder of `preferred_context`.
-local function take_next(preferred_context)
-	local chosen = 1
-	if preferred_context then
-		local prefix = preferred_context .. "/"
-		for index, file_path in ipairs(pending) do
-			if file_path:sub(1, #prefix) == prefix then
-				chosen = index
-				break
-			end
+-- Takes the first file of `folder` out of `pending`, or returns nil.
+-- A context's folder includes its override folders, since their paths start with the context's.
+local function take_from_folder(folder)
+	if not folder then
+		return nil
+	end
+	local prefix = folder .. "/"
+	for index, file_path in ipairs(pending) do
+		if file_path:sub(1, #prefix) == prefix then
+			return table.remove(pending, index)
 		end
 	end
-	return table.remove(pending, chosen)
+	return nil
+end
+
+-- Takes the next file to measure out of `pending`.
+-- The song playing now comes first, then the rest of the folder it plays from, then the rest of its context's folder.
+local function take_next(playing_file_path, playing_folder, playing_context)
+	for index, file_path in ipairs(pending) do
+		if file_path == playing_file_path then
+			return table.remove(pending, index)
+		end
+	end
+	return take_from_folder(playing_folder) or take_from_folder(playing_context) or table.remove(pending, 1)
 end
 
 local function start(file_path)
@@ -331,9 +342,10 @@ function Loudness.set_files(entries)
 	end
 end
 
--- Call every update. Measures for at most MEASURE_MS, starting with the files of `preferred_context`, the context playing now.
+-- Call every update. Measures for at most MEASURE_MS, starting with the song playing now, then its folder's and its context's songs.
+-- Each argument can be nil, as while the game's music plays.
 -- Opening a file takes an update of its own, since opening alone can take a few milliseconds.
-function Loudness.update(preferred_context)
+function Loudness.update(playing_file_path, playing_folder, playing_context)
 	if not enabled or not (MediaDecoder and MediaDecoder.available()) then
 		return
 	end
@@ -342,7 +354,7 @@ function Loudness.update(preferred_context)
 
 	if not active then
 		if #pending > 0 then
-			start(take_next(preferred_context))
+			start(take_next(playing_file_path, playing_folder, playing_context))
 			if active and started then
 				active.ms = (clock() - started) * 1000
 			end

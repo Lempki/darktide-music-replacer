@@ -111,9 +111,9 @@ local function entries(list)
 end
 
 -- Runs updates until nothing is left to measure, or `max` updates.
-local function measure_all(Loudness, preferred_context, max)
+local function measure_all(Loudness, playing_context, max)
 	for _ = 1, max or 100 do
-		Loudness.update(preferred_context)
+		Loudness.update(nil, nil, playing_context)
 	end
 end
 
@@ -132,18 +132,32 @@ describe("loudness.lua measuring", function()
 		assert_equal(test.closed, 2)
 	end)
 
+	it("measures the song playing now first, then its folder's, then its context's, then the rest", function()
+		local Loudness, test = load_loudness({
+			["audio/hub/a.mp3"] = 1, ["audio/boss/b.mp3"] = 1, ["audio/boss/chaos_spawn/c.mp3"] = 1, ["audio/boss/chaos_spawn/d.mp3"] = 1,
+		})
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3" }, { "boss/b.mp3" }, { "boss/chaos_spawn/c.mp3" }, { "boss/chaos_spawn/d.mp3" } }))
+
+		for _ = 1, 100 do
+			Loudness.update("boss/chaos_spawn/d.mp3", "boss/chaos_spawn", "boss")
+		end
+
+		assert_deep_equal(test.opened, { "audio/boss/chaos_spawn/d.mp3", "audio/boss/chaos_spawn/c.mp3", "audio/boss/b.mp3", "audio/hub/a.mp3" })
+	end)
+
 	it("opens a song in an update of its own, then reads for about a millisecond per update", function()
 		local Loudness, test = load_loudness({ ["audio/hub/a.mp3"] = 1000 })
 		Loudness.set_enabled(true)
 		Loudness.set_files(entries({ { "hub/a.mp3" } }))
 
-		Loudness.update("hub")
+		Loudness.update(nil, nil, "hub")
 		assert_equal(#test.opened, 1)
 		assert_equal(test.reads, 0)
 
-		Loudness.update("hub")
+		Loudness.update(nil, nil, "hub")
 		assert_equal(test.reads, 3)
-		Loudness.update("hub")
+		Loudness.update(nil, nil, "hub")
 		assert_equal(test.reads, 6)
 	end)
 
@@ -155,8 +169,8 @@ describe("loudness.lua measuring", function()
 		assert_equal(#test.opened, 0)
 
 		Loudness.set_enabled(true)
-		Loudness.update("hub")
-		Loudness.update("hub")
+		Loudness.update(nil, nil, "hub")
+		Loudness.update(nil, nil, "hub")
 		Loudness.set_enabled(false)
 		assert_equal(test.closed, 1)
 
@@ -275,7 +289,7 @@ describe("loudness.lua cache", function()
 		Loudness.set_enabled(true)
 		Loudness.set_files(entries(listed))
 		while #test.details < 1 do
-			Loudness.update("hub")
+			Loudness.update(nil, nil, "hub")
 		end
 		assert_equal(test.writes, 0)
 
@@ -422,8 +436,8 @@ describe("loudness.lua cache", function()
 		local Loudness, test = load_loudness({ ["audio/hub/a.mp3"] = 100 })
 		Loudness.set_enabled(true)
 		Loudness.set_files(entries({ { "hub/a.mp3", "1" } }))
-		Loudness.update("hub")
-		Loudness.update("hub")
+		Loudness.update(nil, nil, "hub")
+		Loudness.update(nil, nil, "hub")
 
 		Loudness.set_files(entries({ { "hub/a.mp3", "2" } }))
 		measure_all(Loudness, "hub")
@@ -441,7 +455,7 @@ describe("loudness.lua progress", function()
 			if #test.details >= count then
 				return
 			end
-			Loudness.update("hub")
+			Loudness.update(nil, nil, "hub")
 		end
 	end
 
@@ -479,7 +493,7 @@ describe("loudness.lua progress", function()
 		Loudness.set_files(entries({ { "hub/a.mp3" }, { "hub/b.mp3" }, { "hub/c.mp3" } }))
 		assert_deep_equal(progress(Loudness), { 0, 3 })
 
-		Loudness.update("hub")
+		Loudness.update(nil, nil, "hub")
 		assert_deep_equal(progress(Loudness), { 0, 3 })
 
 		measure_songs(Loudness, test, 1)
@@ -503,7 +517,7 @@ describe("loudness.lua progress", function()
 		Loudness.set_enabled(true)
 		Loudness.set_files(entries({ { "hub/a.mp3" }, { "hub/b.mp3" } }))
 
-		Loudness.update("hub")
+		Loudness.update(nil, nil, "hub")
 
 		assert_deep_equal(progress(Loudness), { 1, 2 })
 	end)
@@ -513,7 +527,7 @@ describe("loudness.lua progress", function()
 		Loudness.set_enabled(true)
 		Loudness.set_files(entries({ { "hub/a.mp3" }, { "hub/b.mp3" } }))
 		measure_songs(Loudness, test, 1)
-		Loudness.update("hub")
+		Loudness.update(nil, nil, "hub")
 
 		Loudness.set_files(entries({ { "hub/a.mp3" }, { "hub/b.mp3" }, { "hub/c.mp3" } }))
 
@@ -525,8 +539,8 @@ describe("loudness.lua progress", function()
 		Loudness.set_enabled(true)
 		Loudness.set_files(entries({ { "hub/a.mp3" }, { "hub/b.mp3" } }))
 		measure_songs(Loudness, test, 1)
-		Loudness.update("hub")
-		Loudness.update("hub")
+		Loudness.update(nil, nil, "hub")
+		Loudness.update(nil, nil, "hub")
 
 		Loudness.set_enabled(false)
 		Loudness.set_enabled(true)
