@@ -14,9 +14,12 @@ local DRAW_LAYER = 900
 
 local slot = ConstantElementSlot.new("ConstantElementMusicReplacerOnScreenMessage", DRAW_LAYER)
 
+-- The fade in stays short and fixed, so a key press always shows its message at once.
 local FADE_IN_SECONDS = 0.4
-local HOLD_SECONDS = 3
-local FADE_OUT_SECONDS = 1
+
+-- The Message Duration and Message Fade Out settings, in seconds.
+local hold_seconds = 3
+local fade_out_seconds = 1
 
 -- How long a new message takes to replace the one showing: the old one fades out and the new one in, at once.
 local CROSSFADE_SECONDS = 0.3
@@ -38,7 +41,7 @@ local enabled = false
 local look = { scale = 1, color = DEFAULT_COLOR, offset_x = 0, offset_y = 0 }
 
 -- The message showing now, or nil: its text, its opacity as a share, its phase, and the seconds left of its hold.
--- Its phase is "in", "hold", or "out".
+-- Its phase is "in", "hold", or "out", and its min_hold_seconds, if set, is the shortest hold it gets.
 local current = nil
 
 -- The messages a newer one replaced, oldest first, each with its text and opacity.
@@ -58,7 +61,8 @@ end
 
 -- Shows `text`, replacing the message showing now. Does nothing while the messages are turned off.
 -- The same text again keeps its line and starts its hold over, since two copies of one text crossfading look brighter for a moment.
-function OnScreenMessage.show(text)
+-- `min_hold_seconds`, if given, keeps the message held at least that long, whatever Message Duration says.
+function OnScreenMessage.show(text, min_hold_seconds)
 	if not enabled then
 		return
 	end
@@ -66,6 +70,7 @@ function OnScreenMessage.show(text)
 	if current and current.text == text then
 		current.phase = "in"
 		current.fade_in_seconds = FADE_IN_SECONDS
+		current.min_hold_seconds = min_hold_seconds
 		return
 	end
 
@@ -78,7 +83,7 @@ function OnScreenMessage.show(text)
 		fade_in_seconds = CROSSFADE_SECONDS
 	end
 
-	current = { text = text, opacity = 0, phase = "in", fade_in_seconds = fade_in_seconds }
+	current = { text = text, opacity = 0, phase = "in", fade_in_seconds = fade_in_seconds, min_hold_seconds = min_hold_seconds }
 end
 
 -- Moves the fades and the hold on by `dt` seconds. Call every frame the message is drawn.
@@ -102,7 +107,7 @@ function OnScreenMessage.advance(dt)
 			else
 				current.opacity = 1
 				current.phase = "hold"
-				current.hold_left = HOLD_SECONDS
+				current.hold_left = math.max(hold_seconds, current.min_hold_seconds or 0)
 				seconds = seconds - needed
 			end
 		elseif current.phase == "hold" then
@@ -113,8 +118,10 @@ function OnScreenMessage.advance(dt)
 				current.phase = "out"
 				seconds = seconds - current.hold_left
 			end
+		elseif fade_out_seconds <= 0 then
+			current = nil
 		else
-			current.opacity = current.opacity - seconds / FADE_OUT_SECONDS
+			current.opacity = current.opacity - seconds / fade_out_seconds
 			seconds = 0
 			if current.opacity <= 0 then
 				current = nil
@@ -136,6 +143,13 @@ end
 
 function OnScreenMessage.look()
 	return look
+end
+
+-- Sets how long a message stays at full opacity, and how long it then takes to fade out, both in seconds.
+-- A message showing now keeps the hold it started, and fades out at the new pace.
+function OnScreenMessage.set_timing(new_hold_seconds, new_fade_out_seconds)
+	hold_seconds = new_hold_seconds
+	fade_out_seconds = new_fade_out_seconds
 end
 
 -- The color comes from the saved settings, so anything but four numbers keeps the default.

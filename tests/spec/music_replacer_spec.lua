@@ -716,6 +716,7 @@ describe("MusicReplacer.lua on-screen messages", function()
 
 		assert_equal(harness.on_screen_message.enabled, true)
 		assert_deep_equal(harness.on_screen_message.look, { scale = 1, color = { 217, 200, 200, 195 }, offset_x = 0, offset_y = 0 })
+		assert_deep_equal(harness.on_screen_message.timing, { 3, 1 })
 	end)
 
 	it("follow their settings", function()
@@ -725,8 +726,11 @@ describe("MusicReplacer.lua on-screen messages", function()
 		harness:set_setting("message_color", { 255, 10, 20, 30 })
 		harness:set_setting("message_offset_x", 300)
 		harness:set_setting("message_offset_y", 40)
+		harness:set_setting("message_seconds", 5.5)
+		harness:set_setting("message_fade_out_seconds", 0)
 
 		assert_deep_equal(harness.on_screen_message.look, { scale = 1.5, color = { 255, 10, 20, 30 }, offset_x = 300, offset_y = 40 })
+		assert_deep_equal(harness.on_screen_message.timing, { 5.5, 0 })
 	end)
 
 	it("stay on while either kind is on, and turn off once both are off", function()
@@ -1684,6 +1688,16 @@ describe("MusicReplacer.lua the Remove from Rotation key", function()
 		harness.mod[control]()
 		harness:tick(0.1)
 	end
+
+	it("keeps its question on screen for the whole 3 seconds a second press counts, whatever Message Duration says", function()
+		local harness = in_hub(THREE_HUB_SONGS, { settings = { message_seconds = 1 } })
+
+		press(harness, "remove_song")
+
+		local shown = harness.on_screen_message.shown
+		assert_equal(shown[#shown], "<control_remove_confirm: <source_hub>, a.mp3>")
+		assert_equal(harness.on_screen_message.min_holds[#shown], 3)
+	end)
 
 	it("asks on the first press, naming the song, and changes nothing", function()
 		local harness = in_hub(THREE_HUB_SONGS)

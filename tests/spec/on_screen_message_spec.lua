@@ -240,6 +240,53 @@ describe("on_screen_message.lua", function()
 		assert_lines(OnScreenMessage, { { "Previous", 0.5 } })
 	end)
 
+	it("holds and fades out for as long as its timing says", function()
+		local OnScreenMessage = load_on_screen_message()
+		OnScreenMessage.set_timing(5, 2)
+
+		OnScreenMessage.show("Next")
+		OnScreenMessage.advance(0.4)
+		OnScreenMessage.advance(5)
+		assert_lines(OnScreenMessage, { { "Next", 1 } })
+
+		OnScreenMessage.advance(1)
+		assert_lines(OnScreenMessage, { { "Next", 0.5 } })
+
+		OnScreenMessage.advance(1)
+		assert_equal(OnScreenMessage.line_count(), 0)
+	end)
+
+	it("hides a message at once after its hold when its fade out is 0", function()
+		local OnScreenMessage = load_on_screen_message()
+		OnScreenMessage.set_timing(3, 0)
+
+		OnScreenMessage.show("Next")
+		OnScreenMessage.advance(0.4)
+		OnScreenMessage.advance(3)
+		assert_lines(OnScreenMessage, { { "Next", 1 } })
+
+		OnScreenMessage.advance(0.01)
+		assert_equal(OnScreenMessage.line_count(), 0)
+	end)
+
+	it("holds a message at least its minimum hold, even with a shorter timing", function()
+		local OnScreenMessage = load_on_screen_message()
+		OnScreenMessage.set_timing(1, 1)
+
+		OnScreenMessage.show("Press again", 3)
+		OnScreenMessage.advance(0.4)
+		OnScreenMessage.advance(3)
+		assert_lines(OnScreenMessage, { { "Press again", 1 } })
+
+		OnScreenMessage.show("Next")
+		OnScreenMessage.advance(0.3)
+		OnScreenMessage.advance(1)
+		assert_lines(OnScreenMessage, { { "Next", 1 } })
+
+		OnScreenMessage.advance(0.5)
+		assert_lines(OnScreenMessage, { { "Next", 0.5 } })
+	end)
+
 	it("shows nothing once a single frame outlasts the whole message", function()
 		local OnScreenMessage = load_on_screen_message()
 

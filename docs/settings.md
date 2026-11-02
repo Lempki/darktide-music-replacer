@@ -39,12 +39,14 @@ Keys that control the song playing now, and the setting that goes with them. Eve
 
 ## On-Screen Messages
 
-A message is one line of text near the bottom left corner of the screen. It fades in over 0.4 seconds, stays for 3 seconds, and fades out over 1 second. A new message crossfades from the one showing over 0.3 seconds and then stays its own 3 seconds, so pressing keys quickly never makes the text flicker. The same message again, such as a second Restart Song press's, keeps its line and stays another 3 seconds. The messages are drawn in the game's always-visible layer, so they also show on loading screens and the mission briefing. With For Key Presses and For Song Changes both off, no message shows.
+A message is one line of text near the bottom left corner of the screen. It fades in over 0.4 seconds, stays for the Message Duration, and fades out over the Message Fade Out. A new message crossfades from the one showing over 0.3 seconds and then stays its own Message Duration, so pressing keys quickly never makes the text flicker. The same message again, such as a second Restart Song press's, keeps its line and stays another Message Duration. The messages are drawn in the game's always-visible layer, so they also show on loading screens and the mission briefing. With For Key Presses and For Song Changes both off, no message shows.
 
 | Setting | Default | What it does |
 |---|---|---|
 | For Key Presses | On | Shows a message for each press of a Playback Controls key, such as `Next song: b.mp3`. |
 | For Song Changes | On | Shows `Now playing:` and the song's name whenever one of your songs starts without a key press: when a situation starts its music, when a song ends and the next one plays, and when a song resumes where it stopped. A folder's only song that keeps playing into the next situation shows nothing. |
+| Message Duration | 3 seconds | How long a message stays at full opacity before it fades out, from 1 to 10 seconds. Remove from Rotation's question always stays for the 3 seconds in which a second press removes the song. |
+| Message Fade Out | 1 second | How long a message takes to fade out, from 0 to 3 seconds. Set it to 0 to hide a message at once. |
 | Message Size | 100% | How big the messages are, from 50% to 200%. |
 | Message Color | Grey, 85% opacity | The messages' color, picked with DMF's color picker. Its alpha sets how opaque they are. It needs DMF from August 2026 or newer. |
 | Message Offset Right | 0 px | Moves the messages right from their spot, from 0 to 1800 pixels of a 1920x1080 screen. |

@@ -136,6 +136,20 @@ local strings = {
 		en = "Shows the song's name near the bottom left corner of the screen when one of your songs starts by itself: " ..
 			"when a situation starts its music, and when a song ends and the next one plays.",
 	},
+	message_seconds = {
+		en = "Message Duration",
+	},
+	message_seconds_tooltip = {
+		en = "How long a message stays at full opacity before it fades out.\n\n" ..
+			"Remove from Rotation's question always stays for the 3 seconds in which a second press removes the song.",
+	},
+	message_fade_out_seconds = {
+		en = "Message Fade Out",
+	},
+	message_fade_out_seconds_tooltip = {
+		en = "How long a message takes to fade out.\n\n" ..
+			"Set to " .. highlight("0") .. " to hide it at once.",
+	},
 	-- %s is the name of the song file.
 	song_now_playing = {
 		en = "Now playing: %s",

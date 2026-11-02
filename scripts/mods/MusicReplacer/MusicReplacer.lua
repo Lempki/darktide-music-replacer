@@ -203,11 +203,15 @@ local function song_name(file_path)
 	return file_path:match("[^/]+$")
 end
 
--- Shows the localized `text_id`, formatted with `...`, as the on-screen message.
+-- The localized `text_id`, formatted with `...`, for the on-screen message.
 -- Song and folder names are the player's own text, and "{#" starts a tag in the game's markup, so it is broken up.
-local function show_message(text_id, ...)
+local function message_text(text_id, ...)
 	local text = mod:localize(text_id, ...)
-	OnScreenMessage.show((text:gsub("{#", "{ #")))
+	return (text:gsub("{#", "{ #"))
+end
+
+local function show_message(text_id, ...)
+	OnScreenMessage.show(message_text(text_id, ...))
 end
 
 local play_context
@@ -704,7 +708,12 @@ mod.remove_song = function()
 	end
 
 	removal_asked = { file_path = playing_track.file_path, seconds = 0 }
-	notify_control("control_remove_confirm", folder_label(), song_name(playing_track.file_path))
+
+	-- The question stays up for as long as a second press removes the song, even with a shorter Message Duration.
+	if mod:get("key_press_messages") then
+		local text = message_text("control_remove_confirm", folder_label(), song_name(playing_track.file_path))
+		OnScreenMessage.show(text, REMOVE_CONFIRM_SECONDS)
+	end
 end
 
 -- The Restore Removed Songs button. Listing the folders again brings the songs back into every rotation.
@@ -810,6 +819,8 @@ local ON_SCREEN_MESSAGE_SETTINGS = {
 	message_color = true,
 	message_offset_x = true,
 	message_offset_y = true,
+	message_seconds = true,
+	message_fade_out_seconds = true,
 }
 
 -- The element stays on screen while either kind of message is on, and each kind checks its own setting before it shows.
@@ -821,6 +832,7 @@ local function apply_on_screen_message_settings()
 		offset_x = mod:get("message_offset_x"),
 		offset_y = mod:get("message_offset_y"),
 	})
+	OnScreenMessage.set_timing(mod:get("message_seconds"), mod:get("message_fade_out_seconds"))
 end
 
 -- Raw state transitions, the silencing, and sound events go to the detailed log.
