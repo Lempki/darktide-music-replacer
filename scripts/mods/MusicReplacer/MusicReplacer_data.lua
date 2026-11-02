@@ -143,6 +143,12 @@ return {
 								default_value = true,
 							},
 							{
+								setting_id = "song_change_messages",
+								type = "checkbox",
+								tooltip = "song_change_messages_tooltip",
+								default_value = true,
+							},
+							{
 								setting_id = "message_scale",
 								type = "numeric",
 								tooltip = "message_scale_tooltip",

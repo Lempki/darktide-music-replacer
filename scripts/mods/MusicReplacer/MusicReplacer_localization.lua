@@ -129,6 +129,16 @@ local strings = {
 	key_press_messages_tooltip = {
 		en = "Shows a message when you press one of these keys, such as the song that plays next.",
 	},
+	song_change_messages = {
+		en = "For Song Changes",
+	},
+	song_change_messages_tooltip = {
+		en = "Shows the song's name when one of your songs starts by itself: when a situation starts its music, and when a song ends and the next one plays.",
+	},
+	-- %s is the name of the song file.
+	song_now_playing = {
+		en = "Now playing: %s",
+	},
 	message_scale = {
 		en = "Message Size",
 	},

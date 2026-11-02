@@ -734,12 +734,57 @@ describe("MusicReplacer.lua on-screen messages", function()
 	it("show no message for a key press while For Key Presses is off, and the key still works", function()
 		local harness = in_hub()
 		harness:set_setting("key_press_messages", false)
+		local shown = #harness.on_screen_message.shown
 
 		harness.mod.next_song()
 		harness:tick(0.1)
 
 		assert_equal(harness:playing(), "hub/b.mp3")
+		assert_equal(#harness.on_screen_message.shown, shown)
+	end)
+
+	it("name the song a situation starts", function()
+		local harness = in_hub()
+
+		assert_equal(harness:last_on_screen_message(), "<song_now_playing: a.mp3>")
+	end)
+
+	it("name the next song when one ends", function()
+		local harness = in_hub()
+
+		harness:finish_song(200)
+
+		assert_equal(harness:last_on_screen_message(), "<song_now_playing: b.mp3>")
+	end)
+
+	it("name a song resumed where it stopped as playing now too", function()
+		local harness = in_mission()
+		local explore_song = harness:playing()
+		harness.client.position = 42
+		harness:state("music_combat", "normal")
+		harness:settle()
+
+		harness:state("music_combat", "None")
+		harness:wait(8)
+		harness:settle()
+
+		assert_equal(harness:last_play().opts.start_position, 42)
+		assert_equal(harness:last_on_screen_message(), "<song_now_playing: " .. explore_song:match("[^/]+$") .. ">")
+	end)
+
+	it("show nothing when a situation starts a song while For Song Changes is off", function()
+		local harness = in_hub(nil, { settings = { song_change_messages = false } })
+
+		harness:finish_song(200)
+
+		assert_equal(harness:playing(), "hub/b.mp3")
 		assert_equal(harness:last_on_screen_message(), nil)
+	end)
+
+	it("show markup in a song's name as plain text", function()
+		local harness = in_hub({ hub = { { name = "{#color(255,0,0)}a.mp3", duration = 200 } } })
+
+		assert_equal(harness:last_on_screen_message(), "<song_now_playing: { #color(255,0,0)}a.mp3>")
 	end)
 end)
 
@@ -1727,6 +1772,23 @@ describe("MusicReplacer.lua the Remove from Rotation key", function()
 		assert_equal(harness:last_on_screen_message(), "<control_removed_song: <source_explore> (lm_cooling), cooling.mp3>")
 	end)
 
+	it("keeps its message over the song the situation plays after an override folder's last song", function()
+		local harness = MainHarness.new({ files = {
+			explore = { { name = "x.mp3", duration = 300 } },
+			["explore/lm_cooling"] = { { name = "cooling.mp3", duration = 300 } },
+		} })
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness:enter_mission("lm_cooling", "zone_3")
+		harness:settle()
+
+		press(harness, "remove_song")
+		press(harness, "remove_song")
+
+		assert_equal(harness:playing(), "explore/x.mp3")
+		assert_equal(harness:last_on_screen_message(), "<control_removed_song: <source_explore> (lm_cooling), cooling.mp3>")
+	end)
+
 	it("says no song of yours is playing in a situation set to Vanilla", function()
 		local harness = in_hub(nil, { settings = { source_hub = "game" } })
 
@@ -1744,10 +1806,14 @@ describe("MusicReplacer.lua the Restore Removed Songs button", function()
 		harness:tick(0.1)
 		assert_equal(harness:playing(), nil)
 
+		local shown = #harness.on_screen_message.shown
+
 		harness.mod.restore_removed_songs()
 		harness:tick(0.1)
 
-		assert_equal(harness:last_on_screen_message(), "<control_restored_song>")
+		-- The situation plays again once the folders are listed, which names its song after the restore.
+		assert_deep_equal({ unpack(harness.on_screen_message.shown, shown + 1) },
+			{ "<control_restored_song>", "<song_now_playing: only.mp3>" })
 		assert_equal(harness:playing(), "hub/only.mp3")
 	end)
 

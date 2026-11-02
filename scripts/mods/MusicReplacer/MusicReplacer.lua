@@ -199,6 +199,17 @@ local function hand_back(status)
 	Suppression.release()
 end
 
+local function song_name(file_path)
+	return file_path:match("[^/]+$")
+end
+
+-- Shows the localized `text_id`, formatted with `...`, as the on-screen message.
+-- Song and folder names are the player's own text, and "{#" starts a tag in the game's markup, so it is broken up.
+local function show_message(text_id, ...)
+	local text = mod:localize(text_id, ...)
+	OnScreenMessage.show((text:gsub("{#", "{ #")))
+end
+
 local play_context
 
 -- The AudioClient.play options for `track` from `folder`, whose on_finished plays the context's next song.
@@ -382,6 +393,11 @@ play_context = function(context_name, is_new_context)
 		return
 	end
 
+	-- The keys start their songs through play_manual_pick, and their own messages name them.
+	if mod:get("song_change_messages") then
+		show_message("song_now_playing", song_name(file_path))
+	end
+
 	play_track(context_name, folder, track)
 end
 
@@ -476,14 +492,12 @@ end)
 -- While a change is still settling, a key acts on what plays now.
 
 -- Shows a key's message, unless For Key Presses is off.
--- Song and folder names are the player's own text, and "{#" starts a tag in the game's markup, so it is broken up.
 local function notify_control(text_id, ...)
 	if not mod:get("key_press_messages") then
 		return
 	end
 
-	local text = mod:localize(text_id, ...)
-	OnScreenMessage.show((text:gsub("{#", "{ #")))
+	show_message(text_id, ...)
 end
 
 -- True while one of the player's songs plays for the current situation, or is paused, the only music the keys act on.
@@ -500,10 +514,6 @@ local function song_position()
 		return playing_track.position
 	end
 	return AudioClient.position()
-end
-
-local function song_name(file_path)
-	return file_path:match("[^/]+$")
 end
 
 -- `control` names the key in the log.
@@ -666,7 +676,7 @@ local function remove_playing_song()
 	RemovedSongs.add(file_path)
 	Library.remove_file(file_path)
 	log(string.format("[control] %s: removed %s from rotation", current_context, file_path))
-	notify_control("control_removed_song", folder_label(), song_name(file_path))
+	local label = folder_label()
 
 	local next_path, duration, is_only_file = Library.pick_file(current_folder, file_path)
 	if next_path then
@@ -674,6 +684,9 @@ local function remove_playing_song()
 	else
 		replay_current_context()
 	end
+
+	-- Shown after the replay, so the removal is the message that stays, not the song the next folder starts.
+	notify_control("control_removed_song", label, song_name(file_path))
 end
 
 -- The Remove from Rotation key: the first press asks, and a second press within REMOVE_CONFIRM_SECONDS removes the song.
