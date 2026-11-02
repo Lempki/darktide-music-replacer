@@ -1,6 +1,6 @@
 -- The short on-screen message, such as a playback key's: one line that fades in, holds, and fades out.
 -- A new message takes the place of the one showing, which fades out under it, so the text never jumps or flickers.
--- It shows behind the On-Screen Messages setting, which is on by default.
+-- It shows while For Key Presses or For Song Changes is on, which both are by default.
 --
 -- The lines are drawn by an element in the game's constant UI, which constant_element_slot.lua keeps there.
 -- The constant UI is drawn on every screen, so the message also shows on loading screens and the mission briefing.

@@ -803,17 +803,19 @@ local function create_on_screen_message_element(constant_elements, draw_layer)
 	return OnScreenMessageElement:new(constant_elements, draw_layer)
 end
 
--- For Key Presses is read at each press instead, so it is not here.
 local ON_SCREEN_MESSAGE_SETTINGS = {
-	on_screen_messages = true,
+	key_press_messages = true,
+	song_change_messages = true,
 	message_scale = true,
 	message_color = true,
 	message_offset_x = true,
 	message_offset_y = true,
 }
 
+-- The element stays on screen while either kind of message is on, and each kind checks its own setting before it shows.
 local function apply_on_screen_message_settings()
-	OnScreenMessage.set_enabled(mod:get("on_screen_messages") == true, {
+	local any_on = mod:get("key_press_messages") == true or mod:get("song_change_messages") == true
+	OnScreenMessage.set_enabled(any_on, {
 		scale = mod:get("message_scale") / 100,
 		color = mod:get("message_color"),
 		offset_x = mod:get("message_offset_x"),

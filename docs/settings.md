@@ -1,18 +1,24 @@
 # Settings
 
-Every setting of Music Replacer, with its default. The settings are in the in-game mod options under Music Replacer, in eight groups, in the order the menu shows them.
+Every setting of Music Replacer, with its default. The settings are in the in-game mod options under Music Replacer, in ten groups, in the order the menu shows them.
+
+## Your Songs
+
+| Setting | Default | What it does |
+|---|---|---|
+| Rescan Audio Folders | (button) | Lists the audio folders again at once, and checks every song again. The mod notices added, removed, and replaced files by itself, and lists the folders again 3 seconds after files stop changing. Use this button on drives where Windows cannot report changes, such as some network drives, and to retry a song that would not play. It also lets the mod try playback again after it has given up, and creates any situation's folder that went missing. It does not measure loudness again. |
+| Restore Removed Songs | (button) | Puts every song that Remove from Rotation took out back into its folder's rotation. A situation left with no songs plays them again at once. |
 
 ## Playback
 
 | Setting | Default | What it does |
 |---|---|---|
-| Rescan Audio Folders | (button) | Lists the audio folders again at once, and checks every song again. The mod notices added, removed, and replaced files by itself, and lists the folders again 3 seconds after files stop changing. Use this button on drives where Windows cannot report changes, such as some network drives, and to retry a song that would not play. It also lets the mod try playback again after it has given up, and creates any situation's folder that went missing. It does not measure loudness again. |
 | Resume Songs | On | Explore, combat, Mortis Trials, and Expedition fight and safe room songs continue where they stopped when their music comes back. Horde, boss, and event songs also continue after an interruption by music that outranks them, such as a boss during a horde or a last stand during an event, as long as that horde, fight, or event lasts. A new horde, boss fight, or event gets a new pick. A song that stopped in its last 10 seconds is not continued. A new song is picked once one ends on its own. Every mission and hub visit starts with fresh songs. A Mission Briefing song that the preparation screen interrupts continues in the briefing after it. Within one situation, a song from an override folder also continues when the music switches back to that folder, such as an Operation's stage or an Expedition's fight level. |
 | Fade Length | 2 seconds | How long the music crossfades when the situation changes, and how long a song fades out at its end, from 0 to 10 seconds. A song that does not loop, which is any song not alone in its folder, starts its end fade that long before it ends. A song shorter than two fades fades in over its first half and out over its second. A song that gives way to the game's music or to silence always fades out over half a second. Set it to 0 to switch at once. |
 
 ## Playback Controls
 
-Keys that control the song playing now, and the button and setting that go with them. Every key starts unbound. DMF runs keybinds even while you type in chat, so a key that is not a letter, such as one on the numpad or an F-key, works best. Each press shows a short message, see [On-Screen Messages](#on-screen-messages) below. A press while none of your songs plays, as in a situation set to Vanilla or Silence or with an empty folder, says so and changes nothing.
+Keys that control the song playing now, and the setting that goes with them. Every key starts unbound. DMF runs keybinds even while you type in chat, so a key that is not a letter, such as one on the numpad or an F-key, works best. Each press shows a short message, see [On-Screen Messages](#on-screen-messages). A press while none of your songs plays, as in a situation set to Vanilla or Silence or with an empty folder, says so and changes nothing.
 
 | Setting | Default | What it does |
 |---|---|---|
@@ -21,19 +27,28 @@ Keys that control the song playing now, and the button and setting that go with 
 | Restart Song | Unbound | Jumps back to the start of the song playing now. |
 | Pause / Resume | Unbound | Pauses the song playing now, and the next press resumes it where it stopped. The game's music stays silent while it is paused, and the debug overlay's status reads `Custom, paused`. Next Song, Previous Song, and Restart Song also end the pause. A new situation ends it too, and the paused song continues later like any song that was playing. |
 | Remove from Rotation | Unbound | Press it twice within 3 seconds to stop the song playing now from ever being picked in its folder again, and move on to another song. The first press asks, and both messages name the song and where it plays, such as `Hub`, or `Boss (chaos_spawn)` for an override folder. The file stays where it is, and a copy of the song in another folder still plays there. After a folder's last song, the situation plays as if the folder were empty. The removed songs are listed in `removed.txt`, see [Files the mod writes](troubleshooting.md#files-the-mod-writes). |
-| Restore Removed Songs | (button) | Puts every song that Remove from Rotation took out back into its folder's rotation. A situation left with no songs plays them again at once. |
 | Key Fade Length | 0.5 seconds | How long the music crossfades when one of these keys changes the song, pauses it, or resumes it, from 0 to 10 seconds. Fade Length still sets the fades when the situation changes and when a song ends by itself. A key that starts the song playing now over, as Restart Song does, always jumps to its start in a tenth of a second, so two copies of the song never play over each other. Set it to 0 to switch at once. |
-| On-Screen Messages | On | Shows a short message near the bottom left corner of the screen. The settings below it show while it is on. Off shows no message, and the keys still work. |
-| For Key Presses | On | Shows a message for each press of these keys, such as `Next song: b.mp3`. |
+
+## Volume
+
+| Setting | Default | What it does |
+|---|---|---|
+| Custom Music Volume | 100% | How loud your songs play, on top of the game's master and music volume sliders. At 100%, they play as loud as the files themselves. The game's music is not affected. |
+| Menu Volume | 50% | How loud your songs play while a menu is open, as a share of the Custom Music Volume. The menus are the ones the game reports to its audio: the Esc menu and its settings, the inventory, the mission board, vendors, the store, and character appearance. The music fades down over half a second. It fades back up once no menu has been open for half a second, so moving between menus does not raise it. 100% keeps the music at full volume in menus. |
+| Even Out Loudness | Off | Plays every song at about the same loudness, without changing your files. Each song is measured once in the background and remembered, starting with the folder that plays. A song not measured yet plays at its own level, and a song measured while it plays changes level at its next start. Loud songs are turned down. A quiet song is only raised as far as it can go without distorting, and a very quiet one only partway, since raising it further mostly raises its hiss. |
+
+## On-Screen Messages
+
+A message is one line of text near the bottom left corner of the screen. It fades in over 0.4 seconds, stays for 3 seconds, and fades out over 1 second. A new message crossfades from the one showing over 0.3 seconds and then stays its own 3 seconds, so pressing keys quickly never makes the text flicker. The same message again, such as a second Restart Song press's, keeps its line and stays another 3 seconds. The messages are drawn in the game's always-visible layer, so they also show on loading screens and the mission briefing. With For Key Presses and For Song Changes both off, no message shows.
+
+| Setting | Default | What it does |
+|---|---|---|
+| For Key Presses | On | Shows a message for each press of a Playback Controls key, such as `Next song: b.mp3`. |
 | For Song Changes | On | Shows `Now playing:` and the song's name whenever one of your songs starts without a key press: when a situation starts its music, when a song ends and the next one plays, and when a song resumes where it stopped. A folder's only song that keeps playing into the next situation shows nothing. |
 | Message Size | 100% | How big the messages are, from 50% to 200%. |
 | Message Color | Grey, 85% opacity | The messages' color, picked with DMF's color picker. Its alpha sets how opaque they are. It needs DMF from August 2026 or newer. |
 | Message Offset Right | 0 px | Moves the messages right from their spot, from 0 to 1800 pixels of a 1920x1080 screen. |
 | Message Offset Up | 0 px | Moves the messages up from their spot, from 0 to 1000 pixels of a 1920x1080 screen. |
-
-### On-Screen Messages
-
-A message is one line of text near the bottom left corner of the screen. It fades in over 0.4 seconds, stays for 3 seconds, and fades out over 1 second. A new message crossfades from the one showing over 0.3 seconds and then stays its own 3 seconds, so pressing keys quickly never makes the text flicker. The same message again, such as a second Restart Song press's, keeps its line and stays another 3 seconds. The messages are drawn in the game's always-visible layer, so they also show on loading screens and the mission briefing.
 
 ## Music per Situation
 
@@ -45,14 +60,6 @@ One dropdown per situation except Meat Grinder, which has a group of its own bel
 |---|---|---|
 | Music | Silence | What plays in the Meat Grinder training area: Silence, Meat Grinder Folder, One Situation, or Like a Mission. [Meat Grinder](../README.md#meat-grinder) in the README explains each one. |
 | Situation | Explore | The situation One Situation plays, shown while One Situation is chosen. Every situation but Meat Grinder itself is offered. |
-
-## Volume
-
-| Setting | Default | What it does |
-|---|---|---|
-| Custom Music Volume | 100% | How loud your songs play, on top of the game's master and music volume sliders. At 100%, they play as loud as the files themselves. The game's music is not affected. |
-| Menu Volume | 50% | How loud your songs play while a menu is open, as a share of the Custom Music Volume. The menus are the ones the game reports to its audio: the Esc menu and its settings, the inventory, the mission board, vendors, the store, and character appearance. The music fades down over half a second. It fades back up once no menu has been open for half a second, so moving between menus does not raise it. 100% keeps the music at full volume in menus. |
-| Even Out Loudness | Off | Plays every song at about the same loudness, without changing your files. Each song is measured once in the background and remembered, starting with the folder that plays. A song not measured yet plays at its own level, and a song measured while it plays changes level at its next start. Loud songs are turned down. A quiet song is only raised as far as it can go without distorting, and a very quiet one only partway, since raising it further mostly raises its hiss. |
 
 ## Boss Music
 

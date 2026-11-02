@@ -725,10 +725,21 @@ describe("MusicReplacer.lua on-screen messages", function()
 		harness:set_setting("message_color", { 255, 10, 20, 30 })
 		harness:set_setting("message_offset_x", 300)
 		harness:set_setting("message_offset_y", 40)
-		harness:set_setting("on_screen_messages", false)
 
-		assert_equal(harness.on_screen_message.enabled, false)
 		assert_deep_equal(harness.on_screen_message.look, { scale = 1.5, color = { 255, 10, 20, 30 }, offset_x = 300, offset_y = 40 })
+	end)
+
+	it("stay on while either kind is on, and turn off once both are off", function()
+		local harness = in_hub()
+
+		harness:set_setting("key_press_messages", false)
+		assert_equal(harness.on_screen_message.enabled, true)
+
+		harness:set_setting("song_change_messages", false)
+		assert_equal(harness.on_screen_message.enabled, false)
+
+		harness:set_setting("key_press_messages", true)
+		assert_equal(harness.on_screen_message.enabled, true)
 	end)
 
 	it("show no message for a key press while For Key Presses is off, and the key still works", function()

@@ -1,5 +1,6 @@
 -- The mod options, grouped and ordered by how often players need them.
--- Their songs and the keys that control them come first, then what plays where and how loud, then fine timing, and troubleshooting last.
+-- Their songs, how they play, the keys, and how loud come first, then the on-screen messages.
+-- What plays where follows, then fine timing, and troubleshooting last.
 -- Every setting names its tooltip: DMF formats named strings, turning "%%" into "%", but shows an implicit description's "%%" as it is.
 
 local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/contexts")
@@ -36,7 +37,7 @@ return {
 	options = {
 		widgets = {
 			{
-				setting_id = "playback",
+				setting_id = "your_songs",
 				type = "group",
 				sub_widgets = {
 					{
@@ -46,6 +47,19 @@ return {
 						button_text = "rescan_audio_button",
 						function_name = "rescan_audio",
 					},
+					{
+						setting_id = "restore_removed_songs",
+						type = "button",
+						tooltip = "restore_removed_songs_tooltip",
+						button_text = "restore_removed_songs_button",
+						function_name = "restore_removed_songs",
+					},
+				},
+			},
+			{
+				setting_id = "playback",
+				type = "group",
+				sub_widgets = {
 					{
 						setting_id = "resume_songs",
 						type = "checkbox",
@@ -115,13 +129,6 @@ return {
 						function_name = "remove_song",
 					},
 					{
-						setting_id = "restore_removed_songs",
-						type = "button",
-						tooltip = "restore_removed_songs_tooltip",
-						button_text = "restore_removed_songs_button",
-						function_name = "restore_removed_songs",
-					},
-					{
 						setting_id = "key_fade_seconds",
 						type = "numeric",
 						tooltip = "key_fade_seconds_tooltip",
@@ -130,60 +137,88 @@ return {
 						decimals_number = 1,
 						unit_text = "seconds_unit",
 					},
+				},
+			},
+			{
+				setting_id = "volume",
+				type = "group",
+				sub_widgets = {
 					{
-						setting_id = "on_screen_messages",
+						setting_id = "custom_music_volume",
+						type = "numeric",
+						tooltip = "custom_music_volume_tooltip",
+						default_value = 100,
+						range = { 0, 100 },
+						decimals_number = 0,
+						unit_text = "percent_unit",
+					},
+					{
+						setting_id = "menu_volume",
+						type = "numeric",
+						tooltip = "menu_volume_tooltip",
+						default_value = 50,
+						range = { 0, 100 },
+						decimals_number = 0,
+						unit_text = "percent_unit",
+					},
+					{
+						setting_id = "normalize_loudness",
 						type = "checkbox",
-						tooltip = "on_screen_messages_tooltip",
+						tooltip = "normalize_loudness_tooltip",
+						default_value = false,
+					},
+				},
+			},
+			{
+				setting_id = "on_screen_messages",
+				type = "group",
+				sub_widgets = {
+					{
+						setting_id = "key_press_messages",
+						type = "checkbox",
+						tooltip = "key_press_messages_tooltip",
 						default_value = true,
-						sub_widgets = {
-							{
-								setting_id = "key_press_messages",
-								type = "checkbox",
-								tooltip = "key_press_messages_tooltip",
-								default_value = true,
-							},
-							{
-								setting_id = "song_change_messages",
-								type = "checkbox",
-								tooltip = "song_change_messages_tooltip",
-								default_value = true,
-							},
-							{
-								setting_id = "message_scale",
-								type = "numeric",
-								tooltip = "message_scale_tooltip",
-								default_value = 100,
-								range = { 50, 200 },
-								decimals_number = 0,
-								unit_text = "percent_unit",
-							},
-							{
-								-- ARGB. The alpha, 217, is 85% opacity.
-								setting_id = "message_color",
-								type = "color",
-								tooltip = "message_color_tooltip",
-								default_value = { 217, 200, 200, 195 },
-								has_alpha = true,
-							},
-							{
-								setting_id = "message_offset_x",
-								type = "numeric",
-								tooltip = "message_offset_x_tooltip",
-								default_value = 0,
-								range = { 0, 1800 },
-								decimals_number = 0,
-								unit_text = "pixels_unit",
-							},
-							{
-								setting_id = "message_offset_y",
-								type = "numeric",
-								tooltip = "message_offset_y_tooltip",
-								default_value = 0,
-								range = { 0, 1000 },
-								decimals_number = 0,
-								unit_text = "pixels_unit",
-							},
-						},
+					},
+					{
+						setting_id = "song_change_messages",
+						type = "checkbox",
+						tooltip = "song_change_messages_tooltip",
+						default_value = true,
+					},
+					{
+						setting_id = "message_scale",
+						type = "numeric",
+						tooltip = "message_scale_tooltip",
+						default_value = 100,
+						range = { 50, 200 },
+						decimals_number = 0,
+						unit_text = "percent_unit",
+					},
+					{
+						-- ARGB. The alpha, 217, is 85% opacity.
+						setting_id = "message_color",
+						type = "color",
+						tooltip = "message_color_tooltip",
+						default_value = { 217, 200, 200, 195 },
+						has_alpha = true,
+					},
+					{
+						setting_id = "message_offset_x",
+						type = "numeric",
+						tooltip = "message_offset_x_tooltip",
+						default_value = 0,
+						range = { 0, 1800 },
+						decimals_number = 0,
+						unit_text = "pixels_unit",
+					},
+					{
+						setting_id = "message_offset_y",
+						type = "numeric",
+						tooltip = "message_offset_y_tooltip",
+						default_value = 0,
+						range = { 0, 1000 },
+						decimals_number = 0,
+						unit_text = "pixels_unit",
 					},
 				},
 			},
@@ -219,36 +254,6 @@ return {
 								options = meat_grinder_situations,
 							},
 						},
-					},
-				},
-			},
-			{
-				setting_id = "volume",
-				type = "group",
-				sub_widgets = {
-					{
-						setting_id = "custom_music_volume",
-						type = "numeric",
-						tooltip = "custom_music_volume_tooltip",
-						default_value = 100,
-						range = { 0, 100 },
-						decimals_number = 0,
-						unit_text = "percent_unit",
-					},
-					{
-						setting_id = "menu_volume",
-						type = "numeric",
-						tooltip = "menu_volume_tooltip",
-						default_value = 50,
-						range = { 0, 100 },
-						decimals_number = 0,
-						unit_text = "percent_unit",
-					},
-					{
-						setting_id = "normalize_loudness",
-						type = "checkbox",
-						tooltip = "normalize_loudness_tooltip",
-						default_value = false,
 					},
 				},
 			},

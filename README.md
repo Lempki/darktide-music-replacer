@@ -34,7 +34,7 @@ Everything below is optional detail.
 | …find out which folder plays right now. | Turn on Debug Overlay in the mod options. It shows the folder that plays and the override names the moment looks for. |
 | …try out my songs without starting a mission. | In Meat Grinder, set its Music to One Situation and pick the situation. |
 | …skip a song, or never hear it again. | Bind Next Song or Remove from Rotation under Playback Controls in the mod options. |
-| …see which song is playing. | It shows by default: each new song's name appears for a few seconds near the bottom left corner. On-Screen Messages under Playback Controls turns it off or changes its size, color, and position. |
+| …see which song is playing. | It shows by default: each new song's name appears for a few seconds near the bottom left corner. The On-Screen Messages group in the mod options turns it off or changes its size, color, and position. |
 
 ## What it does
 
@@ -126,7 +126,7 @@ Meat Grinder is a good place to try out your songs, so it has a settings group o
 
 ## Settings
 
-The settings are in the in-game mod options under Music Replacer, in eight groups: Playback, Playback Controls, Music per Situation, Meat Grinder, Volume, Boss Music, Music Holds, and Debug. Every setting and its default is explained in [docs/settings.md](docs/settings.md).
+The settings are in the in-game mod options under Music Replacer, in ten groups: Your Songs, Playback, Playback Controls, Volume, On-Screen Messages, Music per Situation, Meat Grinder, Boss Music, Music Holds, and Debug. Every setting and its default is explained in [docs/settings.md](docs/settings.md).
 
 ## Override folders
 

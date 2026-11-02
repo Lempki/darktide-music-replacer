@@ -20,8 +20,8 @@ local function source_tooltip(when, note)
 end
 
 local strings = {
-	playback = {
-		en = "Playback",
+	your_songs = {
+		en = "Your Songs",
 	},
 	rescan_audio = {
 		en = "Rescan Audio Folders",
@@ -34,6 +34,9 @@ local strings = {
 			"The mod notices added, removed, and replaced files by itself a few seconds after they change. " ..
 			"This button is for drives where Windows cannot report changes, such as some network drives, " ..
 			"for retrying a song that would not play, and for bringing back a situation's folder that went missing.",
+	},
+	playback = {
+		en = "Playback",
 	},
 	fade_seconds = {
 		en = "Fade Length",
@@ -118,22 +121,20 @@ local strings = {
 	on_screen_messages = {
 		en = "On-Screen Messages",
 	},
-	on_screen_messages_tooltip = {
-		en = "Shows a short message near the bottom left corner of the screen. " ..
-			"It fades out after a few seconds, and shows on every screen, loading screens included.\n\n" ..
-			highlight("Off") .. " shows no message. The keys still work.",
-	},
 	key_press_messages = {
 		en = "For Key Presses",
 	},
 	key_press_messages_tooltip = {
-		en = "Shows a message when you press one of these keys, such as the song that plays next.",
+		en = "Shows a short message near the bottom left corner of the screen when you press one of the Playback Controls keys, such as the song that plays next. " ..
+			"It fades out after a few seconds, and shows on every screen, loading screens included.\n\n" ..
+			highlight("Off") .. " shows no message for them. The keys still work.",
 	},
 	song_change_messages = {
 		en = "For Song Changes",
 	},
 	song_change_messages_tooltip = {
-		en = "Shows the song's name when one of your songs starts by itself: when a situation starts its music, and when a song ends and the next one plays.",
+		en = "Shows the song's name near the bottom left corner of the screen when one of your songs starts by itself: " ..
+			"when a situation starts its music, and when a song ends and the next one plays.",
 	},
 	-- %s is the name of the song file.
 	song_now_playing = {
