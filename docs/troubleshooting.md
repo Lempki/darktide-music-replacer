@@ -32,8 +32,6 @@ The mod writes these files to `%APPDATA%\Fatshark\Darktide\MusicReplacer\`:
 
 ## A lost audio device
 
-If your audio device goes away, the mod handles it like this:
-
 * While Windows has no audio output at all, for example right after you unplug your only headset, the game's music takes over. The mod tries again every 5 seconds, and your music comes back once an output does.
 * If the audio device is lost in a way Windows cannot recover from by itself, the mod restarts its audio and continues the song where it was.
 * If it still fails after three restarts in a row, the mod gives up and the game's music plays. Press Rescan Audio Folders, or turn the mod off and on, to let it try again.

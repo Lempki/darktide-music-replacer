@@ -64,7 +64,7 @@ Playing through Media Foundation and XAudio2 inside the game's own process remov
 
 ## How playback works
 
-Music Replacer decodes the files with Media Foundation, Windows' own media framework, and plays them with XAudio2 2.9, the audio engine Windows provides for games. It calls both from Lua through LuaJIT's ffi, which the mod loader exposes as `Mods.lua.ffi`, so the mod ships no DLL or executable. Media Foundation starts in its lite mode, which leaves its network support uninitialized, since the mod only opens local files.
+Music Replacer decodes the files with Media Foundation, Windows' own media framework, and plays them with XAudio2 2.9, the audio engine Windows provides for games. It calls both from Lua through LuaJIT's ffi, which the mod loader exposes as `Mods.lua.ffi`. Media Foundation starts in its lite mode, which leaves its network support uninitialized, since the mod only opens local files.
 
 ### Decoding and streaming
 
@@ -99,7 +99,7 @@ Music Replacer decodes the files with Media Foundation, Windows' own media frame
 * A song copied into several folders keeps its file name, size, and write time, so it is measured once and every copy takes over the result.
 * The log says how long measuring took once every song is measured.
 * The debug overlay shows how many songs of the current batch are measured while songs are left to measure.
-* The results go to `loudness.txt` beside `diagnostic.log`, keyed by each file's size and write time, so a song is measured once and again only after its file changes. It is written every 10 songs, once measuring is done, and on unload. Deleting it measures every song again.
+* The results go to `loudness.txt` beside `diagnostic.log`, keyed by each file's size and write time, so a song is measured once and again only after its file changes. It is written every 10 songs, once measuring is done, and on unload.
 * A song keeps the level it started with, so one measured while it plays changes level at its next start.
 
 ### File checks

@@ -58,11 +58,11 @@ Wwise events start sounds, and a few of them are music.
 * `wwise/events/music/play_exploration_music` and `wwise/events/music/play_exploration_the_machine_spiri_1`, `_3`, and `_4` fire during hordes and around mission event sequences, such as holding a position or minigames.
 * `wwise/events/cinematics/play_outro_win_generic_01` and `wwise/events/ui/play_ui_eor_start_stinger` fire during a mission's victory. Neither has "music" in its name.
 * `wwise/events/cinematics/play_mission_intro_stinger_generic` fires at the start of a mission's intro.
-* Events under `wwise/events/cinematics/` with `music` in their name, such as `play_cs01_cs02_music_combat` or `play_cs03_music_116bpm`, start a cutscene's music. It can run on after the cutscene ends, so the mod stops it once a custom song takes over.
+* Events under `wwise/events/cinematics/` with `music` in their name, such as `play_cs01_cs02_music_combat` or `play_cs03_music_116bpm`, start a cutscene's music.
 
 ## How the mod silences it
 
-The mod only silences the game's music once it has a custom song for the current context, so a context with no songs keeps the game's music. A context set to Silence is the one exception. It silences the game's music with no song at all, by forcing the same groups as a custom song for that context does. Meat Grinder is set to Silence by default. A context set to Vanilla never silences the game's music.
+The mod only silences the game's music once it has a custom song for the current context, so a context with no songs keeps the game's music. A context set to Silence is the one exception. It silences the game's music with no song at all, by forcing the same groups as a custom song for that context does. A context set to Vanilla never silences the game's music.
 
 Each line below shows up in the log with Detailed Logging on.
 
