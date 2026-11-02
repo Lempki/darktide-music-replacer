@@ -29,7 +29,7 @@ These folders can also hold the game's name for a moment inside them:
 
 | Folder | Names | When they play |
 |---|---|---|
-| `event` | The kind of event, such as `escape_event`, `fortification_event`, `twins_event`, or an Operation's `operation_stage_1`. [wwise-events.md](wwise-events.md) lists the kinds. | During that kind of event. |
+| `event` | The kind of event, such as `escape_event`, `fortification_event`, `twins_event`, or an Operation's stage: `operation_stage_1` to `_4` in Rolling Steel and `operation_2_stage_1` to `_4` in No Man's Land. [wwise-events.md](wwise-events.md) lists the kinds. | During that kind of event. |
 | `boss` | `chaos_spawn`, `chaos_beast_of_nurgle`, `chaos_plague_ogryn`, `chaos_ogryn_houndmaster`. With Boss Music for Captains on, also `renegade_captain`, `cultist_captain`, `renegade_twin_captain`, `renegade_twin_captain_two`. With Boss Music for Daemonhosts on, also `chaos_daemonhost`, `chaos_daemonhost_torment`, `chaos_mutator_daemonhost`. | While that boss is in the fight. With several, the one that came last. |
 | `hub` | `mission_ready` | While your party is matchmaking, from choosing a mission until it starts. |
 | `character_select` | `character_creation` | While you create a character. |
@@ -40,6 +40,8 @@ These folders can also hold the game's name for a moment inside them:
 ## Which one plays
 
 When several apply, the first one that has songs wins: the moment's name, then the mission's code, then the game mode. An override folder with no songs is skipped, so its parent folder, or the game's music, plays as before.
+
+Both Operations end with an `escape_event`, the same kind every mission's escape has. So `event\escape_event\` plays at the end of Rolling Steel and No Man's Land too, ahead of `event\op_train\` and `event\op_no_mans_land\`.
 
 On the way into a mission, the mission's code and its game mode apply during the loading screens, the preparation screen, and the briefing. So `mission_briefing\mortis_trials\` plays during the Mortis Trials briefing. Havoc applies only once the mission has loaded, so a `havoc` folder does not apply on the preparation screen or during most of the briefing.
 
