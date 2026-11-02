@@ -35,7 +35,7 @@ These folders can also hold the game's name for a moment inside them:
 | `character_select` | `character_creation` | While you create a character. |
 | `victory`, `defeat` | `game_score_win`, `game_score_lose` | Once the score screen opens. The parent folder then plays only the closing shot of the mission. |
 | `mortis_trials_wave` | `horde_mode_wave`, `horde_mode_objective`, `horde_mode_wave_last`, `horde_mode_win` | During a wave, an objective round, the last wave, or the final win. |
-| `expedition_combat` | `low_combat`, `med_combat`, `high_combat` | At that fight level, which follows how alert the enemy is. The level can change during a fight, which switches the song. |
+| `expedition_combat` | `low_combat`, `med_combat`, `high_combat` | At that fight level, which follows how alert the enemy is. The level can change during a fight, which switches the song, and a level that comes back continues its song. |
 
 ## Which one plays
 
@@ -45,6 +45,6 @@ Both Operations end with an `escape_event`, the same kind every mission's escape
 
 On the way into a mission, the mission's code and its game mode apply during the loading screens, the preparation screen, and the briefing. So `mission_briefing\mortis_trials\` plays during the Mortis Trials briefing. Havoc applies only once the mission has loaded, so a `havoc` folder does not apply on the preparation screen or during most of the briefing.
 
-The music switches within half a second once another override applies, for example when the game names a boss a few seconds after the boss music started, or when an event moves on to its escape. A moment the game names by its screen, such as matchmaking, character creation, or the score screen, keeps its folder for 2 seconds after it ends, since the game passes through another state on the way out. With Debug Overlay on, its Folder line shows the folder that plays and the override names the moment looks for.
+The music switches within half a second once another override applies, for example when the game names a boss a few seconds after the boss music started, or when an event moves on to its escape. When the situation switches back to a folder it already played, its song continues where it stopped, as long as Resume Songs is on. Rolling Steel goes back and forth between its first two stages, so each stage's folder keeps its own song going. A new situation starts every folder with a fresh song. A moment the game names by its screen, such as matchmaking, character creation, or the score screen, keeps its folder for 2 seconds after it ends, since the game passes through another state on the way out. With Debug Overlay on, its Folder line shows the folder that plays and the override names the moment looks for.
 
 To try out a boss override folder, set Meat Grinder's Music to One Situation and pick Boss. While a boss dummy is alive, the folder named after its breed plays, such as `boss\chaos_spawn\`. Meat Grinder runs no events, waves, or score screens, and belongs to no game mode, so the override folders for those never play there. A folder named after Meat Grinder's own mission code, `tg_shooting_range`, does.

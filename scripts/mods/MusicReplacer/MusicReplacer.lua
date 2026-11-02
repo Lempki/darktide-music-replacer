@@ -142,6 +142,21 @@ local function remember_playing_track(next_context_name)
 	end
 end
 
+-- Keeps where the song playing now stopped, for its folder, as the situation switches to another of its folders.
+-- So a situation that moves back and forth between folders, as Rolling Steel's stages do, continues each folder's song.
+local function remember_folder_song()
+	if not playing_track or not AudioClient.is_playing() then
+		return
+	end
+
+	local position = ResumePoints.remember_folder(current_folder, playing_track.file_path,
+		AudioClient.position(), playing_track.duration, playing_track.is_only_file)
+
+	if position then
+		log(string.format("[resume] %s: remembering %s at %.1fs for the %s folder", current_context, playing_track.file_path, position, current_folder))
+	end
+end
+
 -- The folders `context_name` can play from, in order: its override folders that have songs, then its own.
 local function folders_for(context_name)
 	local folders = {}
@@ -318,7 +333,17 @@ play_context = function(context_name, is_new_context)
 			break
 		end
 
-		file_path, duration, is_only_file, start_position = choose_file(folder, resume_path, resume_position)
+		-- A folder this situation switched away from earlier continues its own song first.
+		local folder_path, folder_position = nil, nil
+		if is_new_context then
+			folder_path, folder_position = ResumePoints.take_folder(folder)
+		end
+
+		if folder_path then
+			file_path, duration, is_only_file, start_position = choose_file(folder, folder_path, folder_position)
+		else
+			file_path, duration, is_only_file, start_position = choose_file(folder, resume_path, resume_position)
+		end
 		if file_path or folder == context_name then
 			break
 		end
@@ -981,6 +1006,7 @@ mod.update = function(dt)
 			local folder = folder_for(current_context)
 			if folder ~= current_folder then
 				log(string.format("[playback] %s: switching from the %s folder to the %s folder", current_context, current_folder, folder))
+				remember_folder_song()
 				play_context(current_context, true)
 			end
 		end

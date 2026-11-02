@@ -916,6 +916,88 @@ describe("MusicReplacer.lua override folders", function()
 	end)
 end)
 
+describe("MusicReplacer.lua switching back and forth between override folders", function()
+	local EVENT_FOLDERS = {
+		event = { { name = "e.mp3", duration = 300 } },
+		["event/fortification_event"] = { { name = "f1.mp3", duration = 300 }, { name = "f2.mp3", duration = 300 } },
+		["event/escape_event"] = { { name = "s1.mp3", duration = 300 }, { name = "s2.mp3", duration = 300 } },
+	}
+
+	-- Returns a harness in lm_cooling whose fortification event plays its folder's first song, `position` seconds in.
+	local function in_fortification(position, settings)
+		local harness = MainHarness.new({ files = EVENT_FOLDERS, settings = settings })
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness:enter_mission("lm_cooling", "zone_3")
+		harness:settle()
+		harness:state("music_objective", "fortification_event")
+		harness:settle()
+		harness.client.position = position
+		harness:tick(0.1)
+		return harness
+	end
+
+	-- Moves the event on to `kind`, and waits for the override check to switch folders.
+	local function switch_to(harness, kind)
+		harness:state("music_objective", kind)
+		harness:wait(0.6)
+	end
+
+	it("continues each folder's song where it stopped when the situation switches back to that folder", function()
+		local harness = in_fortification(40)
+		assert_equal(harness:playing(), "event/fortification_event/f1.mp3")
+
+		switch_to(harness, "escape_event")
+		assert_equal(harness:playing(), "event/escape_event/s1.mp3")
+		assert_equal(harness:last_play().opts.start_position, nil)
+		harness.client.position = 20
+		harness:tick(0.1)
+
+		switch_to(harness, "fortification_event")
+		assert_equal(harness:playing(), "event/fortification_event/f1.mp3")
+		assert_equal(harness:last_play().opts.start_position, 40)
+		assert_equal(harness:last_play().opts.fade_in, true)
+		assert_equal(harness:logged("[resume] event: remembering event/fortification_event/f1.mp3 at 40.0s for the event/fortification_event folder"), true)
+
+		switch_to(harness, "escape_event")
+		assert_equal(harness:playing(), "event/escape_event/s1.mp3")
+		assert_equal(harness:last_play().opts.start_position, 20)
+	end)
+
+	it("picks a fresh song on the way back with Resume Songs off", function()
+		local harness = in_fortification(40, { resume_songs = false })
+
+		switch_to(harness, "escape_event")
+		switch_to(harness, "fortification_event")
+
+		assert_equal(harness:last_play().opts.start_position, nil)
+	end)
+
+	it("picks a fresh song on the way back when the song had less than 10 seconds left", function()
+		local harness = in_fortification(295)
+
+		switch_to(harness, "escape_event")
+		switch_to(harness, "fortification_event")
+
+		assert_equal(harness:last_play().opts.start_position, nil)
+	end)
+
+	it("forgets the folders' songs once the situation ends", function()
+		local harness = in_fortification(40)
+		switch_to(harness, "escape_event")
+
+		harness:state("music_objective", "None")
+		harness:wait(6)
+		harness:settle()
+		assert_equal(harness:playing(), nil)
+
+		harness:state("music_objective", "fortification_event")
+		harness:settle()
+		assert_equal(harness:playing():find("^event/fortification_event/") ~= nil, true)
+		assert_equal(harness:last_play().opts.start_position, nil)
+	end)
+end)
+
 describe("MusicReplacer.lua when playback stops working", function()
 	it("hands the music back to the game at once, and takes over again once playback works", function()
 		local harness = in_hub()

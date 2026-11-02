@@ -41,6 +41,12 @@ local points = {} -- context_name -> a table with file_path and position.
 local loading_point = nil
 local is_loading = false
 
+-- folder -> a table with file_path and position, for the override folders the current situation switched away from.
+-- A situation can move between its folders and back, as Rolling Steel's stages do, so each folder's song continues where it stopped.
+-- They last only as long as the situation, and every context resumes them, since they never outlive the situation that played them.
+local folder_points = {}
+local entered_context = nil
+
 function ResumePoints.init(dmf_mod)
 	mod = dmf_mod
 end
@@ -55,15 +61,23 @@ function ResumePoints.on_state_change(group_name, new_state)
 
 	is_loading = true
 	points = {}
+	folder_points = {}
 end
 
 function ResumePoints.forget_all()
 	points = {}
 	loading_point = nil
+	folder_points = {}
 end
 
 -- Call on every context change, before take(), to forget the sequences that the new context ends.
+-- A new situation also forgets the songs of the folders the one before switched between.
 function ResumePoints.enter(context_name)
+	if context_name ~= entered_context then
+		folder_points = {}
+		entered_context = context_name
+	end
+
 	-- The loading and preparation contexts are part of the loading screen, not the next level.
 	if context_name ~= nil and context_name ~= "loading" and context_name ~= "mission_briefing" and context_name ~= "mission_preparation" then
 		is_loading = false
@@ -147,6 +161,36 @@ function ResumePoints.take(context_name)
 		point = loading_point
 		loading_point = nil
 	end
+
+	if not point then
+		return nil
+	end
+
+	return point.file_path, point.position
+end
+
+-- Remembers `position` seconds into `file_path` for `folder`, which the situation playing now is switching away from.
+-- Returns the position it kept, or nil.
+-- `duration` may be nil.
+function ResumePoints.remember_folder(folder, file_path, position, duration, is_only_file)
+	folder_points[folder] = nil
+	if not (mod and mod:get("resume_songs")) then
+		return nil
+	end
+
+	position = kept_position(position, duration, is_only_file)
+	if not position then
+		return nil
+	end
+
+	folder_points[folder] = { file_path = file_path, position = position }
+	return position
+end
+
+-- Returns and forgets the folder's point as file_path and position, or nil if it has none.
+function ResumePoints.take_folder(folder)
+	local point = folder_points[folder]
+	folder_points[folder] = nil
 
 	if not point then
 		return nil
