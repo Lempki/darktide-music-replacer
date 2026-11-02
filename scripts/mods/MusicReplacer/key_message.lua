@@ -1,8 +1,18 @@
 -- The short message a playback key shows: one line that fades in, holds, and fades out.
 -- A new message takes the place of the one showing, which fades out under it, so the text never jumps or flickers.
--- This file only keeps the timing. The element that draws the lines comes later.
+-- It shows behind the Key Messages setting, which is on by default.
+--
+-- The lines are drawn by an element in the game's constant UI, which constant_element_slot.lua keeps there.
+-- The constant UI is drawn on every screen, so the message also shows on loading screens and the mission briefing.
+
+local ConstantElementSlot = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/constant_element_slot")
 
 local KeyMessage = {}
+
+-- Above most constant elements, such as the subtitles, so the text stays readable.
+local DRAW_LAYER = 900
+
+local slot = ConstantElementSlot.new("ConstantElementMusicReplacerKeyMessage", DRAW_LAYER)
 
 local FADE_IN_SECONDS = 0.4
 local HOLD_SECONDS = 3
@@ -13,6 +23,19 @@ local CROSSFADE_SECONDS = 0.3
 
 -- Keys pressed in quick succession leave several messages fading out at once. Past this many, the faintest goes.
 local MAX_FADING_OUT = 3
+
+-- The most lines that show at once, so the element knows how many to draw: those fading out and the newest.
+KeyMessage.MAX_LINES = MAX_FADING_OUT + 1
+
+-- The Message Color setting's default, as ARGB: a muted grey at 85% opacity.
+local DEFAULT_COLOR = { 217, 200, 200, 195 }
+
+local create_element = nil
+local log = function() end
+local enabled = false
+
+-- How the message looks, from its settings: its size as a factor, its ARGB color, and how far it moves right and up, in pixels.
+local look = { scale = 1, color = DEFAULT_COLOR, offset_x = 0, offset_y = 0 }
 
 -- The message showing now, or nil: its text, its opacity as a share, its phase, and the seconds left of its hold.
 -- Its phase is "in", "hold", or "out".
@@ -33,9 +56,13 @@ local function drop_faintest()
 	table.remove(fading_out, faintest)
 end
 
--- Shows `text`, replacing the message showing now.
+-- Shows `text`, replacing the message showing now. Does nothing while the messages are turned off.
 -- The same text again keeps its line and starts its hold over, since two copies of one text crossfading look brighter for a moment.
 function KeyMessage.show(text)
+	if not enabled then
+		return
+	end
+
 	if current and current.text == text then
 		current.phase = "in"
 		current.fade_in_seconds = FADE_IN_SECONDS
@@ -105,6 +132,76 @@ end
 function KeyMessage.line(index)
 	local line = fading_out[index] or current
 	return line.text, line.opacity
+end
+
+function KeyMessage.look()
+	return look
+end
+
+-- The color comes from the saved settings, so anything but four numbers keeps the default.
+local function checked_color(color)
+	if type(color) ~= "table" then
+		return DEFAULT_COLOR
+	end
+	for index = 1, 4 do
+		if type(color[index]) ~= "number" then
+			return DEFAULT_COLOR
+		end
+	end
+	return { color[1], color[2], color[3], color[4] }
+end
+
+-- `options.create_element(constant_elements, draw_layer)` makes the element.
+function KeyMessage.init(logger, options)
+	log = logger or log
+	create_element = options.create_element
+end
+
+-- Call every update. Adds the element once the game's UI exists, and adds it again if the UI was rebuilt.
+function KeyMessage.update()
+	if not enabled or not create_element then
+		return
+	end
+
+	local err = slot:update(create_element)
+	if err then
+		log("[key message] could not be shown: " .. err)
+	end
+end
+
+-- Turns the messages on or off and sets how they look.
+-- `new_look.scale` sizes the text as a factor, and `new_look.color` is its ARGB color, whose alpha also sets its opacity.
+-- `new_look.offset_x` and `new_look.offset_y` move it right and up from its spot, in pixels of the 1920x1080 UI.
+function KeyMessage.set_enabled(on, new_look)
+	enabled = on == true
+	if new_look then
+		look = {
+			scale = new_look.scale or 1,
+			color = checked_color(new_look.color),
+			offset_x = new_look.offset_x or 0,
+			offset_y = new_look.offset_y or 0,
+		}
+	end
+
+	if not enabled then
+		-- A message from before the messages were turned off would show again once they are back on.
+		current = nil
+		fading_out = {}
+		slot:remove()
+		return
+	end
+
+	local element = slot:element()
+	if element and element.set_layout then
+		element:set_layout(look)
+	end
+
+	KeyMessage.update()
+end
+
+-- Call from the main mod file's mod.on_unload.
+function KeyMessage.shutdown()
+	slot:remove()
 end
 
 return KeyMessage

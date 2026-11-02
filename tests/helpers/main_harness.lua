@@ -1,5 +1,5 @@
 -- Loads MusicReplacer.lua, the main file, with its real context, suppression, and resume logic.
--- Everything underneath is a stand-in: the library, audio client, loudness, debug overlay, log, and Windows modules.
+-- Everything underneath is a stand-in: the library, audio client, loudness, debug overlay, key message, log, and Windows modules.
 -- It borrows context_harness.lua's sequences, so the specs set the music states in the game's real order.
 -- Time only passes through wait() and tick(), which call the mod's own update.
 
@@ -207,6 +207,18 @@ local function new_overlay()
 	return overlay
 end
 
+-- A stand-in for key_message.lua that keeps whether it is on and how it looks.
+local function new_key_message()
+	local key_message = { enabled = false, look = nil }
+
+	function key_message.init() end
+	function key_message.set_enabled(on, look) key_message.enabled, key_message.look = on, look end
+	function key_message.update() end
+	function key_message.shutdown() end
+
+	return key_message
+end
+
 -- Options:
 -- * `files`: each context's files for the library stand-in, as { name, duration } lists.
 -- * `settings`: overrides of the mod's default settings, which every other setting reads as, as in the game.
@@ -223,6 +235,7 @@ function MainHarness.new(options)
 	local client = new_audio_client()
 	local loudness = new_loudness()
 	local overlay = new_overlay()
+	local key_message = new_key_message()
 	local lines = {}
 	local noop = function() end
 
@@ -234,6 +247,7 @@ function MainHarness.new(options)
 			audio_client = client.module,
 			loudness = loudness,
 			debug_overlay = overlay,
+			key_message = key_message,
 			loudness_meter = {},
 			diagnostic_log = {
 				init = noop,
@@ -251,7 +265,7 @@ function MainHarness.new(options)
 	})
 
 	local harness = setmetatable({ engine = engine, mod = engine.mod, library = library, client = client, loudness = loudness, overlay = overlay,
-		lines = lines, settings = settings }, MainHarness)
+		key_message = key_message, lines = lines, settings = settings }, MainHarness)
 
 	engine:load("MusicReplacer")
 	if options.turned_off then

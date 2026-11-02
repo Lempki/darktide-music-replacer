@@ -1,10 +1,67 @@
 -- Pins key_message.lua: how a playback key's message fades in, holds, fades out, and gives way to a newer one.
+-- It also pins adding and removing its element on the game's constant UI.
+-- The constant UI is a stand-in with the fields and functions the game's own has.
 
 local FakeEngine = require("tests.helpers.fake_engine")
 
+local CLASS_NAME = "ConstantElementMusicReplacerKeyMessage"
+
+-- A stand-in for the game's UIConstantElements, with two visibility groups.
+local function new_constant_elements()
+	local constant_elements = {
+		_elements = {},
+		_elements_array = { { __class_name = "ConstantElementChat" } },
+		_visibility_groups = { { name = "in_loading" }, { name = "default" } },
+		_visibility_group_parameters = {},
+		_current_group_name = "default",
+	}
+
+	function constant_elements:_setup_visiblity_groups(definitions)
+		for _, definition in ipairs(definitions) do
+			for _, group in ipairs(self._visibility_groups) do
+				group.visible_elements = group.visible_elements or {}
+				group.visible_elements[definition.class_name] = true
+			end
+		end
+	end
+
+	function constant_elements:ui_renderer()
+		return "renderer"
+	end
+
+	return constant_elements
+end
+
+-- Returns a loaded key_message.lua, turned on, with no constant UI to add its element to.
 local function load_key_message()
 	local engine = FakeEngine.new()
-	return engine:load("key_message")
+	local KeyMessage = engine:load("key_message")
+	KeyMessage.set_enabled(true)
+	return KeyMessage
+end
+
+-- Returns a loaded key_message.lua over `constant_elements`, still turned off, the elements it made, and the logged lines.
+local function load_with_element(constant_elements, failing)
+	local engine = FakeEngine.new()
+	local KeyMessage = engine:load("key_message")
+	local made = {}
+	local lines = {}
+	rawset(Managers, "ui", { ui_constant_elements = function() return constant_elements end })
+
+	KeyMessage.init(function(line) lines[#lines + 1] = line end, {
+		create_element = function(parent, draw_layer)
+			if failing then
+				error("no renderer")
+			end
+			local element = { __class_name = CLASS_NAME, parent = parent, draw_layer = draw_layer, layouts = {} }
+			function element:destroy(renderer) self.destroyed_with = renderer end
+			function element:set_layout(look) self.layouts[#self.layouts + 1] = look end
+			made[#made + 1] = element
+			return element
+		end,
+	})
+
+	return KeyMessage, made, lines
 end
 
 -- The lines showing now, oldest first, each as its text and opacity.
@@ -190,5 +247,104 @@ describe("key_message.lua", function()
 		KeyMessage.advance(4.4)
 
 		assert_equal(KeyMessage.line_count(), 0)
+	end)
+
+	it("shows nothing while turned off, and forgets the lines showing when turned off", function()
+		local KeyMessage = load_key_message()
+		KeyMessage.show("Next")
+		KeyMessage.advance(0.4)
+
+		KeyMessage.set_enabled(false)
+		assert_equal(KeyMessage.line_count(), 0)
+
+		KeyMessage.show("Previous")
+		assert_equal(KeyMessage.line_count(), 0)
+
+		KeyMessage.set_enabled(true)
+		assert_equal(KeyMessage.line_count(), 0)
+	end)
+end)
+
+describe("key_message.lua look", function()
+	it("starts at its normal size, in muted grey at 85% opacity, at its spot", function()
+		local KeyMessage = load_key_message()
+
+		assert_deep_equal(KeyMessage.look(), { scale = 1, color = { 217, 200, 200, 195 }, offset_x = 0, offset_y = 0 })
+	end)
+
+	it("takes the look it is given", function()
+		local KeyMessage = load_key_message()
+
+		KeyMessage.set_enabled(true, { scale = 1.5, color = { 255, 10, 20, 30 }, offset_x = 300, offset_y = 40 })
+
+		assert_deep_equal(KeyMessage.look(), { scale = 1.5, color = { 255, 10, 20, 30 }, offset_x = 300, offset_y = 40 })
+	end)
+
+	it("keeps the default color when the saved color is not four numbers", function()
+		local KeyMessage = load_key_message()
+
+		KeyMessage.set_enabled(true, { scale = 1, color = { 255, 10, 20 }, offset_x = 0, offset_y = 0 })
+		assert_deep_equal(KeyMessage.look().color, { 217, 200, 200, 195 })
+
+		KeyMessage.set_enabled(true, { scale = 1, color = "grey", offset_x = 0, offset_y = 0 })
+		assert_deep_equal(KeyMessage.look().color, { 217, 200, 200, 195 })
+	end)
+end)
+
+describe("key_message.lua element", function()
+	it("adds its element to every visibility group once turned on, and removes it all once turned off", function()
+		local constant_elements = new_constant_elements()
+		local KeyMessage, made = load_with_element(constant_elements)
+
+		KeyMessage.update()
+		assert_equal(#made, 0)
+
+		KeyMessage.set_enabled(true)
+
+		assert_equal(constant_elements._elements[CLASS_NAME], made[1])
+		assert_equal(constant_elements._elements_array[2], made[1])
+		assert_equal(made[1].draw_layer, 900)
+		assert_equal(constant_elements._visibility_groups[1].visible_elements[CLASS_NAME], true)
+
+		KeyMessage.set_enabled(false)
+
+		assert_equal(constant_elements._elements[CLASS_NAME], nil)
+		assert_equal(#constant_elements._elements_array, 1)
+		assert_equal(constant_elements._visibility_groups[2].visible_elements[CLASS_NAME], nil)
+		assert_equal(made[1].destroyed_with, "renderer")
+	end)
+
+	it("gives its element a new look without making a new one", function()
+		local KeyMessage, made = load_with_element(new_constant_elements())
+		KeyMessage.set_enabled(true)
+
+		KeyMessage.set_enabled(true, { scale = 2, color = { 255, 10, 20, 30 }, offset_x = 5, offset_y = 6 })
+
+		assert_equal(#made, 1)
+		assert_deep_equal(made[1].layouts, { { scale = 2, color = { 255, 10, 20, 30 }, offset_x = 5, offset_y = 6 } })
+	end)
+
+	it("removes its element on shutdown", function()
+		local constant_elements = new_constant_elements()
+		local KeyMessage, made = load_with_element(constant_elements)
+		KeyMessage.set_enabled(true)
+
+		KeyMessage.shutdown()
+
+		assert_equal(constant_elements._elements[CLASS_NAME], nil)
+		assert_equal(made[1].destroyed_with, "renderer")
+	end)
+
+	it("logs once and stops trying when its element cannot be made", function()
+		local constant_elements = new_constant_elements()
+		local KeyMessage, _, lines = load_with_element(constant_elements, true)
+
+		KeyMessage.set_enabled(true)
+		KeyMessage.update()
+		KeyMessage.update()
+
+		assert_equal(#lines, 1)
+		assert_equal(lines[1]:find("[key message] could not be shown", 1, true) ~= nil, true)
+		assert_equal(constant_elements._visibility_groups[1].visible_elements[CLASS_NAME], nil)
 	end)
 end)

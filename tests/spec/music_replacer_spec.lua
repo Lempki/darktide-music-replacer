@@ -710,6 +710,28 @@ describe("MusicReplacer.lua fade length", function()
 	end)
 end)
 
+describe("MusicReplacer.lua key messages", function()
+	it("are on by default, in their default look", function()
+		local harness = in_hub()
+
+		assert_equal(harness.key_message.enabled, true)
+		assert_deep_equal(harness.key_message.look, { scale = 1, color = { 217, 200, 200, 195 }, offset_x = 0, offset_y = 0 })
+	end)
+
+	it("follow their settings", function()
+		local harness = in_hub()
+
+		harness:set_setting("key_message_scale", 150)
+		harness:set_setting("key_message_color", { 255, 10, 20, 30 })
+		harness:set_setting("key_message_offset_x", 300)
+		harness:set_setting("key_message_offset_y", 40)
+		harness:set_setting("key_messages", false)
+
+		assert_equal(harness.key_message.enabled, false)
+		assert_deep_equal(harness.key_message.look, { scale = 1.5, color = { 255, 10, 20, 30 }, offset_x = 300, offset_y = 40 })
+	end)
+end)
+
 describe("MusicReplacer.lua debug overlay", function()
 	it("follows its settings", function()
 		local harness = in_hub()

@@ -19,6 +19,7 @@ local LoudnessMeter = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/lo
 local Loudness = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/loudness")
 local DiagnosticLog = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/diagnostic_log")
 local DebugOverlay = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/debug_overlay")
+local KeyMessage = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/key_message")
 
 local WwiseGameSyncManager = require("scripts/managers/wwise_game_sync/wwise_game_sync_manager")
 
@@ -776,6 +777,31 @@ local function apply_overlay_settings()
 	DebugOverlay.set_enabled(mod:get("debug_overlay") == true, mod:get("debug_overlay_scale") / 100, mod:get("debug_overlay_opacity") / 100)
 end
 
+-- The key message's element uses the game's UI classes too, so it is only loaded once the message is first shown.
+local KeyMessageElement = nil
+
+local function create_key_message_element(constant_elements, draw_layer)
+	KeyMessageElement = KeyMessageElement or mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/key_message_element")(KeyMessage)
+	return KeyMessageElement:new(constant_elements, draw_layer)
+end
+
+local KEY_MESSAGE_SETTINGS = {
+	key_messages = true,
+	key_message_scale = true,
+	key_message_color = true,
+	key_message_offset_x = true,
+	key_message_offset_y = true,
+}
+
+local function apply_key_message_settings()
+	KeyMessage.set_enabled(mod:get("key_messages") == true, {
+		scale = mod:get("key_message_scale") / 100,
+		color = mod:get("key_message_color"),
+		offset_x = mod:get("key_message_offset_x"),
+		offset_y = mod:get("key_message_offset_y"),
+	})
+end
+
 -- Raw state transitions, the silencing, and sound events go to the detailed log.
 Suppression.init(log_detail)
 EventProbe.init(log_detail)
@@ -829,6 +855,8 @@ mod.on_all_mods_loaded = function()
 	AudioClient.set_fade_seconds(mod:get("fade_seconds"))
 	DebugOverlay.init(log, { snapshot = overlay_snapshot, meter = AudioClient.meter, create_element = create_overlay_element })
 	apply_overlay_settings()
+	KeyMessage.init(log, { create_element = create_key_message_element })
+	apply_key_message_settings()
 
 	-- A mod can hook a method only once, so this one hook serves both Suppression and EventProbe.
 	-- EventProbe sees every event first, even one Suppression stops.
@@ -913,6 +941,8 @@ mod.on_setting_changed = function(setting_id)
 
 	if setting_id == "debug_overlay" or setting_id == "debug_overlay_scale" or setting_id == "debug_overlay_opacity" then
 		apply_overlay_settings()
+	elseif KEY_MESSAGE_SETTINGS[setting_id] then
+		apply_key_message_settings()
 	elseif setting_id == "custom_music_volume" then
 		AudioClient.set_volume(custom_volume())
 	elseif setting_id == "fade_seconds" then
@@ -1013,6 +1043,7 @@ mod.update = function(dt)
 	end
 
 	DebugOverlay.update()
+	KeyMessage.update()
 
 	if enabled and has_pending_change then
 		debounce_elapsed = debounce_elapsed + dt
@@ -1038,6 +1069,7 @@ mod.on_unload = function(exit_game)
 	shut_down("the library", Library.shutdown)
 	shut_down("the loudness measuring", Loudness.shutdown)
 	shut_down("the overlay", DebugOverlay.shutdown)
+	shut_down("the key message", KeyMessage.shutdown)
 	shut_down("the audio", AudioClient.shutdown)
 	shut_down("the decoder", MediaDecoder.shutdown)
 
