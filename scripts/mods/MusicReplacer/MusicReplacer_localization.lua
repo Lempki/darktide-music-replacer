@@ -125,7 +125,7 @@ local strings = {
 		en = "For Key Presses",
 	},
 	key_press_messages_tooltip = {
-		en = "Shows a short message near the bottom left corner of the screen when you press one of the Playback Controls keys, such as the song that plays next. " ..
+		en = "Shows a short message in a corner of the screen when you press one of the Playback Controls keys, such as the song that plays next. " ..
 			"It fades out after a few seconds, and shows on every screen, loading screens included.\n\n" ..
 			highlight("Off") .. " shows no message for them. The keys still work.",
 	},
@@ -133,7 +133,7 @@ local strings = {
 		en = "For Song Changes",
 	},
 	song_change_messages_tooltip = {
-		en = "Shows the song's name near the bottom left corner of the screen when one of your songs starts by itself: " ..
+		en = "Shows the song's name in a corner of the screen when one of your songs starts by itself: " ..
 			"when a situation starts its music, and when a song ends and the next one plays.",
 	},
 	message_seconds = {
@@ -170,19 +170,40 @@ local strings = {
 	pixels_unit = {
 		en = "px",
 	},
+	message_corner = {
+		en = "Message Corner",
+	},
+	message_corner_tooltip = {
+		en = "The corner of the screen the on-screen messages show in. " ..
+			"They align to its side, so in a right corner they are right-aligned.",
+	},
+	corner_bottom_left = {
+		en = "Bottom Left",
+	},
+	corner_bottom_right = {
+		en = "Bottom Right",
+	},
+	corner_top_left = {
+		en = "Top Left",
+	},
+	corner_top_right = {
+		en = "Top Right",
+	},
 	message_offset_x = {
-		en = "Message Offset Right",
+		en = "Message Offset X",
 	},
 	message_offset_x_tooltip = {
-		en = "Moves the on-screen messages right from their spot near the bottom left corner, in pixels of a 1920x1080 screen.\n\n" ..
-			highlight("0") .. " keeps them at their spot.",
+		en = "Moves the on-screen messages sideways, away from their corner toward the middle of the screen, in the game's UI pixels. " ..
+			"A negative number moves them past the corner.\n\n" ..
+			highlight("0") .. " keeps them a few pixels from the corner's side.",
 	},
 	message_offset_y = {
-		en = "Message Offset Up",
+		en = "Message Offset Y",
 	},
 	message_offset_y_tooltip = {
-		en = "Moves the on-screen messages up from their spot near the bottom left corner, in pixels of a 1920x1080 screen.\n\n" ..
-			highlight("0") .. " keeps them at their spot.",
+		en = "Moves the on-screen messages up or down, away from their corner toward the middle of the screen, in the game's UI pixels. " ..
+			"A negative number moves them past the corner.\n\n" ..
+			highlight("0") .. " keeps them a few pixels from the corner's edge.",
 	},
 	-- The messages a key press shows. %s is the name of the song file unless a comment below says otherwise.
 	control_next_song = {

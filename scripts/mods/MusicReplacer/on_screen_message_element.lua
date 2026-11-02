@@ -1,4 +1,4 @@
--- The constant UI element that draws the on-screen message near the bottom left corner of the screen.
+-- The constant UI element that draws the on-screen message in a corner of the screen.
 -- on_screen_message.lua adds and removes it, and times the lines it draws.
 -- Every line is drawn at the same spot at its own opacity, so during a crossfade one text fades into the next.
 
@@ -6,10 +6,6 @@ require("scripts/ui/constant_elements/constant_element_base")
 
 local UIWidget = require("scripts/managers/ui/ui_widget")
 local UIWorkspaceSettings = require("scripts/settings/ui/ui_workspace_settings")
-
--- The message's spot, in the 1920x1080 UI space: under the player's own stats panel, left-aligned with it, close to the bottom edge.
-local LEFT = 50
-local BOTTOM = 15
 
 -- These are the sizes at 100%, and they scale with the Message Size setting.
 local FONT_SIZE = 16
@@ -40,7 +36,7 @@ local function text_pass(index)
 			horizontal_alignment = "left",
 			vertical_alignment = "bottom",
 			size = { TEXT_ROOM, LINE_HEIGHT },
-			offset = { LEFT, -BOTTOM, index },
+			offset = { 0, 0, index },
 		},
 	}
 end
@@ -53,18 +49,13 @@ return function(OnScreenMessage)
 	end
 
 	local definitions = {
+		-- The passes sit straight on the screen node, which the game sizes to the whole screen at any aspect ratio, ultrawide included.
+		-- So every corner of it is a corner of the screen.
 		scenegraph_definition = {
 			screen = UIWorkspaceSettings.screen,
-			message = {
-				parent = "screen",
-				vertical_alignment = "bottom",
-				horizontal_alignment = "left",
-				size = { 1920, 1080 },
-				position = { 0, 0, 1 },
-			},
 		},
 		widget_definitions = {
-			message = UIWidget.create_definition(passes, "message"),
+			message = UIWidget.create_definition(passes, "screen"),
 		},
 	}
 
@@ -76,16 +67,22 @@ return function(OnScreenMessage)
 		self:set_layout(OnScreenMessage.look())
 	end
 
-	-- `look` is OnScreenMessage.look(): the size, the ARGB color, and the offsets right and up.
+	-- `look` is OnScreenMessage.look(): the size, the ARGB color, the corner, and the offsets inward from it.
+	-- The text aligns to the corner's side, so it grows away from the corner.
 	function Element:set_layout(look)
 		local style = self._widgets_by_name.message.style
+		local placement = OnScreenMessage.placement(look)
 		for index = 1, OnScreenMessage.MAX_LINES do
 			local line_style = style[line_id(index)]
 			line_style.font_size = FONT_SIZE * look.scale
 			line_style.size[1] = TEXT_ROOM * look.scale
 			line_style.size[2] = LINE_HEIGHT * look.scale
-			line_style.offset[1] = LEFT + look.offset_x
-			line_style.offset[2] = -(BOTTOM + look.offset_y)
+			line_style.horizontal_alignment = placement.horizontal
+			line_style.text_horizontal_alignment = placement.horizontal
+			line_style.vertical_alignment = placement.vertical
+			line_style.text_vertical_alignment = placement.vertical
+			line_style.offset[1] = placement.x
+			line_style.offset[2] = placement.y
 			line_style.text_color[2] = look.color[2]
 			line_style.text_color[3] = look.color[3]
 			line_style.text_color[4] = look.color[4]

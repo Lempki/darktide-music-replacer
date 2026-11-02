@@ -221,11 +221,25 @@ return {
 						has_alpha = true,
 					},
 					{
+						setting_id = "message_corner",
+						type = "dropdown",
+						tooltip = "message_corner_tooltip",
+						default_value = "bottom_left",
+						options = {
+							{ text = "corner_bottom_left", value = "bottom_left" },
+							{ text = "corner_bottom_right", value = "bottom_right" },
+							{ text = "corner_top_left", value = "top_left" },
+							{ text = "corner_top_right", value = "top_right" },
+						},
+					},
+					{
+						-- The range is wide enough for any screen, so it assumes no resolution or aspect ratio.
+						-- DMF lets a player type the exact number.
 						setting_id = "message_offset_x",
 						type = "numeric",
 						tooltip = "message_offset_x_tooltip",
 						default_value = 0,
-						range = { 0, 1800 },
+						range = { -10000, 10000 },
 						decimals_number = 0,
 						unit_text = "pixels_unit",
 					},
@@ -234,7 +248,7 @@ return {
 						type = "numeric",
 						tooltip = "message_offset_y_tooltip",
 						default_value = 0,
-						range = { 0, 1000 },
+						range = { -10000, 10000 },
 						decimals_number = 0,
 						unit_text = "pixels_unit",
 					},

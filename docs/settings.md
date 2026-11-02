@@ -39,7 +39,7 @@ Keys that control the song playing now, and the setting that goes with them. Eve
 
 ## On-Screen Messages
 
-A message is one line of text near the bottom left corner of the screen. It fades in over 0.4 seconds, stays for the Message Duration, and fades out over the Message Fade Out. A new message crossfades from the one showing over 0.3 seconds and then stays its own Message Duration, so pressing keys quickly never makes the text flicker. The same message again, such as a second Restart Song press's, keeps its line and stays another Message Duration. The messages are drawn in the game's always-visible layer, so they also show on loading screens and the mission briefing. With For Key Presses and For Song Changes both off, no message shows.
+A message is one line of text in the corner of the screen that Message Corner sets, 4 pixels in from its edges. It fades in over 0.4 seconds, stays for the Message Duration, and fades out over the Message Fade Out. A new message crossfades from the one showing over 0.3 seconds and then stays its own Message Duration, so pressing keys quickly never makes the text flicker. The same message again, such as a second Restart Song press's, keeps its line and stays another Message Duration. The messages are drawn in the game's always-visible layer, so they also show on loading screens and the mission briefing. With For Key Presses and For Song Changes both off, no message shows.
 
 | Setting | Default | What it does |
 |---|---|---|
@@ -49,8 +49,9 @@ A message is one line of text near the bottom left corner of the screen. It fade
 | Message Fade Out | 1 second | How long a message takes to fade out, from 0 to 3 seconds. Set it to 0 to hide a message at once. |
 | Message Size | 100% | How big the messages are, from 50% to 200%. |
 | Message Color | Grey, 85% opacity | The messages' color, picked with DMF's color picker. Its alpha sets how opaque they are. It needs DMF from August 2026 or newer. |
-| Message Offset Right | 0 px | Moves the messages right from their spot, from 0 to 1800 pixels of a 1920x1080 screen. |
-| Message Offset Up | 0 px | Moves the messages up from their spot, from 0 to 1000 pixels of a 1920x1080 screen. |
+| Message Corner | Bottom Left | The corner of the screen the messages show in: Bottom Left, Bottom Right, Top Left, or Top Right. They align to its side, so in a right corner they are right-aligned and grow to the left. |
+| Message Offset X | 0 px | Moves the messages sideways, away from their corner toward the middle of the screen, from -10000 to 10000. A negative number moves them past the corner. Type the exact number into the field. |
+| Message Offset Y | 0 px | Moves the messages up or down, away from their corner toward the middle of the screen, from -10000 to 10000. A negative number moves them past the corner. |
 
 ## Music per Situation
 

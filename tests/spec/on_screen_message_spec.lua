@@ -313,18 +313,28 @@ describe("on_screen_message.lua", function()
 end)
 
 describe("on_screen_message.lua look", function()
-	it("starts at its normal size, in muted grey at 85% opacity, at its spot", function()
+	it("starts at its normal size, in muted grey at 85% opacity, in the bottom left corner", function()
 		local OnScreenMessage = load_on_screen_message()
 
-		assert_deep_equal(OnScreenMessage.look(), { scale = 1, color = { 217, 200, 200, 195 }, offset_x = 0, offset_y = 0 })
+		assert_deep_equal(OnScreenMessage.look(),
+			{ scale = 1, color = { 217, 200, 200, 195 }, corner = "bottom_left", offset_x = 0, offset_y = 0 })
 	end)
 
 	it("takes the look it is given", function()
 		local OnScreenMessage = load_on_screen_message()
 
-		OnScreenMessage.set_enabled(true, { scale = 1.5, color = { 255, 10, 20, 30 }, offset_x = 300, offset_y = 40 })
+		OnScreenMessage.set_enabled(true, { scale = 1.5, color = { 255, 10, 20, 30 }, corner = "top_right", offset_x = 300, offset_y = 40 })
 
-		assert_deep_equal(OnScreenMessage.look(), { scale = 1.5, color = { 255, 10, 20, 30 }, offset_x = 300, offset_y = 40 })
+		assert_deep_equal(OnScreenMessage.look(),
+			{ scale = 1.5, color = { 255, 10, 20, 30 }, corner = "top_right", offset_x = 300, offset_y = 40 })
+	end)
+
+	it("keeps the bottom left corner when the saved corner is not one it knows", function()
+		local OnScreenMessage = load_on_screen_message()
+
+		OnScreenMessage.set_enabled(true, { scale = 1, color = { 217, 200, 200, 195 }, corner = "middle", offset_x = 0, offset_y = 0 })
+
+		assert_equal(OnScreenMessage.look().corner, "bottom_left")
 	end)
 
 	it("keeps the default color when the saved color is not four numbers", function()
@@ -335,6 +345,28 @@ describe("on_screen_message.lua look", function()
 
 		OnScreenMessage.set_enabled(true, { scale = 1, color = "grey", offset_x = 0, offset_y = 0 })
 		assert_deep_equal(OnScreenMessage.look().color, { 217, 200, 200, 195 })
+	end)
+end)
+
+describe("on_screen_message.lua placement", function()
+	local function placement(corner, offset_x, offset_y)
+		local OnScreenMessage = load_on_screen_message()
+		return OnScreenMessage.placement({ corner = corner, offset_x = offset_x, offset_y = offset_y })
+	end
+
+	it("sits 4 pixels in from its corner's edges at offsets of 0", function()
+		assert_deep_equal(placement("bottom_left", 0, 0), { horizontal = "left", vertical = "bottom", x = 4, y = -4 })
+	end)
+
+	it("aligns to the corner's side, and moves inward from every corner as the offsets grow", function()
+		assert_deep_equal(placement("bottom_left", 10, 20), { horizontal = "left", vertical = "bottom", x = 14, y = -24 })
+		assert_deep_equal(placement("bottom_right", 10, 20), { horizontal = "right", vertical = "bottom", x = -14, y = -24 })
+		assert_deep_equal(placement("top_left", 10, 20), { horizontal = "left", vertical = "top", x = 14, y = 24 })
+		assert_deep_equal(placement("top_right", 10, 20), { horizontal = "right", vertical = "top", x = -14, y = 24 })
+	end)
+
+	it("moves past the corner for negative offsets", function()
+		assert_deep_equal(placement("top_right", -10, -20), { horizontal = "right", vertical = "top", x = 6, y = -16 })
 	end)
 end)
 
@@ -365,10 +397,10 @@ describe("on_screen_message.lua element", function()
 		local OnScreenMessage, made = load_with_element(new_constant_elements())
 		OnScreenMessage.set_enabled(true)
 
-		OnScreenMessage.set_enabled(true, { scale = 2, color = { 255, 10, 20, 30 }, offset_x = 5, offset_y = 6 })
+		OnScreenMessage.set_enabled(true, { scale = 2, color = { 255, 10, 20, 30 }, corner = "top_left", offset_x = 5, offset_y = 6 })
 
 		assert_equal(#made, 1)
-		assert_deep_equal(made[1].layouts, { { scale = 2, color = { 255, 10, 20, 30 }, offset_x = 5, offset_y = 6 } })
+		assert_deep_equal(made[1].layouts, { { scale = 2, color = { 255, 10, 20, 30 }, corner = "top_left", offset_x = 5, offset_y = 6 } })
 	end)
 
 	it("removes its element on shutdown", function()

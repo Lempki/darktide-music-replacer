@@ -715,7 +715,8 @@ describe("MusicReplacer.lua on-screen messages", function()
 		local harness = in_hub()
 
 		assert_equal(harness.on_screen_message.enabled, true)
-		assert_deep_equal(harness.on_screen_message.look, { scale = 1, color = { 217, 200, 200, 195 }, offset_x = 0, offset_y = 0 })
+		assert_deep_equal(harness.on_screen_message.look,
+			{ scale = 1, color = { 217, 200, 200, 195 }, corner = "bottom_left", offset_x = 0, offset_y = 0 })
 		assert_deep_equal(harness.on_screen_message.timing, { 3, 1 })
 	end)
 
@@ -724,12 +725,14 @@ describe("MusicReplacer.lua on-screen messages", function()
 
 		harness:set_setting("message_scale", 150)
 		harness:set_setting("message_color", { 255, 10, 20, 30 })
+		harness:set_setting("message_corner", "top_right")
 		harness:set_setting("message_offset_x", 300)
-		harness:set_setting("message_offset_y", 40)
+		harness:set_setting("message_offset_y", -40)
 		harness:set_setting("message_seconds", 5.5)
 		harness:set_setting("message_fade_out_seconds", 0)
 
-		assert_deep_equal(harness.on_screen_message.look, { scale = 1.5, color = { 255, 10, 20, 30 }, offset_x = 300, offset_y = 40 })
+		assert_deep_equal(harness.on_screen_message.look,
+			{ scale = 1.5, color = { 255, 10, 20, 30 }, corner = "top_right", offset_x = 300, offset_y = -40 })
 		assert_deep_equal(harness.on_screen_message.timing, { 5.5, 0 })
 	end)
 

@@ -37,8 +37,21 @@ local create_element = nil
 local log = function() end
 local enabled = false
 
--- How the message looks, from its settings: its size as a factor, its ARGB color, and how far it moves right and up, in pixels.
-local look = { scale = 1, color = DEFAULT_COLOR, offset_x = 0, offset_y = 0 }
+-- The Message Corner setting's choices: the side the message aligns to on each axis.
+local CORNERS = {
+	bottom_left = { horizontal = "left", vertical = "bottom" },
+	bottom_right = { horizontal = "right", vertical = "bottom" },
+	top_left = { horizontal = "left", vertical = "top" },
+	top_right = { horizontal = "right", vertical = "top" },
+}
+local DEFAULT_CORNER = "bottom_left"
+
+-- How far the message sits from its corner's edges at offsets of 0, in the UI's pixels, which the game scales to the screen's height.
+local PADDING = 4
+
+-- How the message looks, from its settings: its size as a factor, its ARGB color, and its corner.
+-- Its offsets are how far it moves inward from the corner, in the UI's pixels.
+local look = { scale = 1, color = DEFAULT_COLOR, corner = DEFAULT_CORNER, offset_x = 0, offset_y = 0 }
 
 -- The message showing now, or nil: its text, its opacity as a share, its phase, and the seconds left of its hold.
 -- Its phase is "in", "hold", or "out", and its min_hold_seconds, if set, is the shortest hold it gets.
@@ -145,6 +158,20 @@ function OnScreenMessage.look()
 	return look
 end
 
+-- Where the message sits for `new_look`: the side it aligns to on each axis, and its offset as the game's styles take it.
+-- The offsets move it inward, so a larger X moves it left from a right corner, and a larger Y moves it down from a top corner.
+function OnScreenMessage.placement(new_look)
+	local corner = CORNERS[new_look.corner]
+	local x = PADDING + new_look.offset_x
+	local y = PADDING + new_look.offset_y
+	return {
+		horizontal = corner.horizontal,
+		vertical = corner.vertical,
+		x = corner.horizontal == "left" and x or -x,
+		y = corner.vertical == "top" and y or -y,
+	}
+end
+
 -- Sets how long a message stays at full opacity, and how long it then takes to fade out, both in seconds.
 -- A message showing now keeps the hold it started, and fades out at the new pace.
 function OnScreenMessage.set_timing(new_hold_seconds, new_fade_out_seconds)
@@ -185,13 +212,16 @@ end
 
 -- Turns the messages on or off and sets how they look.
 -- `new_look.scale` sizes the text as a factor, and `new_look.color` is its ARGB color, whose alpha also sets its opacity.
--- `new_look.offset_x` and `new_look.offset_y` move it right and up from its spot, in pixels of the 1920x1080 UI.
+-- `new_look.corner` is a Message Corner choice, such as "bottom_left".
+-- `new_look.offset_x` and `new_look.offset_y` move it inward from that corner, in the UI's pixels.
 function OnScreenMessage.set_enabled(on, new_look)
 	enabled = on == true
 	if new_look then
 		look = {
 			scale = new_look.scale or 1,
 			color = checked_color(new_look.color),
+			-- The corner comes from the saved settings too, so an unknown one keeps the default.
+			corner = CORNERS[new_look.corner] and new_look.corner or DEFAULT_CORNER,
 			offset_x = new_look.offset_x or 0,
 			offset_y = new_look.offset_y or 0,
 		}
