@@ -13,6 +13,7 @@ local function new_constant_elements()
 		_elements_array = { { __class_name = "ConstantElementChat" } },
 		_visibility_groups = { { name = "in_loading" }, { name = "default" } },
 		_visibility_group_parameters = {},
+		_elements_hud_scale_lookup = {},
 		_current_group_name = "default",
 	}
 
@@ -421,7 +422,7 @@ describe("on_screen_message.lua backdrop", function()
 end)
 
 describe("on_screen_message.lua element", function()
-	it("adds its element to every visibility group once turned on, and removes it all once turned off", function()
+	it("adds its element to every visibility group at the HUD Scale once turned on, and removes it all once turned off", function()
 		local constant_elements = new_constant_elements()
 		local OnScreenMessage, made = load_with_element(constant_elements)
 
@@ -434,12 +435,14 @@ describe("on_screen_message.lua element", function()
 		assert_equal(constant_elements._elements_array[2], made[1])
 		assert_equal(made[1].draw_layer, 900)
 		assert_equal(constant_elements._visibility_groups[1].visible_elements[CLASS_NAME], true)
+		assert_equal(constant_elements._elements_hud_scale_lookup[CLASS_NAME], true)
 
 		OnScreenMessage.set_enabled(false)
 
 		assert_equal(constant_elements._elements[CLASS_NAME], nil)
 		assert_equal(#constant_elements._elements_array, 1)
 		assert_equal(constant_elements._visibility_groups[2].visible_elements[CLASS_NAME], nil)
+		assert_equal(constant_elements._elements_hud_scale_lookup[CLASS_NAME], nil)
 		assert_equal(made[1].destroyed_with, "renderer")
 	end)
 

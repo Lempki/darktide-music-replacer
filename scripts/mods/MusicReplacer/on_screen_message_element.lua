@@ -110,6 +110,9 @@ return function(OnScreenMessage)
 
 	function Element:init(parent, draw_layer, start_scale)
 		Element.super.init(self, parent, draw_layer, start_scale, definitions)
+		-- A new scenegraph keeps the screen node at 1920 by 1080 until it is updated at the scale the element draws at.
+		-- That scale is the HUD Scale, so the first update sizes the node to the whole screen at it.
+		self._update_scenegraph = true
 		self:set_layout(OnScreenMessage.look())
 	end
 

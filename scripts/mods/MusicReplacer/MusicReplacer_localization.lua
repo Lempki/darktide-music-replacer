@@ -158,8 +158,8 @@ local strings = {
 		en = "Message Size",
 	},
 	message_scale_tooltip = {
-		en = "How big the on-screen messages are.\n\n" ..
-			highlight("100%%") .. " is their normal size.",
+		en = "How big the on-screen messages are, on top of the game's HUD Scale setting.\n\n" ..
+			highlight("100%%") .. " is their normal size at that HUD Scale.",
 	},
 	message_color = {
 		en = "Message Color",

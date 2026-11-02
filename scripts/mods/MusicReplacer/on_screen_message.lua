@@ -12,7 +12,7 @@ local OnScreenMessage = {}
 -- Above most constant elements, such as the subtitles, so the text stays readable.
 local DRAW_LAYER = 900
 
-local slot = ConstantElementSlot.new("ConstantElementMusicReplacerOnScreenMessage", DRAW_LAYER)
+local slot = ConstantElementSlot.new("ConstantElementMusicReplacerOnScreenMessage", DRAW_LAYER, { use_hud_scale = true })
 
 -- The fade in stays short and fixed, so a key press always shows its message at once.
 local FADE_IN_SECONDS = 0.4

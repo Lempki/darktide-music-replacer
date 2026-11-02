@@ -21,10 +21,12 @@ local VISIBILITY_GROUPS = {
 }
 
 -- `class_name` is the element's class, and the name it is kept under in the constant UI.
-function ConstantElementSlot.new(class_name, draw_layer)
+-- `options.use_hud_scale`, if true, draws the element at the game's HUD Scale setting, as the game does for its own elements.
+function ConstantElementSlot.new(class_name, draw_layer, options)
 	local slot = {
 		_class_name = class_name,
 		_draw_layer = draw_layer,
+		_use_hud_scale = options ~= nil and options.use_hud_scale == true,
 		_installed_into = nil, -- The constant UI the element was added to, or nil.
 		_install_failed = false,
 	}
@@ -73,6 +75,9 @@ function ConstantElementSlot:remove()
 	for _, parameters in pairs(constant_elements._visibility_group_parameters or {}) do
 		parameters[class_name] = nil
 	end
+	if constant_elements._elements_hud_scale_lookup then
+		constant_elements._elements_hud_scale_lookup[class_name] = nil
+	end
 end
 
 function ConstantElementSlot:_install(constant_elements, create_element)
@@ -81,6 +86,10 @@ function ConstantElementSlot:_install(constant_elements, create_element)
 
 	-- Fills in the visibility groups the same way the game does for its own elements. The misspelled name is the game's own.
 	constant_elements:_setup_visiblity_groups({ { class_name = self._class_name, visibility_groups = VISIBILITY_GROUPS } })
+	if self._use_hud_scale then
+		-- The game fills this lookup from the use_hud_scale field of its own element definitions.
+		constant_elements._elements_hud_scale_lookup[self._class_name] = true
+	end
 
 	local element = create_element(constant_elements, self._draw_layer)
 	constant_elements._elements[self._class_name] = element
