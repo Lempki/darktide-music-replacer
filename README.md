@@ -6,6 +6,21 @@ Download it from [Nexus Mods](https://www.nexusmods.com/warhammer40kdarktide/mod
 
 ![How Music Replacer works: the game's music state names the situation, the mod plays a random song from that situation's folder, and the new song crossfades in while the game's music stays silent.](docs/images/how-it-works.png)
 
+## Quickstart
+
+1. Install Music Replacer like any other Darktide mod, by hand or through a mod manager such as Vortex. It needs [Darktide Mod Loader](https://www.nexusmods.com/warhammer40kdarktide/mods/19) and [DMF](https://www.nexusmods.com/warhammer40kdarktide/mods/8), with `MusicReplacer` listed below `dmf` in `mod_load_order.txt`.
+2. Put your songs into the folders you want music for, inside the **installed** mod folder: `...\Warhammer 40,000 DARKTIDE\mods\MusicReplacer\audio\`. It comes with one folder per situation. Most people start with `hub`, `explore`, `combat`, `horde`, and `boss`. Wherever you add no songs, the game's music plays as usual.
+3. Start the game and play.
+
+That is all it takes. A few things to know:
+
+* The formats that work are `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, and `.wma`. Other files, such as `.ogg` and `.opus`, are ignored, so convert those to a supported format first. File names in any language work.
+* You can add, remove, or replace files while the game runs, and the mod picks them up by itself 3 seconds after files stop changing. A song that is playing finishes, even if you remove its file.
+* Put songs directly inside the folders. Folders inside them are [override folders](docs/override-folders.md), which are optional. If a situation's folder goes missing, the mod creates it again when the game starts.
+* Every folder and when it plays is listed under [Where your music plays](#where-your-music-plays).
+
+Everything below is optional detail.
+
 ## What it does
 
 * Plays your songs by situation: the title screen, character select, the hub, loading screens, exploring, combat, hordes, bosses, events, last stands, victory, defeat, Mortis Trials, Expeditions, and Meat Grinder.
@@ -42,36 +57,25 @@ Music Replacer needs no FFmpeg, no extra program, and no other mod beyond the mo
 
 Windows "N" editions leave out Media Foundation, so on one, install Microsoft's free Media Feature Pack, which adds it. Without it, the mod cannot play your songs, and the game's music plays as usual.
 
-## Quickstart
-
-1. Install Music Replacer like any other Darktide mod, by hand or through a mod manager such as Vortex. Check that `MusicReplacer` is listed below `dmf` in `mod_load_order.txt`, as described under [Requirements](#requirements) above.
-2. Put your audio files into the folders inside the **installed** mod folder: `...\Warhammer 40,000 DARKTIDE\mods\MusicReplacer\audio\<folder>\`. For example, songs in `audio\hub\` play in the Mourningstar. Every folder is listed under [Where your music plays](#where-your-music-plays).
-3. Start the game and play.
-
-Put audio files directly inside the folders you want music for. Folders inside them are [override folders](docs/override-folders.md), which are optional. The mod creates any missing folder when the game starts, so every folder exists after your first launch. You can add, remove, or replace files while the game runs, and the mod picks them up by itself 3 seconds after files stop changing. A song that is playing finishes, even if you remove its file.
-
-The formats that work are `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, and `.wma`. Other files, such as `.ogg` and `.opus`, are ignored, so convert those to a supported format first. File names in any language work.
-
 ## Where your music plays
 
-Each folder plays in one situation. The music switches about half a second after the situation changes, or 3 seconds into and out of a loading screen, so a moment that flickers does not restart the song. The Music Holds settings also keep combat, horde, boss, and event music going for a few seconds, so a short lull does not switch the music at once.
+The folders most people fill first are in bold. Each folder plays in one situation. The music switches about half a second after the situation changes, or 3 seconds into and out of a loading screen, so a moment that flickers does not restart the song. The Music Holds settings also keep combat, horde, boss, and event music going for a few seconds, so a short lull does not switch the music at once.
 
 | Folder | When it plays |
 |---|---|
 | `title_screen` | On the title screen, before character select. |
 | `character_select` | On the character select screen, also while you create a character. |
-| `hub` | In the Mourningstar. |
+| **`hub`** | In the Mourningstar. |
 | `loading` | On loading screens that lead anywhere but into a mission: after starting the game, after a mission, and on the way to Meat Grinder. |
 | `mission_preparation` | On the mission preparation screen of every game mode, where the party gathers before a mission and can still change loadouts. |
 | `mission_briefing` | On the loading screens and the briefing on the way into a mission, also when you join a mission in progress. A song that the preparation screen interrupts continues in the briefing, unless Resume Songs is off. The mission's intro keeps the game's music. |
-| `explore` | In a mission while nothing threatens you. |
-| `combat` | In a mission while enemies attack you, outside a horde or a boss fight. |
-| `horde` | During a horde. With no songs here, the game's horde music plays, as it does without the mod. |
-| `boss` | While a monstrosity is near you, such as a Chaos Spawn, a Beast of Nurgle, a Plague Ogryn, or an Ogryn Houndmaster. This is when the game plays its own boss music. Captains and angered daemonhosts get boss music only with their settings on. A scripted boss, such as Rodin Karnak in Spillway, gets no boss music, since the game does not report it as a boss. |
+| **`explore`** | In a mission while nothing threatens you. |
+| **`combat`** | In a mission while enemies attack you, outside a horde or a boss fight. |
+| **`horde`** | During a horde. |
+| **`boss`** | While a monstrosity is near you, such as a Chaos Spawn, a Beast of Nurgle, a Plague Ogryn, or an Ogryn Houndmaster. This is when the game plays its own boss music. Captains and angered daemonhosts get boss music only with their settings on. A scripted boss, such as Rodin Karnak in Spillway, gets no boss music, since the game does not report it as a boss. |
 | `event` | While a mission event plays its music, such as a holdout, a hacking event, an escape, or a scripted boss fight like those in Spillway. It outranks boss, horde, combat, and explore music, as the game's event music does. In Operations, such as Rolling Steel and No Man's Land, it plays for the whole mission, since the game scripts their music from start to end. The prologue, Tancred Bastion, scripts its music the same way, so it mostly plays this folder too. |
 | `last_stand` | While only one player of the team is left alive. It outranks events, Mortis Trials waves and breaks, the Expedition extraction, bosses, hordes, combat, and explore. Victory and defeat still take over. |
-| `victory` | From the moment a mission is won until the loading screen or a cutscene. It covers the closing shot of the mission and the score screen after it. |
-| `defeat` | From the moment a mission is lost until the loading screen or a cutscene. It covers the closing shot of the mission and the score screen after it. |
+| `victory`, `defeat` | From the moment a mission is won (`victory`) or lost (`defeat`) until the loading screen or a cutscene. It covers the closing shot of the mission and the score screen after it. |
 | `mortis_trials_wave` | In Mortis Trials, during a wave or an objective round, through to the final win. Bosses, hordes, and fights do not interrupt it, since nearly every wave brings bosses. A last stand still takes over. |
 | `mortis_trials_break` | In Mortis Trials, between waves. |
 | `expedition_combat` | During a fight in an Expedition. Expeditions play this folder in place of `combat` and `horde`. |
@@ -102,7 +106,7 @@ Meat Grinder is a good place to try out your songs, so it has a settings group o
 | Silence | Nothing, as in the game. This is the default. |
 | Meat Grinder Folder | Your songs from the `meat_grinder` folder, through every fight with the dummies, so trying out loadouts does not switch the song. With an empty folder, the game's music plays, which is none there. |
 | One Situation | The situation you pick under Situation, as if it were happening, to try out its songs. It plays by its own choice in Music per Situation, and with Boss, a boss dummy plays the `boss` override folder named after its breed. |
-| Like a Mission | The mission situations, as the game reports them: explore, combat while you hit the dummies, and boss while a boss dummy is alive. Since Darktide 1.13.0, the boss dummies stand in Meat Grinder from the start, so boss music plays for as long as one of them is still alive. It is recommended to use it with a mod that gives you control over the dummies. |
+| Like a Mission | The mission situations, as the game reports them: explore, combat while you hit the dummies, and boss while a boss dummy is alive. Since Darktide 1.13.0, the boss dummies stand in Meat Grinder from the start, so boss music plays for as long as one of them is still alive. It works best with a mod that gives you control over the dummies. |
 
 ## Settings
 
@@ -115,7 +119,7 @@ Override folders are optional and for advanced use. A folder can hold folders of
 ## Safe by design
 
 * **No game files are changed.** The mod creates its own audio folders and writes files only to its own folder in `%APPDATA%`.
-* **No extra programs or DLLs.** The mod uses the audio decoder and audio engine that come with Windows, and calls them from its Lua scripts.
+* **No extra programs or DLLs.** The mod uses the audio decoder and audio engine that come with Windows.
 * **The game's music is the fallback.** The game's music plays wherever the mod has no songs, cannot play them, or cannot start Windows audio at all. It also plays when a game update reports a music state the mod does not know yet, instead of your songs silencing something new. The game's music is only silenced once one of your songs is ready to play, or where you chose Silence.
 * **Broken files are skipped.** A file Windows cannot decode is skipped once the mod has checked it, shortly after launch, and the log names it. If three songs in a row from one folder fail to play, that folder gives way to the game's music until the game restarts or the folders are listed again. An override folder gives way to its parent folder instead.
 * **Easy to turn off.** You can turn the mod off in the mod options at any time, and the game's music comes back at once.
@@ -138,18 +142,11 @@ Uninstalling the mod leaves its own files in `%APPDATA%\Fatshark\Darktide\MusicR
 
 ## Troubleshooting
 
-Fixes for common problems are in [docs/troubleshooting.md](docs/troubleshooting.md).
-
-To report a problem, open an [issue](https://github.com/Lempki/darktide-music-replacer/issues) and attach these two files:
-
-* The mod's log from `%APPDATA%\Fatshark\Darktide\MusicReplacer\`. That is `diagnostic.log` if the problem happened in the current or last game session, or `diagnostic-prev.log` if it happened in the session before that.
-* The newest file in `%APPDATA%\Fatshark\Darktide\console_logs\`.
-
-A bug report on the mod's Nexus Mods page works too, but its form takes no files, so share them through a link instead.
+Fixes for common problems are in [docs/troubleshooting.md](docs/troubleshooting.md). To report a problem, open an [issue](https://github.com/Lempki/darktide-music-replacer/issues) and attach the two log files that [Reporting a problem](docs/troubleshooting.md#reporting-a-problem) names.
 
 ## Contributing
 
-* Fixes, ideas, and bug reports are welcome, as pull requests or [issues](https://github.com/Lempki/darktide-music-replacer/issues). For a bug, attach the files listed under [Troubleshooting](#troubleshooting).
+* Fixes, ideas, and bug reports are welcome, as pull requests or [issues](https://github.com/Lempki/darktide-music-replacer/issues). For a bug, attach the files listed under [Reporting a problem](docs/troubleshooting.md#reporting-a-problem).
 * Translations are very welcome too, as pull requests. [docs/development.md](docs/development.md) explains where the texts live and how to add a language.
 
 ## Credits
