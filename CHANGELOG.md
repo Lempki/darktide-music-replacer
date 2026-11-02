@@ -6,7 +6,7 @@ What changes for players in each release of Music Replacer. The format follows [
 
 ### Features
 
-* A Next Song key, in the new Playback Controls group of the mod options, crossfades to another song from the folder playing now and shows the song's name. It starts unbound.
+* A Next Song key, in the new Playback Controls group of the mod options, crossfades to another song from the folder playing now and shows the song's name. In a folder with only one song, it keeps that song playing and says so. It starts unbound.
 * Previous Song and Restart Song keys join Next Song. Within a song's first 3 seconds, Previous Song goes back to the song that played before it in the same situation, and later it starts the song over, as most music players do.
 * A Pause / Resume key pauses your song while the game's music stays silent, and resumes it where it stopped.
 * A Key Fade Length setting, 0.5 seconds by default, sets how long the playback keys crossfade, apart from the Fade Length that situation changes use. A key that starts the song playing now over jumps to its start instead of crossfading the song with itself.

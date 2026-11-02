@@ -520,6 +520,17 @@ local function song_position()
 	return AudioClient.position()
 end
 
+-- The folder playing now as the player knows it: the situation's name, and an override folder's name after it.
+-- An example is "Boss (chaos_spawn)".
+-- A removal lasts beyond this situation, so its messages say where the song was taken out.
+local function folder_label()
+	local label = mod:localize("source_" .. current_context)
+	if current_folder ~= current_context then
+		label = string.format("%s (%s)", label, current_folder:match("[^/]+$"))
+	end
+	return label
+end
+
 -- `control` names the key in the log.
 local function say_no_song(control)
 	log(string.format("[control] %s: none of your songs plays", control))
@@ -571,6 +582,13 @@ mod.next_song = function()
 
 	if not file_path then
 		say_no_song("next song")
+		return
+	end
+
+	-- Starting a folder's only song over is what Restart Song does, so Next leaves it playing and says why.
+	if is_only_file then
+		log(string.format("[control] %s: next song, but %s has no other song", current_context, current_folder))
+		notify_control("control_only_song", folder_label(), song_name(playing_track.file_path))
 		return
 	end
 
@@ -660,17 +678,6 @@ local function expire_removal(dt)
 	if removal_asked.seconds >= REMOVE_CONFIRM_SECONDS then
 		removal_asked = nil
 	end
-end
-
--- The folder playing now as the player knows it: the situation's name, and an override folder's name after it.
--- An example is "Boss (chaos_spawn)".
--- A removal lasts beyond this situation, so its messages say where the song was taken out.
-local function folder_label()
-	local label = mod:localize("source_" .. current_context)
-	if current_folder ~= current_context then
-		label = string.format("%s (%s)", label, current_folder:match("[^/]+$"))
-	end
-	return label
 end
 
 -- Takes the song playing now out of its folder's rotation and moves on, as Next Song does.

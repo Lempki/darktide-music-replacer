@@ -62,7 +62,7 @@ local strings = {
 		en = "Next Song",
 	},
 	next_song_keybind_tooltip = {
-		en = "Crossfades to another song from the folder playing now. With one song in the folder, it starts that song over.\n\n" ..
+		en = "Crossfades to another song from the folder playing now. With one song in the folder, that song keeps playing.\n\n" ..
 			"The next situation still starts its own pick, and the skipped song does not continue later. " ..
 			"DMF runs keybinds even while you type in chat, so a key that is not a letter, such as one on the numpad or an F-key, works best.",
 	},
@@ -230,6 +230,9 @@ local strings = {
 		en = "No song of yours is playing",
 	},
 	-- The first %s is where the song plays, such as "Hub" or "Boss (chaos_spawn)", and the second is the song.
+	control_only_song = {
+		en = "Only song in %s: %s",
+	},
 	control_remove_confirm = {
 		en = "Press again to remove from %s: %s",
 	},

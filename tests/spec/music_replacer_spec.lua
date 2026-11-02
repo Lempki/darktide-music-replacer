@@ -1207,19 +1207,15 @@ describe("MusicReplacer.lua the Next Song key", function()
 		assert_equal(harness:last_on_screen_message(), "<control_next_song: { #color(255,0,0)}b.mp3>")
 	end)
 
-	it("starts a folder's only song over in a fresh stream", function()
+	it("keeps a folder's only song playing and says it is the only one", function()
 		local harness = in_hub({ hub = { { name = "only.mp3", duration = 200 } } })
 		local plays = #harness.client.plays
 
 		press_next(harness)
 
-		assert_equal(#harness.client.plays, plays + 1)
-		local play = harness:last_play()
-		assert_equal(play.file_path, "hub/only.mp3")
-		assert_equal(play.opts.start_position, nil)
-		assert_equal(play.opts.loop, true)
-		assert_equal(play.opts.fade_in, true)
-		assert_equal(harness:last_on_screen_message(), "<control_next_song: only.mp3>")
+		assert_equal(#harness.client.plays, plays)
+		assert_equal(harness:playing(), "hub/only.mp3")
+		assert_equal(harness:last_on_screen_message(), "<control_only_song: <source_hub>, only.mp3>")
 	end)
 
 	it("moves on to the folder's next song as usual once the new song ends", function()
@@ -1650,14 +1646,6 @@ describe("MusicReplacer.lua the Key Fade Length", function()
 		local harness = in_hub(nil, { settings = { key_fade_seconds = 5 } })
 
 		press(harness, "restart_song")
-
-		assert_equal(harness:last_play().opts.fade_seconds, 0.1)
-	end)
-
-	it("jumps to the start of a folder's only song on Next Song too", function()
-		local harness = in_hub({ hub = { { name = "only.mp3", duration = 200 } } })
-
-		press(harness, "next_song")
 
 		assert_equal(harness:last_play().opts.fade_seconds, 0.1)
 	end)
