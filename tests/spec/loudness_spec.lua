@@ -93,7 +93,7 @@ local function load_loudness(songs, cache_text)
 		log = function(line) test.lines[#test.lines + 1] = line end,
 		detail = function(line) test.details[#test.details + 1] = line end,
 		media_decoder = media_decoder,
-		native_ffi = { alloc = function() return {} end, free = function() end, ffi = { cast = function(_, buffer) return buffer end } },
+		native_ffi = { alloc = function() if not test.alloc_fails then return {} end end, free = function() end, ffi = { cast = function(_, buffer) return buffer end } },
 		loudness_meter = meter,
 		disk_path = function(file_path) return "audio/" .. file_path end,
 		folder = FOLDER,
@@ -397,6 +397,25 @@ describe("loudness.lua cache", function()
 		Loudness.set_files(entries({ { "hub/a.mp3", "2" } }))
 		measure_all(Loudness, "hub")
 		assert_equal(#test.opened, 2)
+	end)
+
+	it("tries a song it had no memory to read again only once its file changes", function()
+		local Loudness, test = load_loudness({ ["audio/hub/a.mp3"] = 10 })
+		test.alloc_fails = true
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3", "1" } }))
+		measure_all(Loudness, "hub")
+		assert_equal(test.details[1], "[loudness] hub/a.mp3 could not be measured: no memory for its read buffer")
+		assert_equal(test.closed, 1)
+
+		Loudness.set_files(entries({ { "hub/a.mp3", "1" } }))
+		measure_all(Loudness, "hub")
+		assert_equal(#test.opened, 1)
+
+		test.alloc_fails = false
+		Loudness.set_files(entries({ { "hub/a.mp3", "2" } }))
+		measure_all(Loudness, "hub")
+		assert_equal(Loudness.describe("hub/a.mp3"):match("^%-10.0 LUFS") ~= nil, true)
 	end)
 
 	it("starts a song over when its file changes while it is measured", function()

@@ -264,6 +264,8 @@ local function start(file_path)
 	local buffer = NativeFfi.alloc(capacity)
 	if not buffer then
 		decoder:close()
+		log_detail(string.format("[loudness] %s could not be measured: no memory for its read buffer", file_path))
+		failed[file_path] = stamps[file_path]
 		song_done()
 		return
 	end
