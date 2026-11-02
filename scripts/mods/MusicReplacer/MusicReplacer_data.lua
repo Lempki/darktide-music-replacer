@@ -189,7 +189,7 @@ return {
 						setting_id = "message_seconds",
 						type = "numeric",
 						tooltip = "message_seconds_tooltip",
-						default_value = 3,
+						default_value = 4,
 						range = { 1, 10 },
 						decimals_number = 1,
 						unit_text = "seconds_unit",

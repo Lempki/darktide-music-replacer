@@ -45,7 +45,7 @@ A message is one line of text on a backdrop in the corner of the screen that Mes
 |---|---|---|
 | For Key Presses | On | Shows a message for each press of a Playback Controls key, such as `Next song: b.mp3`. |
 | For Song Changes | On | Shows `Now playing:` and the song's name whenever one of your songs starts without a key press: when a situation starts its music, when a song ends and the next one plays, and when a song resumes where it stopped. A folder's only song that keeps playing into the next situation shows nothing. |
-| Message Duration | 3 seconds | How long a message stays at full opacity before it fades out, from 1 to 10 seconds. Remove from Rotation's question always stays for the 3 seconds in which a second press removes the song. |
+| Message Duration | 4 seconds | How long a message stays at full opacity before it fades out, from 1 to 10 seconds. Remove from Rotation's question always stays for the 3 seconds in which a second press removes the song. |
 | Message Fade Out | 1 second | How long a message takes to fade out, from 0 to 3 seconds. Set it to 0 to hide a message at once. |
 | Message Size | 100% | How big the messages are, from 50% to 200%. |
 | Message Color | Grey, 85% opacity | The messages' color, picked with DMF's color picker. Its alpha sets how opaque they are. It needs DMF from August 2026 or newer. |

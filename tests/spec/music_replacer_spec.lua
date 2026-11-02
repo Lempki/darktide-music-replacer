@@ -717,7 +717,7 @@ describe("MusicReplacer.lua on-screen messages", function()
 		assert_equal(harness.on_screen_message.enabled, true)
 		assert_deep_equal(harness.on_screen_message.look,
 			{ scale = 1, color = { 217, 200, 200, 195 }, corner = "bottom_left", offset_x = 0, offset_y = 0, backdrop_opacity = 0.7 })
-		assert_deep_equal(harness.on_screen_message.timing, { 3, 1 })
+		assert_deep_equal(harness.on_screen_message.timing, { 4, 1 })
 	end)
 
 	it("follow their settings", function()

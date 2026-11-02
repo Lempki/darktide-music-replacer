@@ -18,7 +18,7 @@ local slot = ConstantElementSlot.new("ConstantElementMusicReplacerOnScreenMessag
 local FADE_IN_SECONDS = 0.4
 
 -- The Message Duration and Message Fade Out settings, in seconds.
-local hold_seconds = 3
+local hold_seconds = 4
 local fade_out_seconds = 1
 
 -- How long a new message takes to replace the one showing: the old one fades out and the new one in, at once.
