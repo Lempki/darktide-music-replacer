@@ -403,7 +403,7 @@ function Library.same_song(file_path, other_path)
 end
 
 -- Returns the same values as pick_file() for one specific file, or nil if the context no longer has it.
--- A song resumed after a rescan may have been removed, or its folder may have gained or lost files.
+-- Before a song resumes, a rescan can remove it or change its folder's files.
 function Library.find_file(context_name, file_path)
 	local usable = usable_entries(context_name)
 	if not usable then

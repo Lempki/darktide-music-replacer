@@ -44,7 +44,7 @@ log("[startup] " .. version_line)
 local current_context = nil
 
 -- False while the mod is turned off in the mod options.
--- DMF then disables the mod's hooks but keeps calling update, so nothing may start playing while this is false.
+-- DMF then disables the mod's hooks but keeps calling update, so nothing must start playing while this is false.
 local enabled = true
 
 -- True while playback is unavailable: before it has started, while Windows has no audio output, and once it gives up for the session.
@@ -910,7 +910,7 @@ mod.on_all_mods_loaded = function()
 		mod:error("Music Replacer could not start Windows audio playback, so the game's music plays as usual: %s", reason)
 	end
 
-	-- The context may have resolved before Library and AudioClient were ready.
+	-- The context can resolve before Library and AudioClient are ready.
 	-- Re-evaluate now, bypassing the debounce, since this is a one-off catch-up.
 	has_pending_change = false
 	if enabled then

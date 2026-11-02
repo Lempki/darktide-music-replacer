@@ -112,7 +112,7 @@ function MediaDecoder.available()
 end
 
 -- Call from mod.on_unload, after every decoder is closed. It pairs the MFStartup in MediaDecoder.available().
--- Otherwise a mod reload leaves Media Foundation's work threads running in a DLL the old module's handle may unload.
+-- Otherwise a mod reload leaves Media Foundation's work threads running in a DLL that the old module's handle can unload.
 function MediaDecoder.shutdown()
 	if mfreadwrite then
 		mfplat.MusicReplacer_MFShutdown()

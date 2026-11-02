@@ -61,7 +61,7 @@
 --	* Victory and defeat resolve to their own contexts, from their state until the next level starts.
 --	  The game state returns to "mission" in between, so the outcome is tracked in `mission_outcome`.
 --	  A loading screen or a real zone clears it, since a story mission's cutscene can skip the loading screen.
---	* Context.override_keys() names the override folders a context may use: the moment, then the mission, then the game mode.
+--	* Context.override_keys() names the override folders a context can use: the moment, then the mission, then the game mode.
 --	  A moment is the game's own name for what happens inside the context, such as an event's kind or a boss's breed.
 --	  On the way into a mission, the mission and its game mode come from the game's mechanism data, since the level names them late.
 
@@ -676,7 +676,7 @@ local function moment_kind(mod, context_name)
 	return nil
 end
 
--- The override folder names `context_name` may use right now, most specific first.
+-- The override folder names `context_name` can use right now, most specific first.
 -- They are the moment's kind, then the mission's code, then the game mode.
 -- MusicReplacer.lua plays the first one that has songs.
 function Context.override_keys(mod, context_name)
@@ -711,7 +711,7 @@ function Context.refresh(mod)
 end
 
 -- Makes the next value the game sets for every state group count as a change, so this module and its listeners catch up.
--- It is for when the hook may have missed changes, as while the mod is turned off, since DMF disables a mod's hooks then.
+-- It is for when the hook missed changes, as while the mod is turned off, since DMF disables a mod's hooks then.
 -- The next change it resolves is reported even if it matches the context from before.
 function Context.relearn()
 	learned_groups = {}
@@ -775,7 +775,7 @@ local function track_transition(mod, group_name, current, new_state)
 		end
 
 		-- A loading screen that ends in "mission" has reached its level, such as when joining a mission in progress.
-		-- Catching up inside a level ends the trip too, since its arrival may have passed while the mod was off.
+		-- Catching up inside a level ends the trip too, since its arrival can pass while the mod is off.
 		-- The mission board comes before every "mission_ready", so a ready that was taken back does not linger.
 		local arrived = new_state == "mission" and (current == "loading" or current == "mission")
 		if new_state == "mission_ready" or new_state == "loadout" or new_state == "mission_briefing" then

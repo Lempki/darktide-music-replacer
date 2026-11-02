@@ -152,7 +152,7 @@ Uninstalling the mod leaves its own files in `%APPDATA%\Fatshark\Darktide\MusicR
 
 ## Compatibility
 
-* Running Music Replacer alongside other music mods has not been tested. A mod that also changes the game's music states may conflict with it.
+* Running Music Replacer alongside other music mods has not been tested.
 * The mod has not been tested on Steam Deck or Linux. There the game runs through Proton, which brings its own stand-ins for the Windows audio decoder and audio engine the mod uses. If the mod cannot start them, the game's music plays as usual.
 * The mod writes `diagnostic.log`, `loudness.txt`, and `removed.txt` to your `%APPDATA%` folder, and finds it through Windows' "Language for non-Unicode programs" setting. If your Windows username has letters outside that language, such as Japanese letters on an English Windows, those files cannot be written. Your music still plays, Even Out Loudness measures your songs again at every launch, and songs removed from rotation come back at the next launch.
 

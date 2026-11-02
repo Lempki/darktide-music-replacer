@@ -83,7 +83,7 @@ end
 -- Turning it on also forces the current value, otherwise a value set before suppression started plays until the next flap.
 -- Turning it off restores the real value.
 -- Without that, a boss that started while this was on would stay silent, since the game sends "boss" to Wwise only when it changes.
--- expeditions_intensity always holds the same value as music_combat, and the game's Expedition music may follow either.
+-- expeditions_intensity always holds the same value as music_combat, so the mod sets both together.
 local function set_combat(should_suppress)
 	set_reforced_group("music_combat", should_suppress)
 	set_reforced_group("expeditions_intensity", should_suppress)
@@ -188,7 +188,7 @@ function Suppression.on_state_change(group_name, new_state)
 	end
 end
 
--- Stops the cutscene music that may still be playing, since a custom song takes over now.
+-- Stops any cutscene music still playing, since a custom song takes over now.
 -- A cutscene's music already over has nothing left to stop, which Wwise ignores.
 local function stop_cutscene_music()
 	for _, event in ipairs(cutscene_events) do

@@ -267,7 +267,7 @@ function FakeEngine:reassert_states(group_names)
 end
 
 -- Returns the value Wwise last received for a state group, from the game or from the mod.
--- That is the value the player hears, while the game's own manager may still hold the real one.
+-- That is the value the player hears, while the game's own manager can still hold the real one.
 function FakeEngine:wwise_state(group_name)
 	for index = #self.wwise_calls, 1, -1 do
 		local call = self.wwise_calls[index]

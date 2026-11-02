@@ -7,7 +7,7 @@ local NativeFfi = {}
 local ffi = (Mods and Mods.lua and Mods.lua.ffi) or (not Mods and require("ffi")) or nil
 NativeFfi.ffi = ffi
 
--- Every mod shares one LuaJIT state, and ffi.cdef rejects redefining a name that another mod may also declare, as DMF does.
+-- Every mod shares one LuaJIT state, and ffi.cdef rejects redefining a name that another mod, such as DMF, already declared.
 -- So every name is prefixed, and the functions are redirected to their real symbols.
 local CDEF = [[
 typedef struct { uint32_t Data1; uint16_t Data2; uint16_t Data3; uint8_t Data4[8]; } MusicReplacer_GUID;
@@ -74,7 +74,7 @@ local com_ready = false
 local load_error = nil
 
 -- Declares each top-level C declaration in `text` on its own.
--- A mod reload declares everything again, which LuaJIT may reject as a redefinition, so that error alone is skipped.
+-- A mod reload declares everything again, and LuaJIT rejects some of those declarations as redefinitions, so that error alone is skipped.
 -- Any other error, such as a typo in a declaration, stops the load, since it would otherwise surface later as a missing name.
 -- The first load's layouts stay until the game restarts, as LuaJIT keeps every declaration for the life of its state.
 -- A packed region between #pragma pack(push) and #pragma pack(pop) stays one declaration.
@@ -249,7 +249,7 @@ function NativeFfi.wide(text)
 	return buffer
 end
 
--- A NUL-terminated UTF-16 full path for a UTF-8 path, which may be relative to the game's working directory.
+-- A NUL-terminated UTF-16 full path for a UTF-8 path, which can be relative to the game's working directory.
 function NativeFfi.wide_full_path(text)
 	local relative = NativeFfi.wide(text)
 	local length = kernel32.MusicReplacer_GetFullPathNameW(relative, 0, nil, nil)

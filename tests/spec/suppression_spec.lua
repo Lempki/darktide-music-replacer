@@ -289,7 +289,7 @@ end)
 describe("suppression.lua cutscene music", function()
 	local CUTSCENE_MUSIC = "wwise/events/cinematics/play_cs03_music_116bpm"
 
-	it("stops cutscene music that may still play once a custom song takes over, and only once", function()
+	it("stops any cutscene music still playing once a custom song takes over, and only once", function()
 		local engine, Suppression = load_suppression()
 		Suppression.watch_event({}, CUTSCENE_MUSIC, 7)
 		Suppression.watch_event({}, "wwise/events/cinematics/play_mission_intro_stinger_generic", 8)

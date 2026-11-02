@@ -112,7 +112,7 @@ end
 
 -- Remembers `position` seconds into `file_path` for `context_name`, which is giving way to `next_context_name`.
 -- Returns the position it kept, or nil.
--- `duration` may be nil.
+-- `duration` is nil while the song's length is unknown.
 function ResumePoints.remember(context_name, file_path, position, duration, is_only_file, next_context_name)
 	if not (mod and mod:get("resume_songs")) then
 		return nil
@@ -171,7 +171,7 @@ end
 
 -- Remembers `position` seconds into `file_path` for `folder`, which the situation playing now is switching away from.
 -- Returns the position it kept, or nil.
--- `duration` may be nil.
+-- `duration` is nil while the song's length is unknown.
 function ResumePoints.remember_folder(folder, file_path, position, duration, is_only_file)
 	folder_points[folder] = nil
 	if not (mod and mod:get("resume_songs")) then

@@ -452,7 +452,7 @@ describe("MusicReplacer.lua music events from the game", function()
 		assert_deep_equal(harness.engine.stopped_events, {})
 	end)
 
-	-- DMF disables the mod's hooks while it is off, so the level the cutscene music belonged to may have ended unseen.
+	-- DMF disables the mod's hooks while it is off, so the level the cutscene music belonged to can end unseen.
 	it("forgets cutscene music when the mod is turned off", function()
 		local harness = in_mission({ source_explore = "game" })
 		CLASS.WwiseWorld.trigger_resource_event({}, "wwise/events/cinematics/play_cs03_music_116bpm")
