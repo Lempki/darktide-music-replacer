@@ -221,6 +221,15 @@ return {
 						has_alpha = true,
 					},
 					{
+						setting_id = "message_backdrop_opacity",
+						type = "numeric",
+						tooltip = "message_backdrop_opacity_tooltip",
+						default_value = 70,
+						range = { 0, 100 },
+						decimals_number = 0,
+						unit_text = "percent_unit",
+					},
+					{
 						setting_id = "message_corner",
 						type = "dropdown",
 						tooltip = "message_corner_tooltip",

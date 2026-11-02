@@ -313,20 +313,20 @@ describe("on_screen_message.lua", function()
 end)
 
 describe("on_screen_message.lua look", function()
-	it("starts at its normal size, in muted grey at 85% opacity, in the bottom left corner", function()
+	it("starts at its normal size, in muted grey at 85% opacity, in the bottom left corner, on a 70% backdrop", function()
 		local OnScreenMessage = load_on_screen_message()
 
 		assert_deep_equal(OnScreenMessage.look(),
-			{ scale = 1, color = { 217, 200, 200, 195 }, corner = "bottom_left", offset_x = 0, offset_y = 0 })
+			{ scale = 1, color = { 217, 200, 200, 195 }, corner = "bottom_left", offset_x = 0, offset_y = 0, backdrop_opacity = 0.7 })
 	end)
 
 	it("takes the look it is given", function()
 		local OnScreenMessage = load_on_screen_message()
+		local look = { scale = 1.5, color = { 255, 10, 20, 30 }, corner = "top_right", offset_x = 300, offset_y = 40, backdrop_opacity = 0 }
 
-		OnScreenMessage.set_enabled(true, { scale = 1.5, color = { 255, 10, 20, 30 }, corner = "top_right", offset_x = 300, offset_y = 40 })
+		OnScreenMessage.set_enabled(true, look)
 
-		assert_deep_equal(OnScreenMessage.look(),
-			{ scale = 1.5, color = { 255, 10, 20, 30 }, corner = "top_right", offset_x = 300, offset_y = 40 })
+		assert_deep_equal(OnScreenMessage.look(), look)
 	end)
 
 	it("keeps the bottom left corner when the saved corner is not one it knows", function()
@@ -370,6 +370,46 @@ describe("on_screen_message.lua placement", function()
 	end)
 end)
 
+describe("on_screen_message.lua backdrop", function()
+	local WIDTHS = { Next = 100, ["Previous song"] = 200 }
+	local function width_of(text)
+		return WIDTHS[text]
+	end
+
+	it("has no width and no opacity while nothing shows", function()
+		local OnScreenMessage = load_on_screen_message()
+
+		local width, opacity = OnScreenMessage.backdrop(width_of)
+
+		assert_equal(width, 0)
+		assert_equal(opacity, 0)
+	end)
+
+	it("fits one line, and fades with it", function()
+		local OnScreenMessage = load_on_screen_message()
+		OnScreenMessage.show("Next")
+		OnScreenMessage.advance(0.2)
+
+		local width, opacity = OnScreenMessage.backdrop(width_of)
+
+		assert_equal(width, 100)
+		assert_equal(math.abs(opacity - 0.5) < 1e-9, true, tostring(opacity))
+	end)
+
+	it("blends from the old line's width to the new one's during a crossfade, at full opacity", function()
+		local OnScreenMessage = load_on_screen_message()
+		OnScreenMessage.show("Next")
+		OnScreenMessage.advance(0.4)
+		OnScreenMessage.show("Previous song")
+		OnScreenMessage.advance(0.15)
+
+		local width, opacity = OnScreenMessage.backdrop(width_of)
+
+		assert_equal(math.abs(width - 150) < 1e-9, true, tostring(width))
+		assert_equal(math.abs(opacity - 1) < 1e-9, true, tostring(opacity))
+	end)
+end)
+
 describe("on_screen_message.lua element", function()
 	it("adds its element to every visibility group once turned on, and removes it all once turned off", function()
 		local constant_elements = new_constant_elements()
@@ -397,10 +437,12 @@ describe("on_screen_message.lua element", function()
 		local OnScreenMessage, made = load_with_element(new_constant_elements())
 		OnScreenMessage.set_enabled(true)
 
-		OnScreenMessage.set_enabled(true, { scale = 2, color = { 255, 10, 20, 30 }, corner = "top_left", offset_x = 5, offset_y = 6 })
+		local look = { scale = 2, color = { 255, 10, 20, 30 }, corner = "top_left", offset_x = 5, offset_y = 6, backdrop_opacity = 0.5 }
+
+		OnScreenMessage.set_enabled(true, look)
 
 		assert_equal(#made, 1)
-		assert_deep_equal(made[1].layouts, { { scale = 2, color = { 255, 10, 20, 30 }, corner = "top_left", offset_x = 5, offset_y = 6 } })
+		assert_deep_equal(made[1].layouts, { look })
 	end)
 
 	it("removes its element on shutdown", function()

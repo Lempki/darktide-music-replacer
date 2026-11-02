@@ -818,6 +818,7 @@ local ON_SCREEN_MESSAGE_SETTINGS = {
 	message_scale = true,
 	message_color = true,
 	message_corner = true,
+	message_backdrop_opacity = true,
 	message_offset_x = true,
 	message_offset_y = true,
 	message_seconds = true,
@@ -833,6 +834,7 @@ local function apply_on_screen_message_settings()
 		corner = mod:get("message_corner"),
 		offset_x = mod:get("message_offset_x"),
 		offset_y = mod:get("message_offset_y"),
+		backdrop_opacity = mod:get("message_backdrop_opacity") / 100,
 	})
 	OnScreenMessage.set_timing(mod:get("message_seconds"), mod:get("message_fade_out_seconds"))
 end

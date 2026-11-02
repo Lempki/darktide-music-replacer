@@ -170,6 +170,13 @@ local strings = {
 	pixels_unit = {
 		en = "px",
 	},
+	message_backdrop_opacity = {
+		en = "Message Backdrop Opacity",
+	},
+	message_backdrop_opacity_tooltip = {
+		en = "How dark the backdrop behind the on-screen messages is. It fades out toward the middle of the screen, and with the message.\n\n" ..
+			highlight("0%%") .. " leaves out the backdrop.",
+	},
 	message_corner = {
 		en = "Message Corner",
 	},

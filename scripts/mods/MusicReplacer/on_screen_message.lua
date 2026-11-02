@@ -49,9 +49,19 @@ local DEFAULT_CORNER = "bottom_left"
 -- How far the message sits from its corner's edges at offsets of 0, in the UI's pixels, which the game scales to the screen's height.
 local PADDING = 4
 
--- How the message looks, from its settings: its size as a factor, its ARGB color, and its corner.
+-- The Message Backdrop Opacity setting's default, as a share, the same as the debug overlay's backdrop.
+local DEFAULT_BACKDROP_OPACITY = 0.7
+
+-- How the message looks, from its settings: its size as a factor, its ARGB color, its corner, and its backdrop's opacity as a share.
 -- Its offsets are how far it moves inward from the corner, in the UI's pixels.
-local look = { scale = 1, color = DEFAULT_COLOR, corner = DEFAULT_CORNER, offset_x = 0, offset_y = 0 }
+local look = {
+	scale = 1,
+	color = DEFAULT_COLOR,
+	corner = DEFAULT_CORNER,
+	offset_x = 0,
+	offset_y = 0,
+	backdrop_opacity = DEFAULT_BACKDROP_OPACITY,
+}
 
 -- The message showing now, or nil: its text, its opacity as a share, its phase, and the seconds left of its hold.
 -- Its phase is "in", "hold", or "out", and its min_hold_seconds, if set, is the shortest hold it gets.
@@ -158,6 +168,24 @@ function OnScreenMessage.look()
 	return look
 end
 
+-- The backdrop behind the lines showing now: its width, from `width_of(text)` for each line, and its opacity as a share.
+-- During a crossfade it blends from the old line's width to the new one's by their opacities, so it never jumps.
+-- Returns 0, 0 while no line shows.
+function OnScreenMessage.backdrop(width_of)
+	local total_opacity = 0
+	local weighted_width = 0
+	for index = 1, OnScreenMessage.line_count() do
+		local line_text, opacity = OnScreenMessage.line(index)
+		total_opacity = total_opacity + opacity
+		weighted_width = weighted_width + width_of(line_text) * opacity
+	end
+
+	if total_opacity <= 0 then
+		return 0, 0
+	end
+	return weighted_width / total_opacity, math.min(1, total_opacity)
+end
+
 -- Where the message sits for `new_look`: the side it aligns to on each axis, and its offset as the game's styles take it.
 -- The offsets move it inward, so a larger X moves it left from a right corner, and a larger Y moves it down from a top corner.
 function OnScreenMessage.placement(new_look)
@@ -214,6 +242,7 @@ end
 -- `new_look.scale` sizes the text as a factor, and `new_look.color` is its ARGB color, whose alpha also sets its opacity.
 -- `new_look.corner` is a Message Corner choice, such as "bottom_left".
 -- `new_look.offset_x` and `new_look.offset_y` move it inward from that corner, in the UI's pixels.
+-- `new_look.backdrop_opacity` is how opaque the backdrop behind it is, as a share.
 function OnScreenMessage.set_enabled(on, new_look)
 	enabled = on == true
 	if new_look then
@@ -224,6 +253,7 @@ function OnScreenMessage.set_enabled(on, new_look)
 			corner = CORNERS[new_look.corner] and new_look.corner or DEFAULT_CORNER,
 			offset_x = new_look.offset_x or 0,
 			offset_y = new_look.offset_y or 0,
+			backdrop_opacity = math.max(0, math.min(1, new_look.backdrop_opacity or DEFAULT_BACKDROP_OPACITY)),
 		}
 	end
 
