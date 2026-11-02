@@ -475,10 +475,11 @@ end)
 -- The next context change still starts its own pick.
 -- While a change is still settling, a key acts on what plays now.
 
--- Shows a key's message as the game's toast notification.
--- DMF formats the notification, so the localized text goes in as an argument, and a song name with a percent sign in it shows as it is.
+-- Shows a key's message.
+-- Song and folder names are the player's own text, and "{#" starts a tag in the game's markup, so it is broken up.
 local function notify_control(text_id, ...)
-	mod:notify("%s", mod:localize(text_id, ...))
+	local text = mod:localize(text_id, ...)
+	KeyMessage.show((text:gsub("{#", "{ #")))
 end
 
 -- True while one of the player's songs plays for the current situation, or is paused, the only music the keys act on.

@@ -207,11 +207,12 @@ local function new_overlay()
 	return overlay
 end
 
--- A stand-in for key_message.lua that keeps whether it is on and how it looks.
+-- A stand-in for key_message.lua that keeps whether it is on, how it looks, and every text it was asked to show.
 local function new_key_message()
-	local key_message = { enabled = false, look = nil }
+	local key_message = { enabled = false, look = nil, shown = {} }
 
 	function key_message.init() end
+	function key_message.show(text) key_message.shown[#key_message.shown + 1] = text end
 	function key_message.set_enabled(on, look) key_message.enabled, key_message.look = on, look end
 	function key_message.update() end
 	function key_message.shutdown() end
@@ -314,15 +315,9 @@ function MainHarness:settle()
 	self:wait(0.7)
 end
 
--- The text of the last toast notification the mod showed, or nil.
-function MainHarness:last_notification()
-	for index = #self.engine.messages, 1, -1 do
-		local message = self.engine.messages[index]
-		if message.level == "notify" then
-			return message.text
-		end
-	end
-	return nil
+-- The text of the last key message the mod showed, or nil.
+function MainHarness:last_key_message()
+	return self.key_message.shown[#self.key_message.shown]
 end
 
 -- True when a logged line contains `text`.

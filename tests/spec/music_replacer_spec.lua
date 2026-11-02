@@ -1110,8 +1110,16 @@ describe("MusicReplacer.lua the Next Song key", function()
 		assert_equal(play.opts.fade_in, true)
 		assert_equal(play.opts.start_position, nil)
 		assert_equal(play.opts.duration_seconds, 180)
-		assert_equal(harness:last_notification(), "<control_next_song: b.mp3>")
+		assert_equal(harness:last_key_message(), "<control_next_song: b.mp3>")
 		assert_equal(harness.overlay.options.snapshot().song, "b.mp3")
+	end)
+
+	it("shows markup in the song's name as plain text", function()
+		local harness = in_hub({ hub = { { name = "a.mp3", duration = 200 }, { name = "{#color(255,0,0)}b.mp3", duration = 180 } } })
+
+		press_next(harness)
+
+		assert_equal(harness:last_key_message(), "<control_next_song: { #color(255,0,0)}b.mp3>")
 	end)
 
 	it("starts a folder's only song over in a fresh stream", function()
@@ -1126,7 +1134,7 @@ describe("MusicReplacer.lua the Next Song key", function()
 		assert_equal(play.opts.start_position, nil)
 		assert_equal(play.opts.loop, true)
 		assert_equal(play.opts.fade_in, true)
-		assert_equal(harness:last_notification(), "<control_next_song: only.mp3>")
+		assert_equal(harness:last_key_message(), "<control_next_song: only.mp3>")
 	end)
 
 	it("moves on to the folder's next song as usual once the new song ends", function()
@@ -1188,7 +1196,7 @@ describe("MusicReplacer.lua the Next Song key", function()
 			press_next(harness)
 
 			assert_equal(harness:last_play(), nil)
-			assert_equal(harness:last_notification(), "<control_no_song>")
+			assert_equal(harness:last_key_message(), "<control_no_song>")
 		end
 	end)
 
@@ -1198,7 +1206,7 @@ describe("MusicReplacer.lua the Next Song key", function()
 		press_next(harness)
 
 		assert_equal(harness:last_play(), nil)
-		assert_equal(harness:last_notification(), "<control_no_song>")
+		assert_equal(harness:last_key_message(), "<control_no_song>")
 	end)
 
 	it("says no song of yours is playing, and changes nothing, while playback does not work", function()
@@ -1210,7 +1218,7 @@ describe("MusicReplacer.lua the Next Song key", function()
 		press_next(harness)
 
 		assert_equal(#harness.client.plays, plays)
-		assert_equal(harness:last_notification(), "<control_no_song>")
+		assert_equal(harness:last_key_message(), "<control_no_song>")
 	end)
 end)
 
@@ -1234,7 +1242,7 @@ describe("MusicReplacer.lua the Previous Song key", function()
 		assert_equal(play.opts.fade_in, true)
 		assert_equal(play.opts.start_position, nil)
 		assert_equal(play.opts.duration_seconds, 200)
-		assert_equal(harness:last_notification(), "<control_previous_song: a.mp3>")
+		assert_equal(harness:last_key_message(), "<control_previous_song: a.mp3>")
 	end)
 
 	it("goes back to the song that played through before the song playing now", function()
@@ -1262,7 +1270,7 @@ describe("MusicReplacer.lua the Previous Song key", function()
 		press(harness, "previous_song")
 		assert_equal(#harness.client.plays, plays + 1)
 		assert_equal(harness:playing(), "hub/a.mp3")
-		assert_equal(harness:last_notification(), "<control_restart_song: a.mp3>")
+		assert_equal(harness:last_key_message(), "<control_restart_song: a.mp3>")
 	end)
 
 	it("starts the song playing now over once it is 3 seconds in, and goes back on the next press", function()
@@ -1273,7 +1281,7 @@ describe("MusicReplacer.lua the Previous Song key", function()
 		press(harness, "previous_song")
 		assert_equal(harness:last_play().file_path, "hub/b.mp3")
 		assert_equal(harness:last_play().opts.start_position, nil)
-		assert_equal(harness:last_notification(), "<control_restart_song: b.mp3>")
+		assert_equal(harness:last_key_message(), "<control_restart_song: b.mp3>")
 
 		harness.client.position = 0
 		press(harness, "previous_song")
@@ -1289,7 +1297,7 @@ describe("MusicReplacer.lua the Previous Song key", function()
 		assert_equal(#harness.client.plays, plays + 1)
 		assert_equal(harness:last_play().file_path, "hub/a.mp3")
 		assert_equal(harness:last_play().opts.fade_in, true)
-		assert_equal(harness:last_notification(), "<control_restart_song: a.mp3>")
+		assert_equal(harness:last_key_message(), "<control_restart_song: a.mp3>")
 	end)
 
 	it("does not go back past a situation change", function()
@@ -1302,7 +1310,7 @@ describe("MusicReplacer.lua the Previous Song key", function()
 		press(harness, "previous_song")
 
 		assert_equal(harness:playing(), "combat/c.mp3")
-		assert_equal(harness:last_notification(), "<control_restart_song: c.mp3>")
+		assert_equal(harness:last_key_message(), "<control_restart_song: c.mp3>")
 	end)
 
 	it("passes over an earlier song that a rescan removed", function()
@@ -1324,7 +1332,7 @@ describe("MusicReplacer.lua the Previous Song key", function()
 		press(harness, "previous_song")
 
 		assert_equal(harness:playing(), "hub/b.mp3")
-		assert_equal(harness:last_notification(), "<control_restart_song: b.mp3>")
+		assert_equal(harness:last_key_message(), "<control_restart_song: b.mp3>")
 	end)
 
 	it("says no song of yours is playing, and plays nothing, in a situation set to Vanilla", function()
@@ -1333,7 +1341,7 @@ describe("MusicReplacer.lua the Previous Song key", function()
 		press(harness, "previous_song")
 
 		assert_equal(harness:last_play(), nil)
-		assert_equal(harness:last_notification(), "<control_no_song>")
+		assert_equal(harness:last_key_message(), "<control_no_song>")
 	end)
 end)
 
@@ -1356,7 +1364,7 @@ describe("MusicReplacer.lua the Restart Song key", function()
 		assert_equal(play.opts.fade_in, true)
 		assert_equal(play.opts.start_position, nil)
 		assert_equal(play.opts.duration_seconds, 200)
-		assert_equal(harness:last_notification(), "<control_restart_song: a.mp3>")
+		assert_equal(harness:last_key_message(), "<control_restart_song: a.mp3>")
 	end)
 
 	it("keeps a folder's only song looping", function()
@@ -1373,7 +1381,7 @@ describe("MusicReplacer.lua the Restart Song key", function()
 
 		harness.mod.previous_song()
 
-		assert_equal(harness:last_notification(), "<control_restart_song: a.mp3>")
+		assert_equal(harness:last_key_message(), "<control_restart_song: a.mp3>")
 	end)
 
 	it("says no song of yours is playing, and plays nothing, in a situation set to Silence", function()
@@ -1382,7 +1390,7 @@ describe("MusicReplacer.lua the Restart Song key", function()
 		press_restart(harness)
 
 		assert_equal(harness:last_play(), nil)
-		assert_equal(harness:last_notification(), "<control_no_song>")
+		assert_equal(harness:last_key_message(), "<control_no_song>")
 	end)
 end)
 
@@ -1412,7 +1420,7 @@ describe("MusicReplacer.lua the Pause / Resume key", function()
 		assert_equal(harness:playing(), nil)
 		assert_equal(harness.client.stops, stops + 1)
 		assert_equal(harness.engine:wwise_state("music_zone"), "None")
-		assert_equal(harness:last_notification(), "<control_paused: a.mp3>")
+		assert_equal(harness:last_key_message(), "<control_paused: a.mp3>")
 	end)
 
 	it("shows the paused song, where it stopped, and a paused status in the debug overlay", function()
@@ -1435,7 +1443,7 @@ describe("MusicReplacer.lua the Pause / Resume key", function()
 		assert_equal(play.file_path, "hub/a.mp3")
 		assert_equal(play.opts.start_position, 50)
 		assert_equal(play.opts.fade_in, true)
-		assert_equal(harness:last_notification(), "<control_resumed: a.mp3>")
+		assert_equal(harness:last_key_message(), "<control_resumed: a.mp3>")
 		assert_equal(harness.overlay.options.snapshot().status, "Custom")
 	end)
 
@@ -1532,7 +1540,7 @@ describe("MusicReplacer.lua the Pause / Resume key", function()
 
 		press(harness, "pause_song")
 
-		assert_equal(harness:last_notification(), "<control_no_song>")
+		assert_equal(harness:last_key_message(), "<control_no_song>")
 	end)
 end)
 
@@ -1618,7 +1626,7 @@ describe("MusicReplacer.lua the Remove from Rotation key", function()
 
 		assert_equal(#harness.client.plays, plays)
 		assert_deep_equal(harness.library.removed_files, {})
-		assert_equal(harness:last_notification(), "<control_remove_confirm: <source_hub>, a.mp3>")
+		assert_equal(harness:last_key_message(), "<control_remove_confirm: <source_hub>, a.mp3>")
 	end)
 
 	it("removes the song on a second press within 3 seconds, and crossfades to another song over the Key Fade Length", function()
@@ -1629,7 +1637,7 @@ describe("MusicReplacer.lua the Remove from Rotation key", function()
 		press(harness, "remove_song")
 
 		assert_deep_equal(harness.library.removed_files, { "hub/a.mp3" })
-		assert_equal(harness:last_notification(), "<control_removed_song: <source_hub>, a.mp3>")
+		assert_equal(harness:last_key_message(), "<control_removed_song: <source_hub>, a.mp3>")
 		local play = harness:last_play()
 		assert_equal(play.file_path ~= "hub/a.mp3", true)
 		assert_equal(play.opts.fade_seconds, 0.5)
@@ -1655,7 +1663,7 @@ describe("MusicReplacer.lua the Remove from Rotation key", function()
 		press(harness, "remove_song")
 
 		assert_deep_equal(harness.library.removed_files, {})
-		assert_equal(harness:last_notification(), "<control_remove_confirm: <source_hub>, a.mp3>")
+		assert_equal(harness:last_key_message(), "<control_remove_confirm: <source_hub>, a.mp3>")
 	end)
 
 	it("asks again when the song changed between the presses", function()
@@ -1666,7 +1674,7 @@ describe("MusicReplacer.lua the Remove from Rotation key", function()
 		press(harness, "remove_song")
 
 		assert_deep_equal(harness.library.removed_files, {})
-		assert_equal(harness:last_notification(), "<control_remove_confirm: <source_hub>, b.mp3>")
+		assert_equal(harness:last_key_message(), "<control_remove_confirm: <source_hub>, b.mp3>")
 	end)
 
 	it("hands the music back to the game once a folder's last song is removed", function()
@@ -1703,9 +1711,9 @@ describe("MusicReplacer.lua the Remove from Rotation key", function()
 		harness:settle()
 
 		press(harness, "remove_song")
-		assert_equal(harness:last_notification(), "<control_remove_confirm: <source_explore> (lm_cooling), cooling.mp3>")
+		assert_equal(harness:last_key_message(), "<control_remove_confirm: <source_explore> (lm_cooling), cooling.mp3>")
 		press(harness, "remove_song")
-		assert_equal(harness:last_notification(), "<control_removed_song: <source_explore> (lm_cooling), cooling.mp3>")
+		assert_equal(harness:last_key_message(), "<control_removed_song: <source_explore> (lm_cooling), cooling.mp3>")
 	end)
 
 	it("says no song of yours is playing in a situation set to Vanilla", function()
@@ -1713,7 +1721,7 @@ describe("MusicReplacer.lua the Remove from Rotation key", function()
 
 		press(harness, "remove_song")
 
-		assert_equal(harness:last_notification(), "<control_no_song>")
+		assert_equal(harness:last_key_message(), "<control_no_song>")
 	end)
 end)
 
@@ -1728,7 +1736,7 @@ describe("MusicReplacer.lua the Restore Removed Songs button", function()
 		harness.mod.restore_removed_songs()
 		harness:tick(0.1)
 
-		assert_equal(harness:last_notification(), "<control_restored_song>")
+		assert_equal(harness:last_key_message(), "<control_restored_song>")
 		assert_equal(harness:playing(), "hub/only.mp3")
 	end)
 
@@ -1742,7 +1750,7 @@ describe("MusicReplacer.lua the Restore Removed Songs button", function()
 
 		harness.mod.restore_removed_songs()
 
-		assert_equal(harness:last_notification(), "<control_restored_songs: 2>")
+		assert_equal(harness:last_key_message(), "<control_restored_songs: 2>")
 	end)
 
 	it("says no songs are removed when there are none", function()
@@ -1750,7 +1758,7 @@ describe("MusicReplacer.lua the Restore Removed Songs button", function()
 
 		harness.mod.restore_removed_songs()
 
-		assert_equal(harness:last_notification(), "<control_nothing_removed>")
+		assert_equal(harness:last_key_message(), "<control_nothing_removed>")
 		assert_equal(harness.library.rescan_requested, false)
 	end)
 end)
