@@ -1,5 +1,5 @@
--- The constant UI element that draws a playback key's message near the bottom left corner of the screen.
--- key_message.lua adds and removes it, and times the lines it draws.
+-- The constant UI element that draws the on-screen message near the bottom left corner of the screen.
+-- on_screen_message.lua adds and removes it, and times the lines it draws.
 -- Every line is drawn at the same spot at its own opacity, so during a crossfade one text fades into the next.
 
 require("scripts/ui/constant_elements/constant_element_base")
@@ -45,10 +45,10 @@ local function text_pass(index)
 	}
 end
 
--- `KeyMessage` is the loaded key_message.lua. Returns the element class.
-return function(KeyMessage)
+-- `OnScreenMessage` is the loaded on_screen_message.lua. Returns the element class.
+return function(OnScreenMessage)
 	local passes = {}
-	for index = 1, KeyMessage.MAX_LINES do
+	for index = 1, OnScreenMessage.MAX_LINES do
 		passes[index] = text_pass(index)
 	end
 
@@ -69,17 +69,17 @@ return function(KeyMessage)
 	}
 
 	-- After a mod reload, class() hands back the class from the first load, and the methods below replace its old ones.
-	local Element = class("ConstantElementMusicReplacerKeyMessage", "ConstantElementBase")
+	local Element = class("ConstantElementMusicReplacerOnScreenMessage", "ConstantElementBase")
 
 	function Element:init(parent, draw_layer, start_scale)
 		Element.super.init(self, parent, draw_layer, start_scale, definitions)
-		self:set_layout(KeyMessage.look())
+		self:set_layout(OnScreenMessage.look())
 	end
 
-	-- `look` is KeyMessage.look(): the size, the ARGB color, and the offsets right and up.
+	-- `look` is OnScreenMessage.look(): the size, the ARGB color, and the offsets right and up.
 	function Element:set_layout(look)
 		local style = self._widgets_by_name.message.style
-		for index = 1, KeyMessage.MAX_LINES do
+		for index = 1, OnScreenMessage.MAX_LINES do
 			local line_style = style[line_id(index)]
 			line_style.font_size = FONT_SIZE * look.scale
 			line_style.size[1] = TEXT_ROOM * look.scale
@@ -95,14 +95,14 @@ return function(KeyMessage)
 
 	-- Moves the message on and gives each pass its line's text and opacity, or an empty text.
 	function Element:_draw_lines(dt)
-		KeyMessage.advance(dt)
+		OnScreenMessage.advance(dt)
 
 		local widget = self._widgets_by_name.message
-		local line_count = KeyMessage.line_count()
-		for index = 1, KeyMessage.MAX_LINES do
+		local line_count = OnScreenMessage.line_count()
+		for index = 1, OnScreenMessage.MAX_LINES do
 			local id = line_id(index)
 			if index <= line_count then
-				local text, opacity = KeyMessage.line(index)
+				local text, opacity = OnScreenMessage.line(index)
 				widget.content[id] = text
 				widget.style[id].text_color[1] = math.floor(self._alpha * math.max(0, math.min(1, opacity)) + 0.5)
 			else

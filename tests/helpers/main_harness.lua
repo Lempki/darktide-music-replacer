@@ -1,5 +1,5 @@
 -- Loads MusicReplacer.lua, the main file, with its real context, suppression, and resume logic.
--- Everything underneath is a stand-in: the library, audio client, loudness, debug overlay, key message, log, and Windows modules.
+-- Everything underneath is a stand-in: the library, audio client, loudness, debug overlay, on-screen message, log, and Windows modules.
 -- It borrows context_harness.lua's sequences, so the specs set the music states in the game's real order.
 -- Time only passes through wait() and tick(), which call the mod's own update.
 
@@ -207,17 +207,17 @@ local function new_overlay()
 	return overlay
 end
 
--- A stand-in for key_message.lua that keeps whether it is on, how it looks, and every text it was asked to show.
-local function new_key_message()
-	local key_message = { enabled = false, look = nil, shown = {} }
+-- A stand-in for on_screen_message.lua that keeps whether it is on, how it looks, and every text it was asked to show.
+local function new_on_screen_message()
+	local on_screen_message = { enabled = false, look = nil, shown = {} }
 
-	function key_message.init() end
-	function key_message.show(text) key_message.shown[#key_message.shown + 1] = text end
-	function key_message.set_enabled(on, look) key_message.enabled, key_message.look = on, look end
-	function key_message.update() end
-	function key_message.shutdown() end
+	function on_screen_message.init() end
+	function on_screen_message.show(text) on_screen_message.shown[#on_screen_message.shown + 1] = text end
+	function on_screen_message.set_enabled(on, look) on_screen_message.enabled, on_screen_message.look = on, look end
+	function on_screen_message.update() end
+	function on_screen_message.shutdown() end
 
-	return key_message
+	return on_screen_message
 end
 
 -- Options:
@@ -236,7 +236,7 @@ function MainHarness.new(options)
 	local client = new_audio_client()
 	local loudness = new_loudness()
 	local overlay = new_overlay()
-	local key_message = new_key_message()
+	local on_screen_message = new_on_screen_message()
 	local lines = {}
 	local noop = function() end
 
@@ -248,7 +248,7 @@ function MainHarness.new(options)
 			audio_client = client.module,
 			loudness = loudness,
 			debug_overlay = overlay,
-			key_message = key_message,
+			on_screen_message = on_screen_message,
 			loudness_meter = {},
 			diagnostic_log = {
 				init = noop,
@@ -266,7 +266,7 @@ function MainHarness.new(options)
 	})
 
 	local harness = setmetatable({ engine = engine, mod = engine.mod, library = library, client = client, loudness = loudness, overlay = overlay,
-		key_message = key_message, lines = lines, settings = settings }, MainHarness)
+		on_screen_message = on_screen_message, lines = lines, settings = settings }, MainHarness)
 
 	engine:load("MusicReplacer")
 	if options.turned_off then
@@ -315,9 +315,9 @@ function MainHarness:settle()
 	self:wait(0.7)
 end
 
--- The text of the last key message the mod showed, or nil.
-function MainHarness:last_key_message()
-	return self.key_message.shown[#self.key_message.shown]
+-- The text of the last on-screen message the mod showed, or nil.
+function MainHarness:last_on_screen_message()
+	return self.on_screen_message.shown[#self.on_screen_message.shown]
 end
 
 -- True when a logged line contains `text`.

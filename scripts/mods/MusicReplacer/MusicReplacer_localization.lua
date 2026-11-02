@@ -115,42 +115,48 @@ local strings = {
 			"so two copies of the song never play over each other.\n\n" ..
 			"Set to " .. highlight("0") .. " to switch at once.",
 	},
-	key_messages = {
-		en = "Key Messages",
+	on_screen_messages = {
+		en = "On-Screen Messages",
 	},
-	key_messages_tooltip = {
-		en = "Shows a short message near the bottom left corner of the screen when you press one of these keys, such as the song that plays next. " ..
+	on_screen_messages_tooltip = {
+		en = "Shows a short message near the bottom left corner of the screen. " ..
 			"It fades out after a few seconds, and shows on every screen, loading screens included.\n\n" ..
 			highlight("Off") .. " shows no message. The keys still work.",
 	},
-	key_message_scale = {
+	key_press_messages = {
+		en = "For Key Presses",
+	},
+	key_press_messages_tooltip = {
+		en = "Shows a message when you press one of these keys, such as the song that plays next.",
+	},
+	message_scale = {
 		en = "Message Size",
 	},
-	key_message_scale_tooltip = {
-		en = "How big the key messages are.\n\n" ..
+	message_scale_tooltip = {
+		en = "How big the on-screen messages are.\n\n" ..
 			highlight("100%%") .. " is their normal size.",
 	},
-	key_message_color = {
+	message_color = {
 		en = "Message Color",
 	},
-	key_message_color_tooltip = {
-		en = "The color of the key messages. Its alpha sets how opaque they are.",
+	message_color_tooltip = {
+		en = "The color of the on-screen messages. Its alpha sets how opaque they are.",
 	},
 	pixels_unit = {
 		en = "px",
 	},
-	key_message_offset_x = {
+	message_offset_x = {
 		en = "Message Offset Right",
 	},
-	key_message_offset_x_tooltip = {
-		en = "Moves the key messages right from their spot near the bottom left corner, in pixels of a 1920x1080 screen.\n\n" ..
+	message_offset_x_tooltip = {
+		en = "Moves the on-screen messages right from their spot near the bottom left corner, in pixels of a 1920x1080 screen.\n\n" ..
 			highlight("0") .. " keeps them at their spot.",
 	},
-	key_message_offset_y = {
+	message_offset_y = {
 		en = "Message Offset Up",
 	},
-	key_message_offset_y_tooltip = {
-		en = "Moves the key messages up from their spot near the bottom left corner, in pixels of a 1920x1080 screen.\n\n" ..
+	message_offset_y_tooltip = {
+		en = "Moves the on-screen messages up from their spot near the bottom left corner, in pixels of a 1920x1080 screen.\n\n" ..
 			highlight("0") .. " keeps them at their spot.",
 	},
 	-- The messages a key press shows. %s is the name of the song file unless a comment below says otherwise.

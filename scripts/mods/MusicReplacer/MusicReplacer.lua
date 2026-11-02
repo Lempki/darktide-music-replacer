@@ -19,7 +19,7 @@ local LoudnessMeter = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/lo
 local Loudness = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/loudness")
 local DiagnosticLog = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/diagnostic_log")
 local DebugOverlay = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/debug_overlay")
-local KeyMessage = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/key_message")
+local OnScreenMessage = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/on_screen_message")
 
 local WwiseGameSyncManager = require("scripts/managers/wwise_game_sync/wwise_game_sync_manager")
 
@@ -475,11 +475,15 @@ end)
 -- The next context change still starts its own pick.
 -- While a change is still settling, a key acts on what plays now.
 
--- Shows a key's message.
+-- Shows a key's message, unless For Key Presses is off.
 -- Song and folder names are the player's own text, and "{#" starts a tag in the game's markup, so it is broken up.
 local function notify_control(text_id, ...)
+	if not mod:get("key_press_messages") then
+		return
+	end
+
 	local text = mod:localize(text_id, ...)
-	KeyMessage.show((text:gsub("{#", "{ #")))
+	OnScreenMessage.show((text:gsub("{#", "{ #")))
 end
 
 -- True while one of the player's songs plays for the current situation, or is paused, the only music the keys act on.
@@ -778,28 +782,29 @@ local function apply_overlay_settings()
 	DebugOverlay.set_enabled(mod:get("debug_overlay") == true, mod:get("debug_overlay_scale") / 100, mod:get("debug_overlay_opacity") / 100)
 end
 
--- The key message's element uses the game's UI classes too, so it is only loaded once the message is first shown.
-local KeyMessageElement = nil
+-- The on-screen message's element uses the game's UI classes too, so it is only loaded once the message is first shown.
+local OnScreenMessageElement = nil
 
-local function create_key_message_element(constant_elements, draw_layer)
-	KeyMessageElement = KeyMessageElement or mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/key_message_element")(KeyMessage)
-	return KeyMessageElement:new(constant_elements, draw_layer)
+local function create_on_screen_message_element(constant_elements, draw_layer)
+	OnScreenMessageElement = OnScreenMessageElement or mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/on_screen_message_element")(OnScreenMessage)
+	return OnScreenMessageElement:new(constant_elements, draw_layer)
 end
 
-local KEY_MESSAGE_SETTINGS = {
-	key_messages = true,
-	key_message_scale = true,
-	key_message_color = true,
-	key_message_offset_x = true,
-	key_message_offset_y = true,
+-- For Key Presses is read at each press instead, so it is not here.
+local ON_SCREEN_MESSAGE_SETTINGS = {
+	on_screen_messages = true,
+	message_scale = true,
+	message_color = true,
+	message_offset_x = true,
+	message_offset_y = true,
 }
 
-local function apply_key_message_settings()
-	KeyMessage.set_enabled(mod:get("key_messages") == true, {
-		scale = mod:get("key_message_scale") / 100,
-		color = mod:get("key_message_color"),
-		offset_x = mod:get("key_message_offset_x"),
-		offset_y = mod:get("key_message_offset_y"),
+local function apply_on_screen_message_settings()
+	OnScreenMessage.set_enabled(mod:get("on_screen_messages") == true, {
+		scale = mod:get("message_scale") / 100,
+		color = mod:get("message_color"),
+		offset_x = mod:get("message_offset_x"),
+		offset_y = mod:get("message_offset_y"),
 	})
 end
 
@@ -856,8 +861,8 @@ mod.on_all_mods_loaded = function()
 	AudioClient.set_fade_seconds(mod:get("fade_seconds"))
 	DebugOverlay.init(log, { snapshot = overlay_snapshot, meter = AudioClient.meter, create_element = create_overlay_element })
 	apply_overlay_settings()
-	KeyMessage.init(log, { create_element = create_key_message_element })
-	apply_key_message_settings()
+	OnScreenMessage.init(log, { create_element = create_on_screen_message_element })
+	apply_on_screen_message_settings()
 
 	-- A mod can hook a method only once, so this one hook serves both Suppression and EventProbe.
 	-- EventProbe sees every event first, even one Suppression stops.
@@ -942,8 +947,8 @@ mod.on_setting_changed = function(setting_id)
 
 	if setting_id == "debug_overlay" or setting_id == "debug_overlay_scale" or setting_id == "debug_overlay_opacity" then
 		apply_overlay_settings()
-	elseif KEY_MESSAGE_SETTINGS[setting_id] then
-		apply_key_message_settings()
+	elseif ON_SCREEN_MESSAGE_SETTINGS[setting_id] then
+		apply_on_screen_message_settings()
 	elseif setting_id == "custom_music_volume" then
 		AudioClient.set_volume(custom_volume())
 	elseif setting_id == "fade_seconds" then
@@ -1044,7 +1049,7 @@ mod.update = function(dt)
 	end
 
 	DebugOverlay.update()
-	KeyMessage.update()
+	OnScreenMessage.update()
 
 	if enabled and has_pending_change then
 		debounce_elapsed = debounce_elapsed + dt
@@ -1070,7 +1075,7 @@ mod.on_unload = function(exit_game)
 	shut_down("the library", Library.shutdown)
 	shut_down("the loudness measuring", Loudness.shutdown)
 	shut_down("the overlay", DebugOverlay.shutdown)
-	shut_down("the key message", KeyMessage.shutdown)
+	shut_down("the on-screen message", OnScreenMessage.shutdown)
 	shut_down("the audio", AudioClient.shutdown)
 	shut_down("the decoder", MediaDecoder.shutdown)
 
