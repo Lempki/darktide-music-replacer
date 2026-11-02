@@ -89,7 +89,7 @@ Each hold goes from 0 to 30 seconds. Set one to 0 to follow the game exactly.
 |---|---|---|
 | Detailed Logging | Off | Writes much more to `diagnostic.log`: every change in the game's music, each time the mod silences it, and the game's sound events. The important events are always logged, which is enough for most bug reports. The extra lines add up quickly, so turn this on only while tracking down a problem. |
 | Debug Overlay | Off | Shows, in the top left corner of the screen, which situation the mod sees, the song playing, and how loud it plays. It shows on every screen, loading screens and the preparation screen included. It is useful for checking which music a moment counts as. |
-| Overlay Size | 100% | How big the debug overlay is, from 50% to 200%, shown while the overlay is on. It grows and shrinks away from the corner. |
+| Overlay Size | 100% | How big the debug overlay is, from 50% to 200% on top of the game's HUD Scale setting, shown while the overlay is on. It grows and shrinks away from the corner. |
 | Backdrop Opacity | 70% | How dark the backdrop behind the debug overlay is, from 0% to 100%, shown while the overlay is on. The text always stays fully visible, and 0% leaves out the backdrop. |
 
 The debug overlay shows, from the top:

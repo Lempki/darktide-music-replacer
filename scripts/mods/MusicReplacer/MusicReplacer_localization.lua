@@ -526,8 +526,8 @@ local strings = {
 		en = "Overlay Size",
 	},
 	debug_overlay_scale_tooltip = {
-		en = "How big the debug overlay is. It grows and shrinks away from the corner.\n\n" ..
-			highlight("100%%") .. " is its normal size.",
+		en = "How big the debug overlay is, on top of the game's HUD Scale setting. It grows and shrinks away from the corner.\n\n" ..
+			highlight("100%%") .. " is its normal size at that HUD Scale.",
 	},
 	debug_overlay_opacity = {
 		en = "Backdrop Opacity",

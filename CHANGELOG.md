@@ -22,6 +22,7 @@ What changes for players in each release of Music Replacer. The format follows [
 * A situation that switches back to an override folder it already played continues that folder's song where it stopped, with Resume Songs on. Rolling Steel goes back and forth between its first two stages, so stage folders no longer start their songs over each time.
 * Even Out Loudness measures a song copied into several folders only once, so measuring a library with shared songs takes less time.
 * The debug overlay's label column is a little wider, so the Level row's meter and markers sit further right.
+* The debug overlay follows the game's HUD Scale setting, with Overlay Size on top of it.
 
 ### Fixes
 

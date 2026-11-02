@@ -10,7 +10,7 @@ local DebugOverlay = {}
 -- Above most constant elements, such as the subtitles, so the text stays readable.
 local DRAW_LAYER = 900
 
-local slot = ConstantElementSlot.new("ConstantElementMusicReplacerOverlay", DRAW_LAYER)
+local slot = ConstantElementSlot.new("ConstantElementMusicReplacerOverlay", DRAW_LAYER, { use_hud_scale = true })
 
 -- Song names are cut to this many characters, so the overlay keeps its size.
 local MAX_SONG_CHARACTERS = 48
