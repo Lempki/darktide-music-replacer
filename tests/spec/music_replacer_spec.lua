@@ -728,12 +728,12 @@ describe("MusicReplacer.lua on-screen messages", function()
 		harness:set_setting("message_corner", "top_right")
 		harness:set_setting("message_backdrop_opacity", 25)
 		harness:set_setting("message_offset_x", 300)
-		harness:set_setting("message_offset_y", -40)
+		harness:set_setting("message_offset_y", 40)
 		harness:set_setting("message_seconds", 5.5)
 		harness:set_setting("message_fade_out_seconds", 0)
 
 		assert_deep_equal(harness.on_screen_message.look,
-			{ scale = 1.5, color = { 255, 10, 20, 30 }, corner = "top_right", offset_x = 300, offset_y = -40, backdrop_opacity = 0.25 })
+			{ scale = 1.5, color = { 255, 10, 20, 30 }, corner = "top_right", offset_x = 300, offset_y = 40, backdrop_opacity = 0.25 })
 		assert_deep_equal(harness.on_screen_message.timing, { 5.5, 0 })
 	end)
 

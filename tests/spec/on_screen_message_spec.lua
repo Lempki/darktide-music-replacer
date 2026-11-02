@@ -329,6 +329,15 @@ describe("on_screen_message.lua look", function()
 		assert_deep_equal(OnScreenMessage.look(), look)
 	end)
 
+	it("treats a saved negative offset as 0, so the message never moves past its corner", function()
+		local OnScreenMessage = load_on_screen_message()
+
+		OnScreenMessage.set_enabled(true, { scale = 1, color = { 217, 200, 200, 195 }, corner = "top_right", offset_x = -10, offset_y = -20 })
+
+		assert_equal(OnScreenMessage.look().offset_x, 0)
+		assert_equal(OnScreenMessage.look().offset_y, 0)
+	end)
+
 	it("keeps the bottom left corner when the saved corner is not one it knows", function()
 		local OnScreenMessage = load_on_screen_message()
 
@@ -354,19 +363,20 @@ describe("on_screen_message.lua placement", function()
 		return OnScreenMessage.placement({ corner = corner, offset_x = offset_x, offset_y = offset_y })
 	end
 
-	it("sits 4 pixels in from its corner's edges at offsets of 0", function()
-		assert_deep_equal(placement("bottom_left", 0, 0), { horizontal = "left", vertical = "bottom", x = 4, y = -4 })
+	it("puts the backdrop against its corner's edges at offsets of 0", function()
+		assert_deep_equal(placement("bottom_left", 0, 0),
+			{ horizontal = "left", vertical = "bottom", toward_x = 1, toward_y = -1, x = 0, y = 0 })
 	end)
 
 	it("aligns to the corner's side, and moves inward from every corner as the offsets grow", function()
-		assert_deep_equal(placement("bottom_left", 10, 20), { horizontal = "left", vertical = "bottom", x = 14, y = -24 })
-		assert_deep_equal(placement("bottom_right", 10, 20), { horizontal = "right", vertical = "bottom", x = -14, y = -24 })
-		assert_deep_equal(placement("top_left", 10, 20), { horizontal = "left", vertical = "top", x = 14, y = 24 })
-		assert_deep_equal(placement("top_right", 10, 20), { horizontal = "right", vertical = "top", x = -14, y = 24 })
-	end)
-
-	it("moves past the corner for negative offsets", function()
-		assert_deep_equal(placement("top_right", -10, -20), { horizontal = "right", vertical = "top", x = 6, y = -16 })
+		assert_deep_equal(placement("bottom_left", 10, 20),
+			{ horizontal = "left", vertical = "bottom", toward_x = 1, toward_y = -1, x = 10, y = -20 })
+		assert_deep_equal(placement("bottom_right", 10, 20),
+			{ horizontal = "right", vertical = "bottom", toward_x = -1, toward_y = -1, x = -10, y = -20 })
+		assert_deep_equal(placement("top_left", 10, 20),
+			{ horizontal = "left", vertical = "top", toward_x = 1, toward_y = 1, x = 10, y = 20 })
+		assert_deep_equal(placement("top_right", 10, 20),
+			{ horizontal = "right", vertical = "top", toward_x = -1, toward_y = 1, x = -10, y = 20 })
 	end)
 end)
 

@@ -200,17 +200,15 @@ local strings = {
 		en = "Message Offset X",
 	},
 	message_offset_x_tooltip = {
-		en = "Moves the on-screen messages sideways, away from their corner toward the middle of the screen, in the game's UI pixels. " ..
-			"A negative number moves them past the corner.\n\n" ..
-			highlight("0") .. " keeps them a few pixels from the corner's side.",
+		en = "Moves the on-screen messages sideways, away from their corner toward the middle of the screen, in the game's UI pixels.\n\n" ..
+			"At " .. highlight("0") .. ", their backdrop touches the corner's side.",
 	},
 	message_offset_y = {
 		en = "Message Offset Y",
 	},
 	message_offset_y_tooltip = {
-		en = "Moves the on-screen messages up or down, away from their corner toward the middle of the screen, in the game's UI pixels. " ..
-			"A negative number moves them past the corner.\n\n" ..
-			highlight("0") .. " keeps them a few pixels from the corner's edge.",
+		en = "Moves the on-screen messages up or down, away from their corner toward the middle of the screen, in the game's UI pixels.\n\n" ..
+			"At " .. highlight("0") .. ", their backdrop touches the corner's top or bottom edge.",
 	},
 	-- The messages a key press shows. %s is the name of the song file unless a comment below says otherwise.
 	control_next_song = {

@@ -10,10 +10,12 @@ local UIWidget = require("scripts/managers/ui/ui_widget")
 local UIWorkspaceSettings = require("scripts/settings/ui/ui_workspace_settings")
 
 -- These are the sizes at 100%, and they scale with the Message Size setting.
+-- The padding is the space between the backdrop's edges and the text.
 local FONT_SIZE = 16
 local LINE_HEIGHT = 24
 local BACKDROP_PADDING = 4
 local FADE_WIDTH = 80
+local FONT_TYPE = "proxima_nova_medium"
 
 -- Text is placed in a pass far wider than itself, so it never wraps.
 local TEXT_ROOM = 2000
@@ -42,12 +44,12 @@ local function text_pass(index)
 		value = "",
 		style_id = id,
 		style = {
-			font_type = "proxima_nova_medium",
+			font_type = FONT_TYPE,
 			font_size = FONT_SIZE,
 			drop_shadow = true,
 			text_color = { 0, 0, 0, 0 },
 			text_horizontal_alignment = "left",
-			text_vertical_alignment = "bottom",
+			text_vertical_alignment = "center",
 			horizontal_alignment = "left",
 			vertical_alignment = "bottom",
 			size = { TEXT_ROOM, LINE_HEIGHT },
@@ -112,10 +114,11 @@ return function(OnScreenMessage)
 	end
 
 	-- `look` is OnScreenMessage.look(): the size, the ARGB color, the corner, the offsets inward from it, and the backdrop's opacity.
-	-- The text aligns to the corner's side, so it grows away from the corner.
+	-- The backdrop sits at the corner, and the text inside it by the padding, aligned to the corner's side so it grows away from the corner.
 	function Element:set_layout(look)
 		local style = self._widgets_by_name.message.style
 		local placement = OnScreenMessage.placement(look)
+		local padding = BACKDROP_PADDING * look.scale
 		for index = 1, OnScreenMessage.MAX_LINES do
 			local line_style = style[line_id(index)]
 			line_style.font_size = FONT_SIZE * look.scale
@@ -124,9 +127,8 @@ return function(OnScreenMessage)
 			line_style.horizontal_alignment = placement.horizontal
 			line_style.text_horizontal_alignment = placement.horizontal
 			line_style.vertical_alignment = placement.vertical
-			line_style.text_vertical_alignment = placement.vertical
-			line_style.offset[1] = placement.x
-			line_style.offset[2] = placement.y
+			line_style.offset[1] = placement.x + placement.toward_x * padding
+			line_style.offset[2] = placement.y + placement.toward_y * padding
 			line_style.text_color[2] = look.color[2]
 			line_style.text_color[3] = look.color[3]
 			line_style.text_color[4] = look.color[4]
@@ -146,40 +148,35 @@ return function(OnScreenMessage)
 	end
 
 	-- The drawn width of `text`, measured once per text and size.
+	-- It is measured without the text's alignment, since an aligned measure can span the whole box the text sits in.
 	function Element:_width(ui_renderer, text)
 		local width = self._widths[text]
 		if not width then
-			local style = self._widgets_by_name.message.style.line_1
-			width = UIRenderer.styled_text_size(ui_renderer, text, style, { TEXT_ROOM, LINE_HEIGHT }) + MEASURE_SLACK * self._scale
+			width = UIRenderer.text_size(ui_renderer, text, FONT_TYPE, FONT_SIZE * self._scale) + MEASURE_SLACK * self._scale
 			self._widths[text] = width
 		end
 		return width
 	end
 
-	-- Sizes the backdrop around `width` of text at `opacity`, a share, and places its fade on the side away from the corner.
-	-- toward_x and toward_y below are 1 or -1, the way the offsets move inward on each axis.
+	-- Sizes the backdrop around `width` of text at `opacity`, a share, from its corner, and places its fade on the side away from the corner.
 	function Element:_place_backdrop(width, opacity)
 		local style = self._widgets_by_name.message.style
 		local placement = self._placement
 		local s = self._scale
 		local padding = BACKDROP_PADDING * s
-		local toward_x = placement.horizontal == "left" and 1 or -1
-		local toward_y = placement.vertical == "top" and 1 or -1
 
 		local box_width = math.ceil(width + 2 * padding)
 		local box_height = math.ceil(LINE_HEIGHT * s + 2 * padding)
-		local box_x = placement.x - toward_x * padding
-		local box_y = placement.y - toward_y * padding
 
 		local backdrop = style.backdrop
-		backdrop.offset[1] = box_x
-		backdrop.offset[2] = box_y
+		backdrop.offset[1] = placement.x
+		backdrop.offset[2] = placement.y
 		backdrop.size[1] = box_width
 		backdrop.size[2] = box_height
 
 		local fade = style.backdrop_fade
-		fade.offset[1] = box_x + toward_x * box_width
-		fade.offset[2] = box_y
+		fade.offset[1] = placement.x + placement.toward_x * box_width
+		fade.offset[2] = placement.y
 		fade.size[1] = FADE_WIDTH * s
 		fade.size[2] = box_height
 

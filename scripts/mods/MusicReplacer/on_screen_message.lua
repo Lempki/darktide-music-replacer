@@ -46,9 +46,6 @@ local CORNERS = {
 }
 local DEFAULT_CORNER = "bottom_left"
 
--- How far the message sits from its corner's edges at offsets of 0, in the UI's pixels, which the game scales to the screen's height.
-local PADDING = 4
-
 -- The Message Backdrop Opacity setting's default, as a share, the same as the debug overlay's backdrop.
 local DEFAULT_BACKDROP_OPACITY = 0.7
 
@@ -186,17 +183,21 @@ function OnScreenMessage.backdrop(width_of)
 	return weighted_width / total_opacity, math.min(1, total_opacity)
 end
 
--- Where the message sits for `new_look`: the side it aligns to on each axis, and its offset as the game's styles take it.
--- The offsets move it inward, so a larger X moves it left from a right corner, and a larger Y moves it down from a top corner.
+-- Where the message's backdrop sits for `new_look`: the side it aligns to on each axis, and the offset of its outer corner.
+-- At offsets of 0 the backdrop touches the corner's two edges, and the text sits inside it.
+-- toward_x and toward_y are 1 or -1, the sign that moves inward on each axis as the game's styles take offsets.
+-- So a larger X moves it left from a right corner, and a larger Y moves it down from a top corner.
 function OnScreenMessage.placement(new_look)
 	local corner = CORNERS[new_look.corner]
-	local x = PADDING + new_look.offset_x
-	local y = PADDING + new_look.offset_y
+	local toward_x = corner.horizontal == "left" and 1 or -1
+	local toward_y = corner.vertical == "top" and 1 or -1
 	return {
 		horizontal = corner.horizontal,
 		vertical = corner.vertical,
-		x = corner.horizontal == "left" and x or -x,
-		y = corner.vertical == "top" and y or -y,
+		toward_x = toward_x,
+		toward_y = toward_y,
+		x = toward_x * new_look.offset_x,
+		y = toward_y * new_look.offset_y,
 	}
 end
 
@@ -251,8 +252,9 @@ function OnScreenMessage.set_enabled(on, new_look)
 			color = checked_color(new_look.color),
 			-- The corner comes from the saved settings too, so an unknown one keeps the default.
 			corner = CORNERS[new_look.corner] and new_look.corner or DEFAULT_CORNER,
-			offset_x = new_look.offset_x or 0,
-			offset_y = new_look.offset_y or 0,
+			-- Moving past the corner only pushes the message off the screen, so the offsets start at 0.
+			offset_x = math.max(0, new_look.offset_x or 0),
+			offset_y = math.max(0, new_look.offset_y or 0),
 			backdrop_opacity = math.max(0, math.min(1, new_look.backdrop_opacity or DEFAULT_BACKDROP_OPACITY)),
 		}
 	end
