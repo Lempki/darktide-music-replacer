@@ -16,6 +16,7 @@ What changes for players in each release of Music Replacer. The format follows [
 
 ### Changes
 
+* Rescan Audio Folders creates any situation's folder that went missing while the game runs, so it no longer takes a restart.
 * A situation that switches back to an override folder it already played continues that folder's song where it stopped, with Resume Songs on. Rolling Steel goes back and forth between its first two stages, so stage folders no longer start their songs over each time.
 * Even Out Loudness measures a song copied into several folders only once, so measuring a library with shared songs takes less time.
 * The debug overlay's label column is a little wider, so the Level row's meter and markers sit further right.

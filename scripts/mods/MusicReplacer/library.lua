@@ -181,6 +181,14 @@ local function measure_next_duration()
 end
 
 -- Call once, after all mods have loaded, with an initialized audio_folders.lua.
+-- Creates the audio folder and every context's folder that is missing. An existing folder is left as it is.
+local function create_folders()
+	AudioFolders.create(AUDIO_ROOT)
+	for _, context_name in ipairs(CONTEXTS) do
+		AudioFolders.create(AUDIO_ROOT .. "/" .. context_name)
+	end
+end
+
 -- Creates any missing folder at once, and lists them on the first update.
 -- `logger`, if given, receives the library's log lines.
 -- `options.is_removed(file_path)`, if given, is true for a song removed from rotation, which the listings leave out.
@@ -195,10 +203,7 @@ function Library.init(logger, audio_folders, options)
 	end
 	AudioFolders = audio_folders
 
-	AudioFolders.create(AUDIO_ROOT)
-	for _, context_name in ipairs(CONTEXTS) do
-		AudioFolders.create(AUDIO_ROOT .. "/" .. context_name)
-	end
+	create_folders()
 
 	-- Watching starts after the folders exist, so creating them is not reported as a change.
 	local err
@@ -239,8 +244,10 @@ end
 
 -- Asks for every folder to be listed again on the next update, and every file to be measured again.
 -- The button is how a player asks to retry a file that would not play, so it does not keep what was measured before.
+-- It also creates a context's folder again that was deleted while the game runs, so the player needs no restart for it.
 function Library.request_rescan()
 	if AudioFolders then
+		create_folders()
 		rescan_requested = true
 		full_rescan_requested = true
 	end

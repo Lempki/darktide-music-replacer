@@ -89,6 +89,28 @@ describe("library.lua listing", function()
 		assert_equal(#folders.created, 21)
 	end)
 
+	it("creates the folders again when Rescan Audio Folders is pressed, so one deleted while the game runs comes back", function()
+		local Library, folders = listed_library({})
+		folders.created = {}
+
+		Library.request_rescan()
+
+		assert_equal(folders.created[1], ROOT)
+		assert_equal(folders.created[3], ROOT .. "/character_select")
+		assert_equal(#folders.created, 21)
+	end)
+
+	it("leaves the folders alone on a listing the watcher asks for", function()
+		local Library, folders = listed_library({})
+		folders.created = {}
+
+		folders.changes = true
+		Library.update(0.016)
+		Library.update(3.1)
+
+		assert_deep_equal(folders.created, {})
+	end)
+
 	it("lists every folder on the first update, and logs how many files each has", function()
 		local Library, _, lines = listed_library({ hub = { "a.mp3" }, boss = { "b.mp3", "c.mp3" } })
 

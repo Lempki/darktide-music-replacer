@@ -33,7 +33,7 @@ local strings = {
 		en = "Lists the audio folders again at once, and checks every song again.\n\n" ..
 			"The mod notices added, removed, and replaced files by itself a few seconds after they change. " ..
 			"This button is for drives where Windows cannot report changes, such as some network drives, " ..
-			"and for retrying a song that would not play.",
+			"for retrying a song that would not play, and for bringing back a situation's folder that went missing.",
 	},
 	fade_seconds = {
 		en = "Fade Length",
