@@ -432,6 +432,23 @@ describe("loudness.lua cache", function()
 		assert_equal(Loudness.describe("hub/a.mp3"):match("^%-10.0 LUFS") ~= nil, true)
 	end)
 
+	it("tries a song that could not be measured again, with its file unchanged, once its failures are forgotten", function()
+		local songs = { ["audio/hub/a.mp3"] = false }
+		local Loudness, test = load_loudness(songs)
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3", "1" } }))
+		measure_all(Loudness, "hub")
+		assert_equal(#test.opened, 1)
+
+		songs["audio/hub/a.mp3"] = 10
+		Loudness.forget_failures()
+		Loudness.set_files(entries({ { "hub/a.mp3", "1" } }))
+		measure_all(Loudness, "hub")
+
+		assert_equal(#test.opened, 2)
+		assert_equal(Loudness.describe("hub/a.mp3"):match("^%-10.0 LUFS") ~= nil, true)
+	end)
+
 	it("starts a song over when its file changes while it is measured", function()
 		local Loudness, test = load_loudness({ ["audio/hub/a.mp3"] = 100 })
 		Loudness.set_enabled(true)

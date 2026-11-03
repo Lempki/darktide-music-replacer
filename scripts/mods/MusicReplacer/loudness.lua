@@ -316,6 +316,12 @@ function Loudness.set_enabled(on)
 	end
 end
 
+-- Forgets every song that could not be measured, so the next listing queues them again even though their files are unchanged.
+-- Rescan Audio Folders is how a player asks to retry a song, which can have failed for a passing reason, such as a locked file.
+function Loudness.forget_failures()
+	failed = {}
+end
+
 -- Takes a listing from Library.on_listed: every file as { file_path, stamp }.
 -- Files with no result for their current stamp are measured, and a file that changed while it was measured starts over.
 -- A listing that brings songs to measure once nothing is left starts a new batch, whose progress counts from 0.

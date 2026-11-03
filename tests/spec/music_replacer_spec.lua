@@ -139,6 +139,14 @@ describe("MusicReplacer.lua songs that end", function()
 		assert_equal(harness:playing() ~= nil, true)
 	end)
 
+	it("lets loudness measuring try every song that could not be measured again on a rescan", function()
+		local harness = in_hub()
+
+		harness.mod.rescan_audio()
+
+		assert_equal(harness.loudness.failures_forgotten, 1)
+	end)
+
 	it("tries a context again after a rescan, once it gave up", function()
 		local harness = in_hub()
 		for _ = 1, 3 do

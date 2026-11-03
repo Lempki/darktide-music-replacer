@@ -1033,6 +1033,7 @@ mod.rescan_audio = function()
 	AudioClient.try_again()
 	-- It also picks up lines a player deleted from removed.txt by hand.
 	RemovedSongs.load()
+	Loudness.forget_failures()
 	Library.request_rescan()
 end
 
