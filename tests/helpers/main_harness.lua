@@ -211,15 +211,13 @@ local function new_overlay()
 end
 
 -- A stand-in for on_screen_message.lua that keeps whether it is on, how it looks, its timing, and every text it was asked to show.
--- `min_holds` keeps each shown text's shortest hold, by its index in `shown`.
 local function new_on_screen_message()
-	local on_screen_message = { enabled = false, look = nil, timing = nil, shown = {}, min_holds = {} }
+	local on_screen_message = { enabled = false, look = nil, timing = nil, shown = {} }
 
 	function on_screen_message.init() end
-	function on_screen_message.show(text, min_hold_seconds)
-		on_screen_message.shown[#on_screen_message.shown + 1] = text
-		on_screen_message.min_holds[#on_screen_message.shown] = min_hold_seconds
-	end
+	function on_screen_message.show(text) on_screen_message.shown[#on_screen_message.shown + 1] = text end
+	-- The real module's 0.4 s fade in, then the hold and the fade out its timing sets.
+	function on_screen_message.seconds_shown() return 0.4 + on_screen_message.timing[1] + on_screen_message.timing[2] end
 	function on_screen_message.set_timing(hold_seconds, fade_out_seconds) on_screen_message.timing = { hold_seconds, fade_out_seconds } end
 	function on_screen_message.set_enabled(on, look) on_screen_message.enabled, on_screen_message.look = on, look end
 	function on_screen_message.update() end

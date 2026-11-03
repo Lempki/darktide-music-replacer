@@ -94,8 +94,9 @@ local strings = {
 		en = "Remove from Rotation",
 	},
 	remove_song_keybind_tooltip = {
-		en = "Press twice within 3 seconds to stop the song playing now from ever being picked in its folder again, " ..
-			"and move on to another song. The file stays where it is, and a copy in another folder still plays there.\n\n" ..
+		en = "Press twice to stop the song playing now from ever being picked in its folder again, and move on to another song. " ..
+			"The first press asks, and a second press removes the song while the question shows, as Message Duration and Message Fade Out set. " ..
+			"The file stays where it is, and a copy in another folder still plays there.\n\n" ..
 			"Removed songs are listed in removed.txt, beside the mod's log. " ..
 			"Restore Removed Songs puts them all back, and deleting a line from the file, then pressing Rescan, puts one back.",
 	},
@@ -141,7 +142,7 @@ local strings = {
 	},
 	message_seconds_tooltip = {
 		en = "How long a message stays at full opacity before it fades out.\n\n" ..
-			"Remove from Rotation's question always stays for the 3 seconds in which a second press removes the song.",
+			"With Message Fade Out, it also sets how long a second press of Remove from Rotation counts, even with For Key Presses off.",
 	},
 	message_fade_out_seconds = {
 		en = "Message Fade Out",

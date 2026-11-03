@@ -61,7 +61,7 @@ local look = {
 }
 
 -- The message showing now, or nil: its text, its opacity as a share, its phase, and the seconds left of its hold.
--- Its phase is "in", "hold", or "out", and its min_hold_seconds, if set, is the shortest hold it gets.
+-- Its phase is "in", "hold", or "out".
 local current = nil
 
 -- The messages a newer one replaced, oldest first, each with its text and opacity.
@@ -81,8 +81,7 @@ end
 
 -- Shows `text`, replacing the message showing now. Does nothing while the messages are turned off.
 -- The same text again keeps its line and starts its hold over, since two copies of one text crossfading look brighter for a moment.
--- `min_hold_seconds`, if given, keeps the message held at least that long, whatever Message Duration says.
-function OnScreenMessage.show(text, min_hold_seconds)
+function OnScreenMessage.show(text)
 	if not enabled then
 		return
 	end
@@ -90,7 +89,6 @@ function OnScreenMessage.show(text, min_hold_seconds)
 	if current and current.text == text then
 		current.phase = "in"
 		current.fade_in_seconds = FADE_IN_SECONDS
-		current.min_hold_seconds = min_hold_seconds
 		return
 	end
 
@@ -103,7 +101,13 @@ function OnScreenMessage.show(text, min_hold_seconds)
 		fade_in_seconds = CROSSFADE_SECONDS
 	end
 
-	current = { text = text, opacity = 0, phase = "in", fade_in_seconds = fade_in_seconds, min_hold_seconds = min_hold_seconds }
+	current = { text = text, opacity = 0, phase = "in", fade_in_seconds = fade_in_seconds }
+end
+
+-- How long a message shown now stays on screen: its fade in, the Message Duration, and the Message Fade Out.
+-- It holds while the messages are turned off too, for what a message would stand for.
+function OnScreenMessage.seconds_shown()
+	return FADE_IN_SECONDS + hold_seconds + fade_out_seconds
 end
 
 -- Moves the fades and the hold on by `dt` seconds. Call every frame the message is drawn.
@@ -127,7 +131,7 @@ function OnScreenMessage.advance(dt)
 			else
 				current.opacity = 1
 				current.phase = "hold"
-				current.hold_left = math.max(hold_seconds, current.min_hold_seconds or 0)
+				current.hold_left = hold_seconds
 				seconds = seconds - needed
 			end
 		elseif current.phase == "hold" then

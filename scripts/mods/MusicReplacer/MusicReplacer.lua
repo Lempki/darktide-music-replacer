@@ -661,21 +661,18 @@ mod.pause_song = function()
 	notify_control("control_paused", song_name(playing_track.file_path))
 end
 
--- How long after its first press the Remove from Rotation key waits for the second, which removes the song.
+-- The song the first press of Remove from Rotation asked about: file_path, and the seconds left for a second press.
 -- Removing takes two presses, so a stray key press cannot take a song out of rotation.
-local REMOVE_CONFIRM_SECONDS = 3
-
--- The song the first press of Remove from Rotation asked about: file_path, and the seconds since that press.
 local removal_asked = nil
 
--- Forgets the first press once REMOVE_CONFIRM_SECONDS have passed. Call on every update.
+-- Forgets the first press once its time is over. Call on every update.
 local function expire_removal(dt)
 	if not removal_asked then
 		return
 	end
 
-	removal_asked.seconds = removal_asked.seconds + dt
-	if removal_asked.seconds >= REMOVE_CONFIRM_SECONDS then
+	removal_asked.seconds_left = removal_asked.seconds_left - dt
+	if removal_asked.seconds_left <= 0 then
 		removal_asked = nil
 	end
 end
@@ -689,18 +686,19 @@ local function remove_playing_song()
 	log(string.format("[control] %s: removed %s from rotation", current_context, file_path))
 	local label = folder_label()
 
+	-- The situation plays again at once, even while a change is still settling, so the removed song never plays on.
 	local next_path, duration, is_only_file = Library.pick_file(current_folder, file_path)
 	if next_path then
 		play_manual_pick(next_path, duration, is_only_file)
 	else
-		replay_current_context()
+		play_context(current_context, true)
 	end
 
 	-- Shown after the replay, so the removal is the message that stays, not the song the next folder starts.
 	notify_control("control_removed_song", label, song_name(file_path))
 end
 
--- The Remove from Rotation key: the first press asks, and a second press within REMOVE_CONFIRM_SECONDS removes the song.
+-- The Remove from Rotation key: the first press asks, and a second press while the question shows removes the song.
 -- The file stays on disk. Restore Removed Songs puts every removed song back.
 mod.remove_song = function()
 	if not has_song_to_control() then
@@ -714,12 +712,12 @@ mod.remove_song = function()
 		return
 	end
 
-	removal_asked = { file_path = playing_track.file_path, seconds = 0 }
+	-- A second press counts for as long as the question shows, fade out included, so a press while it shows always removes the song.
+	-- That holds with For Key Presses off too, when no question shows.
+	removal_asked = { file_path = playing_track.file_path, seconds_left = OnScreenMessage.seconds_shown() }
 
-	-- The question stays up for as long as a second press removes the song, even with a shorter Message Duration.
 	if mod:get("key_press_messages") then
-		local text = message_text("control_remove_confirm", folder_label(), song_name(playing_track.file_path))
-		OnScreenMessage.show(text, REMOVE_CONFIRM_SECONDS)
+		OnScreenMessage.show(message_text("control_remove_confirm", folder_label(), song_name(playing_track.file_path)))
 	end
 end
 

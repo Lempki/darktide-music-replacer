@@ -1691,14 +1691,36 @@ describe("MusicReplacer.lua the Remove from Rotation key", function()
 		harness:tick(0.1)
 	end
 
-	it("keeps its question on screen for the whole 3 seconds a second press counts, whatever Message Duration says", function()
-		local harness = in_hub(THREE_HUB_SONGS, { settings = { message_seconds = 1 } })
+	it("counts a second press while its question still fades out, after its 0.4 s fade in and the Message Duration", function()
+		local harness = in_hub(THREE_HUB_SONGS, { settings = { message_seconds = 1, message_fade_out_seconds = 1 } })
 
 		press(harness, "remove_song")
+		harness:wait(2.2)
+		press(harness, "remove_song")
 
-		local shown = harness.on_screen_message.shown
-		assert_equal(shown[#shown], "<control_remove_confirm: <source_hub>, a.mp3>")
-		assert_equal(harness.on_screen_message.min_holds[#shown], 3)
+		assert_deep_equal(harness.library.removed_files, { "hub/a.mp3" })
+	end)
+
+	it("stops counting a second press once its question is gone", function()
+		local harness = in_hub(THREE_HUB_SONGS, { settings = { message_seconds = 1, message_fade_out_seconds = 0 } })
+
+		press(harness, "remove_song")
+		harness:wait(1.4)
+		press(harness, "remove_song")
+
+		assert_deep_equal(harness.library.removed_files, {})
+	end)
+
+	it("counts a second press for as long with For Key Presses off, when no question shows", function()
+		local harness = in_hub(THREE_HUB_SONGS, { settings = { key_press_messages = false, message_seconds = 1, message_fade_out_seconds = 1 } })
+
+		press(harness, "remove_song")
+		harness:wait(2.4)
+		press(harness, "remove_song")
+		assert_deep_equal(harness.library.removed_files, {})
+
+		press(harness, "remove_song")
+		assert_deep_equal(harness.library.removed_files, { "hub/a.mp3" })
 	end)
 
 	it("asks on the first press, naming the song, and changes nothing", function()
@@ -1712,7 +1734,7 @@ describe("MusicReplacer.lua the Remove from Rotation key", function()
 		assert_equal(harness:last_on_screen_message(), "<control_remove_confirm: <source_hub>, a.mp3>")
 	end)
 
-	it("removes the song on a second press within 3 seconds, and crossfades to another song over the Key Fade Length", function()
+	it("removes the song on a second press while its question shows, and crossfades to another song over the Key Fade Length", function()
 		local harness = in_hub(THREE_HUB_SONGS)
 
 		press(harness, "remove_song")
@@ -1738,11 +1760,11 @@ describe("MusicReplacer.lua the Remove from Rotation key", function()
 		end
 	end)
 
-	it("only asks again when the second press comes 3 seconds or more after the first", function()
+	it("only asks again when the second press comes once its question is gone", function()
 		local harness = in_hub(THREE_HUB_SONGS)
 
 		press(harness, "remove_song")
-		harness:wait(3)
+		harness:wait(5.4)
 		press(harness, "remove_song")
 
 		assert_deep_equal(harness.library.removed_files, {})
@@ -1769,6 +1791,25 @@ describe("MusicReplacer.lua the Remove from Rotation key", function()
 		assert_equal(harness:playing(), nil)
 		assert_equal(harness.engine:wwise_state("music_zone"), "hub")
 		assert_equal(harness:logged("[playback] hub: no file available, playing the game's music"), true)
+	end)
+
+	it("stops a folder's last song at once while a change is still settling, and the change still follows", function()
+		local harness = MainHarness.new({ settings = { combat_hold_seconds = 0 }, files = {
+			explore = { { name = "x.mp3", duration = 300 } },
+			combat = { { name = "c.mp3", duration = 200 } },
+		} })
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness:enter_mission("lm_cooling", "zone_3")
+		harness:settle()
+		harness:state("music_combat", "normal")
+
+		harness.mod.remove_song()
+		harness.mod.remove_song()
+		assert_equal(harness:playing(), nil)
+
+		harness:settle()
+		assert_equal(harness:playing(), "combat/c.mp3")
 	end)
 
 	it("removes a paused song and plays another one", function()
