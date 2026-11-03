@@ -572,23 +572,39 @@ local function take_previous_song()
 	return nil
 end
 
--- The Next Song key: crossfades to another song from the folder playing now, or starts a folder's only song over.
+-- Plays the paused song on from where it stopped.
+local function resume_paused_song()
+	play_manual_pick(playing_track.file_path, playing_track.duration, playing_track.is_only_file, playing_track.position)
+end
+
+-- True when the song playing or paused now is the only one its folder still holds.
+-- A song that a rescan took out of the folder is not, even when the folder holds one song.
+local function is_lone_song()
+	local file_path, _, is_only_file = Library.find_file(current_folder, playing_track.file_path)
+	return file_path ~= nil and is_only_file
+end
+
+-- The Next Song key: crossfades to another song from the folder playing now.
 -- The skipped song keeps no resume point, since the song that replaces it is the one a later context change remembers.
 mod.next_song = function()
-	local file_path, duration, is_only_file = nil, nil, nil
-	if has_song_to_control() then
-		file_path, duration, is_only_file = Library.pick_file(current_folder, playing_track.file_path)
-	end
-
-	if not file_path then
+	if not has_song_to_control() then
 		say_no_song("next song")
 		return
 	end
 
-	-- Starting a folder's only song over is what Restart Song does, so Next leaves it playing and says why.
-	if is_only_file then
+	-- Starting a folder's only song over is what Restart Song does, so Next keeps it playing, resumes it if paused, and says why.
+	if is_lone_song() then
 		log(string.format("[control] %s: next song, but %s has no other song", current_context, current_folder))
+		if paused then
+			resume_paused_song()
+		end
 		notify_control("control_only_song", folder_label(), song_name(playing_track.file_path))
+		return
+	end
+
+	local file_path, duration, is_only_file = Library.pick_file(current_folder, playing_track.file_path)
+	if not file_path then
+		say_no_song("next song")
 		return
 	end
 
@@ -648,7 +664,7 @@ mod.pause_song = function()
 
 	if paused then
 		log(string.format("[control] %s: resume", current_context))
-		play_manual_pick(playing_track.file_path, playing_track.duration, playing_track.is_only_file, playing_track.position)
+		resume_paused_song()
 		notify_control("control_resumed", song_name(playing_track.file_path))
 		return
 	end

@@ -1218,6 +1218,32 @@ describe("MusicReplacer.lua the Next Song key", function()
 		assert_equal(harness:last_on_screen_message(), "<control_only_song: <source_hub>, only.mp3>")
 	end)
 
+	it("resumes a folder's paused only song where it stopped, and says it is the only one", function()
+		local harness = in_hub({ hub = { { name = "only.mp3", duration = 200 } } })
+		harness.client.position = 50
+		harness:tick(0.1)
+		harness.mod.pause_song()
+		harness:tick(0.1)
+
+		press_next(harness)
+
+		local play = harness:last_play()
+		assert_equal(play.file_path, "hub/only.mp3")
+		assert_equal(play.opts.start_position, 50)
+		assert_equal(harness:last_on_screen_message(), "<control_only_song: <source_hub>, only.mp3>")
+		assert_equal(harness.overlay.options.snapshot().status, "Custom")
+	end)
+
+	it("crossfades to the folder's one song left when the song playing now is no longer in it", function()
+		local harness = in_hub({ hub = { { name = "a.mp3", duration = 200 }, { name = "b.mp3", duration = 180 } } })
+		table.remove(harness.library.files.hub, 1)
+
+		press_next(harness)
+
+		assert_equal(harness:playing(), "hub/b.mp3")
+		assert_equal(harness:last_on_screen_message(), "<control_next_song: b.mp3>")
+	end)
+
 	it("moves on to the folder's next song as usual once the new song ends", function()
 		local harness = in_hub()
 		press_next(harness)
@@ -1392,6 +1418,32 @@ describe("MusicReplacer.lua the Previous Song key", function()
 
 		assert_equal(harness:playing(), "combat/c.mp3")
 		assert_equal(harness:last_on_screen_message(), "<control_restart_song: c.mp3>")
+	end)
+
+	it("starts a folder's only song over while it plays", function()
+		local harness = in_hub({ hub = { { name = "only.mp3", duration = 200 } } })
+		harness.client.position = 50
+		harness:tick(0.1)
+
+		press(harness, "previous_song")
+
+		assert_equal(harness:last_play().opts.start_position, nil)
+		assert_equal(harness:last_on_screen_message(), "<control_restart_song: only.mp3>")
+	end)
+
+	it("starts a folder's paused only song over, and plays it", function()
+		local harness = in_hub({ hub = { { name = "only.mp3", duration = 200 } } })
+		harness.client.position = 50
+		harness:tick(0.1)
+		press(harness, "pause_song")
+
+		press(harness, "previous_song")
+
+		local play = harness:last_play()
+		assert_equal(play.file_path, "hub/only.mp3")
+		assert_equal(play.opts.start_position, nil)
+		assert_equal(harness:last_on_screen_message(), "<control_restart_song: only.mp3>")
+		assert_equal(harness.overlay.options.snapshot().status, "Custom")
 	end)
 
 	it("passes over an earlier song that a rescan removed", function()

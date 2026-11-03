@@ -62,7 +62,8 @@ local strings = {
 		en = "Next Song",
 	},
 	next_song_keybind_tooltip = {
-		en = "Crossfades to another song from the folder playing now. With one song in the folder, that song keeps playing.\n\n" ..
+		en = "Crossfades to another song from the folder playing now. " ..
+			"With one song in the folder, that song keeps playing, and a paused one resumes where it stopped.\n\n" ..
 			"The next situation still starts its own pick, and the skipped song does not continue later. " ..
 			"DMF runs keybinds even while you type in chat, so a key that is not a letter, such as one on the numpad or an F-key, works best.",
 	},
@@ -87,7 +88,7 @@ local strings = {
 	pause_song_keybind_tooltip = {
 		en = "Pauses the song playing now, and the next press resumes it where it stopped. " ..
 			"The game's music stays silent while it is paused.\n\n" ..
-			"Next Song, Previous Song, and Restart Song also end the pause. " ..
+			"Next Song, Previous Song, Restart Song, and removing the song with Remove from Rotation also end the pause. " ..
 			"A new situation ends it too, and the paused song continues later like any song that was playing.",
 	},
 	remove_song_keybind = {
