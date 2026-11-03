@@ -931,6 +931,20 @@ describe("MusicReplacer.lua debug overlay", function()
 		assert_equal(harness.overlay.options.snapshot().song_measured, false)
 	end)
 
+	it("reports a paused song's level and whether it was measured, as it resumes at", function()
+		local harness = in_hub(nil, { settings = { normalize_loudness = true } })
+		harness.loudness.levels["hub/a.mp3"] = 0.5
+		harness.mod.pause_song()
+		harness:tick(0.1)
+
+		local snapshot = harness.overlay.options.snapshot()
+		assert_equal(snapshot.song_level, 0.5)
+		assert_equal(snapshot.song_measured, true)
+
+		harness.loudness.levels["hub/a.mp3"] = nil
+		assert_equal(harness.overlay.options.snapshot().song_measured, false)
+	end)
+
 	it("leaves out the measuring progress while nothing is measured", function()
 		local harness = in_hub()
 

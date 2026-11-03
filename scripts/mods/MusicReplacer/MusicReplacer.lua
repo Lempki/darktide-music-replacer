@@ -778,9 +778,12 @@ local function overlay_snapshot()
 	local song = (AudioClient.is_playing() or paused) and playing_track and playing_track.file_path or nil
 
 	-- AudioClient no longer holds a paused song, so its length comes from the library.
+	-- Its level is the one it resumes at, since a resume sets the level again.
 	local duration = AudioClient.duration()
 	if paused then
 		duration = playing_track.duration
+		song_level = Loudness.level(playing_track.file_path)
+		song_measured = Loudness.is_measured(playing_track.file_path)
 	end
 
 	-- A situation set to Vanilla or Silence plays no folder, so it looks for no override either.
