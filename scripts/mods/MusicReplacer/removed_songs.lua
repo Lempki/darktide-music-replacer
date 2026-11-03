@@ -14,6 +14,7 @@ local HEADER = "# Songs Music Replacer leaves out of their folder's rotation, on
 local log = function() end -- It does nothing unless RemovedSongs.init is given a real logger.
 local file_path_on_disk = nil
 local songs = {} -- lowercased song path -> the path as written.
+local has_unsaved_changes = false -- True while `songs` holds a change the file could not take.
 
 -- A song path as the library writes it: forward slashes, with no spaces around it.
 -- Players editing the file by hand tend to write Windows paths.
@@ -28,9 +29,11 @@ local function save()
 
 	local file = _io.open(file_path_on_disk, "w")
 	if not file then
+		has_unsaved_changes = true
 		log(string.format("[removed] could not write %s, so the change lasts until the game restarts", FILE_NAME))
 		return
 	end
+	has_unsaved_changes = false
 
 	local lines = {}
 	for _, song in pairs(songs) do
@@ -47,6 +50,14 @@ end
 
 -- Reads the file again, replacing what was kept. A missing file means no song is removed.
 function RemovedSongs.load()
+	-- Reading the file back would undo the changes it could not take, so they are written again first, and kept if that fails too.
+	if has_unsaved_changes then
+		save()
+		if has_unsaved_changes then
+			return
+		end
+	end
+
 	songs = {}
 	if not (_io and file_path_on_disk) then
 		return

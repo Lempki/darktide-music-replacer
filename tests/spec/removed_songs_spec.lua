@@ -7,9 +7,9 @@ local FOLDER = "C:/AppData/Fatshark/Darktide/MusicReplacer"
 local FILE = FOLDER .. "/removed.txt"
 local HEADER = "# Songs Music Replacer leaves out of their folder's rotation, one per line. Deleting a line puts that song back.\n"
 
--- A file system that keeps whole files in `files`, by path.
+-- A file system that keeps whole files in `files`, by path, and refuses every write while `read_only` is set.
 local function new_file_system(files)
-	local fs = { files = files or {} }
+	local fs = { files = files or {}, read_only = false }
 
 	fs.io = {
 		open = function(path, mode)
@@ -23,6 +23,9 @@ local function new_file_system(files)
 				}
 			end
 
+			if fs.read_only then
+				return nil, "access denied"
+			end
 			fs.files[path] = ""
 			return {
 				write = function(_, ...) fs.files[path] = fs.files[path] .. table.concat({ ... }) end,
@@ -111,5 +114,29 @@ describe("removed_songs.lua", function()
 
 		assert_equal(RemovedSongs.contains("hub/a.mp3"), true)
 		assert_deep_equal(lines, { "[removed] could not write removed.txt, so the change lasts until the game restarts" })
+	end)
+
+	it("keeps a removal the file could not take through a reload, and writes it once the file can be written", function()
+		local RemovedSongs, fs = load_removed_songs(nil)
+		fs.read_only = true
+
+		RemovedSongs.add("hub/a.mp3")
+		RemovedSongs.load()
+		assert_equal(RemovedSongs.contains("hub/a.mp3"), true)
+
+		fs.read_only = false
+		RemovedSongs.load()
+		assert_equal(RemovedSongs.contains("hub/a.mp3"), true)
+		assert_equal(fs.files[FILE], HEADER .. "hub/a.mp3\n")
+	end)
+
+	it("keeps a restore the file could not take through a reload", function()
+		local RemovedSongs, fs = load_removed_songs(HEADER .. "hub/a.mp3\n")
+		fs.read_only = true
+
+		RemovedSongs.clear()
+		RemovedSongs.load()
+
+		assert_equal(RemovedSongs.contains("hub/a.mp3"), false)
 	end)
 end)
