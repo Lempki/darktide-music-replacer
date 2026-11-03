@@ -397,7 +397,7 @@ play_context = function(context_name, is_new_context)
 		return
 	end
 
-	-- The keys start their songs through play_manual_pick, and their own messages name them.
+	-- The keys start their songs through play_manual_pick, which names them itself.
 	if mod:get("song_change_messages") then
 		show_message("song_now_playing", song_name(file_path))
 	end
@@ -544,8 +544,9 @@ local SAME_SONG_FADE_SECONDS = 0.1
 -- Crossfades to `file_path` from the folder playing now over the Key Fade Length, which ends a pause.
 -- Without `start_position`, even the song playing now starts over in a fresh stream instead of reviving the copy that fades out.
 local function play_manual_pick(file_path, duration, is_only_file, start_position)
+	local is_same_song = file_path == playing_track.file_path
 	local fade_seconds = mod:get("key_fade_seconds")
-	if not start_position and AudioClient.is_playing() and file_path == playing_track.file_path then
+	if not start_position and AudioClient.is_playing() and is_same_song then
 		fade_seconds = math.min(fade_seconds, SAME_SONG_FADE_SECONDS)
 	end
 
@@ -553,6 +554,12 @@ local function play_manual_pick(file_path, duration, is_only_file, start_positio
 	context_status = SOURCE_NAMES.custom
 	play_track(current_context, current_folder, { file_path = file_path, duration = duration, is_only_file = is_only_file,
 		start_position = start_position, fade_in = true, fade_seconds = fade_seconds })
+
+	-- A key's own message names the song it starts, so For Song Changes only names that song while For Key Presses is off.
+	-- A key that keeps the same song, as Restart Song and Resume do, changes no song.
+	if not is_same_song and mod:get("song_change_messages") and not mod:get("key_press_messages") then
+		show_message("song_now_playing", song_name(file_path))
+	end
 end
 
 local function restart_playing_song()

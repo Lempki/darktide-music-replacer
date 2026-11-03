@@ -750,9 +750,10 @@ describe("MusicReplacer.lua on-screen messages", function()
 		assert_equal(harness.on_screen_message.enabled, true)
 	end)
 
-	it("show no message for a key press while For Key Presses is off, and the key still works", function()
+	it("show no message for a key press while both kinds are off, and the key still works", function()
 		local harness = in_hub()
 		harness:set_setting("key_press_messages", false)
+		harness:set_setting("song_change_messages", false)
 		local shown = #harness.on_screen_message.shown
 
 		harness.mod.next_song()
@@ -760,6 +761,46 @@ describe("MusicReplacer.lua on-screen messages", function()
 
 		assert_equal(harness:playing(), "hub/b.mp3")
 		assert_equal(#harness.on_screen_message.shown, shown)
+	end)
+
+	it("name the song a key starts as playing now while only For Song Changes is on", function()
+		local harness = in_hub({ hub = { { name = "a.mp3", duration = 200 }, { name = "b.mp3", duration = 180 }, { name = "c.mp3", duration = 160 } } },
+			{ settings = { key_press_messages = false } })
+
+		harness.mod.next_song()
+		harness:tick(0.1)
+		assert_equal(harness:last_on_screen_message(), "<song_now_playing: b.mp3>")
+
+		harness.mod.previous_song()
+		harness:tick(0.1)
+		assert_equal(harness:last_on_screen_message(), "<song_now_playing: a.mp3>")
+
+		harness.mod.remove_song()
+		harness.mod.remove_song()
+		harness:tick(0.1)
+		assert_equal(harness:last_on_screen_message(), "<song_now_playing: " .. harness:playing():match("[^/]+$") .. ">")
+	end)
+
+	it("name no song as playing now for a key that keeps the same song, while only For Song Changes is on", function()
+		local harness = in_hub(nil, { settings = { key_press_messages = false } })
+		local shown = #harness.on_screen_message.shown
+
+		for _, control in ipairs({ "restart_song", "pause_song", "pause_song" }) do
+			harness.mod[control]()
+			harness:tick(0.1)
+		end
+
+		assert_equal(#harness.on_screen_message.shown, shown)
+	end)
+
+	it("show only a key's own message while both kinds are on", function()
+		local harness = in_hub()
+		local shown = #harness.on_screen_message.shown
+
+		harness.mod.next_song()
+		harness:tick(0.1)
+
+		assert_deep_equal({ unpack(harness.on_screen_message.shown, shown + 1) }, { "<control_next_song: b.mp3>" })
 	end)
 
 	it("name the song a situation starts", function()

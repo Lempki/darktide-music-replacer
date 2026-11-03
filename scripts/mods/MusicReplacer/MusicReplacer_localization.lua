@@ -136,7 +136,8 @@ local strings = {
 	},
 	song_change_messages_tooltip = {
 		en = "Shows the song's name in a corner of the screen when one of your songs starts by itself: " ..
-			"when a situation starts its music, and when a song ends and the next one plays.",
+			"when a situation starts its music, and when a song ends and the next one plays.\n\n" ..
+			"While For Key Presses is off, it also names the song a Playback Controls key starts.",
 	},
 	message_seconds = {
 		en = "Message Duration",
