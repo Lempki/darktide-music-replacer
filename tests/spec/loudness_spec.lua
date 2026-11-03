@@ -75,6 +75,10 @@ local function load_loudness(songs, cache_text)
 				left = left - bytes
 				return bytes
 			end,
+			-- `test.read_failures` maps a path to why its reading stops early, after the frames `songs` gives it.
+			read_failure = function()
+				return left == 0 and test.read_failures and test.read_failures[path] or nil
+			end,
 			close = function() test.closed = (test.closed or 0) + 1 end,
 		}
 	end
@@ -428,6 +432,28 @@ describe("loudness.lua cache", function()
 
 		test.alloc_fails = false
 		Loudness.set_files(entries({ { "hub/a.mp3", "2" } }))
+		measure_all(Loudness, "hub")
+		assert_equal(Loudness.describe("hub/a.mp3"):match("^%-10.0 LUFS") ~= nil, true)
+	end)
+
+	it("keeps no result for a song whose reading stops partway, and tries it again once its failures are forgotten", function()
+		local Loudness, test = load_loudness({ ["audio/hub/a.mp3"] = 10 })
+		test.read_failures = { ["audio/hub/a.mp3"] = "reading it failed with 0x80070005" }
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3", "1" } }))
+		measure_all(Loudness, "hub")
+
+		assert_equal(test.details[1], "[loudness] hub/a.mp3 could not be measured: reading it failed with 0x80070005")
+		assert_equal(Loudness.is_measured("hub/a.mp3"), false)
+		assert_equal(test.closed, 1)
+
+		Loudness.set_files(entries({ { "hub/a.mp3", "1" } }))
+		measure_all(Loudness, "hub")
+		assert_equal(#test.opened, 1)
+
+		test.read_failures = nil
+		Loudness.forget_failures()
+		Loudness.set_files(entries({ { "hub/a.mp3", "1" } }))
 		measure_all(Loudness, "hub")
 		assert_equal(Loudness.describe("hub/a.mp3"):match("^%-10.0 LUFS") ~= nil, true)
 	end)

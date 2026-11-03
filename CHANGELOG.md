@@ -28,6 +28,8 @@ What changes for players in each release of Music Replacer. The format follows [
 ### Fixes
 
 * A song that resumes after it was started over, or picked again within a minute of fading out, continues from where it stopped, instead of from where its earlier play faded out.
+* Rescan Audio Folders lets Even Out Loudness measure a song again that it could not measure before, such as a file that was locked at the time. Before, it tried such a song again only once the file changed.
+* Even Out Loudness keeps no level for a song whose reading fails partway, instead of the level of only its first part. Such a song is measured again once its file changes, or on Rescan Audio Folders.
 
 ## [1.0.0] - 2026-10-30
 

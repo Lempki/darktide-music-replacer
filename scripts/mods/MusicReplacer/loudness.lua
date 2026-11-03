@@ -43,14 +43,14 @@ local cache_path = nil
 local enabled = false
 local results = {} -- file_path -> { stamp, loudness, peak }. loudness is false for a song with no measurable loudness.
 local stamps = {} -- file_path -> its stamp at the last listing.
-local failed = {} -- file_path -> the stamp it could not be opened at, so it is tried again only once the file changes.
+local failed = {} -- file_path -> the stamp it could not be measured at, so it is tried again only once the file changes.
 -- File name and stamp -> the file_path whose result they came with.
 -- A song copied into several folders keeps its name, size, and write time, so it is measured once.
 local same_songs = {}
 local pending = {} -- Files still to measure, in listing order.
 local active = nil -- The song being measured: file_path, stamp, decoder, meter, buffer, samples, capacity, block_align.
 -- Songs of this batch that left the queue for good: measured, or taken over from the same file in another folder.
--- A song also leaves for good when opening it or allocating its buffer fails.
+-- A song also leaves for good when opening it, allocating its buffer, or reading it to its end fails.
 local batch_done = 0
 local measured_count = 0 -- Songs measured since the last summary line.
 local unsaved_count = 0 -- Songs measured since loudness.txt was last written.
@@ -229,6 +229,15 @@ local function finish_active()
 	song_done()
 end
 
+-- A song whose reading stopped partway would keep the loudness of only its first part, so it keeps no result.
+-- It is tried again once its file changes, or on Rescan Audio Folders, like a song that could not be opened.
+local function give_up_active(reason)
+	log_detail(string.format("[loudness] %s could not be measured: %s", active.file_path, reason))
+	failed[active.file_path] = active.stamp
+	stop_active()
+	song_done()
+end
+
 -- Takes the first file of `folder` out of `pending`, or returns nil.
 -- A context's folder includes its override folders, since their paths start with the context's.
 local function take_from_folder(folder)
@@ -374,12 +383,17 @@ function Loudness.update(playing_file_path, playing_folder, playing_context)
 			active.meter:add(active.samples, math.floor(bytes / active.block_align))
 		end
 
-		-- The decoder writes less than asked only at the end of the file.
+		-- The decoder writes less than asked only once reading stopped, at the end of the file or before it.
 		if bytes < active.capacity then
 			if started then
 				active.ms = active.ms + (clock() - started) * 1000
 			end
-			finish_active()
+			local failure = active.decoder:read_failure()
+			if failure then
+				give_up_active(failure)
+			else
+				finish_active()
+			end
 			return
 		end
 	until not started or (clock() - started) * 1000 >= MEASURE_MS

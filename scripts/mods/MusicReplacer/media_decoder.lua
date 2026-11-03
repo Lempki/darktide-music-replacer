@@ -219,6 +219,7 @@ function MediaDecoder.open(path)
 		duration = read_duration(reader),
 		source_ended = false,
 		format_changed = false,
+		read_error = nil, -- Why reading stopped before the file's end, if it did.
 		empty_reads = 0,
 		-- The part of a decoded chunk that did not fit the caller's buffer, on the Windows heap.
 		carry = nil,
@@ -282,7 +283,13 @@ local function next_sample(self)
 	self.out[0] = nil
 	local hresult = self.read_sample(self.reader, FIRST_AUDIO_STREAM, 0, self.stream_index, self.flags, self.timestamp, self.out)
 	local flags = self.flags[0]
-	if not NativeFfi.succeeded(hresult) or has_flag(flags, END_OF_STREAM_FLAG) or has_flag(flags, ERROR_FLAG) then
+	if not NativeFfi.succeeded(hresult) then
+		self.source_ended = true
+		self.read_error = "reading it failed with " .. NativeFfi.hex(hresult)
+	elseif has_flag(flags, ERROR_FLAG) then
+		self.source_ended = true
+		self.read_error = "the reader reported an error"
+	elseif has_flag(flags, END_OF_STREAM_FLAG) then
 		self.source_ended = true
 	end
 
@@ -303,6 +310,7 @@ local function next_sample(self)
 		self.empty_reads = self.empty_reads + 1
 		if self.empty_reads >= MAX_EMPTY_READS then
 			self.source_ended = true
+			self.read_error = string.format("the reader brought no audio %d times in a row", MAX_EMPTY_READS)
 		end
 	else
 		self.empty_reads = 0
@@ -351,7 +359,8 @@ function Decoder:prime()
 end
 
 -- Fills `target`, a byte pointer with room for `capacity` bytes, and returns how many bytes it wrote.
--- It writes fewer only at the end of the file. Keep `capacity` a multiple of the format's block size.
+-- It writes fewer only once reading stopped: at the end of the file, or before it, as read_failure() then says.
+-- Keep `capacity` a multiple of the format's block size.
 function Decoder:read_into(target, capacity)
 	local written = 0
 
@@ -378,6 +387,12 @@ function Decoder:at_end()
 	return self.source_ended and self.carry_bytes == 0
 end
 
+-- Why reading stopped before the file's end, or nil while it reads on or after a real end.
+-- A format change partway is not a failure, since playback ends there too.
+function Decoder:read_failure()
+	return self.read_error
+end
+
 -- Moves to `seconds` into the file. Returns true on success.
 function Decoder:seek(seconds)
 	local position = ffi.new("MusicReplacer_PROPVARIANT")
@@ -394,6 +409,7 @@ function Decoder:seek(seconds)
 	-- Audio kept from before the seek belongs to the old position, so it is dropped.
 	if ok then
 		self.source_ended = false
+		self.read_error = nil
 		self.carry_bytes = 0
 		self.empty_reads = 0
 	end
