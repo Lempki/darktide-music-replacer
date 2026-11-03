@@ -101,6 +101,8 @@ local function load_loudness(songs, cache_text)
 		loudness_meter = meter,
 		disk_path = function(file_path) return "audio/" .. file_path end,
 		folder = FOLDER,
+		-- `test.removed` holds the songs removed from rotation, by path.
+		is_removed = function(file_path) return test.removed ~= nil and test.removed[file_path] == true end,
 	})
 
 	return Loudness, test
@@ -182,6 +184,23 @@ describe("loudness.lua measuring", function()
 		measure_all(Loudness, "hub")
 		assert_deep_equal(test.opened, { "audio/hub/a.mp3", "audio/hub/a.mp3", "audio/hub/b.mp3" })
 		assert_equal(Loudness.describe("hub/a.mp3"):match("^%-100.0 LUFS") ~= nil, true)
+	end)
+
+	it("stops measuring a forgotten song and takes it out of the queue and the progress", function()
+		local Loudness, test = load_loudness({ ["audio/hub/a.mp3"] = 100000, ["audio/hub/b.mp3"] = 10, ["audio/hub/c.mp3"] = 10 })
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3" }, { "hub/b.mp3" }, { "hub/c.mp3" } }))
+		Loudness.update(nil, nil, "hub")
+		assert_deep_equal({ Loudness.progress() }, { 0, 3 })
+
+		Loudness.forget("hub/a.mp3")
+		Loudness.forget("hub/c.mp3")
+		assert_equal(test.closed, 1)
+		assert_deep_equal({ Loudness.progress() }, { 0, 1 })
+
+		measure_all(Loudness, "hub")
+		assert_deep_equal(test.opened, { "audio/hub/a.mp3", "audio/hub/b.mp3" })
+		assert_equal(Loudness.is_measured("hub/a.mp3"), false)
 	end)
 
 	it("logs a song it cannot open and moves on", function()
@@ -335,6 +354,27 @@ describe("loudness.lua cache", function()
 		assert_deep_equal(test.opened, { "audio/hub/a.mp3" })
 		assert_equal(test.fs.files[CACHE]:find("11:1:3  -16.00  0.50000  hub/a.mp3\n", 1, true) ~= nil, true)
 		assert_equal(test.fs.files[CACHE]:find("hub/b.mp3", 1, true), nil)
+	end)
+
+	it("keeps a song removed from rotation in loudness.txt, so it needs no measuring once it is restored", function()
+		local songs = { ["audio/hub/a.mp3"] = 12, ["audio/hub/b.mp3"] = 14, ["audio/hub/c.mp3"] = 16 }
+		local Loudness, test = load_loudness(songs)
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3" }, { "hub/b.mp3" } }))
+		measure_all(Loudness, "hub")
+
+		test.removed = { ["hub/a.mp3"] = true }
+		Loudness.set_files(entries({ { "hub/b.mp3" }, { "hub/c.mp3" } }))
+		measure_all(Loudness, "hub")
+		assert_equal(test.fs.files[CACHE]:find("hub/a.mp3", 1, true) ~= nil, true)
+
+		local Reloaded, retest = load_loudness(songs, test.fs.files[CACHE])
+		Reloaded.set_enabled(true)
+		Reloaded.set_files(entries({ { "hub/a.mp3" }, { "hub/b.mp3" }, { "hub/c.mp3" } }))
+		measure_all(Reloaded, "hub")
+
+		assert_deep_equal(retest.opened, {})
+		assert_equal(Reloaded.describe("hub/a.mp3"):match("^%-12.0 LUFS") ~= nil, true)
 	end)
 
 	it("keeps a file name that starts with a space, and a song listed without a stamp, through loudness.txt", function()

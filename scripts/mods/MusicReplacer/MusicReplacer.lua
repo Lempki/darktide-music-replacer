@@ -706,6 +706,7 @@ local function remove_playing_song()
 	local file_path = playing_track.file_path
 	RemovedSongs.add(file_path)
 	Library.remove_file(file_path)
+	Loudness.forget(file_path)
 	log(string.format("[control] %s: removed %s from rotation", current_context, file_path))
 	local label = folder_label()
 
@@ -912,6 +913,7 @@ mod.on_all_mods_loaded = function()
 		loudness_meter = LoudnessMeter,
 		disk_path = Library.disk_path,
 		folder = DiagnosticLog.folder(),
+		is_removed = RemovedSongs.contains,
 	})
 	Loudness.set_enabled(mod:get("normalize_loudness"))
 	Library.on_listed(Loudness.set_files)

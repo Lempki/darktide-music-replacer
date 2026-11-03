@@ -38,6 +38,7 @@ local MediaDecoder = nil
 local NativeFfi = nil
 local LoudnessMeter = nil
 local disk_path = function(file_path) return file_path end
+local is_removed = function() return false end -- file_path -> true for a song removed from rotation.
 local cache_path = nil
 
 local enabled = false
@@ -117,7 +118,8 @@ local function load_cache()
 	end
 end
 
--- Writes the results of the files listed now, which also drops removed and changed files from the cache.
+-- Writes the results of the files listed now, which also drops deleted and changed files from the cache.
+-- A song removed from rotation is not listed, but keeps its result, so it needs no measuring once it is restored.
 local function save_cache()
 	if not (_io and cache_path) then
 		return
@@ -130,7 +132,7 @@ local function save_cache()
 
 	local file_paths = {}
 	for file_path, result in pairs(results) do
-		if stamps[file_path] == result.stamp then
+		if stamps[file_path] == result.stamp or (stamps[file_path] == nil and is_removed(file_path)) then
 			file_paths[#file_paths + 1] = file_path
 		end
 	end
@@ -305,6 +307,7 @@ end
 
 -- options: log, detail, media_decoder, native_ffi, and loudness_meter, which are loaded and initialized modules.
 -- options.disk_path(file_path) turns a library path into a path on disk, and options.folder is where loudness.txt goes.
+-- options.is_removed(file_path), if given, is true for a song removed from rotation, whose result loudness.txt keeps.
 function Loudness.init(options)
 	log = options.log or log
 	log_detail = options.detail or log_detail
@@ -312,6 +315,7 @@ function Loudness.init(options)
 	NativeFfi = options.native_ffi
 	LoudnessMeter = options.loudness_meter
 	disk_path = options.disk_path or disk_path
+	is_removed = options.is_removed or is_removed
 	cache_path = options.folder and (options.folder .. "/" .. CACHE_FILE_NAME)
 	load_cache()
 end
@@ -321,6 +325,20 @@ function Loudness.set_enabled(on)
 	enabled = on == true
 	if not enabled and active then
 		table.insert(pending, 1, active.file_path)
+		stop_active()
+	end
+end
+
+-- Stops measuring `file_path` and takes it out of the queue, as for a song just removed from rotation.
+-- The next listing leaves it out anyway, but measuring it until then would be wasted, and it would count in the progress.
+function Loudness.forget(file_path)
+	for index = #pending, 1, -1 do
+		if pending[index] == file_path then
+			table.remove(pending, index)
+		end
+	end
+
+	if active and active.file_path == file_path then
 		stop_active()
 	end
 end

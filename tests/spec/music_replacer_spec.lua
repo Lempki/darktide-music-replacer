@@ -1843,6 +1843,7 @@ describe("MusicReplacer.lua the Remove from Rotation key", function()
 		press(harness, "remove_song")
 
 		assert_deep_equal(harness.library.removed_files, { "hub/a.mp3" })
+		assert_deep_equal(harness.loudness.forgotten, { "hub/a.mp3" })
 		assert_equal(harness:last_on_screen_message(), "<control_removed_song: <source_hub>, a.mp3>")
 		local play = harness:last_play()
 		assert_equal(play.file_path ~= "hub/a.mp3", true)

@@ -165,11 +165,12 @@ end
 -- A stand-in for loudness.lua. `levels` maps a file path to the level it plays at once measured.
 -- `updates` keeps what each update was told to measure first.
 local function new_loudness()
-	local loudness = { enabled = false, levels = {}, updates = {}, shut_down = false, failures_forgotten = 0 }
+	local loudness = { enabled = false, levels = {}, updates = {}, shut_down = false, failures_forgotten = 0, forgotten = {} }
 
 	function loudness.init() end
 	function loudness.set_enabled(on) loudness.enabled = on == true end
 	function loudness.forget_failures() loudness.failures_forgotten = loudness.failures_forgotten + 1 end
+	function loudness.forget(file_path) loudness.forgotten[#loudness.forgotten + 1] = file_path end
 	function loudness.set_files() end
 	function loudness.update(playing_file_path, playing_folder, playing_context)
 		loudness.updates[#loudness.updates + 1] = { file_path = playing_file_path, folder = playing_folder, context = playing_context }
