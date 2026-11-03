@@ -393,10 +393,16 @@ return function(DebugOverlay)
 		if self._refresh_in <= 0 then
 			self._refresh_in = REFRESH_SECONDS
 			-- This runs inside the game's own UI update, so a failure here only leaves the overlay as it was.
-			pcall(self._lay_out, self, ui_renderer, DebugOverlay.current_view())
+			local ok, err = pcall(self._lay_out, self, ui_renderer, DebugOverlay.current_view())
+			if not ok then
+				DebugOverlay.report_draw_failure(err)
+			end
 		end
 
-		pcall(self._update_meter, self, dt)
+		local ok, err = pcall(self._update_meter, self, dt)
+		if not ok then
+			DebugOverlay.report_draw_failure(err)
+		end
 
 		Element.super.update(self, dt, t, ui_renderer, render_settings, input_service)
 	end

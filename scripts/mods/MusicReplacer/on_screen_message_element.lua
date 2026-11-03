@@ -216,7 +216,10 @@ return function(OnScreenMessage)
 
 	function Element:update(dt, t, ui_renderer, render_settings, input_service)
 		-- This runs inside the game's own UI update, so a failure here only freezes the message.
-		pcall(self._draw_lines, self, dt, ui_renderer)
+		local ok, err = pcall(self._draw_lines, self, dt, ui_renderer)
+		if not ok then
+			OnScreenMessage.report_draw_failure(err)
+		end
 
 		Element.super.update(self, dt, t, ui_renderer, render_settings, input_service)
 	end

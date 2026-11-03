@@ -243,6 +243,18 @@ function OnScreenMessage.update()
 	end
 end
 
+local reported_draw_failures = {} -- error text -> true.
+
+-- The element calls this when drawing fails. A failure repeats every frame, so each one is logged once.
+function OnScreenMessage.report_draw_failure(err)
+	local text = tostring(err)
+	if reported_draw_failures[text] then
+		return
+	end
+	reported_draw_failures[text] = true
+	log("[on-screen message] drawing failed: " .. text)
+end
+
 -- Turns the messages on or off and sets how they look.
 -- `new_look.scale` sizes the text as a factor, and `new_look.color` is its ARGB color, whose alpha also sets its opacity.
 -- `new_look.corner` is a Message Corner choice, such as "bottom_left".

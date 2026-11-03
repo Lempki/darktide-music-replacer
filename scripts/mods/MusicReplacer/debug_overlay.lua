@@ -249,6 +249,18 @@ function DebugOverlay.update()
 	end
 end
 
+local reported_draw_failures = {} -- error text -> true.
+
+-- The element calls this when drawing fails. A failure repeats every frame, so each one is logged once.
+function DebugOverlay.report_draw_failure(err)
+	local text = tostring(err)
+	if reported_draw_failures[text] then
+		return
+	end
+	reported_draw_failures[text] = true
+	log("[overlay] drawing failed: " .. text)
+end
+
 -- Turns the overlay on or off, sizes it by `new_scale`, and sets its backdrop's opacity to `new_opacity`, both as factors.
 function DebugOverlay.set_enabled(on, new_scale, new_opacity)
 	enabled = on == true

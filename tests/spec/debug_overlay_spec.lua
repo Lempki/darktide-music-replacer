@@ -388,4 +388,14 @@ describe("debug_overlay.lua element", function()
 		assert_equal(lines[1]:find("[overlay] could not be shown", 1, true) ~= nil, true)
 		assert_equal(constant_elements._visibility_groups[1].visible_elements[CLASS_NAME], nil)
 	end)
+
+	it("logs each drawing failure once, however often it repeats", function()
+		local DebugOverlay, _, lines = load_overlay(new_constant_elements())
+
+		DebugOverlay.report_draw_failure("bad font")
+		DebugOverlay.report_draw_failure("bad font")
+		DebugOverlay.report_draw_failure("bad style")
+
+		assert_deep_equal(lines, { "[overlay] drawing failed: bad font", "[overlay] drawing failed: bad style" })
+	end)
 end)

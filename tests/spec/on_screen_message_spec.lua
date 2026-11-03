@@ -477,4 +477,14 @@ describe("on_screen_message.lua element", function()
 		assert_equal(lines[1]:find("[on-screen message] could not be shown", 1, true) ~= nil, true)
 		assert_equal(constant_elements._visibility_groups[1].visible_elements[CLASS_NAME], nil)
 	end)
+
+	it("logs each drawing failure once, however often it repeats", function()
+		local OnScreenMessage, _, lines = load_with_element(new_constant_elements())
+
+		OnScreenMessage.report_draw_failure("bad font")
+		OnScreenMessage.report_draw_failure("bad font")
+		OnScreenMessage.report_draw_failure("bad style")
+
+		assert_deep_equal(lines, { "[on-screen message] drawing failed: bad font", "[on-screen message] drawing failed: bad style" })
+	end)
 end)
