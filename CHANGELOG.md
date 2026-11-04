@@ -17,11 +17,11 @@ What changes for players in each release of Music Replacer. The format follows [
 
 ### Changes
 
-* The mod options have two new groups and a new order: Your Songs, Playback, Playback Controls, Volume, On-Screen Messages, Music per Situation, Meat Grinder, Boss Music, Music Holds, and Debug. Rescan Audio Folders moved from Playback to Your Songs. Every setting keeps its value.
+* The mod options have three new groups and a new order: Your Songs, Playback, Playback Controls, Volume, On-Screen Messages, Music per Situation, Meat Grinder, Boss Music, Music Holds, and Debug. Rescan Audio Folders moved from Playback to Your Songs. Every setting keeps its value.
 * Rescan Audio Folders creates any situation's folder that went missing while the game runs, so it no longer takes a restart.
 * A situation that switches back to an override folder it already played continues that folder's song where it stopped, with Resume Songs on. Rolling Steel goes back and forth between its first two stages, so stage folders no longer start their songs over each time.
 * Even Out Loudness measures a song copied into several folders only once, so measuring a library with shared songs takes less time.
-* Even Out Loudness measures the song playing now first, then the rest of the folder it plays from, override folders included, then the rest of the situation's songs.
+* Even Out Loudness measures the song playing now first, then the rest of the folder it plays from, such as an override folder, then the rest of the situation's songs. Before, it measured all of the situation's songs, override folders included, in the order they were listed.
 * The debug overlay's label column is a little wider, so the Level row's meter and markers sit further right.
 * The debug overlay follows the game's HUD Scale setting, with Overlay Size on top of it.
 * The debug overlay's backdrop touches the top and left edges of the screen, as the on-screen messages' does, instead of sitting a little in from them.
@@ -29,6 +29,8 @@ What changes for players in each release of Music Replacer. The format follows [
 ### Fixes
 
 * A song that resumes after it was started over, or picked again within a minute of fading out, continues from where it stopped, instead of from where its earlier play faded out.
+* A song that Even Out Loudness could not get the memory to measure is tried again once its file changes, or on Rescan Audio Folders, instead of at every listing of the folders.
+* When drawing the debug overlay fails, the log says why, once for each failure, instead of the overlay freezing with nothing in the log.
 * Rescan Audio Folders lets Even Out Loudness measure a song again that it could not measure before, such as a file that was locked at the time. Before, it tried such a song again only once the file changed.
 * Even Out Loudness keeps no level for a song whose reading fails partway, instead of the level of only its first part. Such a song is measured again once its file changes, or on Rescan Audio Folders.
 
