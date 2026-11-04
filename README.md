@@ -15,7 +15,7 @@ Download it from [Nexus Mods](https://www.nexusmods.com/warhammer40kdarktide/mod
 That is all it takes. A few things to know:
 
 * The formats that work are `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, and `.wma`. Other files, such as `.ogg` and `.opus`, are ignored, so convert those to a supported format first. File names in any language work.
-* You can add, remove, or replace files while the game runs, and the mod picks them up by itself 3 seconds after files stop changing. A song that is playing finishes, even if you remove its file.
+* You can add, remove, or replace files while the game runs, and the mod picks them up by itself 3 seconds after files stop changing. A song that is playing finishes, even if you remove its file, and if it was a folder's only song, it'll keep looping until the music changes.
 * Put songs directly inside the folders. Folders inside them are [override folders](docs/override-folders.md), which are optional. If a situation's folder goes missing, the mod creates it again when the game starts or when you press Rescan Audio Folders.
 * Every folder and when it plays is listed under [Where your music plays](#where-your-music-plays).
 
