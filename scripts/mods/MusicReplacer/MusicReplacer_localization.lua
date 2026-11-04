@@ -116,8 +116,8 @@ local strings = {
 	key_fade_seconds_tooltip = {
 		en = "How long the music crossfades when one of these keys changes the song, pauses it, or resumes it. " ..
 			"Fade Length still sets the fades when the situation changes and when a song ends by itself.\n\n" ..
-			"A key that starts the song playing now over always jumps to its start in a tenth of a second, " ..
-			"so two copies of the song never play over each other.\n\n" ..
+			"A key that starts the song playing now over jumps to its start in a tenth of a second, " ..
+			"so two copies of the song never play over each other. A paused song fades in from its start instead.\n\n" ..
 			"Set to " .. highlight("0") .. " to switch at once.",
 	},
 	on_screen_messages = {

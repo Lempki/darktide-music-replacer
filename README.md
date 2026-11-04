@@ -41,7 +41,7 @@ Everything below is optional detail.
 * Plays your songs by situation: the title screen, character select, the hub, loading screens, exploring, combat, hordes, bosses, events, last stands, victory, defeat, Mortis Trials, Expeditions, and Meat Grinder.
 * Picks a random song from a folder with several, never the one that just played.
 * Loops a folder's only song seamlessly, with no gap added between its end and its start.
-* Keeps a song playing when the next situation's folder holds only that same song, instead of starting it over.
+* Keeps a folder's only song playing when the next situation's folder also holds only that song, instead of starting it over.
 * Crossfades when the situation changes, and fades a song out at its end.
 * Continues a song from where it stopped once its situation comes back, such as explore music after a fight.
 * Follows the game's master and music volume sliders at once, without restarting the song.
@@ -75,7 +75,7 @@ Windows "N" editions leave out Media Foundation, so on one, install Microsoft's 
 
 ## Where your music plays
 
-The folders most people fill first are in bold. Each folder plays in one situation. The music switches about half a second after the situation changes, or 3 seconds into and out of a loading screen, so a moment that flickers does not restart the song. The Music Holds settings also keep combat, horde, boss, and event music going for a few seconds, so a short lull does not switch the music at once.
+The folders most people fill first are in bold. Each folder plays in one situation. The music switches about half a second after the situation changes, so a moment that flickers does not restart the song. Into a loading screen, other than the briefing after the preparation screen, it waits 3 seconds, and so does the first situation after a loading screen, other than the hub and the preparation screen. The Music Holds settings also keep combat, horde, boss, and event music going for a few seconds, so a short lull does not switch the music at once.
 
 | Folder | When it plays |
 |---|---|
