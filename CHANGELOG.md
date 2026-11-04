@@ -24,6 +24,7 @@ What changes for players in each release of Music Replacer. The format follows [
 * Even Out Loudness measures the song playing now first, then the rest of the folder it plays from, override folders included, then the rest of the situation's songs.
 * The debug overlay's label column is a little wider, so the Level row's meter and markers sit further right.
 * The debug overlay follows the game's HUD Scale setting, with Overlay Size on top of it.
+* The debug overlay's backdrop touches the top and left edges of the screen, as the on-screen messages' does, instead of sitting a little in from them.
 
 ### Fixes
 

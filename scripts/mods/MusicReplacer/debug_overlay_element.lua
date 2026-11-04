@@ -12,9 +12,6 @@ local UIWorkspaceSettings = require("scripts/settings/ui/ui_workspace_settings")
 -- Large enough for the overlay at its largest size. Every pass is sized and placed inside it.
 local AREA_SIZE = { 2400, 800 }
 
--- The distance from the screen's corner stays the same at every size, so the overlay grows away from the corner.
-local MARGIN = 20
-
 -- These are the sizes at 100%, and they scale with the Overlay Size setting.
 local PADDING = 12
 local GAP = 10
@@ -166,7 +163,8 @@ local definitions = {
 			vertical_alignment = "top",
 			horizontal_alignment = "left",
 			size = AREA_SIZE,
-			position = { MARGIN, MARGIN, 1 },
+			-- The backdrop touches the screen's top and left edges, as the on-screen messages' does, so the overlay grows away from the corner.
+			position = { 0, 0, 1 },
 		},
 	},
 	widget_definitions = {
