@@ -1,5 +1,6 @@
 -- Loads MusicReplacer.lua, the main file, with its real context, suppression, and resume logic.
--- Everything underneath is a stand-in: the library, audio client, loudness, debug overlay, on-screen message, log, and Windows modules.
+-- The library, audio client, loudness, debug overlay, on-screen message, log, and Windows modules underneath are stand-ins.
+-- removed_songs.lua runs as it is.
 -- It borrows context_harness.lua's sequences, so the specs set the music states in the game's real order.
 -- Time only passes through wait() and tick(), which call the mod's own update.
 

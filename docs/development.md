@@ -47,7 +47,7 @@ The mod options and the on-screen messages take their text from `scripts/mods/Mu
 * To add a language, add an entry next to `en` in every string, for example `de = "..."`.
 * The situation dropdowns build their English tooltips with `source_tooltip()`. A translation writes each tooltip as its own full text instead, since the sentence order differs between languages.
 * `highlight()` colors the key words in a tooltip, such as the names of the choices, so keep it around the translated words.
-* DMF formats every string, so `%%` shows as a single percent sign.
+* DMF formats the strings the mod names, such as each setting's title and tooltip, so `%%` in them shows as a single percent sign.
 
 ## Why the mod uses Windows' own audio
 
@@ -104,7 +104,7 @@ Music Replacer decodes the files with Media Foundation, Windows' own media frame
 
 ### File checks
 
-* `library.lua` measures every file's duration in the background, one file per update. A file Media Foundation cannot open is left out of the picks from then on.
+* `library.lua` measures every file's duration in the background, one file per update. A file Media Foundation cannot open is left out of the picks until its file changes, or until Rescan Audio Folders.
 * A track that ends within 3 seconds of starting, and before half its length, did not really play. After 3 in a row from one folder, that folder stops retrying until the folders are listed again. An override folder then gives way to the next folder, and a context's own folder to the game's music.
 
 ## Project structure
@@ -162,7 +162,7 @@ darktide-music-replacer/
 │   ├── helpers/
 │   │   ├── context_harness.lua          # Replays the game's real state sequences through context.lua.
 │   │   ├── fake_engine.lua              # Fakes the game and DMF globals so the mod's modules run outside the game.
-│   │   └── main_harness.lua             # Runs MusicReplacer.lua with stand-ins for the library, the audio client, and the loudness measurements.
+│   │   └── main_harness.lua             # Runs MusicReplacer.lua with stand-ins for the library, the audio client, the loudness measurements, and the Windows modules.
 │   └── spec/                            # Specs, one *_spec.lua file per subject.
 └── tools/
     ├── build.ps1                        # Builds the ZIP and optionally deploys straight into the installed mod folder.

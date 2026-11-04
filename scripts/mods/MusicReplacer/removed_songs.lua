@@ -17,7 +17,7 @@ local songs = {} -- lowercased song path -> the path as written.
 local has_unsaved_changes = false -- True while `songs` holds a change the file could not take.
 
 -- A song path as the library writes it: forward slashes, with no spaces around it.
--- Players editing the file by hand tend to write Windows paths.
+-- A Windows path, with backslashes, is accepted too, for players editing the file by hand.
 local function normalized(song)
 	return (song:gsub("\\", "/"):match("^%s*(.-)%s*$"))
 end

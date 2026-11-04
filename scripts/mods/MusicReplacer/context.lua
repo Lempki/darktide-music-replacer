@@ -372,7 +372,7 @@ local function read_mode(template)
 end
 
 -- Returns the current mission's name, whether its template is the hub, whether it is an Operation, its game mode, and its template.
--- Returns nil, false, false, nil, nil before a level has loaded.
+-- Returns nil, false, false, nil before a level has loaded.
 local function read_mission()
 	local game_state = Managers and Managers.state
 	local mission_manager = game_state and game_state.mission

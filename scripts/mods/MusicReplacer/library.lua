@@ -6,7 +6,8 @@
 -- The folders are listed on the first update, again when a rescan is requested, and again once files change on disk.
 -- Windows reports a change for every step of a copy, so a change only lists the folders once the changes have stopped for QUIET_SECONDS.
 -- Every file's duration is measured in the background, one file per update, so a large library never stalls a frame for long.
--- A file Windows cannot open while it is measured is left out of the picks from then on, so it cannot use up the caller's retries.
+-- A file Windows cannot open while it is measured is left out of the picks until it changes or Rescan Audio Folders.
+-- So it cannot use up the caller's retries.
 -- A file deleted after a listing is still listed until the next one, so pick_file() checks that a file exists before returning it.
 -- Where Windows cannot watch the folders, as on some network drives, only the Rescan Audio Folders button lists them again.
 -- A missing or empty folder resolves to nil here, which is the caller's signal to fall back to the game's music.

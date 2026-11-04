@@ -426,7 +426,7 @@ local strings = {
 	volume = {
 		en = "Volume",
 	},
-	-- DMF formats every string, so this shows as a single percent sign.
+	-- DMF formats this string, since the mod names it, so it shows as a single percent sign.
 	percent_unit = {
 		en = "%%",
 	},

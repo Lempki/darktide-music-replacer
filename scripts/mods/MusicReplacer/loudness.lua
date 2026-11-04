@@ -1,6 +1,6 @@
 -- Measures every song's loudness in the background, so each can play at the level that brings it to TARGET_LUFS.
 -- Measuring decodes a whole file, so it runs a little at a time, for at most MEASURE_MS per update, and frames stay smooth.
--- The results are kept in loudness.txt in the mod's own folder, so a song is measured once and the music files are never changed.
+-- The results are kept in loudness.txt beside the mod's log, so a song is measured once and the music files are never changed.
 -- A song is measured again once its file changes, which its size and write time show.
 -- A song keeps the level it started with, so one measured while it plays changes level only at its next start.
 
