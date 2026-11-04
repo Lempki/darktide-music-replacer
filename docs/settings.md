@@ -6,8 +6,8 @@ Every setting of Music Replacer, with its default. The settings are in the in-ga
 
 | Setting | Default | What it does |
 |---|---|---|
-| Rescan Audio Folders | (button) | Lists the audio folders again at once, and checks every song again. The mod notices added, removed, and replaced files by itself, and lists the folders again 3 seconds after files stop changing. Use this button on drives where Windows cannot report changes, such as some network drives, and to retry a song that would not play. It also lets the mod try playback again after it has given up, and creates any situation's folder that went missing. It does not measure songs again that were measured before, only those that could not be measured. |
-| Restore Removed Songs | (button) | Puts every song that Remove from Rotation took out back into its folder's rotation. A situation left with no songs plays them again at once. |
+| Rescan Audio Folders | (button) | Lists the audio folders again at once, and checks again whether every song plays. The mod notices added, removed, and replaced files by itself, and lists the folders again 3 seconds after files stop changing. Use this button on drives where Windows cannot report changes, such as some network drives, and to retry a song that would not play. It also lets the mod try playback again after it has given up, and creates any situation's folder that went missing. It does not measure songs again that were measured before, only those that could not be measured. |
+| Restore Removed Songs | (button) | Puts every song that Remove from Rotation took out back into its folder's rotation, and a message says how many came back. A situation left with no songs plays them again at once. |
 
 ## Playback
 
@@ -23,7 +23,7 @@ Keys that control the song playing now, and the setting that goes with them. Eve
 | Setting | Default | What it does |
 |---|---|---|
 | Next Song | Unbound | Crossfades to another song from the folder playing now, and the message names it. With one song in the folder, that song keeps playing, or resumes where it stopped while it is paused, and the message says it is the folder's only song, such as `Only song in Boss (chaos_spawn): x.mp3`. It only changes the song of the situation playing now, so the next situation still starts its own pick, and the skipped song does not continue later. |
-| Previous Song | Unbound | Within the first 3 seconds of a song, crossfades back to the song that played before it in this situation, and each further press goes back one more. Later into a song, or with no earlier song, it starts the song playing now over. A new situation starts with no earlier songs, and a song that could not play or that a rescan removed is passed over. |
+| Previous Song | Unbound | Within the first 3 seconds of a song, crossfades back to the song that played before it in this situation, and each further press goes back one more. Later into a song, or with no earlier song, it starts the song playing now over. A new situation starts with no earlier songs, and so does a switch to an override folder, or a replay after a rescan or a changed setting. A song that could not play or that a rescan removed is passed over. |
 | Restart Song | Unbound | Jumps back to the start of the song playing now. |
 | Pause / Resume | Unbound | Pauses the song playing now, and the next press resumes it where it stopped. The game's music stays silent while it is paused, and the debug overlay's status reads `Custom, paused`. Next Song, Previous Song, Restart Song, and removing the song with Remove from Rotation also end the pause. A new situation ends it too, and the paused song continues later like any song that was playing. |
 | Remove from Rotation | Unbound | Press it twice to stop the song playing now from ever being picked in its folder again, and move on to another song. The first press asks, and a second press removes the song while the question shows, through its fade in, the Message Duration, and the Message Fade Out. The same time counts with For Key Presses off, when no question shows. Both messages name the song and where it plays, such as `Hub`, or `Boss (chaos_spawn)` for an override folder. The file stays where it is, and a copy of the song in another folder still plays there. After a folder's last song, the situation plays as if the folder were empty. The removed songs are listed in `removed.txt`, see [Files the mod writes](troubleshooting.md#files-the-mod-writes). |
@@ -43,7 +43,7 @@ A message is one line of text on a backdrop in the corner of the screen that Mes
 
 | Setting | Default | What it does |
 |---|---|---|
-| For Key Presses | On | Shows a message for each press of a Playback Controls key, such as `Next song: song.mp3`. |
+| For Key Presses | On | Shows a message for each press of a Playback Controls key, such as `Next song: song.mp3`, and for each press of Restore Removed Songs. |
 | For Song Changes | On | Shows `Now playing:` and the song's name whenever one of your songs starts by itself: when a situation starts its music, when a song ends and the next one plays, and when a song resumes where it stopped. A folder's only song that keeps playing into the next situation shows nothing. While For Key Presses is off, it also names the song that Next Song, Previous Song, or Remove from Rotation starts, since no key message names it then. |
 | Message Duration | 4 seconds | How long a message stays at full opacity before it fades out, from 1 to 10 seconds. With Message Fade Out, it also sets how long a second press of Remove from Rotation counts. |
 | Message Fade Out | 1 second | How long a message takes to fade out, from 0 to 3 seconds. Set it to 0 to hide a message at once. |

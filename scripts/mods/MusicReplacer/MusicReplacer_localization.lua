@@ -30,7 +30,7 @@ local strings = {
 		en = "Rescan",
 	},
 	rescan_audio_tooltip = {
-		en = "Lists the audio folders again at once, and checks every song again.\n\n" ..
+		en = "Lists the audio folders again at once, and checks again whether every song plays.\n\n" ..
 			"The mod notices added, removed, and replaced files by itself a few seconds after they change. " ..
 			"This button is for drives where Windows cannot report changes, such as some network drives, " ..
 			"for retrying a song that would not play, and for bringing back a situation's folder that went missing.",
@@ -74,7 +74,7 @@ local strings = {
 		en = "Within the first 3 seconds of a song, crossfades back to the song that played before it in this situation. " ..
 			"Pressing it again keeps going back.\n\n" ..
 			"Later into a song, or with no earlier song, it starts the song playing now over. " ..
-			"A new situation starts with no earlier songs.",
+			"A new situation starts with no earlier songs, and so does a switch to an override folder, or a replay after a rescan or a changed setting.",
 	},
 	restart_song_keybind = {
 		en = "Restart Song",
@@ -108,7 +108,7 @@ local strings = {
 		en = "Restore",
 	},
 	restore_removed_songs_tooltip = {
-		en = "Puts every song that Remove from Rotation took out back into its folder's rotation.",
+		en = "Puts every song that Remove from Rotation took out back into its folder's rotation, and a message says how many came back.",
 	},
 	key_fade_seconds = {
 		en = "Key Fade Length",
@@ -127,7 +127,7 @@ local strings = {
 		en = "For Key Presses",
 	},
 	key_press_messages_tooltip = {
-		en = "Shows a short message in a corner of the screen when you press one of the Playback Controls keys, such as the song that plays next. " ..
+		en = "Shows a short message in a corner of the screen when you press one of the Playback Controls keys, such as the song that plays next, or Restore Removed Songs. " ..
 			"It fades out after a few seconds, and shows on every screen, loading screens included.\n\n" ..
 			highlight("Off") .. " shows no message for them. The keys still work.",
 	},
@@ -136,7 +136,7 @@ local strings = {
 	},
 	song_change_messages_tooltip = {
 		en = "Shows the song's name in a corner of the screen when one of your songs starts by itself: " ..
-			"when a situation starts its music, and when a song ends and the next one plays.\n\n" ..
+			"when a situation starts its music, when a song ends and the next one plays, and when a song resumes where it stopped.\n\n" ..
 			"While For Key Presses is off, it also names the song a Playback Controls key starts.",
 	},
 	message_seconds = {
@@ -346,19 +346,19 @@ local strings = {
 		en = "Victory",
 	},
 	source_victory_tooltip = {
-		en = source_tooltip("after a mission is won, until the loading screen"),
+		en = source_tooltip("after a mission is won, until the loading screen or a cutscene"),
 	},
 	source_defeat = {
 		en = "Defeat",
 	},
 	source_defeat_tooltip = {
-		en = source_tooltip("after a mission is lost, until the loading screen"),
+		en = source_tooltip("after a mission is lost, until the loading screen or a cutscene"),
 	},
 	source_mortis_trials_wave = {
 		en = "Mortis Trials Wave",
 	},
 	source_mortis_trials_wave_tooltip = {
-		en = source_tooltip("during a Mortis Trials wave"),
+		en = source_tooltip("in Mortis Trials, during a wave or an objective round, through to the final win"),
 	},
 	source_mortis_trials_break = {
 		en = "Mortis Trials Break",
@@ -404,7 +404,7 @@ local strings = {
 			"Every situation keeps its own choice in Music per Situation. " ..
 			"With " .. highlight("Meat Grinder Folder") .. ", an empty folder plays the game's music, which is none there. " ..
 			"Since Darktide 1.13.0, the boss dummies stand there from the start, so " .. highlight("Like a Mission") ..
-			" plays boss music for as long as one of them is still alive. It is recommended to use it with a mod that gives you control over the dummies.",
+			" plays boss music for as long as one of them is still alive. It works best with a mod that gives you control over the dummies.",
 	},
 	meat_grinder_folder = {
 		en = "Meat Grinder Folder",
