@@ -42,7 +42,7 @@ Pull requests and [issues](https://github.com/Lempki/darktide-music-replacer/iss
 
 ### Translations
 
-All player-facing text is in `scripts/mods/MusicReplacer/MusicReplacer_localization.lua`. Each string is a table with one entry per language, keyed by the game's language ID, such as `en` for English and `de` for German. DMF shows a string in the game's language, and falls back to `en` when that language has none.
+The mod options and the on-screen messages take their text from `scripts/mods/MusicReplacer/MusicReplacer_localization.lua`. The debug overlay's own texts, which the [roadmap](#roadmap) plans to move there, and the error shown when Windows audio playback cannot start are in English in the code. Each string is a table with one entry per language, keyed by the game's language ID, such as `en` for English and `de` for German. DMF shows a string in the game's language, and falls back to `en` when that language has none.
 
 * To add a language, add an entry next to `en` in every string, for example `de = "..."`.
 * The situation dropdowns build their English tooltips with `source_tooltip()`. A translation writes each tooltip as its own full text instead, since the sentence order differs between languages.
@@ -95,7 +95,7 @@ Music Replacer decodes the files with Media Foundation, Windows' own media frame
 * `loudness_meter.lua` measures each song's integrated loudness in LUFS following ITU-R BS.1770 and EBU R128: 400 ms blocks every 100 ms, an absolute gate at -70 LUFS, and a relative gate 10 LU below.
 * Every song plays at the level that brings it to -14 LUFS, the level most streaming services play music at.
 * A quiet song is only raised until its loudest sample reaches full scale, so it never clips, and by at most 12 dB, since raising a very quiet recording further mostly raises its hiss.
-* `loudness.lua` decodes each whole song for this, in 50 ms chunks, for at most about a millisecond per update, starting with the folder of the context that plays. It only measures while Even Out Loudness is on.
+* `loudness.lua` decodes each whole song for this, in 50 ms chunks, for at most about a millisecond per update. It measures the song playing now first, then the rest of the folder it plays from, then the rest of the situation's songs, then everything else. It only measures while Even Out Loudness is on.
 * A song copied into several folders keeps its file name, size, and write time, so it is measured once and every copy takes over the result.
 * The log says how long measuring took once every song is measured.
 * The debug overlay shows how many songs of the current batch are measured while songs are left to measure.
@@ -149,7 +149,7 @@ darktide-music-replacer/
 │   ├── event_probe.lua                  # Logs the game's Wwise event names, and changes nothing.
 │   ├── mission_probe.lua                # Logs the current mission's name and type, and changes nothing.
 │   ├── MusicReplacer_data.lua           # DMF mod-options widgets.
-│   └── MusicReplacer_localization.lua   # Mod-options strings.
+│   └── MusicReplacer_localization.lua   # Mod options and on-screen message strings.
 ├── docs/
 │   ├── development.md                   # This file.
 │   ├── game-internals.md                # How the game reports its missions and modes, and the mission lines in the log.
