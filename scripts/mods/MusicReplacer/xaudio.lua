@@ -46,7 +46,7 @@ local XAUDIO2_END_OF_STREAM = 0x40
 local XAUDIO2_VOICE_NOSAMPLESPLAYED = 0x100
 
 -- AudioCategory_GameMedia, the category Microsoft gives game music.
--- Windows then mutes it on its own while another application plays music in the background.
+-- Microsoft documents that Windows then mutes it while another application plays music in the background.
 local AUDIO_CATEGORY_GAME_MEDIA = 7
 
 -- The formats XAudio2 can play. A voice for anything else is always refused, whatever state the engine is in.
