@@ -85,7 +85,7 @@ The level names its mission only seconds before the briefing ends. The game's me
 
 ## Moving between the hub, missions, and menus
 
-* Leaving the hub for a mission clears the hub zone a moment before it switches the game state to `loading`. The game then reports a loading screen for about 2 seconds before the preparation screen. So a change to a loading screen waits 3 seconds, and the hub song carries straight on into the preparation screen's song. The step from the preparation screen into the briefing takes the usual half a second.
+* Leaving the hub for a mission clears the hub zone a moment before it switches the game state to `loading`. The game then reports a loading screen for 1 to 2 seconds before the preparation screen. So a change to a loading screen waits 3 seconds, and the hub song carries straight on into the preparation screen's song. The step from the preparation screen into the briefing takes the usual half a second.
 * The prologue reports `mission` for about two seconds after its loading screen, before its intro starts. So the first situation after a loading screen waits 3 seconds before its song starts, and an intro or cutscene that begins in that time takes its place. The hub and the preparation screen take the usual half a second, since nothing replaces them a moment after they arrive.
 * After a victory or defeat, the game state goes back to `mission` for a few seconds before the score screen. The mod keeps the `victory` or `defeat` music through it.
 * Leaving the hub for character select clears the zone and unloads the hub at once. The game state stays on `mission` for a few seconds before it switches to `main_menu`. The mod plays no music in between.

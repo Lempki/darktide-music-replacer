@@ -412,7 +412,7 @@ local DEBOUNCE_SECONDS = 0.6
 -- A pending change commits after this long anyway.
 local MAX_DEBOUNCE_SECONDS = 3
 
--- Leaving the hub reports a loading screen for about 2 seconds before the preparation screen.
+-- Leaving the hub reports a loading screen for 1 to 2 seconds before the preparation screen.
 -- So a change to a loading context waits LOADING_DEBOUNCE_SECONDS, and the hub song carries on into the preparation screen's.
 -- The briefing after the preparation screen takes the normal wait, since nothing that brief comes between them.
 -- A level reached from a loading screen can start an intro or a cutscene a moment later, as the prologue does.

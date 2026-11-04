@@ -1,7 +1,8 @@
 -- Remembers where a context's song stopped, so the song continues when that context returns.
 -- A new song is picked only once one ends on its own.
 -- Every loading screen forgets everything, so each mission and hub visit starts with fresh picks.
--- The one exception is a Mission Briefing song that the mission preparation screen interrupts, which continues in the briefing after it.
+-- The one exception: a Mission Briefing song that starts on the loading screen before the preparation screen continues in the briefing.
+-- The game reports a brief loading state between the preparation screen and the briefing, which players do not see as a loading screen.
 
 local ResumePoints = {}
 

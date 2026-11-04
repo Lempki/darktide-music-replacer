@@ -300,8 +300,10 @@ local strings = {
 	},
 	source_mission_briefing_tooltip = {
 		en = source_tooltip(
-			"on the loading screens and the briefing on the way into a mission, also when joining a mission in progress",
-			"The intro itself keeps the game's music. With Resume Songs on, a song interrupted by the preparation screen continues in the briefing."
+			"on the loading screen before the preparation screen and in the briefing on the way into a mission, " ..
+				"and on the loading screen when joining a mission in progress",
+			"The intro itself keeps the game's music. " ..
+				"With Resume Songs on, a song that starts on the loading screen before the preparation screen continues in the briefing after it."
 		),
 	},
 	source_explore = {
