@@ -4,6 +4,8 @@ What changes for players in each release of Music Replacer. The format follows [
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-06
+
 ### Features
 
 * A Next Song key, in the new Playback Controls group of the mod options, crossfades to another song from the folder playing now and shows the song's name. In a folder with only one song, it keeps that song playing, or resumes it while it is paused, and says so. It starts unbound.
@@ -38,5 +40,6 @@ What changes for players in each release of Music Replacer. The format follows [
 
 First public release.
 
-[Unreleased]: https://github.com/Lempki/darktide-music-replacer/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/Lempki/darktide-music-replacer/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/Lempki/darktide-music-replacer/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Lempki/darktide-music-replacer/releases/tag/v1.0.0
