@@ -9,7 +9,7 @@ Fixes for common problems, how to report one, and what the mod writes where.
 * **One file never plays.** Windows cannot decode it. Convert it to another supported format. The mod picks up the new file by itself.
 * **A situation plays the game's music although its folder has songs.** Turn on Debug Overlay and read the tag beside the situation. `Vanilla` means the situation is set to Vanilla. `Vanilla, no songs` means the mod found no playable file in that folder. `Vanilla, its songs would not play` means three songs in a row failed. `Vanilla, no audio output` means Windows audio is not available, or the mod gave up on it after repeated failures.
 * **Changed files are not picked up.** The mod lists the folders again 3 seconds after files stop changing. On a drive where Windows cannot report changes, such as some network drives, press Rescan Audio Folders.
-* **The music fades out while another program plays audio.** Windows fades the mod's music out while Windows Media Player plays anything, and fades it back in once Media Player stops or closes. Spotify does not do this. Other programs have not been tested, so if another one fades the music too, [open an issue](https://github.com/Lempki/darktide-music-replacer/issues) that names it.
+* **The music fades out while another program plays audio.** Windows fades the mod's music out while Windows Media Player plays anything, and fades it back in once Media Player stops or closes. Spotify does not do this. Other programs have not been tested, so if another one fades the music too, name it in [this issue](https://github.com/Lempki/darktide-music-replacer/issues/4).
 
 ## Reporting a problem
 
