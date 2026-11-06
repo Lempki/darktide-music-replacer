@@ -51,7 +51,7 @@ local strings = {
 	},
 	resume_songs_tooltip = {
 		en = "Explore, combat, Mortis Trials, and Expedition fight and safe room songs continue where they stopped when their music comes back.\n\n" ..
-			"Horde, boss, and event songs also continue after an interruption, as long as that horde, fight, or event lasts. " ..
+			"Horde, boss, and event songs also continue after an interruption, as long as that horde, boss fight, or event lasts. " ..
 			"Every mission and hub visit starts with fresh songs.",
 	},
 

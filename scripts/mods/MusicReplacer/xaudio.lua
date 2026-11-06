@@ -47,6 +47,7 @@ local XAUDIO2_VOICE_NOSAMPLESPLAYED = 0x100
 
 -- AudioCategory_GameMedia, the category Microsoft gives game music.
 -- Microsoft documents that Windows then mutes it while another application plays music in the background.
+-- In game, Windows Media Player fades it out and back in, and Spotify leaves it alone.
 local AUDIO_CATEGORY_GAME_MEDIA = 7
 
 -- The formats XAudio2 can play. A voice for anything else is always refused, whatever state the engine is in.
