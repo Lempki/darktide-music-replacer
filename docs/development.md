@@ -129,7 +129,8 @@ darktide-music-replacer/
 │   ├── contexts.lua                     # The catalog of contexts: their settings group, silencing, priorities, resume rules, and loading screens.
 │   ├── context.lua                      # Tracks Wwise music state and boss encounters, resolves one context string.
 │   ├── suppression.lua                  # Silences the game's music while a custom track plays.
-│   ├── library.lua                      # Keeps each context's file list and picks a file for a context.
+│   ├── library.lua                      # Keeps each context's file list, and checks which files can play.
+│   ├── playlist.lua                     # Picks each folder's next song, and keeps the songs Previous Song and Next Song move between.
 │   ├── audio_folders.lua                # Lists, checks, and creates the audio folders through Windows, and measures durations.
 │   ├── resume_points.lua                # Remembers where interrupted songs stopped, until the next loading screen.
 │   ├── removed_songs.lua                # Keeps the songs removed from rotation in removed.txt, which the library leaves out.

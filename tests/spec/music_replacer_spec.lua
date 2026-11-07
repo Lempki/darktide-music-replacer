@@ -1415,6 +1415,44 @@ describe("MusicReplacer.lua the Previous Song key", function()
 		assert_equal(harness:last_on_screen_message(), "<control_previous_song: a.mp3>")
 	end)
 
+	it("lets Next Song return to the songs it went back past, then go on to a new one", function()
+		local harness = in_hub(THREE_HUB_SONGS)
+		press(harness, "next_song")
+		press(harness, "previous_song")
+		assert_equal(harness:playing(), "hub/a.mp3")
+
+		press(harness, "next_song")
+		assert_equal(harness:playing(), "hub/b.mp3")
+		assert_equal(harness:last_on_screen_message(), "<control_next_song: b.mp3>")
+
+		press(harness, "next_song")
+		assert_equal(harness:playing(), "hub/c.mp3")
+	end)
+
+	it("returns to a song it went back past when the song playing now ends by itself", function()
+		local harness = in_hub(THREE_HUB_SONGS)
+		press(harness, "next_song")
+		press(harness, "next_song")
+		press(harness, "previous_song")
+		press(harness, "previous_song")
+		assert_equal(harness:playing(), "hub/a.mp3")
+
+		harness:finish_song(200, false)
+
+		assert_equal(harness:playing(), "hub/b.mp3")
+	end)
+
+	it("starts a new situation with no songs to return to", function()
+		local harness = in_hub(THREE_HUB_SONGS)
+		press(harness, "next_song")
+		press(harness, "previous_song")
+
+		harness:set_setting("source_hub", "game")
+		harness:set_setting("source_hub", "custom")
+
+		assert_equal(harness:playing(), "hub/c.mp3")
+	end)
+
 	it("goes back to the song that played through before the song playing now", function()
 		local harness = in_hub()
 		harness:finish_song(200, false)

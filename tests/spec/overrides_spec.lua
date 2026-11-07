@@ -295,7 +295,7 @@ describe("library.lua override folders", function()
 		})
 
 		assert_equal(Library.has_files("boss/chaos_spawn"), true)
-		assert_equal(Library.pick_file("boss/chaos_spawn"), "boss/chaos_spawn/spawn.mp3")
+		assert_equal(Library.usable_entries("boss/chaos_spawn")[1].file_path, "boss/chaos_spawn/spawn.mp3")
 		assert_equal(lines[1]:find("boss=1 boss/chaos_spawn=1", 1, true) ~= nil, true, lines[1])
 	end)
 
@@ -304,7 +304,7 @@ describe("library.lua override folders", function()
 
 		assert_equal(Library.has_files("event/escape_event"), false)
 		assert_equal(Library.has_files("event/kill_event"), false)
-		assert_equal(Library.pick_file("event/escape_event"), nil)
+		assert_equal(Library.usable_entries("event/escape_event"), nil)
 	end)
 
 	it("passes override files on with every listing, after their context's own files", function()

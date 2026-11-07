@@ -8,7 +8,7 @@
 -- Every file's duration is measured in the background, one file per update, so a large library never stalls a frame for long.
 -- A file Windows cannot open while it is measured is left out of the picks until it changes or Rescan Audio Folders.
 -- So it cannot use up the caller's retries.
--- A file deleted after a listing is still listed until the next one, so pick_file() checks that a file exists before returning it.
+-- A file deleted after a listing is still listed until the next one, so usable_entries() checks that a file exists before returning it.
 -- Where Windows cannot watch the folders, as on some network drives, only the Rescan Audio Folders button lists them again.
 -- A missing or empty folder resolves to nil here, which is the caller's signal to fall back to the game's music.
 -- Every listing is passed on to the Library.on_listed listeners, which is how the loudness measurements learn of changed files.
@@ -43,7 +43,6 @@ local watcher = nil
 local quiet_seconds = nil -- Seconds since the last change Windows reported, or nil while none waits for a listing.
 local lists = {} -- folder key, a context name or "context/override", -> file paths, each starting with that key.
 local override_folders = {} -- context_name -> its override folder keys, sorted.
-local last_picked = {} -- context_name -> the file path most recently returned.
 local reported_missing = {} -- file_path -> true once a missing file has been logged.
 local unplayable = {} -- file_path -> true once Windows could not open the file.
 local stamps = {} -- file_path -> its size and write time at the last listing.
@@ -200,7 +199,7 @@ function Library.init(logger, audio_folders, options)
 	end
 
 	if not (audio_folders and audio_folders.available()) then
-		return -- Without a way to list the folders, pick_file() returns nil, so the game's music plays.
+		return -- Without a way to list the folders, no folder has songs, so the game's music plays.
 	end
 	AudioFolders = audio_folders
 
@@ -325,8 +324,10 @@ function Library.has_files(folder_key)
 	return false
 end
 
--- The context's listed entries that still exist on disk, or nil when there are none.
-local function usable_entries(context_name)
+-- The folder's listed songs that Windows can play and that still exist on disk, as { file_path, duration } entries, in listing order.
+-- Nil means the folder is missing, empty or not yet listed, or no listed file exists any more.
+-- duration is nil until the file has been measured, or when it could not be.
+function Library.usable_entries(context_name)
 	local file_paths = lists[context_name]
 	if not file_paths or #file_paths == 0 then
 		return nil
@@ -353,39 +354,6 @@ local function usable_entries(context_name)
 	return usable
 end
 
--- `entries` without `file_path`, or `entries` itself when that would leave none.
-local function without_file(entries, file_path)
-	local kept = {}
-	for _, entry in ipairs(entries) do
-		if entry.file_path ~= file_path then
-			kept[#kept + 1] = entry
-		end
-	end
-	return #kept > 0 and kept or entries
-end
-
--- Returns file_path, duration_seconds and is_only_file, or nil if no file is available.
--- Nil means the folder is missing, empty or not yet listed, or no listed file exists any more.
--- The caller should fall back to the game's music on nil.
--- duration is nil until the file has been measured, or when it could not be.
--- is_only_file flags a folder with exactly one usable file, which loops.
--- With two or more usable files, the pick is random and never `playing`, the song that plays now.
--- It is also never the file returned last time, as long as another file is left.
--- A resumed song is found rather than picked, so `playing` is what keeps a pick from starting it over.
-function Library.pick_file(context_name, playing)
-	local usable = usable_entries(context_name)
-	if not usable then
-		return nil
-	end
-
-	local pool = without_file(without_file(usable, playing), last_picked[context_name])
-	local picked = pool[math.random(1, #pool)]
-
-	last_picked[context_name] = picked.file_path
-
-	return picked.file_path, picked.duration, #usable == 1
-end
-
 -- The path of a picked file on disk, relative to the game's working directory.
 function Library.disk_path(file_path)
 	return AUDIO_ROOT .. "/" .. file_path
@@ -403,10 +371,11 @@ function Library.same_song(file_path, other_path)
 	return size ~= nil and size == other_size and file_path:match("[^/]+$") == other_path:match("[^/]+$")
 end
 
--- Returns the same values as pick_file() for one specific file, or nil if the context no longer has it.
+-- Returns file_path, duration_seconds, and is_only_file for one specific file, or nil if the context no longer has it.
+-- is_only_file flags a folder with exactly one usable file, which loops.
 -- Before a song resumes, a rescan can remove it or change its folder's files.
 function Library.find_file(context_name, file_path)
-	local usable = usable_entries(context_name)
+	local usable = Library.usable_entries(context_name)
 	if not usable then
 		return nil
 	end

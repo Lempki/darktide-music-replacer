@@ -5,6 +5,7 @@ local Contexts = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/context
 local Context = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/context")
 local Suppression = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/suppression")
 local Library = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/library")
+local Playlist = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/playlist")
 local RemovedSongs = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/removed_songs")
 local ResumePoints = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/resume_points")
 local EventProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/event_probe")
@@ -65,9 +66,6 @@ local emptied = {}
 
 -- The custom track AudioClient was last asked to play, so a context change can remember where it stopped.
 local playing_track = nil -- Its fields are context_name, file_path, duration, is_only_file, and position, its last known position.
-
--- The songs that played earlier in the current situation, oldest first, which the Previous Song key goes back through.
-local played_before = {}
 
 -- True while the Pause / Resume key holds the song in playing_track, at its `position`.
 -- AudioClient has stopped it, but the game's music stays silenced, so the situation is quiet until the song resumes.
@@ -175,7 +173,7 @@ local function folder_for(context_name)
 	return folders_for(context_name)[1]
 end
 
--- The remembered song if `folder` still has that file, else a new pick from Library.pick_file().
+-- The remembered song if `folder` still has that file, else the next song from Playlist.next().
 -- Returns file_path, duration, is_only_file, and the start position of a resumed song.
 -- A song is resumed only from the folder it played from, so a resume point from another folder gives way to a new pick.
 local function choose_file(folder, resume_path, resume_position)
@@ -186,7 +184,7 @@ local function choose_file(folder, resume_path, resume_position)
 		end
 	end
 
-	return Library.pick_file(folder, playing_track and playing_track.file_path)
+	return Playlist.next(folder, playing_track and playing_track.file_path)
 end
 
 -- Stops any custom song and hands the music back to the game.
@@ -265,7 +263,7 @@ local function track_opts(context_name, folder, track)
 
 			-- A file that could not play is left out, so Previous Song never goes back to it.
 			if not failed then
-				played_before[#played_before + 1] = track.file_path
+				Playlist.add_played(track.file_path)
 			end
 
 			play_context(context_name, false)
@@ -295,7 +293,7 @@ play_context = function(context_name, is_new_context)
 		remember_playing_track(context_name)
 		ResumePoints.enter(context_name)
 		-- Previous Song stays within one situation, and a switch to an override folder or a replay starts the situation afresh too.
-		played_before = {}
+		Playlist.forget_history()
 	end
 
 	-- Whatever the context plays now replaces a paused song.
@@ -567,18 +565,6 @@ local function restart_playing_song()
 	notify_control("control_restart_song", song_name(playing_track.file_path))
 end
 
--- The latest earlier song of this situation that its folder still holds, taken off the list, or nil.
--- Songs a rescan removed since they played are passed over.
-local function take_previous_song()
-	while #played_before > 0 do
-		local file_path, duration, is_only_file = Library.find_file(current_folder, table.remove(played_before))
-		if file_path then
-			return file_path, duration, is_only_file
-		end
-	end
-	return nil
-end
-
 -- Plays the paused song on from where it stopped.
 local function resume_paused_song()
 	play_manual_pick(playing_track.file_path, playing_track.duration, playing_track.is_only_file, playing_track.position)
@@ -609,14 +595,14 @@ mod.next_song = function()
 		return
 	end
 
-	local file_path, duration, is_only_file = Library.pick_file(current_folder, playing_track.file_path)
+	local file_path, duration, is_only_file = Playlist.next(current_folder, playing_track.file_path)
 	if not file_path then
 		say_no_song("next song")
 		return
 	end
 
 	log(string.format("[control] %s: next song", current_context))
-	played_before[#played_before + 1] = playing_track.file_path
+	Playlist.add_played(playing_track.file_path)
 	play_manual_pick(file_path, duration, is_only_file)
 	notify_control("control_next_song", song_name(file_path))
 end
@@ -635,7 +621,6 @@ end
 local PREVIOUS_SONG_SECONDS = 3
 
 -- The Previous Song key: goes back to the song that played before in this situation, or starts the song playing now over.
--- Going back does not add the song it leaves to the list, so pressing it again keeps going back.
 mod.previous_song = function()
 	if not has_song_to_control() then
 		say_no_song("previous song")
@@ -644,7 +629,7 @@ mod.previous_song = function()
 
 	local file_path, duration, is_only_file = nil, nil, nil
 	if song_position() < PREVIOUS_SONG_SECONDS then
-		file_path, duration, is_only_file = take_previous_song()
+		file_path, duration, is_only_file = Playlist.previous(current_folder, playing_track.file_path)
 	end
 
 	if not file_path then
@@ -711,7 +696,7 @@ local function remove_playing_song()
 	local label = folder_label()
 
 	-- The situation plays again at once, even while a change is still settling, so the removed song never plays on.
-	local next_path, duration, is_only_file = Library.pick_file(current_folder, file_path)
+	local next_path, duration, is_only_file = Playlist.next(current_folder, file_path)
 	if next_path then
 		play_manual_pick(next_path, duration, is_only_file)
 	else
@@ -877,6 +862,7 @@ EventProbe.init(log_detail)
 MissionProbe.init(log)
 Context.on_mission_change(MissionProbe.on_mission_change)
 ResumePoints.init(mod)
+Playlist.init({ usable_entries = Library.usable_entries, find_file = Library.find_file })
 Context.on_state_change(Suppression.on_state_change)
 Context.on_state_change(ResumePoints.on_state_change)
 Context.init(mod, log_detail, log)

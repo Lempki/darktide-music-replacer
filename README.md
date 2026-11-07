@@ -39,7 +39,7 @@ Everything below is optional detail.
 ## What it does
 
 * Plays your songs by situation: the title screen, character select, the hub, loading screens, exploring, combat, hordes, bosses, events, last stands, victory, defeat, Mortis Trials, Expeditions, and Meat Grinder.
-* Picks a random song from a folder with several, never the one that just played.
+* Plays a folder's songs in a random order, each once before any song repeats.
 * Loops a folder's only song seamlessly, with no gap added between its end and its start.
 * Keeps a folder's only song playing when the next situation's folder also holds only that song, instead of starting it over.
 * Crossfades when the situation changes, and fades a song out at its end.

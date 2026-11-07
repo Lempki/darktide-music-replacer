@@ -4,6 +4,11 @@ What changes for players in each release of Music Replacer. The format follows [
 
 ## [Unreleased]
 
+### Changes
+
+* A folder plays each of its songs once before any song repeats, instead of only avoiding the song that just played.
+* Next Song returns to the songs Previous Song went back past before it moves on to a new one, and so does a song that ends by itself.
+
 ### Fixes
 
 * Windows no longer fades your music out while Windows Media Player plays.

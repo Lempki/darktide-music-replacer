@@ -67,6 +67,15 @@ local function new_audio_folders(disk, lengths, missing, broken)
 	return folders
 end
 
+-- The folder's first usable song as file_path, duration, and is_only_file, or nil.
+local function first_file(Library, folder_key)
+	local entries = Library.usable_entries(folder_key)
+	if not entries then
+		return nil
+	end
+	return entries[1].file_path, entries[1].duration, #entries == 1
+end
+
 -- Returns a library.lua that has listed `disk`, the fake folders, and the logged lines.
 local function listed_library(disk, lengths, missing, broken)
 	local engine = FakeEngine.new()
@@ -114,7 +123,7 @@ describe("library.lua listing", function()
 	it("lists every folder on the first update, and logs how many files each has", function()
 		local Library, _, lines = listed_library({ hub = { "a.mp3" }, boss = { "b.mp3", "c.mp3" } })
 
-		assert_equal(Library.pick_file("hub"), "hub/a.mp3")
+		assert_equal(first_file(Library, "hub"), "hub/a.mp3")
 		assert_equal(lines[1]:find("[library] listed the audio folders: title_screen=0 character_select=0 hub=1 ", 1, true) ~= nil, true, lines[1])
 		assert_equal(lines[1]:find("boss=2", 1, true) ~= nil, true, lines[1])
 	end)
@@ -144,7 +153,7 @@ describe("library.lua listing", function()
 		Library.init(nil, new_audio_folders({ title_screen = { "t.mp3" } }, {}))
 
 		assert_equal(Library.update(0.016), true)
-		assert_equal(Library.pick_file("title_screen"), "title_screen/t.mp3")
+		assert_equal(first_file(Library, "title_screen"), "title_screen/t.mp3")
 		assert_equal(Library.update(0.016), false)
 	end)
 
@@ -178,7 +187,7 @@ describe("library.lua listing", function()
 		local Library = engine:load("library")
 		Library.init(nil, new_audio_folders({ hub = { "a.mp3" } }, {}))
 
-		assert_equal(Library.pick_file("hub"), nil)
+		assert_equal(first_file(Library, "hub"), nil)
 	end)
 
 	it("lists nothing without a working audio_folders.lua", function()
@@ -187,7 +196,7 @@ describe("library.lua listing", function()
 		Library.init(nil, { available = function() return false end })
 		Library.update(0.016)
 
-		assert_equal(Library.pick_file("hub"), nil)
+		assert_equal(first_file(Library, "hub"), nil)
 		assert_equal(Library.update(0.016), false)
 	end)
 
@@ -196,11 +205,11 @@ describe("library.lua listing", function()
 			{ hub = { "a.mp3" }, combat = { "b.mp3" } },
 			{ ["hub/a.mp3"] = 245.5, ["combat/b.mp3"] = 120 }
 		)
-		assert_deep_equal({ Library.pick_file("hub") }, { "hub/a.mp3", nil, true })
+		assert_deep_equal({ first_file(Library, "hub") }, { "hub/a.mp3", nil, true })
 
 		Library.update(0.016)
 		assert_deep_equal(folders.measured, { "hub/a.mp3" })
-		assert_deep_equal({ Library.pick_file("hub") }, { "hub/a.mp3", 245.5, true })
+		assert_deep_equal({ first_file(Library, "hub") }, { "hub/a.mp3", 245.5, true })
 
 		Library.update(0.016)
 		assert_deep_equal(folders.measured, { "hub/a.mp3", "combat/b.mp3" })
@@ -212,7 +221,7 @@ describe("library.lua listing", function()
 
 		Library.update(0.016)
 
-		assert_deep_equal({ Library.pick_file("hub") }, { "hub/a.mp3", nil, true })
+		assert_deep_equal({ first_file(Library, "hub") }, { "hub/a.mp3", nil, true })
 	end)
 
 	it("skips a file Windows cannot open once it is measured, and logs why once", function()
@@ -225,7 +234,7 @@ describe("library.lua listing", function()
 		Library.update(0.016)
 
 		for _ = 1, 10 do
-			assert_deep_equal({ Library.pick_file("hub") }, { "hub/good.mp3", nil, true })
+			assert_deep_equal({ first_file(Library, "hub") }, { "hub/good.mp3", nil, true })
 		end
 		assert_equal(Library.find_file("hub", "hub/bad.mp3"), nil)
 
@@ -241,22 +250,22 @@ describe("library.lua listing", function()
 	it("returns nil when Windows can open none of a folder's files, so the game's music plays", function()
 		local Library = listed_library({ hub = { "bad.mp3" } }, {}, {}, { ["hub/bad.mp3"] = "unsupported" })
 
-		assert_equal(Library.pick_file("hub"), "hub/bad.mp3")
+		assert_equal(first_file(Library, "hub"), "hub/bad.mp3")
 		Library.update(0.016)
-		assert_equal(Library.pick_file("hub"), nil)
+		assert_equal(first_file(Library, "hub"), nil)
 	end)
 
 	it("tries a skipped file again on a rescan, in case it was replaced", function()
 		local Library, folders = listed_library({ hub = { "a.mp3" } }, { ["hub/a.mp3"] = 100 }, {}, { ["hub/a.mp3"] = "unsupported" })
 		Library.update(0.016)
-		assert_equal(Library.pick_file("hub"), nil)
+		assert_equal(first_file(Library, "hub"), nil)
 
 		folders.broken = {}
 		Library.request_rescan()
 		Library.update(0.016)
 		Library.update(0.016)
 
-		assert_deep_equal({ Library.pick_file("hub") }, { "hub/a.mp3", 100, true })
+		assert_deep_equal({ first_file(Library, "hub") }, { "hub/a.mp3", 100, true })
 	end)
 
 	it("picks up an added file on a rescan, and measures every file again", function()
@@ -353,7 +362,7 @@ describe("library.lua watching the folders", function()
 		Library.update(0.016)
 
 		assert_equal(lines[1], "[library] Windows cannot report changes in the audio folders, so changed files need Rescan Audio Folders")
-		assert_equal(Library.pick_file("hub"), "hub/a.mp3")
+		assert_equal(first_file(Library, "hub"), "hub/a.mp3")
 		assert_equal(Library.update(5), false)
 	end)
 
@@ -370,60 +379,9 @@ describe("library.lua file selection", function()
 	it("returns nil for an empty or missing folder, and for a context it does not know", function()
 		local Library = listed_library({ hub = {} })
 
-		assert_equal(Library.pick_file("hub"), nil)
-		assert_equal(Library.pick_file("horde"), nil)
-		assert_equal(Library.pick_file("not_a_context"), nil)
-	end)
-
-	it("never picks the same file twice in a row when there is a choice", function()
-		math.randomseed(1)
-		local Library = listed_library({ combat = { "a.mp3", "b.mp3", "c.mp3" } })
-		local previous = Library.pick_file("combat")
-
-		for _ = 1, 50 do
-			local file_path, _, is_only_file = Library.pick_file("combat")
-
-			assert_equal(file_path ~= previous, true, "picked " .. file_path .. " twice in a row")
-			assert_equal(is_only_file, false)
-			previous = file_path
-		end
-	end)
-
-	it("never picks the song playing now, even a resumed one that was not the last pick", function()
-		local Library = listed_library({ hub = { "a.mp3", "b.mp3" } })
-		local first = Library.pick_file("hub")
-		local resumed = first == "hub/a.mp3" and "hub/b.mp3" or "hub/a.mp3"
-
-		assert_equal(Library.pick_file("hub", resumed), first)
-	end)
-
-	it("avoids both the song playing now and the last pick when a third file is left", function()
-		math.randomseed(1)
-		local Library = listed_library({ hub = { "a.mp3", "b.mp3", "c.mp3" } })
-
-		for _ = 1, 20 do
-			local last = Library.pick_file("hub")
-			local playing = last == "hub/a.mp3" and "hub/b.mp3" or "hub/a.mp3"
-			local file_path = Library.pick_file("hub", playing)
-			assert_equal(file_path ~= playing and file_path ~= last, true, "picked " .. file_path)
-		end
-	end)
-
-	it("still picks a folder's only song while it plays", function()
-		local Library = listed_library({ hub = { "a.mp3" } })
-
-		assert_deep_equal({ Library.pick_file("hub", "hub/a.mp3") }, { "hub/a.mp3", nil, true })
-	end)
-
-	it("alternates between two files", function()
-		local Library = listed_library({ hub = { "a.mp3", "b.mp3" } })
-		local picks = {}
-
-		for index = 1, 4 do
-			picks[index] = Library.pick_file("hub")
-		end
-
-		assert_equal(picks[1] ~= picks[2] and picks[1] == picks[3] and picks[2] == picks[4], true, table.concat(picks, ", "))
+		assert_equal(first_file(Library, "hub"), nil)
+		assert_equal(first_file(Library, "horde"), nil)
+		assert_equal(first_file(Library, "not_a_context"), nil)
 	end)
 
 	it("skips a listed file that has since been deleted, whatever its name, and logs it once", function()
@@ -432,7 +390,7 @@ describe("library.lua file selection", function()
 		missing["hub/Mötley.mp3"] = true
 
 		for _ = 1, 10 do
-			assert_deep_equal({ Library.pick_file("hub") }, { "hub/kept.mp3", nil, true })
+			assert_deep_equal({ first_file(Library, "hub") }, { "hub/kept.mp3", nil, true })
 		end
 
 		local missing_lines = 0
@@ -447,7 +405,7 @@ describe("library.lua file selection", function()
 	it("returns nil when every listed file is missing on disk", function()
 		local Library = listed_library({ hub = { "gone.mp3" } }, {}, { ["hub/gone.mp3"] = true })
 
-		assert_equal(Library.pick_file("hub"), nil)
+		assert_equal(first_file(Library, "hub"), nil)
 	end)
 
 	it("finds a specific file with the same values as a pick, or nil once the folder no longer has it", function()
@@ -455,15 +413,6 @@ describe("library.lua file selection", function()
 
 		assert_deep_equal({ Library.find_file("explore", "explore/b.mp3") }, { "explore/b.mp3", nil, false })
 		assert_equal(Library.find_file("explore", "explore/gone.mp3"), nil)
-	end)
-
-	it("does not change which file pick_file avoids next when finding one", function()
-		local Library = listed_library({ hub = { "a.mp3", "b.mp3" } })
-		local first = Library.pick_file("hub")
-
-		Library.find_file("hub", first == "hub/a.mp3" and "hub/b.mp3" or "hub/a.mp3")
-
-		assert_equal(Library.pick_file("hub") ~= first, true)
 	end)
 end)
 
@@ -484,7 +433,7 @@ describe("library.lua songs removed from rotation", function()
 		local Library, folders, listings = library_with_removed({ hub = { "a.mp3", "b.mp3" } }, { ["hub/a.mp3"] = true })
 
 		for _ = 1, 5 do
-			assert_equal(Library.pick_file("hub"), "hub/b.mp3")
+			assert_equal(first_file(Library, "hub"), "hub/b.mp3")
 		end
 		assert_equal(Library.find_file("hub", "hub/a.mp3"), nil)
 		assert_equal(#listings[1], 1)
@@ -499,7 +448,7 @@ describe("library.lua songs removed from rotation", function()
 		local Library = library_with_removed({ hub = { "a.mp3" } }, { ["hub/a.mp3"] = true })
 
 		assert_equal(Library.has_files("hub"), false)
-		assert_equal(Library.pick_file("hub"), nil)
+		assert_equal(first_file(Library, "hub"), nil)
 	end)
 
 	it("takes a removed song out of its folder at once, before the next listing", function()
@@ -508,7 +457,7 @@ describe("library.lua songs removed from rotation", function()
 		Library.remove_file("hub/a.mp3")
 
 		for _ = 1, 5 do
-			assert_equal(Library.pick_file("hub"), "hub/b.mp3")
+			assert_equal(first_file(Library, "hub"), "hub/b.mp3")
 		end
 	end)
 

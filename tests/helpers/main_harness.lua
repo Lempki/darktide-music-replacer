@@ -1,6 +1,7 @@
 -- Loads MusicReplacer.lua, the main file, with its real context, suppression, and resume logic.
 -- The library, audio client, loudness, debug overlay, on-screen message, log, and Windows modules underneath are stand-ins.
--- removed_songs.lua runs as it is.
+-- removed_songs.lua and playlist.lua run as they are, with playlist.lua always drawing the first song left.
+-- So a folder plays in order, and the specs know which file comes next.
 -- It borrows context_harness.lua's sequences, so the specs set the music states in the game's real order.
 -- Time only passes through wait() and tick(), which call the mod's own update.
 
@@ -12,11 +13,9 @@ MainHarness.__index = MainHarness
 
 -- A stand-in for library.lua over `files`, which maps a folder key to a list of { name, duration }.
 -- A folder key is a context, or an override folder inside it, such as "boss/chaos_spawn".
--- Picks go through each folder in order, so the specs know which file comes next.
 local function new_library(files)
 	-- `gone` marks a folder whose files the listing still has but which are gone from disk, so nothing can be picked.
 	local library = { files = files, rescan_requested = false, listed_listeners = {}, gone = {}, removed_files = {} }
-	local last_index = {}
 	local is_removed = function() return false end
 
 	function library.init(_, _, options)
@@ -50,19 +49,17 @@ local function new_library(files)
 		return rescanned
 	end
 
-	-- Picks the folder's files in turn, passing over `playing` like the real library does.
-	function library.pick_file(context_name, playing)
-		local list = listed(context_name)
-		if #list == 0 or library.gone[context_name] then
+	function library.usable_entries(folder_key)
+		local list = listed(folder_key)
+		if #list == 0 or library.gone[folder_key] then
 			return nil
 		end
 
-		local index = (last_index[context_name] or 0) % #list + 1
-		if #list > 1 and context_name .. "/" .. list[index].name == playing then
-			index = index % #list + 1
+		local entries = {}
+		for index, entry in ipairs(list) do
+			entries[index] = { file_path = folder_key .. "/" .. entry.name, duration = entry.duration }
 		end
-		last_index[context_name] = index
-		return context_name .. "/" .. list[index].name, list[index].duration, #list == 1
+		return entries
 	end
 
 	-- Copies of one song share a name and a size, which an entry's `size` stands in for, 1 by default.
@@ -90,6 +87,19 @@ local function new_library(files)
 	end
 
 	return library
+end
+
+-- The real playlist.lua, in a fresh copy for each harness, which always draws the first song left.
+local function new_playlist()
+	local playlist = dofile(package.searchpath("scripts/mods/MusicReplacer/playlist", package.path))
+	local init = playlist.init
+
+	function playlist.init(options)
+		options.random = function(first) return first end
+		init(options)
+	end
+
+	return playlist
 end
 
 -- A stand-in for audio_client.lua that records every play and stop, and the volume levels it was given.
@@ -254,6 +264,7 @@ function MainHarness.new(options)
 		metadata = { version = "0.0.0" },
 		modules = {
 			library = library,
+			playlist = new_playlist(),
 			audio_client = client.module,
 			loudness = loudness,
 			debug_overlay = overlay,
