@@ -4,6 +4,11 @@ What changes for players in each release of Music Replacer. The format follows [
 
 ## [Unreleased]
 
+### Features
+
+* A Shuffle setting, on by default, in the Playback group. Turned off, each folder plays in the order File Explorer sorts it by name, and continues after the song it played last. Previous Song then goes to the song before in that order, and from the first song to the last.
+* A Toggle Shuffle key turns Shuffle on or off, and the message says which. It starts unbound.
+
 ### Changes
 
 * A folder plays each of its songs once before any song repeats, instead of only avoiding the song that just played.

@@ -46,6 +46,13 @@ local strings = {
 			"A switch to the game's music or to silence always takes half a second.\n\n" ..
 			"Set to " .. highlight("0") .. " to switch at once.",
 	},
+	shuffle = {
+		en = "Shuffle",
+	},
+	shuffle_tooltip = {
+		en = "Plays each folder's songs in a random order, each once before any song repeats.\n\n" ..
+			"Turned off, each folder plays in the order File Explorer sorts it by name, and continues after the song it played last.",
+	},
 	resume_songs = {
 		en = "Resume Songs",
 	},
@@ -109,6 +116,12 @@ local strings = {
 	},
 	restore_removed_songs_tooltip = {
 		en = "Puts every song that Remove from Rotation took out back into its folder's rotation, and a message says how many came back.",
+	},
+	shuffle_keybind = {
+		en = "Toggle Shuffle",
+	},
+	shuffle_keybind_tooltip = {
+		en = "Turns Shuffle on or off, and the message says which.",
 	},
 	key_fade_seconds = {
 		en = "Key Fade Length",
@@ -251,6 +264,12 @@ local strings = {
 	},
 	control_nothing_removed = {
 		en = "No songs are removed",
+	},
+	control_shuffle_on = {
+		en = "Shuffle on",
+	},
+	control_shuffle_off = {
+		en = "Shuffle off",
 	},
 
 	music_per_situation = {

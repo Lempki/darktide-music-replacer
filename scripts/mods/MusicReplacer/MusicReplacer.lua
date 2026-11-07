@@ -730,6 +730,15 @@ mod.remove_song = function()
 	end
 end
 
+-- The Toggle Shuffle key. It changes the setting itself, so the mod options show the new choice and it lasts.
+-- It works whatever plays, since it only decides what the next pick does.
+mod.toggle_shuffle = function()
+	local is_on = not mod:get("shuffle")
+	mod:set("shuffle", is_on, true)
+	log(string.format("[control] shuffle %s", is_on and "on" or "off"))
+	notify_control(is_on and "control_shuffle_on" or "control_shuffle_off")
+end
+
 -- The Restore Removed Songs button. Listing the folders again brings the songs back into every rotation.
 mod.restore_removed_songs = function()
 	local count = RemovedSongs.clear()
@@ -863,6 +872,7 @@ MissionProbe.init(log)
 Context.on_mission_change(MissionProbe.on_mission_change)
 ResumePoints.init(mod)
 Playlist.init({ usable_entries = Library.usable_entries, find_file = Library.find_file })
+Playlist.set_shuffle(mod:get("shuffle"))
 Context.on_state_change(Suppression.on_state_change)
 Context.on_state_change(ResumePoints.on_state_change)
 Context.init(mod, log_detail, log)
@@ -1007,6 +1017,8 @@ mod.on_setting_changed = function(setting_id)
 		Loudness.set_enabled(mod:get("normalize_loudness"))
 		AudioClient.refresh_levels()
 		log(string.format("[loudness] evening out turned %s", mod:get("normalize_loudness") and "on" or "off"))
+	elseif setting_id == "shuffle" then
+		Playlist.set_shuffle(mod:get("shuffle"))
 	elseif setting_id == "resume_songs" and not mod:get("resume_songs") then
 		ResumePoints.forget_all()
 	elseif enabled and current_context and setting_id == "source_" .. current_context then

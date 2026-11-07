@@ -52,6 +52,7 @@ typedef struct {
 	uint16_t cAlternateFileName[14];
 } MusicReplacer_WIN32_FIND_DATAW;
 
+int32_t MusicReplacer_StrCmpLogicalW(const uint16_t *first, const uint16_t *second) __asm__("StrCmpLogicalW");
 void *MusicReplacer_FindFirstFileW(const uint16_t *pattern, MusicReplacer_WIN32_FIND_DATAW *data) __asm__("FindFirstFileW");
 int32_t MusicReplacer_FindNextFileW(void *find, MusicReplacer_WIN32_FIND_DATAW *data) __asm__("FindNextFileW");
 int32_t MusicReplacer_FindClose(void *find) __asm__("FindClose");
@@ -69,6 +70,7 @@ local CP_UTF8 = 65001
 
 local ole32 = nil
 local kernel32 = nil
+local shlwapi = nil
 local method_types = {}
 local com_ready = false
 local load_error = nil
@@ -126,6 +128,7 @@ function NativeFfi.load()
 
 		ole32 = ffi.load("ole32")
 		kernel32 = ffi.load("kernel32")
+		shlwapi = ffi.load("shlwapi")
 	end)
 
 	if not ok then
@@ -147,6 +150,10 @@ end
 
 function NativeFfi.kernel32()
 	return kernel32
+end
+
+function NativeFfi.shlwapi()
+	return shlwapi
 end
 
 -- CoInitializeEx would change how the game's thread runs COM, so it is never called.

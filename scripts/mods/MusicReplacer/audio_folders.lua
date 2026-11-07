@@ -53,7 +53,21 @@ local function for_each_entry(folder, visit)
 	return true
 end
 
--- The audio files directly inside `folder`, a UTF-8 path, sorted by name. Nil when the folder does not exist.
+-- Sorts `names` as File Explorer does, ignoring case and reading digits as numbers, so "2.mp3" comes before "10.mp3".
+-- With Shuffle off this is the order a folder plays in, so it has to match what the player sees.
+local function sort_like_explorer(names)
+	local wide_names = {}
+	for _, name in ipairs(names) do
+		wide_names[name] = NativeFfi.wide(name)
+	end
+
+	local shlwapi = NativeFfi.shlwapi()
+	table.sort(names, function(first, second)
+		return shlwapi.MusicReplacer_StrCmpLogicalW(wide_names[first], wide_names[second]) < 0
+	end)
+end
+
+-- The audio files directly inside `folder`, a UTF-8 path, sorted by name as File Explorer does. Nil when the folder does not exist.
 -- The second value maps each name to a stamp of its size and write time, which changes whenever the file does.
 function AudioFolders.list(folder)
 	local names = {}
@@ -75,7 +89,7 @@ function AudioFolders.list(folder)
 		return nil
 	end
 
-	table.sort(names)
+	sort_like_explorer(names)
 	return names, stamps
 end
 

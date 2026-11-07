@@ -1392,6 +1392,53 @@ describe("MusicReplacer.lua the Next Song key", function()
 	end)
 end)
 
+describe("MusicReplacer.lua Shuffle", function()
+	local THREE_HUB_SONGS = { hub = { { name = "a.mp3" }, { name = "b.mp3" }, { name = "c.mp3" } } }
+
+	it("wraps Previous Song to the folder's last song with Shuffle off", function()
+		local harness = in_hub(THREE_HUB_SONGS, { settings = { shuffle = false } })
+		assert_equal(harness:playing(), "hub/a.mp3")
+
+		harness.mod.previous_song()
+
+		assert_equal(harness:playing(), "hub/c.mp3")
+	end)
+
+	it("follows the setting from the next song on, and leaves the song playing now alone", function()
+		local harness = in_hub(THREE_HUB_SONGS)
+		local plays = #harness.client.plays
+
+		harness:set_setting("shuffle", false)
+		assert_equal(#harness.client.plays, plays)
+
+		harness.mod.previous_song()
+		assert_equal(harness:playing(), "hub/c.mp3")
+	end)
+
+	it("turns Shuffle off and on with its key, saves the choice, and says which", function()
+		local harness = in_hub(THREE_HUB_SONGS)
+
+		harness.mod.toggle_shuffle()
+		assert_equal(harness.settings.shuffle, false)
+		assert_equal(harness:last_on_screen_message(), "<control_shuffle_off>")
+		harness.mod.previous_song()
+		assert_equal(harness:playing(), "hub/c.mp3")
+
+		harness.mod.toggle_shuffle()
+		assert_equal(harness.settings.shuffle, true)
+		assert_equal(harness:last_on_screen_message(), "<control_shuffle_on>")
+	end)
+
+	it("toggles while no song of yours plays, since it only decides the next pick", function()
+		local harness = in_hub({ hub = {} })
+
+		harness.mod.toggle_shuffle()
+
+		assert_equal(harness.settings.shuffle, false)
+		assert_equal(harness:last_on_screen_message(), "<control_shuffle_off>")
+	end)
+end)
+
 describe("MusicReplacer.lua the Previous Song key", function()
 	local THREE_HUB_SONGS = { hub = { { name = "a.mp3", duration = 200 }, { name = "b.mp3", duration = 180 }, { name = "c.mp3", duration = 160 } } }
 

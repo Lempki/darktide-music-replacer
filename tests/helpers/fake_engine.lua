@@ -93,6 +93,14 @@ local function new_mod(engine)
 		return value
 	end
 
+	-- Like DMF's, stores the value, and calls the mod's on_setting_changed when `notify_mod` is true.
+	function mod:set(setting_id, value, notify_mod)
+		engine.settings[setting_id] = value
+		if notify_mod then
+			self.on_setting_changed(setting_id)
+		end
+	end
+
 	-- DMF returns the string in the game's language, formatted with any arguments.
 	-- The fake marks the ID and the arguments instead, so a spec can see which was asked for.
 	function mod:localize(text_id, ...)

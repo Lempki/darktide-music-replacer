@@ -124,6 +124,89 @@ describe("playlist.lua rounds", function()
 	end)
 end)
 
+describe("playlist.lua with Shuffle off", function()
+	local function in_name_order(folders)
+		local Playlist = new_playlist(folders)
+		Playlist.set_shuffle(false)
+		return Playlist
+	end
+
+	it("plays a folder in its listed order, and wraps from its last song to its first", function()
+		local Playlist = in_name_order({ hub = { "a", "b", "c" } })
+
+		assert_deep_equal(play_songs(Playlist, "hub", 4), { "a", "b", "c", "a" })
+	end)
+
+	it("continues after the song it played last, when the music returns from another folder", function()
+		local Playlist = in_name_order({ hub = { "a", "b", "c" }, combat = { "x" } })
+		assert_equal(Playlist.next("hub"), "a")
+		Playlist.forget_history()
+
+		assert_equal(Playlist.next("hub", "x"), "b")
+	end)
+
+	it("follows the song playing now, even a resumed one it did not pick", function()
+		local Playlist = in_name_order({ hub = { "a", "b", "c" } })
+		assert_equal(Playlist.next("hub"), "a")
+
+		assert_equal(Playlist.next("hub", "b"), "c")
+	end)
+
+	it("goes on with the song after one that left the folder", function()
+		local folders = { hub = { "a", "b", "c" } }
+		local Playlist = in_name_order(folders)
+		assert_deep_equal(play_songs(Playlist, "hub", 2), { "a", "b" })
+		folders.hub = { "a", "c" }
+
+		assert_equal(Playlist.next("hub", "b"), "c")
+	end)
+
+	it("wraps to the first song when the folder's last song left it", function()
+		local folders = { hub = { "a", "b" } }
+		local Playlist = in_name_order(folders)
+		assert_deep_equal(play_songs(Playlist, "hub", 2), { "a", "b" })
+		folders.hub = { "a" }
+
+		assert_deep_equal({ Playlist.next("hub", "b") }, { "a", 100, true })
+	end)
+
+	it("goes to the song before in the order, and from the first song to the last", function()
+		local Playlist = in_name_order({ hub = { "a", "b", "c" } })
+
+		assert_deep_equal({ Playlist.previous("hub", "b") }, { "a", 100, false })
+		assert_equal(Playlist.previous("hub", "a"), "c")
+	end)
+
+	it("moves the order along with Previous Song, so Next Song goes on from there", function()
+		local Playlist = in_name_order({ hub = { "a", "b", "c" } })
+		assert_equal(Playlist.previous("hub", "a"), "c")
+
+		assert_equal(Playlist.next("hub", "c"), "a")
+	end)
+
+	it("has no song before a folder's only song", function()
+		local Playlist = in_name_order({ hub = { "a" } })
+
+		assert_equal(Playlist.previous("hub", "a"), nil)
+	end)
+
+	it("returns nil for a folder with no songs", function()
+		local Playlist = in_name_order({})
+
+		assert_equal(Playlist.next("hub"), nil)
+		assert_equal(Playlist.previous("hub"), nil)
+	end)
+
+	it("forgets the history when Shuffle changes, since it belongs to the other order", function()
+		local Playlist = new_playlist({ hub = { "a", "b", "c" } }, first_left)
+		Playlist.add_played("a")
+		Playlist.set_shuffle(false)
+		Playlist.set_shuffle(true)
+
+		assert_equal(Playlist.previous("hub", "b"), nil)
+	end)
+end)
+
 describe("playlist.lua history", function()
 	-- A folder that has played a and b, with c playing now.
 	local function after_three_songs()
