@@ -4,6 +4,10 @@ What changes for players in each release of Music Replacer. The format follows [
 
 ## [Unreleased]
 
+### Fixes
+
+* Windows no longer fades your music out while Windows Media Player plays.
+
 ## [1.1.0] - 2026-11-06
 
 ### Features

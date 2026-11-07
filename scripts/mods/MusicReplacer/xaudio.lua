@@ -45,10 +45,10 @@ local XAUDIO2_DEFAULT_FREQ_RATIO = 2
 local XAUDIO2_END_OF_STREAM = 0x40
 local XAUDIO2_VOICE_NOSAMPLESPLAYED = 0x100
 
--- AudioCategory_GameMedia, the category Microsoft gives game music.
--- Microsoft documents that Windows then mutes it while another application plays music in the background.
--- In game, Windows Media Player fades it out and back in, and Spotify leaves it alone.
-local AUDIO_CATEGORY_GAME_MEDIA = 7
+-- AudioCategory_GameEffects, XAudio2's default category.
+-- Microsoft gives game music AudioCategory_GameMedia.
+-- Windows mutes that category while another application plays music in the background, and Windows Media Player faded it out in game.
+local AUDIO_CATEGORY_GAME_EFFECTS = 6
 
 -- The formats XAudio2 can play. A voice for anything else is always refused, whatever state the engine is in.
 local MIN_SAMPLE_RATE = 1000
@@ -137,7 +137,7 @@ function XAudio.available()
 
 	-- This fails while Windows has no audio output at all, for example right after the only headset is unplugged.
 	-- A nil device ID asks for Windows' default output.
-	hresult = call(created, CREATE_MASTERING_VOICE, out, 0, 0, 0, nil, nil, AUDIO_CATEGORY_GAME_MEDIA)
+	hresult = call(created, CREATE_MASTERING_VOICE, out, 0, 0, 0, nil, nil, AUDIO_CATEGORY_GAME_EFFECTS)
 	if not NativeFfi.succeeded(hresult) then
 		NativeFfi.release(created)
 		init_error = "creating the output failed with " .. NativeFfi.hex(hresult)
