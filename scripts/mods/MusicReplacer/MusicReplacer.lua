@@ -560,9 +560,19 @@ local function play_manual_pick(file_path, duration, is_only_file, start_positio
 	end
 end
 
+-- Starts the song playing or paused now over from its file.
+-- A song whose file a rescan no longer finds in the folder keeps playing, since opening the file again would fail and lose it.
 local function restart_playing_song()
-	play_manual_pick(playing_track.file_path, playing_track.duration, playing_track.is_only_file)
-	notify_control("control_restart_song", song_name(playing_track.file_path))
+	local file_path, duration, is_only_file = Library.find_file(current_folder, playing_track.file_path)
+	if not file_path then
+		log(string.format("[control] %s: %s is no longer in %s, so it keeps playing", current_context, playing_track.file_path,
+			current_folder))
+		notify_control("control_song_gone", folder_label(), song_name(playing_track.file_path))
+		return
+	end
+
+	play_manual_pick(file_path, duration, is_only_file)
+	notify_control("control_restart_song", song_name(file_path))
 end
 
 -- Plays the paused song on from where it stopped.
@@ -595,9 +605,11 @@ mod.next_song = function()
 		return
 	end
 
+	-- A rescan can empty the folder while its song still plays, and nothing replaces that song then.
 	local file_path, duration, is_only_file = Playlist.next(current_folder, playing_track.file_path)
 	if not file_path then
-		say_no_song("next song")
+		log(string.format("[control] %s: next song, but %s has no songs left", current_context, current_folder))
+		notify_control("control_no_songs_left", folder_label())
 		return
 	end
 

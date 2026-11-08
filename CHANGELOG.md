@@ -17,6 +17,9 @@ What changes for players in each release of Music Replacer. The format follows [
 ### Fixes
 
 * Windows no longer fades your music out while Windows Media Player plays.
+* Next Song keeps the song playing and says `No songs left in` the folder when you deleted the folder's songs while the game runs. Before, it said that no song of yours was playing.
+* Restart Song and Previous Song keep a song playing whose file you deleted or moved while it played, and say so. Before, they tried to open the file again, and the music fell back to the game's or jumped to another song.
+* Restart Song loops a song that became its folder's only one while it played, as such a song does when it starts by itself.
 
 ## [1.1.0] - 2026-11-06
 

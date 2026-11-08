@@ -249,6 +249,14 @@ local strings = {
 	control_only_song = {
 		en = "Only song in %s: %s",
 	},
+	-- Restart Song and Previous Song show this when the song's file left the folder while the song played on.
+	control_song_gone = {
+		en = "No longer in %s: %s",
+	},
+	-- %s is where the song plays, such as "Hub" or "Boss (chaos_spawn)".
+	control_no_songs_left = {
+		en = "No songs left in %s",
+	},
 	control_remove_confirm = {
 		en = "Press again to remove from %s: %s",
 	},

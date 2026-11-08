@@ -1307,6 +1307,19 @@ describe("MusicReplacer.lua the Next Song key", function()
 		assert_equal(harness:last_on_screen_message(), "<control_next_song: b.mp3>")
 	end)
 
+	it("keeps the song playing, and says the folder has no songs left, once a rescan emptied it", function()
+		local harness = in_hub({ hub = { { name = "a.mp3", duration = 200 }, { name = "b.mp3", duration = 180 } } })
+		local plays, stops = #harness.client.plays, harness.client.stops
+		harness.library.files.hub = {}
+
+		press_next(harness)
+
+		assert_equal(#harness.client.plays, plays)
+		assert_equal(harness.client.stops, stops)
+		assert_equal(harness:playing(), "hub/a.mp3")
+		assert_equal(harness:last_on_screen_message(), "<control_no_songs_left: <source_hub>>")
+	end)
+
 	it("moves on to the folder's next song as usual once the new song ends", function()
 		local harness = in_hub()
 		press_next(harness)
@@ -1654,6 +1667,32 @@ describe("MusicReplacer.lua the Restart Song key", function()
 		press_restart(harness)
 
 		assert_equal(harness:last_play().opts.loop, true)
+	end)
+
+	it("loops the song once a rescan left it the folder's only one", function()
+		local harness = in_hub({ hub = { { name = "a.mp3", duration = 200 }, { name = "b.mp3", duration = 180 } } })
+		table.remove(harness.library.files.hub, 2)
+
+		press_restart(harness)
+
+		assert_equal(harness:last_play().opts.loop, true)
+	end)
+
+	it("keeps the song playing, and says so, once a rescan no longer finds its file in the folder", function()
+		local harness = in_hub({ hub = { { name = "a.mp3", duration = 200 }, { name = "b.mp3", duration = 180 } } })
+		harness.client.position = 120
+		local plays, stops = #harness.client.plays, harness.client.stops
+		table.remove(harness.library.files.hub, 1)
+
+		for _, key in ipairs({ "restart_song", "previous_song" }) do
+			harness.mod[key]()
+			harness:tick(0.1)
+
+			assert_equal(#harness.client.plays, plays)
+			assert_equal(harness.client.stops, stops)
+			assert_equal(harness:playing(), "hub/a.mp3")
+			assert_equal(harness:last_on_screen_message(), "<control_song_gone: <source_hub>, a.mp3>")
+		end
 	end)
 
 	it("adds nothing for Previous Song to go back to", function()
