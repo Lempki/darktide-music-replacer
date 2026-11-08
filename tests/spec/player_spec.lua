@@ -405,6 +405,53 @@ describe("player.lua", function()
 		assert_equal(stream:position(), 0.5)
 	end)
 
+	it("loops once looping is turned on while it plays", function()
+		local Player, decoder, voice = load_player(1)
+		local stream = Player.open("a.mp3")
+
+		assert_equal(stream:set_loop(true), true)
+		for _ = 1, 4 do
+			voice:play(2)
+			stream:update(0.016)
+		end
+
+		assert_deep_equal(decoder.seeks, { 0, 0 })
+		for _, buffer in ipairs(voice.submitted) do
+			assert_equal(buffer.last, false)
+		end
+		assert_equal(stream:position(), 0)
+	end)
+
+	it("refuses to loop once the file's last buffer is queued, and ends as before", function()
+		local Player, _, voice = load_player(1)
+		local stream = Player.open("a.mp3")
+		stream:update(0.016)
+
+		assert_equal(stream:set_loop(true), false)
+		voice:play(4)
+
+		assert_equal(stream:ended(), true)
+	end)
+
+	it("plays to its end once looping is turned off, with positions still within the file", function()
+		local Player, _, voice = load_player(1)
+		local stream = Player.open("a.mp3", { loop = true })
+		voice:play(2)
+		stream:update(0.016)
+		voice:play(4)
+		stream:update(0.016)
+
+		assert_equal(stream:set_loop(false), true)
+		for _ = 1, 4 do
+			voice:play(2)
+			stream:update(0.016)
+		end
+
+		assert_equal(voice.submitted[#voice.submitted].last, true)
+		assert_equal(stream:ended(), true)
+		assert_equal(stream:position() < 1, true, tostring(stream:position()))
+	end)
+
 	it("finishes a fade at once after a frame gap longer than the fade", function()
 		local Player = load_player(60)
 		local stream = Player.open("a.mp3", { fade = 1 })

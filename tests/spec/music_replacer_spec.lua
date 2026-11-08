@@ -1452,6 +1452,88 @@ describe("MusicReplacer.lua Shuffle", function()
 	end)
 end)
 
+describe("MusicReplacer.lua Repeat Song", function()
+	it("loops every song that starts while it is on, and gives none an end fade", function()
+		local harness = in_hub(nil, { settings = { repeat_song = true } })
+		assert_equal(harness:last_play().opts.loop, true)
+
+		harness.mod.next_song()
+
+		local play = harness:last_play()
+		assert_equal(play.file_path, "hub/b.mp3")
+		assert_equal(play.opts.loop, true)
+		assert_equal(play.opts.duration_seconds, nil)
+	end)
+
+	it("makes the song playing now loop, or play to its end, without starting it again", function()
+		local harness = in_hub()
+		local plays = #harness.client.plays
+
+		harness:set_setting("repeat_song", true)
+		assert_equal(harness:last_play().opts.loop, true)
+		assert_equal(harness:last_play().opts.duration_seconds, nil)
+
+		harness:set_setting("repeat_song", false)
+		assert_equal(harness:last_play().opts.loop, false)
+		assert_equal(harness:last_play().opts.duration_seconds, 200)
+		assert_equal(#harness.client.plays, plays)
+	end)
+
+	it("keeps a folder's only song looping when turned off", function()
+		local harness = in_hub({ hub = { { name = "only.mp3", duration = 200 } } }, { settings = { repeat_song = true } })
+
+		harness:set_setting("repeat_song", false)
+
+		assert_equal(harness:last_play().opts.loop, true)
+	end)
+
+	it("loops from the next song when the song playing now is too close to its end", function()
+		local harness = in_hub()
+		harness.client.refuse_loop = true
+
+		harness:set_setting("repeat_song", true)
+		assert_equal(harness:last_play().opts.loop, false)
+
+		harness:finish_song(170, false)
+		assert_equal(harness:last_play().opts.loop, true)
+	end)
+
+	it("loops a paused song once it resumes", function()
+		local harness = in_hub()
+		harness.client.position = 50
+		harness.mod.pause_song()
+
+		harness:set_setting("repeat_song", true)
+		harness.mod.pause_song()
+
+		local play = harness:last_play()
+		assert_equal(play.opts.start_position, 50)
+		assert_equal(play.opts.loop, true)
+	end)
+
+	it("turns Repeat Song on and off with its key, saves the choice, and says which", function()
+		local harness = in_hub()
+
+		harness.mod.toggle_repeat_song()
+		assert_equal(harness.settings.repeat_song, true)
+		assert_equal(harness:last_play().opts.loop, true)
+		assert_equal(harness:last_on_screen_message(), "<control_repeat_song_on>")
+
+		harness.mod.toggle_repeat_song()
+		assert_equal(harness.settings.repeat_song, false)
+		assert_equal(harness:last_on_screen_message(), "<control_repeat_song_off>")
+	end)
+
+	it("toggles while no song of yours plays", function()
+		local harness = in_hub({ hub = {} })
+
+		harness.mod.toggle_repeat_song()
+
+		assert_equal(harness.settings.repeat_song, true)
+		assert_equal(harness:last_on_screen_message(), "<control_repeat_song_on>")
+	end)
+end)
+
 describe("MusicReplacer.lua the Previous Song key", function()
 	local THREE_HUB_SONGS = { hub = { { name = "a.mp3", duration = 200 }, { name = "b.mp3", duration = 180 }, { name = "c.mp3", duration = 160 } } }
 

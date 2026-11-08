@@ -53,6 +53,14 @@ local strings = {
 		en = "Plays each folder's songs in a random order, each once before any song repeats.\n\n" ..
 			"Turned off, each folder plays in the order File Explorer sorts it by name, and continues after the song it played last.",
 	},
+	repeat_song = {
+		en = "Repeat Song",
+	},
+	repeat_song_tooltip = {
+		en = "Loops the song playing now with no gap, and every song after it. " ..
+			"Next Song and a new situation still change the song, and the new one loops too.\n\n" ..
+			"A folder's only song always loops.",
+	},
 	resume_songs = {
 		en = "Resume Songs",
 	},
@@ -122,6 +130,12 @@ local strings = {
 	},
 	shuffle_keybind_tooltip = {
 		en = "Turns Shuffle on or off, and the message says which.",
+	},
+	repeat_song_keybind = {
+		en = "Toggle Repeat Song",
+	},
+	repeat_song_keybind_tooltip = {
+		en = "Turns Repeat Song on or off, and the message says which.",
 	},
 	key_fade_seconds = {
 		en = "Key Fade Length",
@@ -278,6 +292,12 @@ local strings = {
 	},
 	control_shuffle_off = {
 		en = "Shuffle off",
+	},
+	control_repeat_song_on = {
+		en = "Repeat song on",
+	},
+	control_repeat_song_off = {
+		en = "Repeat song off",
 	},
 
 	music_per_situation = {

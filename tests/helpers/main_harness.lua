@@ -147,6 +147,16 @@ local function new_audio_client()
 		return true
 	end
 
+	-- `refuse_loop` stands for a song too close to its end to loop.
+	function module.set_loop(on, duration_seconds)
+		if not client.current or (on and client.refuse_loop) then
+			return false
+		end
+		client.current.opts.loop = on
+		client.current.opts.duration_seconds = duration_seconds
+		return true
+	end
+
 	-- `stop_seconds` keeps the last stop's own fade length, or nil for the default.
 	function module.stop(seconds)
 		client.current = nil

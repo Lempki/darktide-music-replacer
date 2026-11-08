@@ -214,17 +214,23 @@ end
 
 local play_context
 
+-- True when a song loops: a folder's only song always does, and with Repeat Song on, every song does.
+local function loops(is_only_file)
+	return is_only_file == true or mod:get("repeat_song") == true
+end
+
 -- The AudioClient.play options for `track` from `folder`, whose on_finished plays the context's next song.
 -- `track` holds file_path, duration, is_only_file, start_position, fade_in, and fade_seconds, which only the keys set.
 local function track_opts(context_name, folder, track)
 	local duration = track.duration
+	local is_looping = loops(track.is_only_file)
 
-	-- A single file loops from its first play, with no seam, so it needs no end fade.
+	-- A looping song loops from its first play, with no seam, so it needs no end fade.
 	return {
-		duration_seconds = not track.is_only_file and duration or nil,
+		duration_seconds = not is_looping and duration or nil,
 		fade_in = track.fade_in,
 		fade_seconds = track.fade_seconds,
-		loop = track.is_only_file,
+		loop = is_looping,
 		start_position = track.start_position,
 		on_finished = function(failed)
 			-- A loop only gets here if its file could not be played.
@@ -279,7 +285,7 @@ local function play_track(context_name, folder, track)
 	log(string.format("[playback] %s: %s %s%s (duration=%s%s%s)",
 		context_name, start_position and "resuming" or "playing", file_path,
 		start_position and string.format(" at %.1fs", start_position) or "",
-		tostring(track.duration), track.is_only_file and ", looping" or "", loudness and (", " .. loudness) or ""))
+		tostring(track.duration), loops(track.is_only_file) and ", looping" or "", loudness and (", " .. loudness) or ""))
 
 	playing_track = { context_name = context_name, file_path = file_path, duration = track.duration, is_only_file = track.is_only_file }
 
@@ -751,6 +757,29 @@ mod.toggle_shuffle = function()
 	notify_control(is_on and "control_shuffle_on" or "control_shuffle_off")
 end
 
+-- Makes the song playing now follow Repeat Song, so the setting takes effect without waiting for the next song.
+-- A paused song follows it once it resumes, since resuming starts it again.
+local function apply_repeat_song()
+	if not has_song_to_control() or paused then
+		return
+	end
+
+	local is_looping = loops(playing_track.is_only_file)
+	if AudioClient.set_loop(is_looping, not is_looping and playing_track.duration or nil) then
+		log(string.format("[playback] %s: %s %s", current_context, playing_track.file_path, is_looping and "loops now" or "plays to its end now"))
+	else
+		log(string.format("[playback] %s: %s could not follow Repeat Song, so it applies from the next song", current_context, playing_track.file_path))
+	end
+end
+
+-- The Toggle Repeat Song key. Like Toggle Shuffle, it changes the setting itself, and works whatever plays.
+mod.toggle_repeat_song = function()
+	local is_on = not mod:get("repeat_song")
+	mod:set("repeat_song", is_on, true)
+	log(string.format("[control] repeat song %s", is_on and "on" or "off"))
+	notify_control(is_on and "control_repeat_song_on" or "control_repeat_song_off")
+end
+
 -- The Restore Removed Songs button. Listing the folders again brings the songs back into every rotation.
 mod.restore_removed_songs = function()
 	local count = RemovedSongs.clear()
@@ -1031,6 +1060,8 @@ mod.on_setting_changed = function(setting_id)
 		log(string.format("[loudness] evening out turned %s", mod:get("normalize_loudness") and "on" or "off"))
 	elseif setting_id == "shuffle" then
 		Playlist.set_shuffle(mod:get("shuffle"))
+	elseif setting_id == "repeat_song" then
+		apply_repeat_song()
 	elseif setting_id == "resume_songs" and not mod:get("resume_songs") then
 		ResumePoints.forget_all()
 	elseif enabled and current_context and setting_id == "source_" .. current_context then

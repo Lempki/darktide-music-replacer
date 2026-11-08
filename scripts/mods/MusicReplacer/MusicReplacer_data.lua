@@ -67,6 +67,12 @@ return {
 						default_value = true,
 					},
 					{
+						setting_id = "repeat_song",
+						type = "checkbox",
+						tooltip = "repeat_song_tooltip",
+						default_value = false,
+					},
+					{
 						setting_id = "resume_songs",
 						type = "checkbox",
 						tooltip = "resume_songs_tooltip",
@@ -142,6 +148,15 @@ return {
 						keybind_trigger = "pressed",
 						keybind_type = "function_call",
 						function_name = "toggle_shuffle",
+					},
+					{
+						setting_id = "repeat_song_keybind",
+						type = "keybind",
+						tooltip = "repeat_song_keybind_tooltip",
+						default_value = {},
+						keybind_trigger = "pressed",
+						keybind_type = "function_call",
+						function_name = "toggle_repeat_song",
 					},
 					{
 						setting_id = "key_fade_seconds",

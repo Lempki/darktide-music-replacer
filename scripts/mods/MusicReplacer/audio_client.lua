@@ -429,6 +429,25 @@ function AudioClient.retarget(file_path, opts)
 	return true
 end
 
+-- Makes the current song loop, or play to its end and fade out over its last stretch, with `duration_seconds` as the library's length.
+-- A looping song never ends, so its on_finished only runs when its file fails.
+-- Returns false when nothing plays, or the song is too close to its end to loop.
+function AudioClient.set_loop(on, duration_seconds)
+	if not current or not current.stream or not current.stream:set_loop(on) then
+		return false
+	end
+
+	current.loop = on
+	current.duration = duration_seconds
+
+	-- A song whose end fade had begun comes back up, since it no longer ends.
+	if on and current.end_fading then
+		current.end_fading = false
+		current.stream:fade_to(1, fade_seconds)
+	end
+	return true
+end
+
 -- Fades the current track out quickly, for falling back to the game's music and for contexts without music.
 -- `seconds` sets the fade instead, as for the Pause key.
 function AudioClient.stop(seconds)

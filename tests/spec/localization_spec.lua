@@ -40,6 +40,8 @@ local MESSAGE_ARGUMENTS = {
 	control_nothing_removed = 0,
 	control_shuffle_on = 0,
 	control_shuffle_off = 0,
+	control_repeat_song_on = 0,
+	control_repeat_song_off = 0,
 }
 
 -- How many values `text` formats, leaving out the "%%" that shows a percent sign.

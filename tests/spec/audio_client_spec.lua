@@ -35,6 +35,14 @@ local function new_stream(path, opts)
 	function stream.failure(self) return self.failed end
 	function stream.file_failure(self) return self.file_failed end
 	function stream.destroy(self) self.destroyed = true end
+	-- `finishing` stands for a stream that queued its file's last buffer, which can no longer loop.
+	function stream.set_loop(self, on)
+		if on and self.finishing then
+			return false
+		end
+		self.loop = on
+		return true
+	end
 
 	return stream
 end
@@ -337,6 +345,46 @@ describe("audio_client.lua", function()
 
 		assert_deep_equal(streams[1].fades, {})
 		assert_equal(streams[1].opts.loop, true)
+	end)
+
+	it("stops a song's end fade and brings it back up once it loops", function()
+		local AudioClient, _, streams = load_client()
+		AudioClient.play("hub/a.mp3", { fade_in = false, duration_seconds = 199 })
+		streams[1].current_position = 198.2
+		AudioClient.update(0.1)
+
+		assert_equal(AudioClient.set_loop(true, nil), true)
+		streams[1].current_position = 198.9
+		AudioClient.update(0.1)
+
+		assert_equal(streams[1].loop, true)
+		assert_deep_equal(streams[1].fades[2], { 1, 2 })
+		assert_equal(#streams[1].fades, 2)
+	end)
+
+	it("fades a song out at its end once it stops looping", function()
+		local AudioClient, _, streams = load_client()
+		AudioClient.play("hub/b.mp3", { fade_in = false, loop = true })
+
+		assert_equal(AudioClient.set_loop(false, 199), true)
+		streams[1].current_position = 198.2
+		AudioClient.update(0.1)
+
+		assert_equal(streams[1].loop, false)
+		assert_equal(streams[1].fades[1][1], 0)
+	end)
+
+	it("cannot make a song loop once its last buffer is queued, or while nothing plays", function()
+		local AudioClient, _, streams = load_client()
+		assert_equal(AudioClient.set_loop(true, nil), false)
+
+		AudioClient.play("hub/a.mp3", { fade_in = false, duration_seconds = 199 })
+		streams[1].finishing = true
+
+		assert_equal(AudioClient.set_loop(true, nil), false)
+		streams[1].current_position = 198.2
+		AudioClient.update(0.1)
+		assert_equal(streams[1].fades[1][1], 0)
 	end)
 
 	-- Right after the folders are listed again, a song can start before the library has measured it.

@@ -251,6 +251,7 @@ local function open_stream(path, opts)
 		duration = decoder.duration,
 		start_position = start_position,
 		loop = opts.loop == true,
+		wraps_position = opts.loop == true,
 		submitted = 0,
 		finishing = false,
 		failed = nil,
@@ -321,10 +322,24 @@ function Stream:resume()
 	end
 end
 
--- Seconds into the file. A looping stream wraps back at the file's end.
+-- Makes the stream loop or play to its end from the buffer it queues next.
+-- Returns false once the file's last buffer is queued, up to 4 seconds before its end, since that pass can no longer loop.
+-- Turned off, a stream that already queued its next pass from the file's start plays that pass to its end.
+function Stream:set_loop(on)
+	if on and self.finishing then
+		return false
+	end
+
+	self.loop = on
+	-- The samples played still count every earlier pass, so positions keep wrapping once a stream has looped.
+	self.wraps_position = self.wraps_position or on
+	return true
+end
+
+-- Seconds into the file. A stream that loops, or looped before, wraps back at the file's end.
 function Stream:position()
 	local position = self.start_position + self.voice:samples_played() / self.sample_rate
-	if self.loop and self.duration and self.duration > 0 then
+	if self.wraps_position and self.duration and self.duration > 0 then
 		position = position % self.duration
 	end
 	return position
