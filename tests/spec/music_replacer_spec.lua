@@ -1487,7 +1487,7 @@ describe("MusicReplacer.lua Repeat Song", function()
 		assert_equal(harness:last_play().opts.loop, true)
 	end)
 
-	it("loops from the next song when the song playing now is too close to its end", function()
+	it("starts the song over once it ends, when it was too close to its end to loop", function()
 		local harness = in_hub()
 		harness.client.refuse_loop = true
 
@@ -1495,7 +1495,32 @@ describe("MusicReplacer.lua Repeat Song", function()
 		assert_equal(harness:last_play().opts.loop, false)
 
 		harness:finish_song(170, false)
-		assert_equal(harness:last_play().opts.loop, true)
+		local play = harness:last_play()
+		assert_equal(play.file_path, "hub/a.mp3")
+		assert_equal(play.opts.loop, true)
+		assert_equal(play.opts.start_position, nil)
+	end)
+
+	it("moves on from a song that ended at once, instead of repeating it", function()
+		local harness = in_hub(nil, { settings = { repeat_song = true } })
+
+		harness:finish_song(0, false)
+
+		assert_equal(harness:playing(), "hub/b.mp3")
+	end)
+
+	it("keeps a looping song's place in its last seconds, so the situation returns to it", function()
+		local harness = in_mission({ repeat_song = true })
+		harness.client.position = 298
+
+		harness:state("music_combat", "normal")
+		harness:settle()
+		harness:state("music_combat", "None")
+		harness:wait(8)
+		harness:settle()
+
+		assert_equal(harness:playing(), "explore/x.mp3")
+		assert_equal(harness:last_play().opts.start_position, 298)
 	end)
 
 	it("loops a paused song once it resumes", function()

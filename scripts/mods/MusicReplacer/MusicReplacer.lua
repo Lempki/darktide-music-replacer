@@ -118,6 +118,11 @@ local function menu_volume(dt)
 	return menu_closed_elapsed < MENU_CLOSED_SECONDS and mod:get("menu_volume") / 100 or 1
 end
 
+-- True when a song loops: a folder's only song always does, and with Repeat Song on, every song does.
+local function loops(is_only_file)
+	return is_only_file == true or mod:get("repeat_song") == true
+end
+
 local function remember_playing_track(next_context_name)
 	if not playing_track or playing_track.context_name == next_context_name then
 		return
@@ -134,7 +139,7 @@ local function remember_playing_track(next_context_name)
 	end
 
 	local position = ResumePoints.remember(playing_track.context_name, playing_track.file_path,
-		stopped_at, playing_track.duration, playing_track.is_only_file, next_context_name)
+		stopped_at, playing_track.duration, loops(playing_track.is_only_file), next_context_name)
 
 	if position then
 		log(string.format("[resume] %s: remembering %s at %.1fs", playing_track.context_name, playing_track.file_path, position))
@@ -149,7 +154,7 @@ local function remember_folder_song()
 	end
 
 	local position = ResumePoints.remember_folder(current_folder, playing_track.file_path,
-		AudioClient.position(), playing_track.duration, playing_track.is_only_file)
+		AudioClient.position(), playing_track.duration, loops(playing_track.is_only_file))
 
 	if position then
 		log(string.format("[resume] %s: remembering %s at %.1fs for the %s folder", current_context, playing_track.file_path, position, current_folder))
@@ -213,11 +218,7 @@ local function show_message(text_id, ...)
 end
 
 local play_context
-
--- True when a song loops: a folder's only song always does, and with Repeat Song on, every song does.
-local function loops(is_only_file)
-	return is_only_file == true or mod:get("repeat_song") == true
-end
+local play_track
 
 -- The AudioClient.play options for `track` from `folder`, whose on_finished plays the context's next song.
 -- `track` holds file_path, duration, is_only_file, start_position, fade_in, and fade_seconds, which only the keys set.
@@ -267,6 +268,17 @@ local function track_opts(context_name, folder, track)
 				quick_ends[folder] = 0
 			end
 
+			-- Repeat Song turned on too late for the stream to loop still repeats this song, from a new start.
+			-- A song that ended at once is left to the checks above, so a broken file cannot repeat forever.
+			if not quick and mod:get("repeat_song") then
+				local file_path, file_duration, is_only_file = Library.find_file(folder, track.file_path)
+				if file_path then
+					log(string.format("[playback] %s: repeating %s", context_name, file_path))
+					play_track(context_name, folder, { file_path = file_path, duration = file_duration, is_only_file = is_only_file })
+					return
+				end
+			end
+
 			-- A file that could not play is left out, so Previous Song never goes back to it.
 			if not failed then
 				Playlist.add_played(track.file_path)
@@ -278,7 +290,7 @@ local function track_opts(context_name, folder, track)
 end
 
 -- Starts `track` from `folder` for `context_name`, as track_opts() describes it.
-local function play_track(context_name, folder, track)
+play_track = function(context_name, folder, track)
 	local file_path, start_position = track.file_path, track.start_position
 
 	local loudness = Loudness.describe(file_path)
@@ -768,15 +780,16 @@ local function apply_repeat_song()
 	if AudioClient.set_loop(is_looping, not is_looping and playing_track.duration or nil) then
 		log(string.format("[playback] %s: %s %s", current_context, playing_track.file_path, is_looping and "loops now" or "plays to its end now"))
 	else
-		log(string.format("[playback] %s: %s could not follow Repeat Song, so it applies from the next song", current_context, playing_track.file_path))
+		log(string.format("[playback] %s: %s is too close to its end to loop, so it starts over once it ends", current_context, playing_track.file_path))
 	end
 end
 
 -- The Toggle Repeat Song key. Like Toggle Shuffle, it changes the setting itself, and works whatever plays.
 mod.toggle_repeat_song = function()
 	local is_on = not mod:get("repeat_song")
-	mod:set("repeat_song", is_on, true)
+	-- Logged first, since the setting change logs what it does to the song playing now.
 	log(string.format("[control] repeat song %s", is_on and "on" or "off"))
+	mod:set("repeat_song", is_on, true)
 	notify_control(is_on and "control_repeat_song_on" or "control_repeat_song_off")
 end
 

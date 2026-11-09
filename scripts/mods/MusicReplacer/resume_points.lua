@@ -96,11 +96,12 @@ function ResumePoints.enter(context_name)
 	end
 end
 
--- Returns the position to keep, with a single file's loop wrapped back into the file, or nil when the song is too close to its end.
-local function kept_position(position, duration, is_only_file)
+-- Returns the position to keep, or nil when the song is too close to its end.
+-- A looping song has no end to be close to, so its position is wrapped back into the file and always kept.
+local function kept_position(position, duration, is_looping)
 	if duration and duration > 0 then
-		if is_only_file then
-			position = position % duration
+		if is_looping then
+			return position % duration
 		end
 
 		if position > duration - MIN_REMAINING_SECONDS then
@@ -114,7 +115,8 @@ end
 -- Remembers `position` seconds into `file_path` for `context_name`, which is giving way to `next_context_name`.
 -- Returns the position it kept, or nil.
 -- `duration` is nil while the song's length is unknown.
-function ResumePoints.remember(context_name, file_path, position, duration, is_only_file, next_context_name)
+-- `is_looping` tells whether the song loops when it plays again.
+function ResumePoints.remember(context_name, file_path, position, duration, is_looping, next_context_name)
 	if not (mod and mod:get("resume_songs")) then
 		return nil
 	end
@@ -125,7 +127,7 @@ function ResumePoints.remember(context_name, file_path, position, duration, is_o
 			return nil
 		end
 
-		position = kept_position(position, duration, is_only_file)
+		position = kept_position(position, duration, is_looping)
 		loading_point = position and { file_path = file_path, position = position }
 		return position
 	end
@@ -143,7 +145,7 @@ function ResumePoints.remember(context_name, file_path, position, duration, is_o
 
 	points[context_name] = nil
 
-	position = kept_position(position, duration, is_only_file)
+	position = kept_position(position, duration, is_looping)
 	if not position then
 		return nil
 	end
@@ -173,13 +175,14 @@ end
 -- Remembers `position` seconds into `file_path` for `folder`, which the situation playing now is switching away from.
 -- Returns the position it kept, or nil.
 -- `duration` is nil while the song's length is unknown.
-function ResumePoints.remember_folder(folder, file_path, position, duration, is_only_file)
+-- `is_looping` tells whether the song loops when it plays again.
+function ResumePoints.remember_folder(folder, file_path, position, duration, is_looping)
 	folder_points[folder] = nil
 	if not (mod and mod:get("resume_songs")) then
 		return nil
 	end
 
-	position = kept_position(position, duration, is_only_file)
+	position = kept_position(position, duration, is_looping)
 	if not position then
 		return nil
 	end

@@ -74,6 +74,13 @@ describe("resume_points.lua", function()
 		assert_equal(ResumePoints.remember("combat", "combat/only.mp3", 250, 100, true), 50)
 	end)
 
+	it("keeps a looping song's position in its last seconds, since it has no end", function()
+		local ResumePoints = load_resume_points()
+
+		assert_equal(ResumePoints.remember("combat", "combat/a.mp3", 95, 100, true), 95)
+		assert_equal(ResumePoints.remember_folder("combat/havoc", "combat/havoc/a.mp3", 195, 100, true), 95)
+	end)
+
 	it("keeps a song of unknown duration at its position", function()
 		local ResumePoints = load_resume_points()
 
