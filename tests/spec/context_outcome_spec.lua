@@ -26,6 +26,19 @@ describe("context.lua mission endings", function()
 		assert_deep_equal(harness.changes, { "victory", "loading", "hub" })
 	end)
 
+	it("does not play victory again once the game leaves character select after the mission", function()
+		local harness = in_mission()
+		harness:state("music_game_state", "victory")
+		harness:state("music_zone", "None")
+		harness:state("music_game_state", "main_menu")
+		assert_equal(harness:current(), "character_select")
+
+		harness:state("music_game_state", "mission_board")
+
+		assert_equal(harness:current(), nil)
+		assert_deep_equal(harness.changes, { "victory", "character_select", "nil" })
+	end)
+
 	it("resolves victory over combat and boss signals that are still set", function()
 		local harness = in_mission()
 		local boss = harness:new_boss("chaos_beast_of_nurgle")

@@ -61,6 +61,7 @@
 --	* Victory and defeat resolve to their own contexts, from their state until the next level starts.
 --	  The game state returns to "mission" in between, so the outcome is tracked in `mission_outcome`.
 --	  A loading screen or a real zone clears it, since a story mission's cutscene can skip the loading screen.
+--	  A menu before the hub, such as character select, clears it too.
 --	* Context.override_keys() names the override folders a context can use: the moment, then the mission, then the game mode.
 --	  A moment is the game's own name for what happens inside the context, such as an event's kind or a boss's breed.
 --	  On the way into a mission, the mission and its game mode come from the game's mechanism data, since the level names them late.
@@ -797,7 +798,9 @@ local function track_transition(mod, group_name, current, new_state)
 			mission_outcome = "victory"
 		elseif new_state == "defeat" or new_state == "game_score_lose" then
 			mission_outcome = "defeat"
-		elseif new_state == "loading" or new_state == "mission_intro" then
+		elseif new_state == "loading" or new_state == "mission_intro" or MENU_CONTEXTS[new_state] then
+			-- A menu after a mission's end means the mission is over, as when a mod returns the player to character select.
+			-- Otherwise the outcome plays again from its start once the game leaves the menu.
 			mission_outcome = nil
 		end
 
