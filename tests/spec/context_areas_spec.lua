@@ -57,6 +57,31 @@ describe("context.lua areas", function()
 		assert_deep_equal(harness.changes, { "title_screen", "character_select", "loading" })
 	end)
 
+	it("keeps character_select while a mission is chosen and matched from character select, with no level loaded", function()
+		local harness = Harness.new()
+		harness:state("music_game_state", "title")
+		harness:state("music_game_state", "main_menu")
+		harness:clear_changes()
+
+		harness:state("music_game_state", "mission_board")
+		harness:state("music_game_state", "mission_ready")
+		harness:state("music_game_state", "main_menu")
+		harness:state("music_game_state", "loading")
+
+		assert_deep_equal(harness.changes, { "loading" })
+	end)
+
+	it("resolves no context for the mission board while a level is loaded but has no zone", function()
+		local harness = Harness.new()
+		harness:cold_start_to_hub()
+		harness:clear_changes()
+
+		harness:state("music_zone", "None")
+		harness:state("music_game_state", "mission_board")
+
+		assert_deep_equal(harness.changes, { "nil" })
+	end)
+
 	it("stays on hub while the mission board is used", function()
 		local harness = Harness.new()
 		harness:cold_start_to_hub()

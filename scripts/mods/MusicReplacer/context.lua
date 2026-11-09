@@ -31,6 +31,7 @@
 --	  So the game's music plays instead of an explore song silencing it.
 --	  Each such value is logged once, so a bug report names it.
 --	* The hub and mission contexts only resolve while the game state is in the world: "mission", "mission_board" or "mission_ready".
+--	  The mission board and matchmaking with no level loaded resolve "character_select", where the player still is.
 --	  Loading screens and the briefing resolve "loading" or "mission_briefing" instead, even once the zone has arrived.
 --	  The game sends the hub zone about 10 seconds before the loading screen ends, and a mission zone partway through the briefing.
 --	  The briefing, and every loading screen after the mission board's "mission_ready", lead into a mission and resolve "mission_briefing".
@@ -185,6 +186,9 @@ local reported_unknown_states = {}
 
 -- Game states in which the player is in the hub or a mission, rather than on a loading screen, a briefing or a menu.
 local IN_WORLD_GAME_STATES = { mission = true, mission_board = true, mission_ready = true }
+
+-- The in-world game states that name what the player does rather than where they are: the mission board and matchmaking.
+local MISSION_SEARCH_GAME_STATES = { mission_board = true, mission_ready = true }
 
 -- Game states of a loading screen, and of the briefing before a mission.
 local LOADING_GAME_STATES = { loading = true, mission_loading = true, mission_briefing = true }
@@ -473,6 +477,12 @@ local function resolve(mod)
 			-- Silence and the Meat Grinder folder last through every fight with the dummies.
 			return "meat_grinder"
 		end
+	end
+
+	-- The mission board and matchmaking only refine where the player is, so with no level loaded, the player is still at character select.
+	-- The game reports them there when it is reached from character select, as other mods allow.
+	if MISSION_SEARCH_GAME_STATES[music_game_state] and mission_name == nil and has_no_zone() then
+		return "character_select"
 	end
 
 	-- No zone outside a zoneless mission means the player is between levels, as when leaving the hub clears its zone first.

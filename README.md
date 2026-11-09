@@ -80,7 +80,7 @@ The folders most people fill first are in bold. Each folder plays in one situati
 | Folder | When it plays |
 |---|---|
 | `title_screen` | On the title screen, before character select. |
-| `character_select` | On the character select screen, also while you create a character. |
+| `character_select` | On the character select screen, also while you create a character, and while you pick a mission or wait for one from there, as some mods allow. |
 | **`hub`** | In the Mourningstar. |
 | `loading` | On loading screens that lead anywhere but into a mission: after starting the game, after a mission, and on the way to Meat Grinder. |
 | `mission_preparation` | On the mission preparation screen of every game mode, where the party gathers before a mission and can still change loadouts. |

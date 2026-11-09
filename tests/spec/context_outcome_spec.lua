@@ -31,12 +31,12 @@ describe("context.lua mission endings", function()
 		harness:state("music_game_state", "victory")
 		harness:state("music_zone", "None")
 		harness:state("music_game_state", "main_menu")
+		harness:mission(nil)
 		assert_equal(harness:current(), "character_select")
 
 		harness:state("music_game_state", "mission_board")
 
-		assert_equal(harness:current(), nil)
-		assert_deep_equal(harness.changes, { "victory", "character_select", "nil" })
+		assert_deep_equal(harness.changes, { "victory", "character_select" })
 	end)
 
 	it("resolves victory over combat and boss signals that are still set", function()
