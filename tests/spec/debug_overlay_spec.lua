@@ -76,6 +76,17 @@ local function full_snapshot()
 end
 
 describe("debug_overlay.lua view", function()
+	it("names the skipped situations going on in the tag, keeping the tag's color", function()
+		local DebugOverlay = load_overlay(new_constant_elements())
+		local snapshot = full_snapshot()
+		snapshot.skipped = { "boss", "horde" }
+
+		local view = DebugOverlay.view(snapshot)
+
+		assert_equal(view.tag, "Custom, boss and horde skipped")
+		assert_equal(view.kind, "custom")
+	end)
+
 	it("shows the situation by its dropdown name with its choice, the folder, the song with its time, and the song's level", function()
 		local DebugOverlay = load_overlay(new_constant_elements())
 

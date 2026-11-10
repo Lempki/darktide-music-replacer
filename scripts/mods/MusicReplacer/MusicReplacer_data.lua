@@ -6,17 +6,23 @@
 local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/contexts")
 
 -- What a context plays. Custom keeps the mod's plain behavior: custom songs where there are files, the game's music elsewhere.
+-- A ranked situation with one below it also offers Skip, which lets that one play instead.
 local function source_widget(context_name)
+	local options = {
+		{ text = "source_custom", value = "custom" },
+		{ text = "source_game", value = "game" },
+		{ text = "source_silence", value = "silence" },
+	}
+	if Contexts.can_skip(context_name) then
+		options[#options + 1] = { text = "source_skip", value = "skip" }
+	end
+
 	return {
 		setting_id = "source_" .. context_name,
 		type = "dropdown",
 		tooltip = "source_" .. context_name .. "_tooltip",
 		default_value = "custom",
-		options = {
-			{ text = "source_custom", value = "custom" },
-			{ text = "source_game", value = "game" },
-			{ text = "source_silence", value = "silence" },
-		},
+		options = options,
 	}
 end
 

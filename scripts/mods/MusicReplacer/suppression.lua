@@ -108,7 +108,8 @@ local function set_game_state(should_suppress)
 end
 
 -- Forces music_objective to "None" so the game's own last stand or event music stops.
--- It is engaged only for the last stand, event and Mortis Trials wave contexts, which are the ones this group decides.
+-- It is engaged for every ranked mission context, since this group decides the last stand, event and Mortis Trials wave.
+-- Any other ranked context plays over this group's music only while those are skipped or have not taken over yet.
 -- The game changes this group repeatedly, so it is forced again after every real transition while on.
 local function set_objective(should_suppress)
 	set_reforced_group("music_objective", should_suppress)
@@ -212,7 +213,9 @@ function Suppression.engage(context_name)
 	stop_cutscene_music()
 	set_zone(silences == "music_zone")
 	set_game_state(silences == "music_game_state")
-	set_objective(silences == "music_objective")
+	-- Every music_objective value resolves a ranked context that outranks the rest.
+	-- So while another ranked context plays, that music belongs to a skipped one.
+	set_objective(silences == "music_objective" or (context ~= nil and context.priority ~= nil))
 end
 
 -- Turns every lever off, for no context or a context with no custom track.

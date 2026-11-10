@@ -61,7 +61,7 @@ A message is one line of text on a backdrop in the corner of the screen that Mes
 
 ## Music per Situation
 
-One dropdown per situation except Meat Grinder, which has a group of its own below, with the choices Custom, Vanilla, and Silence. See [Choosing what plays](../README.md#choosing-what-plays) in the README for what each choice does.
+One dropdown per situation except Meat Grinder, which has a group of its own below, with the choices Custom, Vanilla, and Silence, and Skip for the mission situations that rank above another. Changing a choice to or from Skip applies at once, without the short wait a situation change takes. See [Choosing what plays](../README.md#choosing-what-plays) in the README for what each choice does.
 
 ## Meat Grinder
 
@@ -99,7 +99,7 @@ Each hold goes from 0 to 30 seconds. Set one to 0 to follow the game exactly.
 
 The debug overlay shows, from the top:
 
-* **The situation,** by its name in the mod options, with a tag for what plays there. The tag is green for Custom, gold for Vanilla, and red for Silence. When the game's music plays for a reason, the tag says so, for example `Vanilla, no songs` or `Vanilla, its songs would not play`. While no situation applies, it names the reason instead, such as Cutscene or Mission Intro. Unknown Music State means the game reports a music state the mod does not know, and No situation covers everything else.
+* **The situation,** by its name in the mod options, with a tag for what plays there. The tag is green for Custom, gold for Vanilla, and red for Silence. When the game's music plays for a reason, the tag says so, for example `Vanilla, no songs` or `Vanilla, its songs would not play`. It also names a skipped situation that is going on, such as `Custom, boss skipped`. While no situation applies, it names the reason instead, such as Cutscene or Mission Intro. Unknown Music State means the game reports a music state the mod does not know, and No situation covers everything else.
 * **The folder** that plays, and the override names the moment looks for.
 * **The song,** with a bar that shows how far it has played, and its time and length. While no song of yours plays, this line says what plays instead.
 * **Level,** a meter that moves with the music as you hear it, so it also follows the volume sliders, fades, and the menu lowering. Beside it, the Menu marker lights up while a menu is open, and the Loudness marker while Even Out Loudness is on. With Even Out Loudness on, the song's level shows after them, such as `-6.1 dB`. A song not yet measured when it started shows `not measured` there instead. The row only shows while one of your songs plays.

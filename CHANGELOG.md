@@ -10,6 +10,7 @@ What changes for players in each release of Music Replacer. The format follows [
 * A Toggle Shuffle key turns Shuffle on or off, and the message says which. It starts unbound.
 * A Repeat Song setting, off by default, in the Playback group. Turned on, the song playing now loops with no gap, and so does every song after it, until you turn it off. A Toggle Repeat Song key turns it on or off, and the message says which. It starts unbound.
 * A Let Songs Finish setting, off by default, in the Playback group. Turned on, a song plays to its end before a situation that ranks the same or lower takes over, such as explore after a fight. A switch to a situation that ranks higher, to the game's music, or to silence still happens at once, and Next Song ends the wait.
+* A Skip choice joins Custom, Vanilla, and Silence for the mission situations that rank above another, such as Combat, Boss, and Event. A skipped situation lets the one ranked below it play on, such as explore through fights with Combat skipped, and a skipped boss fight plays Combat. The skipped situation's own game music stays silenced while your songs play, and the debug overlay's tag names it, such as `Custom, boss skipped`.
 * The debug overlay has Fade in and Fade out rows, with each fade's level and seconds left while the music fades, and the name of the song fading out.
 
 ### Changes

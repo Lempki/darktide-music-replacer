@@ -8,6 +8,7 @@
 --	* silences: the game's state group that plays this context's own music, forced to "None" while a custom song plays.
 --	  Combat music and the exploration music events are silenced for every context, so they are not listed.
 --	* priority: its rank among the mission contexts, lowest first, matching the order context.lua resolves them in.
+--	  A ranked context set to Skip leaves the ranking, so context.lua resolves the one below it instead.
 --	* resume: "always" when its song continues whenever it returns, "sequence" when only within one horde, fight, or event.
 --	* loading_screen: true for a loading screen's context, which waits longer before it takes over.
 
@@ -48,6 +49,13 @@ end
 -- The entry for `id`, or nil for a context the catalog does not know.
 function Contexts.get(id)
 	return id and by_id[id]
+end
+
+-- True when the context can be set to Skip, which lets the context ranked below it play instead.
+-- Only a context ranked above the lowest rank can, since nothing ranks below explore, Mortis Trials' break, or an Expedition's safe room.
+function Contexts.can_skip(id)
+	local context = by_id[id]
+	return context ~= nil and context.priority ~= nil and context.priority > 1
 end
 
 return Contexts

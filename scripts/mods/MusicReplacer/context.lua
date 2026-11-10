@@ -334,6 +334,33 @@ local function is_combat_active()
 	return music_combat == "normal" or music_combat == "horde_low" or music_combat == "horde_high"
 end
 
+-- True when the context is set to Skip, so resolve() passes it over for the one ranked below.
+local function is_skipped(mod, context_name)
+	return Contexts.can_skip(context_name) and mod:get("source_" .. context_name) == "skip"
+end
+
+-- A boss fight is a fight, so with Boss skipped it counts as combat, and keeps combat's hold going.
+local function is_fight_active(mod)
+	return is_combat_active() or (is_skipped(mod, "boss") and is_boss_active(mod))
+end
+
+local skipped_now = {} -- The skipped contexts whose state was active at the last resolve, highest first.
+
+-- True when the context's state is active and it is not skipped, so it is the one to resolve.
+-- An active context that is skipped is remembered, so the debug overlay can name it.
+local function takes_over(mod, context_name, is_active)
+	if not is_active then
+		return false
+	end
+
+	if is_skipped(mod, context_name) then
+		skipped_now[#skipped_now + 1] = context_name
+		return false
+	end
+
+	return true
+end
+
 local function is_expedition_fight_active()
 	return EXPEDITION_FIGHT_STATES[music_combat] == true
 end
@@ -341,7 +368,7 @@ end
 hold_named.event.is_active = is_event_active
 hold_named.boss.is_active = is_boss_active
 hold_named.horde.is_active = is_horde_active
-hold_named.combat.is_active = is_combat_active
+hold_named.combat.is_active = is_fight_active
 hold_named.expedition_combat.is_active = is_expedition_fight_active
 
 -- The game mode a mission template names: "expeditions" or "mortis_trials", else nil.
@@ -436,6 +463,7 @@ end
 
 local function resolve(mod)
 	active_hold = nil
+	skipped_now = {}
 
 	-- Cutscenes get no custom music, whatever zone or outcome is still set.
 	if CUTSCENE_GAME_STATES[music_game_state] then
@@ -471,8 +499,14 @@ local function resolve(mod)
 		local mode = mod:get("source_meat_grinder")
 		if mode == "situation" then
 			-- A stored situation the catalog no longer has resolves none, so the game's music plays.
+			-- A skipped one follows the mission instead, as with the Mission choice, so Skip means the same everywhere.
 			local situation = mod:get("meat_grinder_situation")
-			return MEAT_GRINDER_SITUATIONS[situation] and situation or nil
+			if not MEAT_GRINDER_SITUATIONS[situation] then
+				return nil
+			end
+			if not is_skipped(mod, situation) then
+				return situation
+			end
 		elseif mode ~= "mission" then
 			-- Silence and the Meat Grinder folder last through every fight with the dummies.
 			return "meat_grinder"
@@ -495,27 +529,29 @@ local function resolve(mod)
 		return "hub"
 	end
 
-	if music_objective == LAST_MAN_STANDING then
+	-- From here on, a ranked context set to Skip is passed over, so the check below it resolves instead.
+	-- A skipped context's hold does not keep it either.
+	if takes_over(mod, "last_stand", music_objective == LAST_MAN_STANDING) then
 		return "last_stand"
 	end
 
 	if music_zone == MORTIS_TRIALS_ZONE then
 		local in_wave = music_objective ~= nil and music_objective ~= "None"
-		return in_wave and "mortis_trials_wave" or "mortis_trials_break"
+		return takes_over(mod, "mortis_trials_wave", in_wave) and "mortis_trials_wave" or "mortis_trials_break"
 	end
 
 	-- An Expedition's extraction is its finale, so it ranks like an event, below a last stand.
-	if music_combat == "extraction" then
+	if takes_over(mod, "expedition_extraction", music_combat == "extraction") then
 		return "expedition_extraction"
 	end
 
 	-- Operations script their music across the whole mission, in stages with short gaps between them, so each is one long event.
-	if is_event_active() then
+	if takes_over(mod, "event", is_event_active()) then
 		start_hold(mod, "event")
 		return "event"
 	end
 
-	if holding("event") then
+	if not is_skipped(mod, "event") and holding("event") then
 		return "event"
 	end
 
@@ -527,7 +563,7 @@ local function resolve(mod)
 		return nil
 	end
 
-	if is_boss_active(mod) then
+	if takes_over(mod, "boss", is_boss_active(mod)) then
 		-- A boss after other music is a new fight, even when no window announced it.
 		if resolved_context ~= "boss" then
 			boss_fight_over = false
@@ -540,7 +576,7 @@ local function resolve(mod)
 		return "boss"
 	end
 
-	if holding("boss") then
+	if not is_skipped(mod, "boss") and holding("boss") then
 		-- Combat that goes on under the held boss starts its own hold, which takes over once the boss hold ends.
 		if is_combat_active() then
 			start_hold(mod, "combat")
@@ -553,32 +589,33 @@ local function resolve(mod)
 		log_detail(string.format("[zoneless] music_zone=%s with music_game_state=%s, treating as a mission", tostring(music_zone), tostring(music_game_state)))
 	end
 
-	if is_horde_active() then
+	-- A skipped horde is still a fight, which the combat check below counts.
+	if takes_over(mod, "horde", is_horde_active()) then
 		start_hold(mod, "horde")
 		-- Once the horde hold runs out, the plain combat state decides, with no combat hold left over from before the horde.
 		hold_named.combat.remaining = 0
 		return "horde"
 	end
 
-	if holding("horde") then
+	if not is_skipped(mod, "horde") and holding("horde") then
 		return "horde"
 	end
 
-	if is_combat_active() then
+	if takes_over(mod, "combat", is_fight_active(mod)) then
 		start_hold(mod, "combat")
 		return "combat"
 	end
 
-	if holding("combat") then
+	if not is_skipped(mod, "combat") and holding("combat") then
 		return "combat"
 	end
 
-	if is_expedition_fight_active() then
+	if takes_over(mod, "expedition_combat", is_expedition_fight_active()) then
 		start_hold(mod, "expedition_combat")
 		return "expedition_combat"
 	end
 
-	if holding("expedition_combat") then
+	if not is_skipped(mod, "expedition_combat") and holding("expedition_combat") then
 		return "expedition_combat"
 	end
 
@@ -664,6 +701,11 @@ function Context.hold()
 	end
 	local hold = hold_named[active_hold]
 	return active_hold, hold.remaining, hold.length or hold.remaining
+end
+
+-- The skipped contexts whose state is active, highest first, as a new list.
+function Context.skipped()
+	return { unpack(skipped_now) }
 end
 
 -- The game's own name for the moment `context_name` plays in now, or nil where the game names none.

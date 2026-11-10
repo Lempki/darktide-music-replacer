@@ -129,6 +129,10 @@ function DebugOverlay.view(snapshot)
 	view.situation = situation or IDLE_NAMES[snapshot.idle] or "No situation"
 	view.tag = tostring(snapshot.status)
 	view.kind = kind_of(snapshot.status)
+	-- A skipped situation that is going on is why this one plays, so the tag names it, as it names why the game's music plays.
+	if snapshot.skipped and #snapshot.skipped > 0 then
+		view.tag = view.tag .. ", " .. table.concat(snapshot.skipped, " and ") .. " skipped"
+	end
 
 	-- The override names the context looks for, so a player can see which folder to make.
 	-- With no folder and nothing to look for, as while the game's music plays, the row says nothing and is left out.

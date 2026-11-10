@@ -110,6 +110,15 @@ describe("context.lua Meat Grinder with One Situation", function()
 		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "mortis_trials_wave"), { "tg_shooting_range" })
 	end)
 
+	it("follows the mission for a chosen situation set to Skip, as Skip does everywhere", function()
+		local harness = in_meat_grinder({ source_meat_grinder = "situation", meat_grinder_situation = "boss", source_boss = "skip" })
+		assert_equal(harness:current(), "explore")
+
+		harness:state("music_combat", "boss")
+
+		assert_equal(harness:current(), "combat")
+	end)
+
 	it("resolves no situation for a stored situation the mod does not know, so the game's music plays", function()
 		local harness = in_meat_grinder({ source_meat_grinder = "situation", meat_grinder_situation = "not_a_situation" })
 

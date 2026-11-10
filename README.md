@@ -27,6 +27,7 @@ Everything below is optional detail.
 |---|---|
 | …keep the game's music in one situation. | Leave its folder empty, or set it to Vanilla under Music per Situation in the mod options. |
 | …have no music at all in one situation. | Set it to Silence under Music per Situation. |
+| …keep the fight's music going through boss fights. | Set Boss to Skip under Music per Situation. Skip works for the other mission situations too, as [Choosing what plays](#choosing-what-plays) lists. |
 | …hear one song through a whole mission without it starting over. | Put a copy of that one file, and nothing else, into each folder you want it in, such as `explore`, `combat`, `horde`, and `boss`. |
 | …give one kind of boss its own music. | Make a folder named after the boss inside `boss`, such as `boss\chaos_spawn\`. [Override folders](docs/override-folders.md#folder-names) lists every name. |
 | …give one mission its own music. | Make a folder named after the mission's code inside the folders you want, such as `explore\spillway\` and `combat\spillway\`. [game-internals.md](docs/game-internals.md) lists every mission's code. |
@@ -46,7 +47,7 @@ Everything below is optional detail.
 * Continues a song from where it stopped once its situation comes back, such as explore music after a fight.
 * Can let a song play to its end before a calmer situation takes over.
 * Follows the game's master and music volume sliders at once, without restarting the song.
-* Lets you choose Custom, Vanilla, or Silence for each situation.
+* Lets you choose Custom, Vanilla, or Silence for each situation, or Skip one, such as boss music, so the situation below plays on.
 * Lets you try out any situation's songs in Meat Grinder, or play a folder of its own there.
 * Has optional keys to skip to the next or previous song, restart or pause the song playing now, or remove it from rotation.
 * Names each new song, and what each key did, in a short message in a corner of the screen, on every screen, loading screens included.
@@ -104,13 +105,14 @@ In Mortis Trials, the two Mortis Trials folders replace the mission folders from
 
 ## Choosing what plays
 
-The Music per Situation group has one dropdown per folder above, named after it, except `meat_grinder`. Each offers the same three choices:
+The Music per Situation group has one dropdown per folder above, named after it, except `meat_grinder`. Each offers the first three choices below, and the mission situations that rank above another also offer Skip:
 
 | Choice | What plays |
 |---|---|
 | Custom | Your songs from the situation's folder. With an empty folder, the game's music plays. This is the default. |
 | Vanilla | Always the game's music, even with songs in the folder, so you can turn one situation off without moving files. |
 | Silence | Nothing. The game's music is silenced too. |
+| Skip | The situation ranked below it, as if this one were not going on, such as explore through fights with `combat` skipped. A boss fight is a fight, so with `boss` skipped it plays `combat`. While your songs or silence play instead, the skipped situation's own game music stays silenced. With the situation below set to Vanilla, the game's music plays as the game picks it. Skip is offered for `combat`, `horde`, `boss`, `event`, `last_stand`, `mortis_trials_wave`, `expedition_combat`, and `expedition_extraction`. |
 
 A changed choice applies at once, even to the situation that is playing.
 

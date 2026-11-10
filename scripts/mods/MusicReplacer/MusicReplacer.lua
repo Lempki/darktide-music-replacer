@@ -923,6 +923,7 @@ local function overlay_snapshot()
 		situation = current_context and mod:localize("source_" .. current_context) or nil,
 		idle = not current_context and Context.idle_reason() or nil,
 		status = context_status,
+		skipped = current_context and Context.skipped() or nil,
 		hold = hold,
 		hold_seconds = hold_seconds,
 		hold_length = hold_length,
@@ -1129,7 +1130,9 @@ local RESOLVING_SETTINGS = {
 
 mod.on_setting_changed = function(setting_id)
 	-- Meat Grinder's own choice reaches the last branch below when it moves between Silence and its folder, which both resolve meat_grinder.
-	if RESOLVING_SETTINGS[setting_id] then
+	-- A situation that can be skipped changes what resolves when it moves to or from Skip.
+	local skippable_source = setting_id:match("^source_(.+)$")
+	if RESOLVING_SETTINGS[setting_id] or (skippable_source and Contexts.can_skip(skippable_source)) then
 		local previous_context = Context.current()
 		Context.refresh(mod)
 

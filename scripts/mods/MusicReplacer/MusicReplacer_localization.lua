@@ -10,11 +10,13 @@ end
 
 -- Builds the English tooltip of a situation dropdown, since every one offers the same choices.
 -- `note`, if given, is one more sentence about that situation.
+-- `skipped`, given for a situation that offers Skip, says what plays while it is skipped.
 -- A translation writes its own full text instead, since the sentence order differs between languages.
-local function source_tooltip(when, note)
+local function source_tooltip(when, note, skipped)
 	return "What plays " .. when .. ".\n\n" ..
 		highlight("Custom") .. " plays your songs from its folder. " ..
 		highlight("Vanilla") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing." ..
+		(skipped and " " .. highlight("Skip") .. " passes it over, so " .. skipped .. "." or "") ..
 		(note and " " .. note or "") ..
 		"\n\nWith " .. highlight("Custom") .. ", an empty folder plays the game's music."
 end
@@ -320,6 +322,9 @@ local strings = {
 	source_silence = {
 		en = "Silence",
 	},
+	source_skip = {
+		en = "Skip",
+	},
 	source_title_screen = {
 		en = "Title Screen",
 	},
@@ -371,31 +376,33 @@ local strings = {
 		en = "Combat",
 	},
 	source_combat_tooltip = {
-		en = source_tooltip("in a mission while enemies attack you, outside a horde or a boss fight"),
+		en = source_tooltip("in a mission while enemies attack you, outside a horde or a boss fight", nil, "explore plays through fights"),
 	},
 	source_horde = {
 		en = "Horde",
 	},
 	source_horde_tooltip = {
-		en = source_tooltip("during a horde"),
+		en = source_tooltip("during a horde", nil, "combat plays through hordes"),
 	},
 	source_boss = {
 		en = "Boss",
 	},
 	source_boss_tooltip = {
-		en = source_tooltip("while a monstrosity is near you"),
+		en = source_tooltip("while a monstrosity is near you", nil, "combat plays through boss fights"),
 	},
 	source_event = {
 		en = "Event",
 	},
 	source_event_tooltip = {
-		en = source_tooltip("while a mission event plays its music, and through a whole Operation"),
+		en = source_tooltip("while a mission event plays its music, and through a whole Operation", nil,
+			"whatever ranks below it, such as combat or explore, plays through events"),
 	},
 	source_last_stand = {
 		en = "Last Stand",
 	},
 	source_last_stand_tooltip = {
-		en = source_tooltip("while only one player of the team is left alive"),
+		en = source_tooltip("while only one player of the team is left alive", nil,
+			"whatever ranks below it, such as a boss fight or combat, plays through a last stand"),
 	},
 	source_victory = {
 		en = "Victory",
@@ -413,7 +420,7 @@ local strings = {
 		en = "Mortis Trials Wave",
 	},
 	source_mortis_trials_wave_tooltip = {
-		en = source_tooltip("in Mortis Trials, during a wave or an objective round, through to the final win"),
+		en = source_tooltip("in Mortis Trials, during a wave or an objective round, through to the final win", nil, "the break's music plays through waves"),
 	},
 	source_mortis_trials_break = {
 		en = "Mortis Trials Break",
@@ -425,7 +432,7 @@ local strings = {
 		en = "Expedition Combat",
 	},
 	source_expedition_combat_tooltip = {
-		en = source_tooltip("during a fight in an Expedition"),
+		en = source_tooltip("during a fight in an Expedition", nil, "explore plays through an Expedition's fights"),
 	},
 	source_expedition_safe_room = {
 		en = "Expedition Safe Room",
@@ -437,7 +444,8 @@ local strings = {
 		en = "Expedition Extraction",
 	},
 	source_expedition_extraction_tooltip = {
-		en = source_tooltip("while an Expedition's extraction runs"),
+		en = source_tooltip("while an Expedition's extraction runs", nil,
+			"whatever ranks below it, such as Expedition Combat or explore, plays through the extraction"),
 	},
 
 	meat_grinder = {

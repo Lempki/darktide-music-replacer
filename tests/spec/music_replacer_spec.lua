@@ -1557,6 +1557,30 @@ describe("MusicReplacer.lua Let Songs Finish", function()
 	end)
 end)
 
+describe("MusicReplacer.lua Skip", function()
+	it("plays the situation below at once when the one playing is set to Skip, and names the skipped one in the overlay", function()
+		local harness = in_mission()
+		harness:state("music_combat", "normal")
+		harness:settle()
+		assert_equal(harness:playing(), "combat/c.mp3")
+
+		harness:set_setting("source_combat", "skip")
+
+		assert_equal(harness:playing(), "explore/x.mp3")
+		assert_deep_equal(harness.overlay.options.snapshot().skipped, { "combat" })
+	end)
+
+	it("keeps a skipped event's own music silenced while the situation below plays your songs", function()
+		local harness = in_mission({ source_event = "skip" })
+
+		harness:state("music_objective", "hacking_event")
+		harness:settle()
+
+		assert_equal(harness:playing(), "explore/x.mp3")
+		assert_equal(harness.engine:wwise_state("music_objective"), "None")
+	end)
+end)
+
 describe("MusicReplacer.lua Repeat Song", function()
 	it("loops every song that starts while it is on, and gives none an end fade", function()
 		local harness = in_hub(nil, { settings = { repeat_song = true } })

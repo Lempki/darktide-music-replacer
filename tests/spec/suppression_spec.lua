@@ -240,12 +240,12 @@ describe("suppression.lua last stand", function()
 		assert_equal(engine:wwise_state("music_objective"), "end_event")
 	end)
 
-	it("restores the real objective music when the context moves on to boss", function()
+	it("restores the real objective music when the context moves on to defeat", function()
 		local engine, Suppression = load_suppression()
 		engine:set_state("music_objective", "last_man_standing")
 		Suppression.engage("last_stand")
 
-		Suppression.engage("boss")
+		Suppression.engage("defeat")
 
 		assert_equal(engine:wwise_state("music_objective"), "last_man_standing")
 	end)
@@ -263,7 +263,7 @@ describe("suppression.lua last stand", function()
 		assert_equal(engine:wwise_state("music_objective"), "fortification_event")
 	end)
 
-	it("forces Mortis Trials' wave music to None for mortis_trials_wave, and leaves it to the game between waves", function()
+	it("forces Mortis Trials' wave music to None for mortis_trials_wave, and keeps it silenced for the break that plays while the wave is skipped", function()
 		local engine, Suppression = load_suppression()
 		engine:set_state("music_objective", "horde_mode_wave")
 
@@ -273,14 +273,23 @@ describe("suppression.lua last stand", function()
 
 		Suppression.engage("mortis_trials_break")
 
-		assert_equal(engine:wwise_state("music_objective"), "horde_mode_wave")
+		assert_equal(engine:wwise_state("music_objective"), "None")
 	end)
 
-	it("leaves event music alone for other contexts", function()
+	it("silences event music for every ranked context, since it plays over one only while the event is skipped", function()
 		local engine, Suppression = load_suppression()
 		engine:set_state("music_objective", "end_event")
 
-		Suppression.engage("boss")
+		Suppression.engage("combat")
+
+		assert_equal(engine:wwise_state("music_objective"), "None")
+	end)
+
+	it("leaves event music alone for unranked contexts", function()
+		local engine, Suppression = load_suppression()
+		engine:set_state("music_objective", "end_event")
+
+		Suppression.engage("hub")
 
 		assert_equal(engine:wwise_state("music_objective"), "end_event")
 	end)
