@@ -73,6 +73,12 @@ return {
 						default_value = false,
 					},
 					{
+						setting_id = "let_songs_finish",
+						type = "checkbox",
+						tooltip = "let_songs_finish_tooltip",
+						default_value = false,
+					},
+					{
 						setting_id = "resume_songs",
 						type = "checkbox",
 						tooltip = "resume_songs_tooltip",

@@ -154,6 +154,13 @@ function DebugOverlay.view(snapshot)
 			share = (snapshot.pending_seconds or 0) / snapshot.pending_length
 		end
 	end
+	-- Let Songs Finish holds a change back until the song ends, so the bar shows how much of the song is left.
+	if snapshot.after_song then
+		timing[#timing + 1] = string.format("%s after this song", snapshot.after_song)
+		if not share and (snapshot.duration or 0) > 0 then
+			share = 1 - (snapshot.position or 0) / snapshot.duration
+		end
+	end
 	if #timing > 0 then
 		view.waiting = table.concat(timing, ", ")
 		view.waiting_share = share and math.max(0, math.min(1, share)) or 1

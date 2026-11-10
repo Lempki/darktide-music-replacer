@@ -189,6 +189,19 @@ describe("debug_overlay.lua view", function()
 			"Fade out: 38%, 1.2s left, Sinister Fiend - Valfaris.mp3 (+2 more)")
 	end)
 
+	it("names the situation that waits for the song to end, with how much of the song is left", function()
+		local DebugOverlay = load_overlay(new_constant_elements())
+		local snapshot = full_snapshot()
+		snapshot.position = 50
+		snapshot.duration = 200
+		snapshot.after_song = "explore"
+
+		local view = DebugOverlay.view(snapshot)
+
+		assert_equal(view.waiting, "explore after this song")
+		assert_equal(view.waiting_share, 0.75)
+	end)
+
 	it("names no other songs when only one fades out", function()
 		local DebugOverlay = load_overlay(new_constant_elements())
 		local snapshot = full_snapshot()

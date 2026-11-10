@@ -1463,6 +1463,90 @@ describe("MusicReplacer.lua Shuffle", function()
 	end)
 end)
 
+describe("MusicReplacer.lua Let Songs Finish", function()
+	-- A mission with Let Songs Finish on, in a fight whose song is combat/c.mp3.
+	local function in_fight(settings)
+		settings = settings or {}
+		settings.let_songs_finish = true
+		local harness = in_mission(settings)
+		harness:state("music_combat", "normal")
+		harness:settle()
+		assert_equal(harness:playing(), "combat/c.mp3")
+		return harness
+	end
+
+	local function end_fight(harness)
+		harness:state("music_combat", "None")
+		harness:wait(8)
+		harness:settle()
+	end
+
+	it("plays the fight's song to its end before explore takes over", function()
+		local harness = in_fight()
+		local plays = #harness.client.plays
+
+		end_fight(harness)
+		assert_equal(#harness.client.plays, plays)
+		assert_equal(harness:playing(), "combat/c.mp3")
+		assert_equal(harness.overlay.options.snapshot().after_song, "explore")
+
+		harness:finish_song(150, false)
+		assert_equal(harness:playing(), "explore/x.mp3")
+		assert_equal(harness.overlay.options.snapshot().after_song, nil)
+	end)
+
+	it("makes a looping song play to the end of its pass, and loop again if the fight comes back first", function()
+		local harness = in_fight({ repeat_song = true })
+		assert_equal(harness:last_play().opts.loop, true)
+
+		end_fight(harness)
+		assert_equal(harness:last_play().opts.loop, false)
+
+		harness:state("music_combat", "normal")
+		harness:settle()
+		assert_equal(harness:playing(), "combat/c.mp3")
+		assert_equal(harness:last_play().opts.loop, true)
+		assert_equal(harness.overlay.options.snapshot().after_song, nil)
+	end)
+
+	it("switches at once to a more intense situation", function()
+		local harness = in_mission({ let_songs_finish = true })
+
+		harness:state("music_combat", "normal")
+		harness:settle()
+
+		assert_equal(harness:playing(), "combat/c.mp3")
+	end)
+
+	it("switches at once when the calmer situation plays the game's music", function()
+		local harness = in_fight({ source_explore = "game" })
+
+		end_fight(harness)
+
+		assert_equal(harness:playing(), nil)
+	end)
+
+	it("moves on to the waiting situation with Next Song", function()
+		local harness = in_fight()
+		end_fight(harness)
+
+		harness.mod.next_song()
+
+		assert_equal(harness:playing(), "explore/x.mp3")
+		assert_equal(harness:last_on_screen_message(), "<control_next_song: x.mp3>")
+	end)
+
+	it("switches at once while it is off", function()
+		local harness = in_mission()
+		harness:state("music_combat", "normal")
+		harness:settle()
+
+		end_fight(harness)
+
+		assert_equal(harness:playing(), "explore/x.mp3")
+	end)
+end)
+
 describe("MusicReplacer.lua Repeat Song", function()
 	it("loops every song that starts while it is on, and gives none an end fade", function()
 		local harness = in_hub(nil, { settings = { repeat_song = true } })

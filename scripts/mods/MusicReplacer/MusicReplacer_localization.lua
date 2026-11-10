@@ -61,6 +61,14 @@ local strings = {
 			"Next Song and a new situation still change the song, and the new one loops too.\n\n" ..
 			"A folder's only song always loops.",
 	},
+	let_songs_finish = {
+		en = "Let Songs Finish",
+	},
+	let_songs_finish_tooltip = {
+		en = "When the music would switch to a calmer situation, such as from a fight back to exploring, the song playing now plays to its end first. " ..
+			"A looping song plays to the end of its loop.\n\n" ..
+			"A switch to a more intense situation, to the game's music, or to silence still happens at once. Next Song moves on right away.",
+	},
 	resume_songs = {
 		en = "Resume Songs",
 	},

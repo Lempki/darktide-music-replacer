@@ -71,6 +71,10 @@ local playing_track = nil -- Its fields are context_name, file_path, duration, i
 -- AudioClient has stopped it, but the game's music stays silenced, so the situation is quiet until the song resumes.
 local paused = false
 
+-- The situation that takes over once the song playing now ends, while Let Songs Finish holds the change back, else nil.
+-- The current context stays the one whose song plays, so the keys and the overlay still speak about that song.
+local context_after_song = nil
+
 -- The song that was playing when playback stopped working, as when the only headset is unplugged: context_name, file_path, position.
 -- It continues where it was once playback works again, if its context is still the one playing.
 local lost_track = nil
@@ -121,6 +125,12 @@ end
 -- True when a song loops: a folder's only song always does, and with Repeat Song on, every song does.
 local function loops(is_only_file)
 	return is_only_file == true or mod:get("repeat_song") == true
+end
+
+-- True when a song that starts or changes now loops.
+-- A song that Let Songs Finish waits for has to end, so the waiting situation can take over, and so does a key's song in its place.
+local function plays_looping(is_only_file)
+	return loops(is_only_file) and not context_after_song
 end
 
 local function remember_playing_track(next_context_name)
@@ -224,7 +234,7 @@ local play_track
 -- `track` holds file_path, duration, is_only_file, start_position, fade_in, and fade_seconds, which only the keys set.
 local function track_opts(context_name, folder, track)
 	local duration = track.duration
-	local is_looping = loops(track.is_only_file)
+	local is_looping = plays_looping(track.is_only_file)
 
 	-- A looping song loops from its first play, with no seam, so it needs no end fade.
 	return {
@@ -237,6 +247,15 @@ local function track_opts(context_name, folder, track)
 			-- A loop only gets here if its file could not be played.
 			-- After a context change, whatever triggered it already called play_context for the new context.
 			if current_context ~= context_name then
+				return
+			end
+
+			-- The song Let Songs Finish held the change back for has ended, so the situation that waited takes over.
+			if context_after_song then
+				local next_context = context_after_song
+				log(string.format("[playback] %s: the song finished, so %s takes over", context_name, tostring(next_context)))
+				current_context = next_context
+				play_context(next_context, true)
 				return
 			end
 
@@ -297,7 +316,7 @@ play_track = function(context_name, folder, track)
 	log(string.format("[playback] %s: %s %s%s (duration=%s%s%s)",
 		context_name, start_position and "resuming" or "playing", file_path,
 		start_position and string.format(" at %.1fs", start_position) or "",
-		tostring(track.duration), loops(track.is_only_file) and ", looping" or "", loudness and (", " .. loudness) or ""))
+		tostring(track.duration), plays_looping(track.is_only_file) and ", looping" or "", loudness and (", " .. loudness) or ""))
 
 	playing_track = { context_name = context_name, file_path = file_path, duration = track.duration, is_only_file = track.is_only_file }
 
@@ -307,6 +326,9 @@ end
 -- is_new_context separates a real context change from advancing within the same context.
 -- Advancing means a playlist continuation, and only a real change should fade in again.
 play_context = function(context_name, is_new_context)
+	-- Whatever plays now is decided afresh, so no change waits for a song any more.
+	context_after_song = nil
+
 	if is_new_context then
 		remember_playing_track(context_name)
 		ResumePoints.enter(context_name)
@@ -459,6 +481,26 @@ local pending_elapsed = 0
 local has_pending_change = false
 local replay_requested = false -- True when the current context should play again once the pending change commits.
 
+-- True when Let Songs Finish holds the change to `next_context` back until the song playing now ends.
+-- Only a situation that ranks no higher waits, since a fight or a boss should not wait for a calm song.
+-- Only a change to the player's own songs waits, so Vanilla, Silence, and an empty folder still take over at once.
+local function waits_for_song(next_context)
+	if not mod:get("let_songs_finish") or paused or not current_folder or not AudioClient.is_playing() then
+		return false
+	end
+
+	local playing_entry = Contexts.get(current_context)
+	local next_entry = next_context and Contexts.get(next_context)
+	if not (playing_entry and playing_entry.priority and next_entry and next_entry.priority) then
+		return false
+	end
+	if next_entry.priority > playing_entry.priority then
+		return false
+	end
+
+	return source_of(next_context) == "custom" and Library.has_files(folder_for(next_context))
+end
+
 local function commit_pending_context()
 	has_pending_change = false
 	local replay = replay_requested
@@ -466,6 +508,21 @@ local function commit_pending_context()
 
 	if pending_context == current_context and not replay then
 		-- A flicker round-tripped back to what is already playing, so there is nothing to do.
+		-- The song's own situation is back, so it no longer has to end, and loops again if it should.
+		if context_after_song then
+			log(string.format("[playback] %s: back before the song ended, so %s no longer waits", current_context, tostring(context_after_song)))
+			context_after_song = nil
+			local is_looping = loops(playing_track.is_only_file)
+			AudioClient.set_loop(is_looping, not is_looping and playing_track.duration or nil)
+		end
+		return
+	end
+
+	if not replay and waits_for_song(pending_context) then
+		log(string.format("[playback] %s: letting %s finish before %s", current_context, playing_track.file_path, tostring(pending_context)))
+		context_after_song = pending_context
+		-- A looping song would never end, so it plays to the end of the pass it is in.
+		AudioClient.set_loop(false, playing_track.duration)
 		return
 	end
 
@@ -475,12 +532,16 @@ end
 
 -- Plays the current context again, as after a rescan or a changed setting.
 -- While a change is still settling, that waits for its commit, which plays anyway, so the music does not crossfade twice.
+-- A situation waiting for a song to finish takes over instead, since the replay starts its music anew anyway.
 local function replay_current_context()
 	if has_pending_change then
 		replay_requested = true
 		return
 	end
 
+	if context_after_song then
+		current_context = context_after_song
+	end
 	play_context(current_context, true)
 end
 
@@ -610,6 +671,18 @@ end
 mod.next_song = function()
 	if not has_song_to_control() then
 		say_no_song("next song")
+		return
+	end
+
+	-- While Let Songs Finish holds a change back, moving on means going to the situation that waits.
+	if context_after_song then
+		local next_context = context_after_song
+		log(string.format("[control] %s: next song, so %s takes over now", current_context, next_context))
+		current_context = next_context
+		play_context(next_context, true)
+		if AudioClient.is_playing() and playing_track then
+			notify_control("control_next_song", song_name(playing_track.file_path))
+		end
 		return
 	end
 
@@ -776,7 +849,7 @@ local function apply_repeat_song()
 		return
 	end
 
-	local is_looping = loops(playing_track.is_only_file)
+	local is_looping = plays_looping(playing_track.is_only_file)
 	if AudioClient.set_loop(is_looping, not is_looping and playing_track.duration or nil) then
 		log(string.format("[playback] %s: %s %s", current_context, playing_track.file_path, is_looping and "loops now" or "plays to its end now"))
 	else
@@ -855,6 +928,7 @@ local function overlay_snapshot()
 		hold_length = hold_length,
 		pending = has_pending_change and (pending_context or "none") or nil,
 		pending_length = has_pending_change and debounce_seconds() or nil,
+		after_song = context_after_song,
 		folder = current_folder,
 		overrides = overrides,
 		pending_seconds = pending_seconds,
@@ -1022,6 +1096,7 @@ mod.on_disabled = function(initial_call)
 	remember_playing_track(nil)
 	has_pending_change = false
 	replay_requested = false
+	context_after_song = nil
 	current_context = nil
 	playing_track = nil
 	paused = false
@@ -1165,7 +1240,7 @@ mod.update = function(dt)
 	override_check_elapsed = override_check_elapsed + dt
 	if override_check_elapsed >= OVERRIDE_CHECK_SECONDS then
 		override_check_elapsed = 0
-		if enabled and current_folder and not has_pending_change and not paused then
+		if enabled and current_folder and not has_pending_change and not paused and not context_after_song then
 			local folder = folder_for(current_context)
 			if folder ~= current_folder then
 				log(string.format("[playback] %s: switching from the %s folder to the %s folder", current_context, current_folder, folder))

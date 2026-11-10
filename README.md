@@ -44,6 +44,7 @@ Everything below is optional detail.
 * Keeps a folder's only song playing when the next situation's folder also holds only that song, instead of starting it over.
 * Crossfades when the situation changes, and fades a song out at its end.
 * Continues a song from where it stopped once its situation comes back, such as explore music after a fight.
+* Can let a song play to its end before a calmer situation takes over.
 * Follows the game's master and music volume sliders at once, without restarting the song.
 * Lets you choose Custom, Vanilla, or Silence for each situation.
 * Lets you try out any situation's songs in Meat Grinder, or play a folder of its own there.
