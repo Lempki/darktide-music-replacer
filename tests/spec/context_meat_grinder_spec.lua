@@ -114,9 +114,12 @@ describe("context.lua Meat Grinder with One Situation", function()
 		local harness = in_meat_grinder({ source_meat_grinder = "situation", meat_grinder_situation = "boss", source_boss = "skip" })
 		assert_equal(harness:current(), "explore")
 
-		harness:state("music_combat", "boss")
-
+		harness:state("music_combat", "normal")
 		assert_equal(harness:current(), "combat")
+
+		harness:state("music_combat", "boss")
+		harness:wait(30)
+		assert_equal(harness:current(), "explore")
 	end)
 
 	it("resolves no situation for a stored situation the mod does not know, so the game's music plays", function()

@@ -388,7 +388,8 @@ local strings = {
 		en = "Boss",
 	},
 	source_boss_tooltip = {
-		en = source_tooltip("while a monstrosity is near you", nil, "combat plays through boss fights"),
+		en = source_tooltip("while a monstrosity is near you", nil,
+			"a horde or combat plays through boss fights only while its hold lasts, and explore after that"),
 	},
 	source_event = {
 		en = "Event",

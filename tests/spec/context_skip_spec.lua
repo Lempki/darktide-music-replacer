@@ -37,22 +37,24 @@ describe("context.lua Skip", function()
 		assert_deep_equal(harness.Context.skipped(), {})
 	end)
 
-	it("plays combat through a boss fight with boss skipped, since a boss fight is a fight", function()
+	it("plays explore through a boss fight with boss skipped, since the boss state says nothing of a fight", function()
 		local harness = in_mission({ source_boss = "skip" })
 
 		harness:state("music_combat", "boss")
 
-		assert_equal(harness:current(), "combat")
+		assert_equal(harness:current(), "explore")
 		assert_deep_equal(harness.Context.skipped(), { "boss" })
 	end)
 
-	it("plays explore through a boss fight with boss and combat skipped", function()
-		local harness = in_mission({ source_boss = "skip", source_combat = "skip" })
+	it("keeps a fight's music into a skipped boss fight only while combat's hold lasts", function()
+		local harness = in_mission({ source_boss = "skip", combat_hold_seconds = 8 })
+		harness:state("music_combat", "normal")
 
 		harness:state("music_combat", "boss")
+		assert_equal(harness:current(), "combat")
 
+		harness:wait(9)
 		assert_equal(harness:current(), "explore")
-		assert_deep_equal(harness.Context.skipped(), { "boss", "combat" })
 	end)
 
 	it("plays what ranks below through an event with event skipped, and holds no event after it", function()
@@ -86,7 +88,7 @@ describe("context.lua Skip", function()
 		assert_equal(harness:current(), "boss")
 
 		harness:set_setting("source_boss", "skip")
-		assert_equal(harness:current(), "combat")
+		assert_equal(harness:current(), "explore")
 
 		harness:set_setting("source_boss", "custom")
 		assert_equal(harness:current(), "boss")

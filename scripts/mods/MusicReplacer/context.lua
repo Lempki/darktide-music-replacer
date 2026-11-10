@@ -339,11 +339,6 @@ local function is_skipped(mod, context_name)
 	return Contexts.can_skip(context_name) and mod:get("source_" .. context_name) == "skip"
 end
 
--- A boss fight is a fight, so with Boss skipped it counts as combat, and keeps combat's hold going.
-local function is_fight_active(mod)
-	return is_combat_active() or (is_skipped(mod, "boss") and is_boss_active(mod))
-end
-
 local skipped_now = {} -- The skipped contexts whose state was active at the last resolve, highest first.
 
 -- True when the context's state is active and it is not skipped, so it is the one to resolve.
@@ -368,7 +363,7 @@ end
 hold_named.event.is_active = is_event_active
 hold_named.boss.is_active = is_boss_active
 hold_named.horde.is_active = is_horde_active
-hold_named.combat.is_active = is_fight_active
+hold_named.combat.is_active = is_combat_active
 hold_named.expedition_combat.is_active = is_expedition_fight_active
 
 -- The game mode a mission template names: "expeditions" or "mortis_trials", else nil.
@@ -601,7 +596,7 @@ local function resolve(mod)
 		return "horde"
 	end
 
-	if takes_over(mod, "combat", is_fight_active(mod)) then
+	if takes_over(mod, "combat", is_combat_active()) then
 		start_hold(mod, "combat")
 		return "combat"
 	end
