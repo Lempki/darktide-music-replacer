@@ -10,6 +10,7 @@ local RemovedSongs = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/rem
 local ResumePoints = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/resume_points")
 local EventProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/event_probe")
 local MissionProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/mission_probe")
+local BossProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/boss_probe")
 local NativeFfi = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/native_ffi")
 local MediaDecoder = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/media_decoder")
 local AudioFolders = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/audio_folders")
@@ -1006,6 +1007,13 @@ end
 Suppression.init(log_detail)
 EventProbe.init(log_detail)
 MissionProbe.init(log)
+-- A boss's arrival is when its jingle plays, so the minion sounds around it are logged for a few seconds.
+local BOSS_SOUND_REVEAL_SECONDS = 5
+BossProbe.init(log_detail, {
+	on_arrival = function()
+		EventProbe.reveal_minion_events(BOSS_SOUND_REVEAL_SECONDS)
+	end,
+})
 Context.on_mission_change(MissionProbe.on_mission_change)
 ResumePoints.init(mod)
 Playlist.init({ usable_entries = Library.usable_entries, find_file = Library.find_file })
@@ -1198,6 +1206,12 @@ mod.update = function(dt)
 
 	Context.update(mod, dt)
 	expire_removal(dt)
+
+	-- The boss probe only feeds the detailed log, so it reads nothing while that is off.
+	EventProbe.update(dt)
+	if mod:get("diagnostic_mode") then
+		BossProbe.update(dt)
+	end
 
 	if Library.update(dt) then
 		-- A replaced file deserves another try, so contexts that gave up retry after a rescan.
