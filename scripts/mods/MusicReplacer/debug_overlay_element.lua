@@ -64,9 +64,11 @@ local MARKER_OFF = { background = { 255, 40, 42, 38 }, text = { 255, 110, 110, 1
 local MARKER_ON = { background = { 255, 78, 64, 30 }, text = { 255, 230, 196, 120 } }
 
 -- The rows with a bar always show, so the overlay keeps its height, and are greyed out like the markers while nothing happens.
-local FADE_ROW = { label = DIM_COLOR, track = TRACK_COLOR }
-local PROGRESS_ROW = { label = TITLE_COLOR, track = WAITING_TRACK_COLOR }
-local IDLE_ROW = { label = MARKER_OFF.text, track = MARKER_OFF.background }
+-- An idle row still says what state it is in, so it does not look as if it failed to draw.
+local FADE_ROW = { label = DIM_COLOR, track = TRACK_COLOR, text = SOFT_COLOR }
+local PROGRESS_ROW = { label = TITLE_COLOR, track = WAITING_TRACK_COLOR, text = TITLE_COLOR }
+local IDLE_ROW = { label = MARKER_OFF.text, track = MARKER_OFF.background, text = MARKER_OFF.text }
+local IDLE_TEXT = "none"
 
 -- Each choice's tag: green for your songs, gold for the game's music, and red for silence.
 local TAG_COLORS = {
@@ -381,6 +383,7 @@ return function(DebugOverlay)
 		end
 
 		-- Places a row's label and bar, greyed out with an empty bar while `share` is nil.
+		-- Returns the row's colors, for the text after the bar.
 		local function bar_row(id, colors, share)
 			colors = share and colors or IDLE_ROW
 			style[id .. "_label"].text_color = colors.label
@@ -388,23 +391,40 @@ return function(DebugOverlay)
 			self:_text(id .. "_label", x, y, row)
 			self:_box(id .. "_track", x + label_width, y, row, waiting_bar_width, 3 * s)
 			self:_box(id .. "_bar", x + label_width, y, row, math.floor(waiting_bar_width * (share or 0) + 0.5), 3 * s)
+			return colors
 		end
 
 		-- These rows show whenever a situation does, so the overlay keeps its height, as the markers keep the meter's row steady.
 		-- The fades sit under the meter they move.
 		if view.tag then
 			for _, id in ipairs({ "fade_in", "fade_out" }) do
-				bar_row(id, FADE_ROW, view[id .. "_share"])
-				self:_text(id .. "_level", x + bar_text_x, y, row, fade_level_width)
-				self:_text(id .. "_seconds", x + fade_seconds_x, y, row)
-				if id == "fade_out" then
-					self:_text("fade_out_song", x + fade_song_x, y, row)
+				local share = view[id .. "_share"]
+				local colors = bar_row(id, FADE_ROW, share)
+				style[id .. "_seconds"].text_color = colors.text
+				if share then
+					self:_text(id .. "_level", x + bar_text_x, y, row, fade_level_width)
+					self:_text(id .. "_seconds", x + fade_seconds_x, y, row)
+					if id == "fade_out" then
+						self:_text("fade_out_song", x + fade_song_x, y, row)
+					end
+				else
+					-- The idle word starts right after the bar, as the other rows' text does.
+					content[id .. "_seconds"] = IDLE_TEXT
+					self:_text(id .. "_seconds", x + bar_text_x, y, row)
 				end
 				next_row(row)
 			end
 
+			-- Even Out Loudness turned off measures nothing, which is not the same as having nothing left to measure.
+			if not view.waiting then
+				content.waiting = IDLE_TEXT
+			end
+			if not view.measuring then
+				content.measuring = view.evening_out and "all measured" or "off"
+			end
 			for _, id in ipairs({ "waiting", "measuring" }) do
-				bar_row(id, PROGRESS_ROW, view[id .. "_share"])
+				local colors = bar_row(id, PROGRESS_ROW, view[id .. "_share"])
+				style[id].text_color = colors.text
 				self:_text(id, x + bar_text_x, y, row)
 				next_row(row)
 			end

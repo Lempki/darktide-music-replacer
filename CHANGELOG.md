@@ -16,7 +16,7 @@ What changes for players in each release of Music Replacer. The format follows [
 
 * A folder plays each of its songs once before any song repeats, instead of only avoiding the song that just played.
 * Next Song returns to the songs Previous Song went back past before it moves on to a new one, and so does a song that ends by itself.
-* The debug overlay's Waiting and Measuring rows always show, greyed out while nothing counts down or needs measuring, so the overlay keeps its height.
+* The debug overlay's Waiting and Measuring rows always show, so the overlay keeps its height. While nothing counts down or needs measuring, they are greyed out and say so, such as `none` or `all measured`.
 * Character select keeps its music while you pick a mission or wait for one from there, as some mods allow. Before, the game's music played.
 
 ### Fixes
