@@ -126,6 +126,7 @@ local function new_audio_client()
 	function module.is_playing() return client.current ~= nil end
 	function module.elapsed() return client.elapsed end
 	function module.position() return client.position end
+	function module.fades() return client.fading_in, client.fading_out end
 
 	function module.play(file_path, opts)
 		if not client.available then

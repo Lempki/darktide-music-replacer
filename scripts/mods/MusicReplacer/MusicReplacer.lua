@@ -838,6 +838,7 @@ local function overlay_snapshot()
 	local overrides = current_folder and table.concat(Context.override_keys(mod, current_context), ", ") or nil
 
 	local measuring_done, measuring_total = Loudness.progress()
+	local fading_in, fading_out = AudioClient.fades()
 
 	local pending_seconds = nil
 	if has_pending_change then
@@ -869,6 +870,13 @@ local function overlay_snapshot()
 		evening_out = mod:get("normalize_loudness") == true,
 		measuring_done = measuring_done,
 		measuring_total = measuring_total,
+		fade_in = fading_in,
+		fade_out = fading_out and {
+			song = song_name(fading_out.file_path),
+			level = fading_out.level,
+			seconds_left = fading_out.seconds_left,
+			more = fading_out.more,
+		} or nil,
 	}
 end
 

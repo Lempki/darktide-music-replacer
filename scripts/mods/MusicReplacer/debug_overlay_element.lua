@@ -43,6 +43,8 @@ local LONGEST_LOUDNESS = "not measured"
 
 -- Building the view makes strings, so it is refreshed a few times a second, and only the meter moves every frame.
 local REFRESH_SECONDS = 0.25
+-- A key's fade can last half a second, so the fade rows refresh this often while one runs, to show it move.
+local FADE_REFRESH_SECONDS = 0.05
 
 local BACKDROP_RGB = { 12, 13, 11 }
 local TITLE_COLOR = { 255, 217, 165, 74 }
@@ -141,6 +143,14 @@ local passes = {
 	rect_pass("measuring_track", WAITING_TRACK_COLOR, 1),
 	rect_pass("measuring_bar", TITLE_COLOR, 2),
 	text_pass("measuring", "proxima_nova_medium", 13, TITLE_COLOR),
+	text_pass("fade_in_label", "proxima_nova_medium", 13, DIM_COLOR),
+	rect_pass("fade_in_track", TRACK_COLOR, 1),
+	rect_pass("fade_in_bar", TEXT_COLOR, 2),
+	text_pass("fade_in", "proxima_nova_medium", 13, SOFT_COLOR),
+	text_pass("fade_out_label", "proxima_nova_medium", 13, DIM_COLOR),
+	rect_pass("fade_out_track", TRACK_COLOR, 1),
+	rect_pass("fade_out_bar", TEXT_COLOR, 2),
+	text_pass("fade_out", "proxima_nova_medium", 13, SOFT_COLOR),
 }
 for index = 1, METER_SEGMENTS do
 	passes[#passes + 1] = rect_pass("segment_" .. index, TRACK_COLOR, 1)
@@ -250,6 +260,10 @@ return function(DebugOverlay)
 		content.waiting = view.waiting or ""
 		content.measuring_label = "Measuring"
 		content.measuring = view.measuring or ""
+		content.fade_in_label = "Fade in"
+		content.fade_in = view.fade_in or ""
+		content.fade_out_label = "Fade out"
+		content.fade_out = view.fade_out or ""
 
 		local tag_colors = TAG_COLORS[view.kind] or TAG_COLORS.game
 		style.tag_background.color = tag_colors.background
@@ -284,7 +298,9 @@ return function(DebugOverlay)
 			self:_text_width(ui_renderer, "song", content.song),
 			view.song and markers_end + gap + column_width or 0,
 			view.waiting and label_width + waiting_bar_width + gap + self:_text_width(ui_renderer, "waiting", content.waiting) or 0,
-			view.measuring and label_width + waiting_bar_width + gap + self:_text_width(ui_renderer, "measuring", content.measuring) or 0)
+			view.measuring and label_width + waiting_bar_width + gap + self:_text_width(ui_renderer, "measuring", content.measuring) or 0,
+			view.fade_in and label_width + waiting_bar_width + gap + self:_text_width(ui_renderer, "fade_in", content.fade_in) or 0,
+			view.fade_out and label_width + waiting_bar_width + gap + self:_text_width(ui_renderer, "fade_out", content.fade_out) or 0)
 		local width = math.ceil(inner + 2 * padding)
 
 		local x = padding
@@ -344,6 +360,17 @@ return function(DebugOverlay)
 			next_row(row)
 		end
 
+		-- The fades sit under the meter they move, with the same bar as the rows below.
+		for _, id in ipairs({ "fade_in", "fade_out" }) do
+			if view[id] then
+				self:_text(id .. "_label", x, y, row)
+				self:_box(id .. "_track", x + label_width, y, row, waiting_bar_width, 3 * s)
+				self:_box(id .. "_bar", x + label_width, y, row, math.floor(waiting_bar_width * view[id .. "_share"] + 0.5), 3 * s)
+				self:_text(id, x + label_width + waiting_bar_width + gap, y, row)
+				next_row(row)
+			end
+		end
+
 		if view.waiting then
 			self:_text("waiting_label", x, y, row)
 			self:_box("waiting_track", x + label_width, y, row, waiting_bar_width, 3 * s)
@@ -389,9 +416,10 @@ return function(DebugOverlay)
 	function Element:update(dt, t, ui_renderer, render_settings, input_service)
 		self._refresh_in = self._refresh_in - dt
 		if self._refresh_in <= 0 then
-			self._refresh_in = REFRESH_SECONDS
+			local view = DebugOverlay.current_view()
+			self._refresh_in = (view.fade_in or view.fade_out) and FADE_REFRESH_SECONDS or REFRESH_SECONDS
 			-- This runs inside the game's own UI update, so a failure here only leaves the overlay as it was.
-			local ok, err = pcall(self._lay_out, self, ui_renderer, DebugOverlay.current_view())
+			local ok, err = pcall(self._lay_out, self, ui_renderer, view)
 			if not ok then
 				DebugOverlay.report_draw_failure(err)
 			end

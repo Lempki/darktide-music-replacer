@@ -147,6 +147,50 @@ function AudioClient.meter()
 	return loudest
 end
 
+-- The fades under way, for the debug overlay, read from each stream's own fade, so they follow whichever fade length applies.
+-- Returns the song playing now while it fades in, as { level, seconds_left }.
+-- It also returns the loudest song fading out, as { file_path, level, seconds_left, more }.
+-- `more` counts the other songs fading out with it, as after quick key presses. Either is nil when nothing fades that way.
+-- A parked song has already faded out, so it is left out.
+function AudioClient.fades()
+	local fading_in, fading_out, more = nil, nil, 0
+
+	local function add_fading_out(file_path, stream)
+		local level, target, seconds_left = stream:fade_state()
+		if not target or target >= level then
+			return
+		end
+		if fading_out then
+			more = more + 1
+			if fading_out.level >= level then
+				return
+			end
+		end
+		fading_out = { file_path = file_path, level = level, seconds_left = seconds_left }
+	end
+
+	if current and current.stream then
+		local level, target, seconds_left = current.stream:fade_state()
+		if target and target > level then
+			fading_in = { level = level, seconds_left = seconds_left }
+		else
+			-- A song's own end fade.
+			add_fading_out(current.file_path, current.stream)
+		end
+	end
+
+	for _, entry in ipairs(outgoing) do
+		if not entry.parked_elapsed then
+			add_fading_out(entry.file_path, entry.stream)
+		end
+	end
+
+	if fading_out then
+		fading_out.more = more
+	end
+	return fading_in, fading_out
+end
+
 -- The keys are spelled as the game's sound_settings.lua spells them, "option_" for the master slider and "options_" for music.
 local function read_sliders()
 	local master = Application.user_setting("sound_settings", "option_master_slider") or 100

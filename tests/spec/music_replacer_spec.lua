@@ -870,6 +870,17 @@ describe("MusicReplacer.lua debug overlay", function()
 		assert_equal(harness.overlay.opacity, 0.4)
 	end)
 
+	it("reports the fades under way, naming the song fading out by its file name", function()
+		local harness = in_hub()
+		harness.client.fading_in = { level = 0.2, seconds_left = 1.5 }
+		harness.client.fading_out = { file_path = "combat/b.mp3", level = 0.8, seconds_left = 1.5, more = 1 }
+
+		local snapshot = harness.overlay.options.snapshot()
+
+		assert_deep_equal(snapshot.fade_in, { level = 0.2, seconds_left = 1.5 })
+		assert_deep_equal(snapshot.fade_out, { song = "b.mp3", level = 0.8, seconds_left = 1.5, more = 1 })
+	end)
+
 	it("reports the context, its choice, and the song playing", function()
 		local harness = in_hub()
 		harness.client.position = 12

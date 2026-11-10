@@ -176,6 +176,22 @@ function DebugOverlay.view(snapshot)
 		end
 	end
 
+	-- The fades under way, each by its level and seconds left, so a crossfade shows both of its songs.
+	-- The song fading in is the one the song row names, so only the song fading out is named.
+	if snapshot.fade_in then
+		view.fade_in = string.format("%d%%, %.1fs left", percent(snapshot.fade_in.level), snapshot.fade_in.seconds_left)
+		view.fade_in_share = math.max(0, math.min(1, snapshot.fade_in.level))
+	end
+	if snapshot.fade_out then
+		local fade_out = snapshot.fade_out
+		local fading = string.format("%d%%, %.1fs left, %s", percent(fade_out.level), fade_out.seconds_left, plain(shorten(fade_out.song)))
+		if (fade_out.more or 0) > 0 then
+			fading = fading .. string.format(" (+%d more)", fade_out.more)
+		end
+		view.fade_out = fading
+		view.fade_out_share = math.max(0, math.min(1, fade_out.level))
+	end
+
 	view.level = level_words(snapshot)
 	view.menu = snapshot.menu_open == true
 	view.evening_out = snapshot.evening_out == true
@@ -204,6 +220,12 @@ function DebugOverlay.text(snapshot)
 	rows[#rows + 1] = "Song: " .. (view.song and (view.song .. "  " .. view.time) or "none")
 	if view.level ~= "" then
 		rows[#rows + 1] = "Level: " .. view.level
+	end
+	if view.fade_in then
+		rows[#rows + 1] = "Fade in: " .. view.fade_in
+	end
+	if view.fade_out then
+		rows[#rows + 1] = "Fade out: " .. view.fade_out
 	end
 	return table.concat(rows, "\n")
 end

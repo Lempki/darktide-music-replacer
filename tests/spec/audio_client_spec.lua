@@ -24,10 +24,18 @@ local function new_stream(path, opts)
 
 	function stream.fade_to(self, target, seconds)
 		self.fades[#self.fades + 1] = { target, seconds }
+		self.fade_before = self.fade
 		self.fade = target
 		self.ramp_left = seconds
 	end
 	function stream.fading(self) return self.ramp_left > 0 end
+	-- A fade reports the level it started from until it is over, which is enough to tell its direction.
+	function stream.fade_state(self)
+		if self.ramp_left > 0 then
+			return self.fade_before, self.fade, self.ramp_left
+		end
+		return self.fade, nil, 0
+	end
 	function stream.set_gain(self, gain) self.gains[#self.gains + 1] = gain end
 	function stream.update(self, dt) self.ramp_left = math.max(0, self.ramp_left - dt) end
 	function stream.position(self) return self.current_position end
@@ -661,6 +669,49 @@ describe("audio_client.lua", function()
 		assert_equal(streams[1].destroyed, true)
 		assert_equal(streams[2].destroyed, true)
 		assert_equal(player.resets, 1)
+	end)
+end)
+
+describe("audio_client.lua fades for the debug overlay", function()
+	it("reports the song fading in and the loudest song fading out, with how many more fade out", function()
+		local AudioClient, _, streams = load_client()
+		AudioClient.play("hub/a.mp3", { fade_in = true })
+		AudioClient.play("hub/b.mp3", { fade_in = true })
+		-- a was still partway into its fade in when b took over.
+		streams[1].fade_before = 0.6
+		AudioClient.play("hub/c.mp3", { fade_in = true })
+
+		local fading_in, fading_out = AudioClient.fades()
+
+		assert_deep_equal(fading_in, { level = 0, seconds_left = 2 })
+		assert_deep_equal(fading_out, { file_path = "hub/b.mp3", level = 1, seconds_left = 2, more = 1 })
+	end)
+
+	it("reports a song's own end fade as fading out", function()
+		local AudioClient, _, streams = load_client()
+		AudioClient.play("hub/a.mp3", { fade_in = false, duration_seconds = 199 })
+		streams[1].current_position = 198.2
+		AudioClient.update(0.1)
+
+		local fading_in, fading_out = AudioClient.fades()
+
+		assert_equal(fading_in, nil)
+		assert_equal(fading_out.file_path, "hub/a.mp3")
+		assert_equal(fading_out.more, 0)
+	end)
+
+	it("reports nothing once the fades are over, and leaves out the parked song", function()
+		local AudioClient = load_client()
+		AudioClient.play("hub/a.mp3", { fade_in = true })
+		AudioClient.play("hub/b.mp3", { fade_in = true })
+		for _ = 1, 30 do
+			AudioClient.update(0.1)
+		end
+
+		local fading_in, fading_out = AudioClient.fades()
+
+		assert_equal(fading_in, nil)
+		assert_equal(fading_out, nil)
 	end)
 end)
 

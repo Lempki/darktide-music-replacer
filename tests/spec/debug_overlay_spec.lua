@@ -170,6 +170,33 @@ describe("debug_overlay.lua view", function()
 		assert_equal(DebugOverlay.text(snapshot):match("Waiting: [^\n]+"), "Waiting: combat hold 6.0s, boss in 0.4s")
 	end)
 
+	it("adds rows after the level for the song fading in and the loudest song fading out, with how many more fade out", function()
+		local DebugOverlay = load_overlay(new_constant_elements())
+		local snapshot = full_snapshot()
+		snapshot.fade_in = { level = 0.62, seconds_left = 1.24 }
+		snapshot.fade_out = { song = "Sinister Fiend - Valfaris.mp3", level = 0.38, seconds_left = 1.24, more = 2 }
+
+		local view = DebugOverlay.view(snapshot)
+
+		assert_equal(view.fade_in_share, 0.62)
+		assert_equal(view.fade_out_share, 0.38)
+		assert_equal(DebugOverlay.text(snapshot),
+			"Combat (Custom)\n" ..
+			"Folder: combat\n" ..
+			"Song: Antagonist - Valfaris.mp3  1:23 / 4:25\n" ..
+			"Level: -7.9 dB\n" ..
+			"Fade in: 62%, 1.2s left\n" ..
+			"Fade out: 38%, 1.2s left, Sinister Fiend - Valfaris.mp3 (+2 more)")
+	end)
+
+	it("names no other songs when only one fades out", function()
+		local DebugOverlay = load_overlay(new_constant_elements())
+		local snapshot = full_snapshot()
+		snapshot.fade_out = { song = "a.mp3", level = 0.5, seconds_left = 0.3, more = 0 }
+
+		assert_equal(DebugOverlay.view(snapshot).fade_out, "50%, 0.3s left, a.mp3")
+	end)
+
 	it("adds a row for the measuring progress, with or without a song", function()
 		local DebugOverlay = load_overlay(new_constant_elements())
 		local snapshot = full_snapshot()

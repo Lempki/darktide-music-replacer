@@ -306,6 +306,15 @@ function Stream:fading()
 	return self.ramp ~= nil
 end
 
+-- The fade level now, and while a fade moves, the level it moves to and its seconds left. A still fade gives nil and 0.
+function Stream:fade_state()
+	local ramp = self.ramp
+	if not ramp then
+		return self.fade, nil, 0
+	end
+	return self.fade, ramp.to, math.max(0, ramp.seconds - ramp.elapsed)
+end
+
 -- Stops playing but keeps the queue and the position, so the song can continue later exactly where it stopped.
 function Stream:pause()
 	if not self.paused then
