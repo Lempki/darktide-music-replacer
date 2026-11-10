@@ -65,6 +65,12 @@ local function read_target(unit, player_unit)
 	return target_unit and describe_target(target_unit, player_unit) or "unknown"
 end
 
+-- The distance between two positions, or nil when the engine refuses one, so the rest of what the probe reads still gets logged.
+local function measure_distance(from, to)
+	local ok, distance = pcall(Vector3.distance, from, to)
+	return ok and distance or nil
+end
+
 -- Every boss alive now, or nil while the player has no unit to measure from, as on a loading screen.
 local function read_bosses_from_game()
 	local player = Managers.player and Managers.player:local_player(1)
@@ -81,7 +87,8 @@ local function read_bosses_from_game()
 
 	local bosses = {}
 	local listed = {}
-	local player_position = POSITION_LOOKUP[player_unit]
+	-- POSITION_LOOKUP holds vectors that only stay valid within the game's own update, so the mod asks each unit for its position.
+	local player_position = Unit.world_position(player_unit, 1)
 
 	for _, tag in ipairs(BOSS_TAGS) do
 		local units = side:alive_units_by_tag("enemy", tag)
@@ -91,14 +98,14 @@ local function read_bosses_from_game()
 				listed[unit] = true
 
 				local boss_extension = ScriptUnit.has_extension(unit, "boss_system")
-				local position = POSITION_LOOKUP[unit]
+				local position = Unit.world_position(unit, 1)
 				bosses[#bosses + 1] = {
 					unit = unit,
 					breed = breed_name(unit),
 					kind = tag,
 					weakened = boss_extension and boss_extension:is_weakened() == true or false,
 					damaged = boss_extension and boss_extension:time_since_first_damage() < math.huge or false,
-					distance = position and player_position and Vector3.distance(position, player_position) or nil,
+					distance = measure_distance(position, player_position),
 					target = read_target(unit, player_unit),
 				}
 			end
