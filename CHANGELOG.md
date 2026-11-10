@@ -10,12 +10,13 @@ What changes for players in each release of Music Replacer. The format follows [
 * A Toggle Shuffle key turns Shuffle on or off, and the message says which. It starts unbound.
 * A Repeat Song setting, off by default, in the Playback group. Turned on, the song playing now loops with no gap, and so does every song after it, until you turn it off. A Toggle Repeat Song key turns it on or off, and the message says which. It starts unbound.
 * A Let Songs Finish setting, off by default, in the Playback group. Turned on, a song plays to its end before a situation that ranks the same or lower takes over, such as explore after a fight. A switch to a situation that ranks higher, to the game's music, or to silence still happens at once, and Next Song ends the wait.
-* The debug overlay shows Fade in and Fade out rows while the music fades, with each fade's level and seconds left, and the name of the song fading out.
+* The debug overlay has Fade in and Fade out rows, with each fade's level and seconds left while the music fades, and the name of the song fading out.
 
 ### Changes
 
 * A folder plays each of its songs once before any song repeats, instead of only avoiding the song that just played.
 * Next Song returns to the songs Previous Song went back past before it moves on to a new one, and so does a song that ends by itself.
+* The debug overlay's Waiting and Measuring rows always show, greyed out while nothing counts down or needs measuring, so the overlay keeps its height.
 * Character select keeps its music while you pick a mission or wait for one from there, as some mods allow. Before, the game's music played.
 
 ### Fixes

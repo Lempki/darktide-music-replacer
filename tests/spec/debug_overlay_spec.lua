@@ -178,7 +178,12 @@ describe("debug_overlay.lua view", function()
 
 		local view = DebugOverlay.view(snapshot)
 
+		assert_equal(view.fade_in_level, "62%")
+		assert_equal(view.fade_in_seconds, "1.2s left")
 		assert_equal(view.fade_in_share, 0.62)
+		assert_equal(view.fade_out_level, "38%")
+		assert_equal(view.fade_out_seconds, "1.2s left")
+		assert_equal(view.fade_out_song, "Sinister Fiend - Valfaris.mp3 (+2 more)")
 		assert_equal(view.fade_out_share, 0.38)
 		assert_equal(DebugOverlay.text(snapshot),
 			"Combat (Custom)\n" ..
@@ -207,7 +212,7 @@ describe("debug_overlay.lua view", function()
 		local snapshot = full_snapshot()
 		snapshot.fade_out = { song = "a.mp3", level = 0.5, seconds_left = 0.3, more = 0 }
 
-		assert_equal(DebugOverlay.view(snapshot).fade_out, "50%, 0.3s left, a.mp3")
+		assert_equal(DebugOverlay.view(snapshot).fade_out_song, "a.mp3")
 	end)
 
 	it("adds a row for the measuring progress, with or without a song", function()

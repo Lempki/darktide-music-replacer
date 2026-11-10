@@ -40,6 +40,9 @@ local SEGMENT_GAP = 3
 -- The longest the song's time and level get, so the column they share keeps its width whatever they read.
 local LONGEST_TIME = "00:00 / 00:00"
 local LONGEST_LOUDNESS = "not measured"
+-- The longest a fade's level and seconds get, as both fade lengths go up to 10 seconds, so the song named after them stays put.
+local LONGEST_FADE_LEVEL = "100%"
+local LONGEST_FADE_SECONDS = "10.0s left"
 
 -- Building the view makes strings, so it is refreshed a few times a second, and only the meter moves every frame.
 local REFRESH_SECONDS = 0.25
@@ -59,6 +62,11 @@ local WAITING_TRACK_COLOR = { 255, 70, 56, 32 }
 -- The markers beside the meter, greyed out until a menu is open or Even Out Loudness is on, when they light up.
 local MARKER_OFF = { background = { 255, 40, 42, 38 }, text = { 255, 110, 110, 105 } }
 local MARKER_ON = { background = { 255, 78, 64, 30 }, text = { 255, 230, 196, 120 } }
+
+-- The rows with a bar always show, so the overlay keeps its height, and are greyed out like the markers while nothing happens.
+local FADE_ROW = { label = DIM_COLOR, track = TRACK_COLOR }
+local PROGRESS_ROW = { label = TITLE_COLOR, track = WAITING_TRACK_COLOR }
+local IDLE_ROW = { label = MARKER_OFF.text, track = MARKER_OFF.background }
 
 -- Each choice's tag: green for your songs, gold for the game's music, and red for silence.
 local TAG_COLORS = {
@@ -146,11 +154,14 @@ local passes = {
 	text_pass("fade_in_label", "proxima_nova_medium", 13, DIM_COLOR),
 	rect_pass("fade_in_track", TRACK_COLOR, 1),
 	rect_pass("fade_in_bar", TEXT_COLOR, 2),
-	text_pass("fade_in", "proxima_nova_medium", 13, SOFT_COLOR),
+	text_pass("fade_in_level", "proxima_nova_medium", 13, SOFT_COLOR, "right"),
+	text_pass("fade_in_seconds", "proxima_nova_medium", 13, SOFT_COLOR),
 	text_pass("fade_out_label", "proxima_nova_medium", 13, DIM_COLOR),
 	rect_pass("fade_out_track", TRACK_COLOR, 1),
 	rect_pass("fade_out_bar", TEXT_COLOR, 2),
-	text_pass("fade_out", "proxima_nova_medium", 13, SOFT_COLOR),
+	text_pass("fade_out_level", "proxima_nova_medium", 13, SOFT_COLOR, "right"),
+	text_pass("fade_out_seconds", "proxima_nova_medium", 13, SOFT_COLOR),
+	text_pass("fade_out_song", "proxima_nova_medium", 13, SOFT_COLOR),
 }
 for index = 1, METER_SEGMENTS do
 	passes[#passes + 1] = rect_pass("segment_" .. index, TRACK_COLOR, 1)
@@ -261,9 +272,12 @@ return function(DebugOverlay)
 		content.measuring_label = "Measuring"
 		content.measuring = view.measuring or ""
 		content.fade_in_label = "Fade in"
-		content.fade_in = view.fade_in or ""
+		content.fade_in_level = view.fade_in_level or ""
+		content.fade_in_seconds = view.fade_in_seconds or ""
 		content.fade_out_label = "Fade out"
-		content.fade_out = view.fade_out or ""
+		content.fade_out_level = view.fade_out_level or ""
+		content.fade_out_seconds = view.fade_out_seconds or ""
+		content.fade_out_song = view.fade_out_song or ""
 
 		local tag_colors = TAG_COLORS[view.kind] or TAG_COLORS.game
 		style.tag_background.color = tag_colors.background
@@ -290,6 +304,12 @@ return function(DebugOverlay)
 		local column_width = math.max(
 			self:_text_width(ui_renderer, "time", LONGEST_TIME), self:_text_width(ui_renderer, "loudness", LONGEST_LOUDNESS))
 
+		-- A fade's level and seconds sit in columns as wide as they get, and the song fading out follows them.
+		local bar_text_x = label_width + waiting_bar_width + gap
+		local fade_level_width = self:_text_width(ui_renderer, "fade_in_level", LONGEST_FADE_LEVEL)
+		local fade_seconds_x = bar_text_x + fade_level_width + gap
+		local fade_song_x = fade_seconds_x + self:_text_width(ui_renderer, "fade_in_seconds", LONGEST_FADE_SECONDS) + gap
+
 		local inner = math.max(
 			MIN_WIDTH * s - 2 * padding,
 			self:_text_width(ui_renderer, "title", content.title),
@@ -297,10 +317,10 @@ return function(DebugOverlay)
 			view.folder and self:_text_width(ui_renderer, "folder", content.folder) or 0,
 			self:_text_width(ui_renderer, "song", content.song),
 			view.song and markers_end + gap + column_width or 0,
-			view.waiting and label_width + waiting_bar_width + gap + self:_text_width(ui_renderer, "waiting", content.waiting) or 0,
-			view.measuring and label_width + waiting_bar_width + gap + self:_text_width(ui_renderer, "measuring", content.measuring) or 0,
-			view.fade_in and label_width + waiting_bar_width + gap + self:_text_width(ui_renderer, "fade_in", content.fade_in) or 0,
-			view.fade_out and label_width + waiting_bar_width + gap + self:_text_width(ui_renderer, "fade_out", content.fade_out) or 0)
+			view.waiting and bar_text_x + self:_text_width(ui_renderer, "waiting", content.waiting) or 0,
+			view.measuring and bar_text_x + self:_text_width(ui_renderer, "measuring", content.measuring) or 0,
+			view.tag and fade_song_x - gap or 0,
+			view.fade_out_song and fade_song_x + self:_text_width(ui_renderer, "fade_out_song", content.fade_out_song) or 0)
 		local width = math.ceil(inner + 2 * padding)
 
 		local x = padding
@@ -360,31 +380,34 @@ return function(DebugOverlay)
 			next_row(row)
 		end
 
-		-- The fades sit under the meter they move, with the same bar as the rows below.
-		for _, id in ipairs({ "fade_in", "fade_out" }) do
-			if view[id] then
-				self:_text(id .. "_label", x, y, row)
-				self:_box(id .. "_track", x + label_width, y, row, waiting_bar_width, 3 * s)
-				self:_box(id .. "_bar", x + label_width, y, row, math.floor(waiting_bar_width * view[id .. "_share"] + 0.5), 3 * s)
-				self:_text(id, x + label_width + waiting_bar_width + gap, y, row)
+		-- Places a row's label and bar, greyed out with an empty bar while `share` is nil.
+		local function bar_row(id, colors, share)
+			colors = share and colors or IDLE_ROW
+			style[id .. "_label"].text_color = colors.label
+			style[id .. "_track"].color = colors.track
+			self:_text(id .. "_label", x, y, row)
+			self:_box(id .. "_track", x + label_width, y, row, waiting_bar_width, 3 * s)
+			self:_box(id .. "_bar", x + label_width, y, row, math.floor(waiting_bar_width * (share or 0) + 0.5), 3 * s)
+		end
+
+		-- These rows show whenever a situation does, so the overlay keeps its height, as the markers keep the meter's row steady.
+		-- The fades sit under the meter they move.
+		if view.tag then
+			for _, id in ipairs({ "fade_in", "fade_out" }) do
+				bar_row(id, FADE_ROW, view[id .. "_share"])
+				self:_text(id .. "_level", x + bar_text_x, y, row, fade_level_width)
+				self:_text(id .. "_seconds", x + fade_seconds_x, y, row)
+				if id == "fade_out" then
+					self:_text("fade_out_song", x + fade_song_x, y, row)
+				end
 				next_row(row)
 			end
-		end
 
-		if view.waiting then
-			self:_text("waiting_label", x, y, row)
-			self:_box("waiting_track", x + label_width, y, row, waiting_bar_width, 3 * s)
-			self:_box("waiting_bar", x + label_width, y, row, math.floor(waiting_bar_width * view.waiting_share + 0.5), 3 * s)
-			self:_text("waiting", x + label_width + waiting_bar_width + gap, y, row)
-			next_row(row)
-		end
-
-		if view.measuring then
-			self:_text("measuring_label", x, y, row)
-			self:_box("measuring_track", x + label_width, y, row, waiting_bar_width, 3 * s)
-			self:_box("measuring_bar", x + label_width, y, row, math.floor(waiting_bar_width * view.measuring_share + 0.5), 3 * s)
-			self:_text("measuring", x + label_width + waiting_bar_width + gap, y, row)
-			next_row(row)
+			for _, id in ipairs({ "waiting", "measuring" }) do
+				bar_row(id, PROGRESS_ROW, view[id .. "_share"])
+				self:_text(id, x + bar_text_x, y, row)
+				next_row(row)
+			end
 		end
 
 		-- The last row added a gap below itself, which the padding replaces.
@@ -417,7 +440,7 @@ return function(DebugOverlay)
 		self._refresh_in = self._refresh_in - dt
 		if self._refresh_in <= 0 then
 			local view = DebugOverlay.current_view()
-			self._refresh_in = (view.fade_in or view.fade_out) and FADE_REFRESH_SECONDS or REFRESH_SECONDS
+			self._refresh_in = (view.fade_in_level or view.fade_out_level) and FADE_REFRESH_SECONDS or REFRESH_SECONDS
 			-- This runs inside the game's own UI update, so a failure here only leaves the overlay as it was.
 			local ok, err = pcall(self._lay_out, self, ui_renderer, view)
 			if not ok then

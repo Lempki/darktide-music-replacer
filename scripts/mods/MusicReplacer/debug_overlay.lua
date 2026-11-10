@@ -185,17 +185,21 @@ function DebugOverlay.view(snapshot)
 
 	-- The fades under way, each by its level and seconds left, so a crossfade shows both of its songs.
 	-- The song fading in is the one the song row names, so only the song fading out is named.
+	-- The level and the seconds are separate, so the overlay can give each a column that keeps its width as they count.
 	if snapshot.fade_in then
-		view.fade_in = string.format("%d%%, %.1fs left", percent(snapshot.fade_in.level), snapshot.fade_in.seconds_left)
+		view.fade_in_level = string.format("%d%%", percent(snapshot.fade_in.level))
+		view.fade_in_seconds = string.format("%.1fs left", snapshot.fade_in.seconds_left)
 		view.fade_in_share = math.max(0, math.min(1, snapshot.fade_in.level))
 	end
 	if snapshot.fade_out then
 		local fade_out = snapshot.fade_out
-		local fading = string.format("%d%%, %.1fs left, %s", percent(fade_out.level), fade_out.seconds_left, plain(shorten(fade_out.song)))
+		local song = plain(shorten(fade_out.song))
 		if (fade_out.more or 0) > 0 then
-			fading = fading .. string.format(" (+%d more)", fade_out.more)
+			song = song .. string.format(" (+%d more)", fade_out.more)
 		end
-		view.fade_out = fading
+		view.fade_out_level = string.format("%d%%", percent(fade_out.level))
+		view.fade_out_seconds = string.format("%.1fs left", fade_out.seconds_left)
+		view.fade_out_song = song
 		view.fade_out_share = math.max(0, math.min(1, fade_out.level))
 	end
 
@@ -208,6 +212,7 @@ function DebugOverlay.view(snapshot)
 end
 
 -- The overlay as plain text, one row per line, for the log and the specs.
+-- The rows the overlay greys out while they have nothing to show are left out here.
 function DebugOverlay.text(snapshot)
 	local view = DebugOverlay.view(snapshot)
 	if not view.tag then
@@ -228,11 +233,11 @@ function DebugOverlay.text(snapshot)
 	if view.level ~= "" then
 		rows[#rows + 1] = "Level: " .. view.level
 	end
-	if view.fade_in then
-		rows[#rows + 1] = "Fade in: " .. view.fade_in
+	if view.fade_in_level then
+		rows[#rows + 1] = "Fade in: " .. view.fade_in_level .. ", " .. view.fade_in_seconds
 	end
-	if view.fade_out then
-		rows[#rows + 1] = "Fade out: " .. view.fade_out
+	if view.fade_out_level then
+		rows[#rows + 1] = "Fade out: " .. view.fade_out_level .. ", " .. view.fade_out_seconds .. ", " .. view.fade_out_song
 	end
 	return table.concat(rows, "\n")
 end
