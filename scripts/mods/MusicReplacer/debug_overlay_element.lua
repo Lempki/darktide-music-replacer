@@ -156,12 +156,12 @@ local passes = {
 	text_pass("fade_in_label", "proxima_nova_medium", 13, DIM_COLOR),
 	rect_pass("fade_in_track", TRACK_COLOR, 1),
 	rect_pass("fade_in_bar", TEXT_COLOR, 2),
-	text_pass("fade_in_level", "proxima_nova_medium", 13, SOFT_COLOR, "right"),
+	text_pass("fade_in_level", "proxima_nova_medium", 13, SOFT_COLOR),
 	text_pass("fade_in_seconds", "proxima_nova_medium", 13, SOFT_COLOR),
 	text_pass("fade_out_label", "proxima_nova_medium", 13, DIM_COLOR),
 	rect_pass("fade_out_track", TRACK_COLOR, 1),
 	rect_pass("fade_out_bar", TEXT_COLOR, 2),
-	text_pass("fade_out_level", "proxima_nova_medium", 13, SOFT_COLOR, "right"),
+	text_pass("fade_out_level", "proxima_nova_medium", 13, SOFT_COLOR),
 	text_pass("fade_out_seconds", "proxima_nova_medium", 13, SOFT_COLOR),
 	text_pass("fade_out_song", "proxima_nova_medium", 13, SOFT_COLOR),
 }
@@ -402,7 +402,7 @@ return function(DebugOverlay)
 				local colors = bar_row(id, FADE_ROW, share)
 				style[id .. "_seconds"].text_color = colors.text
 				if share then
-					self:_text(id .. "_level", x + bar_text_x, y, row, fade_level_width)
+					self:_text(id .. "_level", x + bar_text_x, y, row)
 					self:_text(id .. "_seconds", x + fade_seconds_x, y, row)
 					if id == "fade_out" then
 						self:_text("fade_out_song", x + fade_song_x, y, row)
