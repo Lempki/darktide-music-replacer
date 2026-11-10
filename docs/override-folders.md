@@ -30,7 +30,7 @@ These folders can also hold the game's name for a moment inside them:
 | Folder | Names | When they play |
 |---|---|---|
 | `event` | The kind of event, such as `escape_event`, `fortification_event`, `twins_event`, or an Operation's stage: `operation_stage_1` to `_4` in Rolling Steel and `operation_2_stage_1` to `_4` in No Man's Land. [wwise-events.md](wwise-events.md) lists the kinds. | During that kind of event. |
-| `boss` | `chaos_spawn`, `chaos_beast_of_nurgle`, `chaos_plague_ogryn`, `chaos_ogryn_houndmaster`. With Boss Music for Captains on, also `renegade_captain`, `cultist_captain`, `renegade_twin_captain`, `renegade_twin_captain_two`. With Boss Music for Daemonhosts on, also `chaos_daemonhost`, `chaos_daemonhost_torment`, `chaos_mutator_daemonhost`. | While that boss is in the fight. With several, the one that came last. |
+| `boss` | `chaos_spawn`, `chaos_beast_of_nurgle`, `chaos_plague_ogryn`, `chaos_ogryn_houndmaster`. With Boss Music for Captains on, also `renegade_captain`, `cultist_captain`, `renegade_twin_captain`, `renegade_twin_captain_two`. With Boss Music for Daemonhosts on, also `chaos_daemonhost`, `chaos_daemonhost_torment`, `chaos_mutator_daemonhost`. | While that boss is in the fight. With several, the one that came first, until it dies or leaves the fight, so bosses that come back to back do not change the music each time. |
 | `hub` | `mission_ready` | While your party is matchmaking, from choosing a mission until it starts. |
 | `character_select` | `character_creation` | While you create a character. |
 | `victory`, `defeat` | `game_score_win`, `game_score_lose` | Once the score screen opens. The parent folder then plays only the closing shot of the mission. |

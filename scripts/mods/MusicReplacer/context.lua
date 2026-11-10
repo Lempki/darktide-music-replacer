@@ -97,7 +97,7 @@ local state_moment = nil -- The moment music_game_state names now, or named less
 local state_moment_grace = 0 -- Seconds left of state_moment once the game state has moved on, else 0.
 local mission_outcome = nil -- "victory" or "defeat" from that game state until the next level starts, else nil.
 local open_bosses = {} -- Boss unit -> { breed = name, order = n } for every open encounter window.
-local boss_open_order = 0 -- Counts up with every newly opened window, so the latest one can be found.
+local boss_open_order = 0 -- Counts up with every newly opened window, so the earliest one can be found.
 
 local resolved_context = nil -- Last computed context string, for example "hub".
 
@@ -288,18 +288,19 @@ local function is_boss_active(mod)
 	return false
 end
 
--- Breed name of the most recently opened encounter window that counts as a boss, or nil when none does.
--- So a captain or daemonhost with its setting off does not name the folder during another boss's fight.
+-- Breed name of the earliest opened encounter window that counts as a boss, or nil when none does.
+-- Bosses can come back to back, so the first one keeps its folder until its window closes, instead of the music changing with each.
+-- A captain or daemonhost with its setting off does not name the folder during another boss's fight.
 local function current_boss_breed(mod)
-	local latest = nil
+	local first = nil
 
 	for _, boss in pairs(open_bosses) do
-		if counts_as_boss(mod, boss) and (not latest or boss.order > latest.order) then
-			latest = boss
+		if counts_as_boss(mod, boss) and (not first or boss.order < first.order) then
+			first = boss
 		end
 	end
 
-	return latest and latest.breed
+	return first and first.breed
 end
 
 local function is_horde_active()

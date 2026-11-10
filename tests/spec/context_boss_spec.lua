@@ -85,7 +85,7 @@ describe("context.lua boss signals", function()
 		assert_deep_equal(harness.changes, { "boss", "combat", "explore" })
 	end)
 
-	it("offers the breed of the latest open encounter as the boss's override folder", function()
+	it("offers the breed of the open encounter as the boss's override folder", function()
 		local harness = in_mission("zone_3")
 		local boss = harness:new_boss("chaos_spawn")
 

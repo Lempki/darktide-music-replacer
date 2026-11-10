@@ -71,14 +71,30 @@ describe("context.lua override names", function()
 	it("offers a captain's kind during another boss only while captains play boss music", function()
 		local harness = in_mission()
 		harness:state("music_combat", "boss")
-		harness:boss_start(harness:new_boss("chaos_spawn"))
 		harness:boss_start(harness:new_boss("renegade_captain"))
+		harness:boss_start(harness:new_boss("chaos_spawn"))
 
 		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "boss"), { "chaos_spawn", "fm_cargo" })
 
 		harness:set_setting("captain_boss_music", true)
 
 		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "boss"), { "renegade_captain", "fm_cargo" })
+	end)
+
+	-- Bosses can come back to back, as in Mortis Trials and Havoc, and the music should not change with each.
+	it("keeps the first boss's kind while later bosses come, and offers the next one once the first boss's window closes", function()
+		local harness = in_mission()
+		local spawn = harness:new_boss("chaos_spawn")
+		harness:state("music_combat", "boss")
+		harness:boss_start(spawn)
+		harness:boss_start(harness:new_boss("chaos_beast_of_nurgle"))
+		harness:boss_start(harness:new_boss("chaos_plague_ogryn"))
+
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "boss"), { "chaos_spawn", "fm_cargo" })
+
+		harness:boss_end(spawn)
+
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "boss"), { "chaos_beast_of_nurgle", "fm_cargo" })
 	end)
 
 	-- The game state returns to "mission" for up to a second between matchmaking and the loading screen.
