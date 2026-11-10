@@ -1158,6 +1158,12 @@ mod.on_setting_changed = function(setting_id)
 		Playlist.set_shuffle(mod:get("shuffle"))
 	elseif setting_id == "repeat_song" then
 		apply_repeat_song()
+	elseif setting_id == "let_songs_finish" and not mod:get("let_songs_finish") and context_after_song then
+		-- Nothing waits for a song with the setting off, so the situation that waited takes over at once.
+		local next_context = context_after_song
+		log(string.format("[playback] %s: let songs finish turned off, so %s takes over now", current_context, next_context))
+		current_context = next_context
+		play_context(next_context, true)
 	elseif setting_id == "resume_songs" and not mod:get("resume_songs") then
 		ResumePoints.forget_all()
 	elseif enabled and current_context and setting_id == "source_" .. current_context then

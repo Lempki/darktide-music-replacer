@@ -1536,6 +1536,16 @@ describe("MusicReplacer.lua Let Songs Finish", function()
 		assert_equal(harness:last_on_screen_message(), "<control_next_song: x.mp3>")
 	end)
 
+	it("lets the waiting situation take over at once when turned off", function()
+		local harness = in_fight()
+		end_fight(harness)
+
+		harness:set_setting("let_songs_finish", false)
+
+		assert_equal(harness:playing(), "explore/x.mp3")
+		assert_equal(harness.overlay.options.snapshot().after_song, nil)
+	end)
+
 	it("switches at once while it is off", function()
 		local harness = in_mission()
 		harness:state("music_combat", "normal")
