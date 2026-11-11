@@ -13,7 +13,7 @@ local function in_zoneless_mission()
 end
 
 describe("context.lua zoneless missions", function()
-	it("stays on loading through the briefing, and resolves no context during the intro", function()
+	it("resolves mission_briefing through the briefing, and no context during the intro", function()
 		local harness = Harness.new()
 		harness:cold_start_to_hub()
 		harness:leave_hub()
@@ -23,7 +23,7 @@ describe("context.lua zoneless missions", function()
 		harness:mission("zoneless_mission")
 		harness:state("music_game_state", "mission_intro")
 
-		assert_deep_equal(harness.changes, { "nil" })
+		assert_deep_equal(harness.changes, { "mission_briefing", "nil" })
 	end)
 
 	it("resolves explore once the game state returns to mission", function()

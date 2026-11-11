@@ -34,10 +34,11 @@
 --	  The mission board and matchmaking with no level loaded resolve "character_select", where the player still is.
 --	  Loading screens and the briefing resolve "loading" or "mission_briefing" instead, even once the zone has arrived.
 --	  The game sends the hub zone about 10 seconds before the loading screen ends, and a mission zone partway through the briefing.
---	  The briefing, and every loading screen after the mission board's "mission_ready", lead into a mission and resolve "mission_briefing".
---	  A plain loading screen does not say where it leads, so "mission_ready" tells joining a mission apart from leaving one.
---	  A mission picked from character select returns the game state to "main_menu" before its first loading screen.
---	  That ends the trip, so that loading screen resolves "loading".
+--	  Each follows the game state alone, so only the game's "mission_briefing" resolves "mission_briefing".
+--	  Joining a mission in progress passes through that state too, and every other loading screen is "loading".
+--	* A trip into a mission runs from the mission board's "mission_ready" until the mission's intro or another arrival.
+--	  It only names the mission and its game mode for the override folders, before the level names them.
+--	  A mission picked from character select returns the game state to "main_menu" first, which ends the trip there.
 --	  With the board closed, matchmaking that ends without a mission leaves the game state on "mission".
 --	  That ends the trip after a few seconds.
 --	  The mission preparation screen, where the party gathers before a mission, resolves "mission_preparation".
@@ -216,7 +217,8 @@ end
 -- Matchmaking that finds a mission returns the game state to "mission" for about a second before the loading screen.
 -- Matchmaking that ends without one with the mission board closed, as after a declined party vote, leaves it there.
 -- So "mission" that outlasts this after matchmaking ends the trip.
--- Ending a real trip early only costs its first loading screen the briefing folder, hence the wide margin.
+-- Ending a real trip early only costs its first loading screen the mission's override names.
+-- The preparation screen and the briefing start the trip again.
 local MATCHMAKING_PASS_SECONDS = 5
 
 -- Game states of the mission preparation screen.
@@ -479,9 +481,10 @@ local function resolve(mod)
 	end
 
 	-- A loading screen clears the outcome, so the loading screen after a mission's end gets here too.
+	-- The game reports the briefing as a state of its own, also when joining a mission in progress.
+	-- So every other loading screen is plain loading, wherever it leads.
 	if LOADING_GAME_STATES[music_game_state] then
-		-- The first "mission_briefing" is the game's state. The second is the mod's context, which also covers loading screens into a mission.
-		return (heading_to_mission or music_game_state == "mission_briefing") and "mission_briefing" or "loading"
+		return music_game_state == "mission_briefing" and "mission_briefing" or "loading"
 	end
 
 	if PREPARATION_GAME_STATES[music_game_state] then

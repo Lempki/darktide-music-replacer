@@ -210,6 +210,9 @@ describe("context.lua override names", function()
 
 		harness:leave_hub()
 		harness.engine:set_mechanism_mission("psykhanium", { game_mode_name = "survival" })
+		harness:state("music_game_state", "loadout")
+		harness:state("music_game_state", "loading")
+		harness:state("music_game_state", "mission_briefing")
 		harness:tick(0)
 
 		assert_equal(harness:current(), "mission_briefing")

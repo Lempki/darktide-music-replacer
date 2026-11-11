@@ -603,11 +603,11 @@ describe("MusicReplacer.lua loading", function()
 		assert_equal(harness:playing(), "mission_preparation/p.mp3")
 	end)
 
-	it("continues a Mission Briefing song the preparation screen interrupted in the briefing, then plays the game's stinger, then explore", function()
+	it("plays the loading folder on a long loading screen before the preparation screen, and a fresh song in the briefing, then the game's stinger, then explore", function()
 		local harness = in_hub_with(FILES)
 		harness:leave_hub()
 		harness:wait(5)
-		assert_equal(harness:playing(), "mission_briefing/m1.mp3")
+		assert_equal(harness:playing(), "loading/l1.mp3")
 		harness.client.position = 42
 
 		harness:state("music_game_state", "loadout")
@@ -621,7 +621,7 @@ describe("MusicReplacer.lua loading", function()
 		harness:wait(3.1)
 
 		assert_equal(harness:playing(), "mission_briefing/m1.mp3")
-		assert_equal(harness:last_play().opts.start_position, 42)
+		assert_equal(harness:last_play().opts.start_position, nil)
 
 		harness:state("music_game_state", "mission_intro")
 		harness:settle()
@@ -668,7 +668,7 @@ describe("MusicReplacer.lua loading", function()
 		assert_equal(harness:playing(), nil)
 	end)
 
-	it("plays a level reached straight from a loading screen after the long wait, as when joining a mission in progress", function()
+	it("plays a level reached straight from a loading screen after the long wait", function()
 		local harness = in_hub_with(FILES)
 		harness:leave_hub()
 		harness:wait(5)
@@ -677,9 +677,26 @@ describe("MusicReplacer.lua loading", function()
 		harness:mission("lm_cooling")
 		harness:state("music_game_state", "mission")
 		harness:wait(2.5)
-		assert_equal(harness:playing():find("^mission_briefing/") ~= nil, true)
+		assert_equal(harness:playing(), "loading/l1.mp3")
 
 		harness:wait(0.6)
+		assert_equal(harness:playing(), "explore/x.mp3")
+	end)
+
+	-- Joining a mission in progress goes from its loading screen through the briefing straight into the mission.
+	it("plays the briefing folder when joining a mission in progress, then explore", function()
+		local harness = in_hub_with(FILES)
+		harness:leave_hub()
+		harness:wait(2)
+		harness:state("music_game_state", "mission_briefing")
+		harness:wait(3.1)
+		assert_equal(harness:playing():find("^mission_briefing/") ~= nil, true)
+
+		harness:state("music_zone", "zone_3")
+		harness:mission("lm_cooling")
+		harness:state("music_game_state", "mission")
+		harness:wait(3.1)
+
 		assert_equal(harness:playing(), "explore/x.mp3")
 	end)
 
@@ -691,7 +708,7 @@ describe("MusicReplacer.lua loading", function()
 
 		assert_equal(harness:playing(), nil)
 		assert_equal(harness.engine:wwise_state("music_game_state"), "loading")
-		assert_equal(harness:logged("[playback] mission_briefing: no file available, playing the game's music"), true)
+		assert_equal(harness:logged("[playback] loading: no file available, playing the game's music"), true)
 	end)
 
 	it("plays the loading folder, not the mission briefing one, on the way back to the hub", function()

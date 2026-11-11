@@ -84,7 +84,7 @@ The folders most people fill first are in bold. Each folder plays in one situati
 | `title_screen` | On the title screen, before character select. |
 | `character_select` | On the character select screen, also while you create a character, and while you pick a mission or wait for one from there, as some mods allow. |
 | **`hub`** | In the Mourningstar. |
-| `loading` | On loading screens that lead anywhere but into a mission: after starting the game, after a mission, and on the way to Meat Grinder. |
+| `loading` | On every loading screen, wherever it leads: after starting the game, into a mission and out of one, and on the way to Meat Grinder. |
 | `mission_preparation` | On the mission preparation screen of every game mode, where the party gathers before a mission and can still change loadouts. |
 | `mission_briefing` | In the briefing after the preparation screen (or when you join a mission in progress). The mission's intro keeps the game's music. |
 | **`explore`** | In a mission while nothing threatens you. |

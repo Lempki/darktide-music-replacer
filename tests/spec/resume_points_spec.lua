@@ -152,30 +152,21 @@ describe("resume_points.lua", function()
 		assert_equal(ResumePoints.take("explore"), nil)
 	end)
 
-	it("keeps a Mission Briefing song that the preparation screen interrupts through the loading state of the briefing", function()
+	-- The preparation screen interrupts a loading screen's song, and the briefing after it starts its own.
+	it("keeps no Loading or Mission Briefing song, so every loading screen and briefing starts afresh", function()
 		local ResumePoints = load_resume_points()
 		ResumePoints.on_state_change("music_game_state", "loading")
-		ResumePoints.enter("mission_briefing")
+		ResumePoints.enter("loading")
 
-		assert_equal(ResumePoints.remember("mission_briefing", "mission_briefing/a.mp3", 30, 200, false, "mission_preparation"), 30)
+		assert_equal(ResumePoints.remember("loading", "loading/a.mp3", 30, 200, false, "mission_preparation"), nil)
 
 		ResumePoints.enter("mission_preparation")
 		ResumePoints.on_state_change("music_game_state", "loading")
 		ResumePoints.enter("mission_briefing")
 
-		assert_deep_equal({ ResumePoints.take("mission_briefing") }, { "mission_briefing/a.mp3", 30 })
-	end)
-
-	it("keeps no loading song for anything but the preparation screen, or with Resume Songs off", function()
-		local ResumePoints = load_resume_points()
-		assert_equal(ResumePoints.remember("loading", "loading/a.mp3", 30, 200, false, "hub"), nil)
-		assert_equal(ResumePoints.remember("mission_briefing", "mission_briefing/a.mp3", 30, 200, false, "explore"), nil)
-		ResumePoints.remember("mission_briefing", "mission_briefing/a.mp3", 30, 200, false, "mission_preparation")
-		ResumePoints.enter(nil)
+		assert_equal(ResumePoints.remember("mission_briefing", "mission_briefing/a.mp3", 30, 200, false, "mission_preparation"), nil)
+		assert_equal(ResumePoints.take("loading"), nil)
 		assert_equal(ResumePoints.take("mission_briefing"), nil)
-
-		local off = load_resume_points({ resume_songs = false })
-		assert_equal(off.remember("mission_briefing", "mission_briefing/a.mp3", 30, 200, false, "mission_preparation"), nil)
 	end)
 
 	it("keeps its points through a mid-mission cutscene and other state groups", function()

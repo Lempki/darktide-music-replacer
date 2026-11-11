@@ -1,8 +1,6 @@
 -- Remembers where a context's song stopped, so the song continues when that context returns.
 -- A new song is picked only once one ends on its own.
 -- Every loading screen forgets everything, so each mission and hub visit starts with fresh picks.
--- The one exception: a Mission Briefing song that starts on the loading screen before the preparation screen continues in the briefing.
--- The game reports a brief loading state between the preparation screen and the briefing, which players do not see as a loading screen.
 
 local ResumePoints = {}
 
@@ -37,9 +35,6 @@ local MIN_REMAINING_SECONDS = 10
 
 local mod = nil
 local points = {} -- context_name -> a table with file_path and position.
-
--- The Mission Briefing song the preparation screen interrupted, kept apart from `points`, since loading screens clear those.
-local loading_point = nil
 local is_loading = false
 
 -- folder -> a table with file_path and position, for the override folders the current situation switched away from.
@@ -67,7 +62,6 @@ end
 
 function ResumePoints.forget_all()
 	points = {}
-	loading_point = nil
 	folder_points = {}
 end
 
@@ -82,11 +76,6 @@ function ResumePoints.enter(context_name)
 	-- The loading and preparation contexts are part of the loading screen, not the next level.
 	if context_name ~= nil and context_name ~= "loading" and context_name ~= "mission_briefing" and context_name ~= "mission_preparation" then
 		is_loading = false
-	end
-
-	-- Only the briefing after the preparation screen continues the Mission Briefing song.
-	if context_name ~= "mission_briefing" and context_name ~= "mission_preparation" then
-		loading_point = nil
 	end
 
 	for sequence_name in pairs(SEQUENCES) do
@@ -121,17 +110,6 @@ function ResumePoints.remember(context_name, file_path, position, duration, is_l
 		return nil
 	end
 
-	if context_name == "mission_briefing" then
-		loading_point = nil
-		if next_context_name ~= "mission_preparation" then
-			return nil
-		end
-
-		position = kept_position(position, duration, is_looping)
-		loading_point = position and { file_path = file_path, position = position }
-		return position
-	end
-
 	-- The debounced context change into a loading screen can come after the loading state itself.
 	-- So nothing is kept from a loading screen until the next level's first context.
 	if is_loading or not RESUMABLE_CONTEXTS[context_name] then
@@ -159,11 +137,6 @@ end
 function ResumePoints.take(context_name)
 	local point = points[context_name]
 	points[context_name] = nil
-
-	if context_name == "mission_briefing" then
-		point = loading_point
-		loading_point = nil
-	end
 
 	if not point then
 		return nil

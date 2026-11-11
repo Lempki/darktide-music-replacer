@@ -96,14 +96,14 @@ describe("context.lua areas", function()
 	end)
 
 	-- The zone clears one step before the game state changes, while the hub is still loaded.
-	it("resolves no context from the moment the zone clears when leaving the hub for a mission, then mission_briefing", function()
+	it("resolves no context from the moment the zone clears when leaving the hub for a mission, then loading", function()
 		local harness = Harness.new()
 		harness:cold_start_to_hub()
 		harness:clear_changes()
 
 		harness:leave_hub()
 
-		assert_deep_equal(harness.changes, { "nil", "mission_briefing" })
+		assert_deep_equal(harness.changes, { "nil", "loading" })
 	end)
 
 	it("resolves loading, not mission_briefing, on the loading screens of starting the game and leaving a mission", function()
@@ -118,8 +118,8 @@ describe("context.lua areas", function()
 		assert_deep_equal(harness.changes, { "victory", "loading" })
 	end)
 
-	-- Joining a mission in progress skips the preparation screen and the briefing.
-	it("resolves mission_briefing when joining a mission in progress, from the mission board's ready state", function()
+	-- Joining a mission in progress skips the preparation screen and the intro, but the game still reports its briefing.
+	it("resolves loading, then mission_briefing, when joining a mission in progress", function()
 		local harness = Harness.new()
 		harness:cold_start_to_hub()
 		harness:clear_changes()
@@ -130,16 +130,18 @@ describe("context.lua areas", function()
 		harness:state("music_zone", "None")
 		harness:state("music_game_state", "loading")
 		harness:mission(nil)
-		harness:wait(20)
+		harness:wait(2)
+		harness:state("music_game_state", "mission_briefing")
+		harness:wait(12)
 		harness:state("music_zone", "zone_3")
 		harness:mission("lm_cooling")
 		harness:state("music_game_state", "mission")
 
-		assert_deep_equal(harness.changes, { "nil", "mission_briefing", "explore" })
+		assert_deep_equal(harness.changes, { "nil", "loading", "mission_briefing", "explore" })
 	end)
 
 	-- Matchmaking that finds a mission returns the game state to "mission" for about a second before the loading screen.
-	it("keeps the trip into a mission through the second between matchmaking and its loading screen", function()
+	it("keeps the trip into a mission through the second between matchmaking and its loading screen, so the mission is named", function()
 		local harness = Harness.new()
 		harness:cold_start_to_hub()
 		harness:clear_changes()
@@ -151,12 +153,15 @@ describe("context.lua areas", function()
 		harness:state("music_zone", "None")
 		harness:state("music_game_state", "loading")
 		harness:mission(nil)
+		harness.engine:set_mechanism_mission("lm_cooling", {})
+		harness:tick(0)
 
-		assert_deep_equal(harness.changes, { "nil", "mission_briefing" })
+		assert_deep_equal(harness.changes, { "nil", "loading" })
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "loading"), { "lm_cooling" })
 	end)
 
 	-- Matchmaking can end without a mission while the mission board is closed, as after a declined party vote.
-	it("ends the trip once matchmaking ends without a mission, so the next plain loading screen resolves loading", function()
+	it("ends the trip once matchmaking ends without a mission, so the next loading screen names no mission", function()
 		local harness = Harness.new()
 		harness:cold_start_to_hub()
 
@@ -171,8 +176,11 @@ describe("context.lua areas", function()
 		harness:state("music_zone", "None")
 		harness:state("music_game_state", "loading")
 		harness:mission(nil)
+		harness.engine:set_mechanism_mission("lm_cooling", {})
+		harness:tick(0)
 
 		assert_deep_equal(harness.changes, { "nil", "loading" })
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "loading"), {})
 	end)
 
 	-- Going back to character select leaves about a second between the two, longer than the debounce.
@@ -217,7 +225,7 @@ describe("context.lua areas", function()
 		harness:wait(30)
 
 		assert_equal(harness:current(), "mission_briefing")
-		assert_deep_equal(harness.changes, { "mission_preparation", "mission_briefing" })
+		assert_deep_equal(harness.changes, { "mission_preparation", "loading", "mission_briefing" })
 	end)
 
 	-- The game sends a mission's zone partway through the briefing.
@@ -242,7 +250,7 @@ describe("context.lua areas", function()
 
 		harness:state("music_game_state", "mission")
 
-		assert_deep_equal(harness.changes, { "mission_preparation", "mission_briefing", "nil", "combat" })
+		assert_deep_equal(harness.changes, { "mission_preparation", "loading", "mission_briefing", "nil", "combat" })
 	end)
 
 	it("treats the zone \"None\" like no zone at all", function()

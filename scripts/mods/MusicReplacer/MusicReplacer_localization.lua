@@ -352,7 +352,7 @@ local strings = {
 		en = "Loading",
 	},
 	source_loading_tooltip = {
-		en = source_tooltip("on loading screens that lead anywhere but into a mission: after starting the game, after a mission, and on the way to Meat Grinder"),
+		en = source_tooltip("on every loading screen, wherever it leads: after starting the game, into a mission and out of one, and on the way to Meat Grinder"),
 	},
 	source_mission_preparation = {
 		en = "Mission Preparation",
@@ -365,7 +365,7 @@ local strings = {
 	},
 	source_mission_briefing_tooltip = {
 		en = source_tooltip(
-			"in the briefing after the preparation screen, and on the loading screen when joining a mission in progress",
+			"in the briefing after the preparation screen, and when joining a mission in progress",
 			"The intro itself keeps the game's music."
 		),
 	},

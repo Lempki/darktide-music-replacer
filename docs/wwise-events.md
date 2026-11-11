@@ -37,13 +37,13 @@ What each `music_game_state` value plays, by the dropdowns in Music per Situatio
 | `mission`, `mission_board`, `mission_ready` | The hub and mission music, picked by the other groups. It plays in these states only. `mission_board` is the mission board's screen, and `mission_ready` is matchmaking, from choosing a mission until it starts. |
 | `loadout`, `loadout_ready` | The Mission Preparation music. These states are the mission preparation screen. |
 | `mission_briefing` | The Mission Briefing music. |
-| `loading`, `mission_loading` | The Mission Briefing music on the way into a mission, else the Loading music. |
+| `loading`, `mission_loading` | The Loading music, wherever the loading screen leads. |
 | `mission_intro` | The game's music. This state is the mission's intro. |
 | `victory`, `game_score_win` | The Victory music, until the loading screen. `game_score_win` is the score screen. |
 | `defeat`, `game_score_lose` | The Defeat music, until the loading screen. `game_score_lose` is the score screen. |
 | `cinematic`, `cinematic_pot` | The game's music. These states are cutscenes, which never get custom music. Story cutscenes use `cinematic`, and the hub's own, such as Path of Trust and the hub location intros, use `cinematic_pot`. |
 
-A loading screen leads into a mission when it follows `mission_ready`, `loadout`, or `mission_briefing`. Matchmaking that finds a mission goes back to `mission` for about a second before the loading screen. When `mission` lasts 5 seconds after `mission_ready`, the matchmaking ended without a mission, and with Detailed Logging on the log says `[mission] matchmaking ended without a mission`. After a mission, a story mission can go straight from `game_score_win` to `cinematic`.
+Joining a mission in progress goes from `loading` to `mission_briefing` and then straight to `mission`, with no preparation screen and no intro. From `mission_ready` on, the mod names the upcoming mission for the override folders, as [game-internals.md](game-internals.md#game-modes-and-early-mission-names) explains. Matchmaking that finds a mission goes back to `mission` for about a second before the loading screen. When `mission` lasts 5 seconds after `mission_ready`, the matchmaking ended without a mission, and with Detailed Logging on the log says `[mission] matchmaking ended without a mission`. After a mission, a story mission can go straight from `game_score_win` to `cinematic`.
 
 Two more groups matter to the mod. The `options` group says which kind of menu is open. It is `ingame_menu` in the Esc menu and its settings, the inventory, the mission board, and on the score screen after a mission. It is `vendor_menu` at vendors, in crafting, in penances, and in the Havoc menu, `appearance_menu` in character appearance, and `credit_store_menu` in the store. It is `None` with no menu open. The game's settings also list `story_mission_menu` and `credits`. The mod lowers custom music to the Menu Volume setting while it is anything but `None`, and logs its changes as `[raw] options` lines.
 
