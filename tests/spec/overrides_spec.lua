@@ -249,6 +249,21 @@ describe("context.lua override names", function()
 		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "loading"), {})
 	end)
 
+	-- These belong to no one mission, so a mission folder in them would apply only when the game happens to name a mission.
+	it("offers no mission or game mode to the title screen, character select, the hub, or loading, even while the game names one", function()
+		local harness = Harness.new()
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness.engine:set_mechanism_mission("psykhanium", { game_mode_name = "survival" })
+		-- Matchmaking's own moment, which the hub offers, lasts 2 seconds past it.
+		harness:wait(3)
+
+		for _, context_name in ipairs({ "title_screen", "character_select", "hub", "loading" }) do
+			assert_deep_equal(harness.Context.override_keys(harness.engine.mod, context_name), {})
+		end
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "mission_preparation"), { "psykhanium", "mortis_trials" })
+	end)
+
 	it("offers havoc while the game has Havoc data, which is how the game itself tells a Havoc run apart", function()
 		local harness = Harness.new()
 		harness:cold_start_to_hub()

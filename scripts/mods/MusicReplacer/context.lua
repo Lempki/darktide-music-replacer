@@ -733,11 +733,17 @@ end
 
 -- The override folder names `context_name` can use right now, most specific first.
 -- They are the moment's kind, then the mission's code, then the game mode.
+-- A context the catalog marks as belonging to no one mission gets only the moment's kind.
 -- MusicReplacer.lua plays the first one that has songs.
 function Context.override_keys(mod, context_name)
 	local keys = {}
 
 	keys[#keys + 1] = moment_kind(mod, context_name)
+
+	local context = Contexts.get(context_name)
+	if context and context.mission_overrides == false then
+		return keys
+	end
 
 	if mission_name and not mission_is_hub then
 		keys[#keys + 1] = mission_name

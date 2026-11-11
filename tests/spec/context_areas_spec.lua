@@ -157,7 +157,7 @@ describe("context.lua areas", function()
 		harness:tick(0)
 
 		assert_deep_equal(harness.changes, { "nil", "loading" })
-		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "loading"), { "lm_cooling" })
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "mission_preparation"), { "lm_cooling" })
 	end)
 
 	-- Matchmaking can end without a mission while the mission board is closed, as after a declined party vote.
@@ -180,7 +180,7 @@ describe("context.lua areas", function()
 		harness:tick(0)
 
 		assert_deep_equal(harness.changes, { "nil", "loading" })
-		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "loading"), {})
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "mission_preparation"), {})
 	end)
 
 	-- Going back to character select leaves about a second between the two, longer than the debounce.

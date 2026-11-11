@@ -30,6 +30,7 @@ What changes for players in each release of Music Replacer. The format follows [
 * Restart Song and Previous Song keep a song playing whose file you deleted or moved while it played, and say so. Before, they tried to open the file again, and the music fell back to the game's or jumped to another song.
 * Restart Song loops a song that became its folder's only one while it played, as such a song does when it starts by itself.
 * Victory and defeat music no longer starts over when you leave character select after a mission, as with a mod that returns you there instead of to the Mourningstar.
+* A mission or game mode folder inside `title_screen`, `character_select`, `hub`, or `loading` never plays, as the override folder docs say. Before, one inside `loading` played on the first loading screen of a trip into that mission.
 
 ## [1.1.0] - 2026-11-06
 

@@ -11,14 +11,16 @@
 --	  A ranked context set to Skip leaves the ranking, so context.lua resolves the one below it instead.
 --	* resume: "always" when its song continues whenever it returns, "sequence" when only within one horde, fight, or event.
 --	* loading_screen: true for a loading screen's context, which waits longer before it takes over.
+--	* mission_overrides: false for a context that belongs to no one mission, so no mission code or game mode names its override folders.
+--	  Without it, such a folder would apply only when the game happens to name a mission early or late, which no player could rely on.
 
 local Contexts = {}
 
 Contexts.list = {
-	{ id = "title_screen", silences = "music_game_state" },
-	{ id = "character_select", silences = "music_game_state" },
-	{ id = "hub", silences = "music_zone" },
-	{ id = "loading", silences = "music_game_state", loading_screen = true },
+	{ id = "title_screen", silences = "music_game_state", mission_overrides = false },
+	{ id = "character_select", silences = "music_game_state", mission_overrides = false },
+	{ id = "hub", silences = "music_zone", mission_overrides = false },
+	{ id = "loading", silences = "music_game_state", loading_screen = true, mission_overrides = false },
 	{ id = "mission_preparation", silences = "music_game_state" },
 	{ id = "mission_briefing", silences = "music_game_state", loading_screen = true },
 	{ id = "explore", priority = 1, resume = "always" },
