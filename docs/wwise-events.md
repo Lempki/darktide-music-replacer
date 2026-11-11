@@ -97,7 +97,6 @@ With Detailed Logging on, the mod also logs every boss alive in the level, readi
 |---|---|
 | `[boss] #1 chaos_spawn appeared: monster, 60 m away, targets nobody` | A boss the game has just sent, with its kind, how far it is, and whom it targets. `weakened` follows the kind for a boss with less health than normal, which the game's boss music leaves out. |
 | `[boss] #1 chaos_spawn targets you, 20 m away, 12.5s after it appeared` | The boss picked a target, or lost one, which shows when it noticed the players. The target is `you`, `a teammate`, `a bot`, another enemy's breed, `nobody`, or `unknown` when the game sends none for it. |
-| `[boss] #1 chaos_spawn first damaged, 20 m away, 14.0s after it appeared` | Someone hit the boss for the first time. |
 | `[boss] #1 chaos_spawn gone after 80.2s, it had targeted someone` | The boss died or despawned, and whether it ever targeted anyone. |
 
 ## The event probe
@@ -108,7 +107,6 @@ With Detailed Logging on, the mod also logs the game's sound events, without cha
 |---|---|
 | `[probe] music event: <name> (extra args: N)` | An event whose name contains "music". It is logged every time it fires. |
 | `[probe] new event: <name>` | Any other event, logged the first time it fires after the game starts. |
-| `[probe] minion event near a boss: <name>` | An enemy sound in the 5 seconds after a boss appears or picks a target, logged once in that time. These are otherwise left out, so this shows the sounds that come with a boss. |
 
 The probe starts once every mod has loaded, so it cannot see events from before that, such as the title screen's first sounds.
 

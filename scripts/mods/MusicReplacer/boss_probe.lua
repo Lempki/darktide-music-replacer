@@ -1,5 +1,6 @@
 -- Logs the bosses alive in the level, and never changes or silences anything.
--- It shows when each one appears, whom it targets, when it is first damaged, and when it is gone.
+-- It shows when each one appears, whom it targets, and when it is gone.
+-- A boss's first damage is only known on the server, so the HP bar's boss_encounter_start, which context.lua logs, stands in for it.
 -- The game's boss music and HP bar each follow rules of their own, so this is the evidence for following bosses more closely.
 -- Enemy AI runs on the server, so it reads only what the game sends to every player.
 -- That is the alive enemies, their boss extension, and their target.
@@ -14,10 +15,9 @@ local POLL_SECONDS = 0.25
 local BOSS_TAGS = { "witch", "lord", "captain", "cultist_captain", "monster" }
 
 local log_detail = function() end -- It does nothing unless BossProbe.init is given a real logger.
-local on_arrival = function() end -- Called when a boss appears or picks a new target.
 local read_bosses -- Reads the game, as set below, or stands in for it in the specs.
 
-local tracked = {} -- Unit -> { id, breed, age, target, damaged, ever_targeted } for every boss seen and not yet gone.
+local tracked = {} -- Unit -> { id, breed, age, target, ever_targeted } for every boss seen and not yet gone.
 local next_id = 0
 local poll_seconds_left = 0
 local reported_failures = {} -- Error text -> true, so a failure that repeats every poll is logged once.
@@ -104,7 +104,6 @@ local function read_bosses_from_game()
 					breed = breed_name(unit),
 					kind = tag,
 					weakened = boss_extension and boss_extension:is_weakened() == true or false,
-					damaged = boss_extension and boss_extension:time_since_first_damage() < math.huge or false,
 					distance = measure_distance(position, player_position),
 					target = read_target(unit, player_unit),
 				}
@@ -135,13 +134,11 @@ local function observe(bosses, elapsed)
 
 		if not known then
 			next_id = next_id + 1
-			known = { id = next_id, breed = boss.breed, age = 0, target = boss.target, damaged = boss.damaged }
+			known = { id = next_id, breed = boss.breed, age = 0, target = boss.target }
 			known.ever_targeted = boss.target ~= "nobody" and boss.target ~= "unknown"
 			tracked[boss.unit] = known
-			log_detail(string.format("[boss] #%d %s appeared: %s%s, %s, targets %s%s",
-				known.id, boss.breed, boss.kind, boss.weakened and ", weakened" or "", distance_text(boss), boss.target,
-				boss.damaged and ", already damaged" or ""))
-			on_arrival()
+			log_detail(string.format("[boss] #%d %s appeared: %s%s, %s, targets %s",
+				known.id, boss.breed, boss.kind, boss.weakened and ", weakened" or "", distance_text(boss), boss.target))
 		else
 			known.age = known.age + elapsed
 
@@ -149,16 +146,9 @@ local function observe(bosses, elapsed)
 				known.target = boss.target
 				if boss.target ~= "nobody" and boss.target ~= "unknown" then
 					known.ever_targeted = true
-					on_arrival()
 				end
 				log_detail(string.format("[boss] #%d %s targets %s, %s, %.1fs after it appeared",
 					known.id, known.breed, boss.target, distance_text(boss), known.age))
-			end
-
-			if boss.damaged and not known.damaged then
-				known.damaged = true
-				log_detail(string.format("[boss] #%d %s first damaged, %s, %.1fs after it appeared",
-					known.id, known.breed, distance_text(boss), known.age))
 			end
 		end
 	end
@@ -177,11 +167,10 @@ end
 -- ###########################################################################
 
 -- Call once from the main mod file's top level.
--- `options.on_arrival()` runs when a boss appears or picks a new target, and `options.read()` stands in for the game in the specs.
+-- `options.read()`, if given, stands in for the game in the specs.
 function BossProbe.init(detail_logger, options)
 	log_detail = detail_logger or log_detail
 	options = options or {}
-	on_arrival = options.on_arrival or on_arrival
 	read_bosses = options.read or read_bosses_from_game
 end
 
