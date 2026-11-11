@@ -340,7 +340,7 @@ local strings = {
 		en = "Character Select",
 	},
 	source_character_select_tooltip = {
-		en = source_tooltip("on the character select screen, also while creating a character"),
+		en = source_tooltip("on the character select screen, also while creating a character, and while picking a mission or waiting for one from there, as some mods allow"),
 	},
 	source_hub = {
 		en = "Hub",
@@ -365,10 +365,8 @@ local strings = {
 	},
 	source_mission_briefing_tooltip = {
 		en = source_tooltip(
-			"on the loading screen before the preparation screen and in the briefing on the way into a mission, " ..
-				"and on the loading screen when joining a mission in progress",
-			"The intro itself keeps the game's music. " ..
-				"With Resume Songs on, a song that starts on the loading screen before the preparation screen continues in the briefing after it."
+			"in the briefing after the preparation screen, and on the loading screen when joining a mission in progress",
+			"The intro itself keeps the game's music."
 		),
 	},
 	source_explore = {

@@ -86,7 +86,7 @@ The folders most people fill first are in bold. Each folder plays in one situati
 | **`hub`** | In the Mourningstar. |
 | `loading` | On loading screens that lead anywhere but into a mission: after starting the game, after a mission, and on the way to Meat Grinder. |
 | `mission_preparation` | On the mission preparation screen of every game mode, where the party gathers before a mission and can still change loadouts. |
-| `mission_briefing` | On the loading screen before the preparation screen and in the briefing on the way into a mission, and on the loading screen when you join a mission in progress. A song that starts on the loading screen before the preparation screen continues in the briefing after it, unless Resume Songs is off. The mission's intro keeps the game's music. |
+| `mission_briefing` | In the briefing after the preparation screen (or when you join a mission in progress). The mission's intro keeps the game's music. |
 | **`explore`** | In a mission while nothing threatens you. |
 | **`combat`** | In a mission while enemies attack you, outside a horde or a boss fight. |
 | **`horde`** | During a horde. |

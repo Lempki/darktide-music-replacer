@@ -36,6 +36,8 @@
 --	  The game sends the hub zone about 10 seconds before the loading screen ends, and a mission zone partway through the briefing.
 --	  The briefing, and every loading screen after the mission board's "mission_ready", lead into a mission and resolve "mission_briefing".
 --	  A plain loading screen does not say where it leads, so "mission_ready" tells joining a mission apart from leaving one.
+--	  A mission picked from character select returns the game state to "main_menu" before its first loading screen.
+--	  That ends the trip, so that loading screen resolves "loading".
 --	  With the board closed, matchmaking that ends without a mission leaves the game state on "mission".
 --	  That ends the trip after a few seconds.
 --	  The mission preparation screen, where the party gathers before a mission, resolves "mission_preparation".
