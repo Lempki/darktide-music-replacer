@@ -19,6 +19,25 @@ local function spawn(unit)
 end
 
 describe("boss_probe.lua", function()
+	-- Asking for the local player before the network is up crashes the game, which no pcall catches.
+	it("reads no player outside a level, as on the title screen", function()
+		local engine = FakeEngine.new()
+		local asked_for_player = false
+		rawset(Managers, "player", {
+			local_player = function()
+				asked_for_player = true
+			end,
+		})
+		local BossProbe = engine:load("boss_probe")
+		local lines = {}
+		BossProbe.init(function(line) lines[#lines + 1] = line end)
+
+		BossProbe.update(0.25)
+
+		assert_equal(asked_for_player, false)
+		assert_deep_equal(lines, {})
+	end)
+
 	it("logs a boss's arrival, its target, and its departure, each once", function()
 		local BossProbe, lines, world = new_probe()
 		local boss = spawn("unit_a")

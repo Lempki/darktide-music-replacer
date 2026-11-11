@@ -73,10 +73,16 @@ end
 
 -- Every boss alive now, or nil while the player has no unit to measure from, as on a loading screen.
 local function read_bosses_from_game()
+	-- The level comes first, since asking for the local player before the network is up crashes the game, as on the title screen.
+	-- That crash happens in the engine, so the pcall around this reader cannot catch it.
+	local extension_manager = Managers.state and Managers.state.extension
+	if not extension_manager or not extension_manager:has_system("side_system") then
+		return nil
+	end
+
 	local player = Managers.player and Managers.player:local_player(1)
 	local player_unit = player and player.player_unit
-	local extension_manager = Managers.state and Managers.state.extension
-	if not player_unit or not extension_manager or not extension_manager:has_system("side_system") then
+	if not player_unit then
 		return nil
 	end
 
