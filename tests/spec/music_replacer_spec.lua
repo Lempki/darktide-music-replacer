@@ -2311,9 +2311,9 @@ describe("MusicReplacer.lua the Remove from Rotation key", function()
 		harness:settle()
 
 		press(harness, "remove_song")
-		assert_equal(harness:last_on_screen_message(), "<control_remove_confirm: <source_explore> (lm_cooling), cooling.mp3>")
+		assert_equal(harness:last_on_screen_message(), "<control_remove_confirm: <override_folder_label: <source_explore>, lm_cooling>, cooling.mp3>")
 		press(harness, "remove_song")
-		assert_equal(harness:last_on_screen_message(), "<control_removed_song: <source_explore> (lm_cooling), cooling.mp3>")
+		assert_equal(harness:last_on_screen_message(), "<control_removed_song: <override_folder_label: <source_explore>, lm_cooling>, cooling.mp3>")
 	end)
 
 	it("keeps its message over the song the situation plays after an override folder's last song", function()
@@ -2330,7 +2330,7 @@ describe("MusicReplacer.lua the Remove from Rotation key", function()
 		press(harness, "remove_song")
 
 		assert_equal(harness:playing(), "explore/x.mp3")
-		assert_equal(harness:last_on_screen_message(), "<control_removed_song: <source_explore> (lm_cooling), cooling.mp3>")
+		assert_equal(harness:last_on_screen_message(), "<control_removed_song: <override_folder_label: <source_explore>, lm_cooling>, cooling.mp3>")
 	end)
 
 	it("says no song of yours is playing in a situation set to Vanilla", function()

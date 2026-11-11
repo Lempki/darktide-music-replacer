@@ -601,12 +601,13 @@ end
 -- The folder playing now as the player knows it: the situation's name, and an override folder's name after it.
 -- An example is "Boss (chaos_spawn)".
 -- A removal lasts beyond this situation, so its messages say where the song was taken out.
+-- The pattern that joins the two names is localized too, since languages set such a name apart in their own ways.
 local function folder_label()
-	local label = mod:localize("source_" .. current_context)
-	if current_folder ~= current_context then
-		label = string.format("%s (%s)", label, current_folder:match("[^/]+$"))
+	local situation = mod:localize("source_" .. current_context)
+	if current_folder == current_context then
+		return situation
 	end
-	return label
+	return mod:localize("override_folder_label", situation, current_folder:match("[^/]+$"))
 end
 
 -- `control` names the key in the log.

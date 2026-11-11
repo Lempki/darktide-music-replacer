@@ -250,6 +250,11 @@ local strings = {
 		en = "Moves the on-screen messages up or down, away from their corner toward the middle of the screen, in the game's UI pixels.\n\n" ..
 			"At " .. highlight("0") .. ", their backdrop touches the corner's top or bottom edge.",
 	},
+	-- Where a song from an override folder plays, in the key messages below.
+	-- The first %s is the situation's name, such as "Boss", and the second is the override folder's name, such as "chaos_spawn".
+	override_folder_label = {
+		en = "%s (%s)",
+	},
 	-- The messages a key press shows. %s is the name of the song file unless a comment below says otherwise.
 	control_next_song = {
 		en = "Next song: %s",

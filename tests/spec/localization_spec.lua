@@ -42,6 +42,7 @@ local MESSAGE_ARGUMENTS = {
 	control_shuffle_off = 0,
 	control_repeat_song_on = 0,
 	control_repeat_song_off = 0,
+	override_folder_label = 2,
 }
 
 -- How many values `text` formats, leaving out the "%%" that shows a percent sign.
