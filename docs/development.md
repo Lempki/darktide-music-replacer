@@ -173,30 +173,4 @@ darktide-music-replacer/
 
 ## Roadmap
 
-What comes next, in the order it is planned. What each release changed is in the [changelog](../CHANGELOG.md).
-
-### Next release
-
-* [ ] Mission Intro and No Situation as situations of their own, each with a folder and the choice of Custom, Vanilla, or Silence. The game's music plays in both now. Mission Intro is the cutscene that opens a mission, and No Situation covers any moment whose music states match no situation. The mission intro's music state also changes other game audio, so silencing its music must leave that audio alone.
-* [ ] A Boss Approaching situation for a boss that is near, with Boss taking over once the fight starts. A boss within 80 m of you, the distance the game's own boss music uses, starts Boss Approaching, and its HP bar starts Boss, until that boss dies. Once a boss has come that close, it stays approaching until you are a wider distance away, so moving back and forth at the edge does not switch the music, while a boss left far behind, such as a roaming captain in an Expedition, lets go. Like the other fight situations, it has a hold of its own in Music Holds, which keeps it for a while after the last boss lets go. It covers every enemy the mod counts as a boss: monstrosities, and captains and daemonhosts with their settings on. Daemonhosts get a distance setting of their own in their group, since some levels keep you near a sleeping one for a long time. Weakened monstrosities join the boss settings if the game reports their distance and HP bar as it does for the others. With several bosses, the first to come keeps the music until it dies. The boss probe's lines in the detailed log show each boss's arrival, target, and death.
-* [ ] Any other situation the game's music states or game modes tell apart, as a situation of its own. The detailed log's `[raw]` lines show every music state the game sets.
-
-### Later
-
-* [ ] A now-playing widget in the HUD, small enough to fit among the game's own HUD elements, like the display of a music player. It shows the situation, the song, its time with a progress bar, the shuffle, repeat, and pause state, and the keys bound to the controls. Its width, height, and font size stay fixed, so a song name that fits stays still, and a longer one scrolls around without end, with a short pause before each pass. It is never cut short. It is a HUD element added with DMF's `mod:register_hud_element`, so it shows while the player is alive or dead, and while the communication wheel, emote wheel, or tactical overlay is open, and hides with the rest of the HUD in menus. It is apart from the on-screen messages, which are drawn on every screen, and each has its own settings. It comes in steps: first the widget itself in a fixed spot, then its position, size, and opacity, then settings of its own for the hub and for missions, since the hub shows almost no HUD, with a few presets that set its position, size, and opacity at once. It can be hidden completely, and the keys still work then.
-* [ ] Song names in any script on the debug overlay, the on-screen messages, and the now-playing widget, whatever the game's language. Japanese, Chinese, Korean, and Cyrillic letters draw as empty boxes in an English game now. The game gives each font a list of fonts to fall back on, character by character, and loads its Japanese, Korean, and Chinese fonts from packages of their own only when you play in that language. The mod would give its own texts a list that adds `proxima_nova_bold`, which the game's Russian setup falls back on, and the Noto Sans fonts, loading a font's package only once a song name needs it. The game's own fonts and texts stay as they are.
-* [ ] More settings per situation, such as its own volume.
-* [ ] User rules that refine which folder a situation plays, in three layers. A rule never creates a situation of its own, so each situation keeps its silencing, priority, resume rule, and fallback to the game's music. The priorities between situations stay fixed, offered at most as a few vetted settings.
-  * [ ] Richer override folder names: combined conditions, such as `boss\chaos_spawn+havoc\`, and more of what the game reports. Examples are a mission's circumstance and event intensity.
-  * [ ] A Vanilla marker, an empty file named `vanilla` that any folder can hold. Among other songs, the game's music becomes one more pick in the rotation, and it lasts until the situation changes. Alone in a folder, it keeps the game's music there, so `event\spillway\vanilla` keeps Spillway's own boss music while other events play your songs.
-  * [ ] An optional rules file for what folder names cannot express, such as several conditions, weights, or a chance to play the game's music instead. A bad rule is skipped and named in the log, and the debug overlay shows which rule matched.
-  * [ ] An in-game rule editor, last of all.
-* [ ] Any of the game's own tracks in any situation, after the Vanilla marker. The mod would force the game's music states into the combination that makes Wwise play a chosen track, the way it already forces them to silence the game. It needs a list of the tracks and their state combinations, built from the game's own source, and care with states that change other game audio, such as the mission intro's.
-* [ ] Explore playing music streamed from the internet, such as from YouTube. Whether it can work is an open question. Media Foundation starts with its network support uninitialized, YouTube offers no plain audio file to open, and the mod ships no program of its own to fetch one.
-
-### Done
-
-* [x] Keys to play the next or previous song, restart it, pause it, and take it out of its folder's rotation, each with a short on-screen message. In 1.1.0.
-* [x] Shuffle, Repeat Song, and Let Songs Finish. Unreleased.
-* [x] A crossfade view in the debug overlay, with Fade in and Fade out rows. Unreleased.
-* [x] A Skip choice for the mission situations that rank above another. Unreleased.
+Planned work lives on the [Music Replacer board](https://github.com/users/Lempki/projects/2), with an issue for each item, sorted by status into Next, Planned, and Ideas. What each release changed is in the [changelog](../CHANGELOG.md).
