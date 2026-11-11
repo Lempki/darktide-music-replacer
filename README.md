@@ -8,7 +8,7 @@ Download it from [Nexus Mods](https://www.nexusmods.com/warhammer40kdarktide/mod
 
 ## Quickstart
 
-1. Install Music Replacer like any other Darktide mod, by hand or through a mod manager such as Vortex. It needs [Darktide Mod Loader](https://www.nexusmods.com/warhammer40kdarktide/mods/19) and [DMF](https://www.nexusmods.com/warhammer40kdarktide/mods/8), with `MusicReplacer` listed below `dmf` in `mod_load_order.txt`.
+1. Install Music Replacer like any other Darktide mod, by hand or through a mod manager such as Vortex. It needs [Darktide Mod Loader](https://www.nexusmods.com/warhammer40kdarktide/mods/19) and [DMF](https://www.nexusmods.com/warhammer40kdarktide/mods/8) 26.10.22 or newer, with `MusicReplacer` listed below `dmf` in `mod_load_order.txt`.
 2. Put your songs into the folders you want music for, inside the **installed** mod folder: `...\Warhammer 40,000 DARKTIDE\mods\MusicReplacer\audio\`. It comes with one folder per situation. Most people start with `hub`, `explore`, `combat`, `horde`, and `boss`. Wherever you add no songs, the game's music plays as usual.
 3. Start the game and play.
 
@@ -70,7 +70,7 @@ Music Replacer needs no FFmpeg, no extra program, and no other mod beyond the mo
 ## Requirements
 
 * [Darktide Mod Loader](https://www.nexusmods.com/warhammer40kdarktide/mods/19).
-* [Darktide Mod Framework](https://www.nexusmods.com/warhammer40kdarktide/mods/8) (DMF).
+* [Darktide Mod Framework](https://www.nexusmods.com/warhammer40kdarktide/mods/8) (DMF), version 26.10.22 or newer.
 * `MusicReplacer` listed below `dmf` in `mod_load_order.txt`, in the game's `mods` folder.
 
 Windows "N" editions leave out Media Foundation, so on one, install Microsoft's free Media Feature Pack, which adds it. Without it, the mod cannot play your songs, and the game's music plays as usual.

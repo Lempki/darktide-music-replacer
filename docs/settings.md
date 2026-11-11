@@ -53,7 +53,7 @@ A message is one line of text on a backdrop in the corner of the screen that Mes
 | Message Duration | 4 seconds | How long a message stays at full opacity before it fades out, from 1 to 10 seconds. With Message Fade Out, it also sets how long a second press of Remove from Rotation counts. |
 | Message Fade Out | 1 second | How long a message takes to fade out, from 0 to 3 seconds. Set it to 0 to hide a message at once. |
 | Message Size | 100% | How big the messages are, from 50% to 200%, on top of the game's HUD Scale setting. |
-| Message Color | Grey, 85% opacity | The messages' color, picked with DMF's color picker. Its alpha sets how opaque they are. It needs DMF from August 2026 or newer. |
+| Message Color | Grey, 85% opacity | The messages' color, picked with DMF's color picker. Its alpha sets how opaque they are. |
 | Message Backdrop Opacity | 70% | How dark the backdrop behind the messages is, from 0% to 100%. The backdrop is the same as the debug overlay's: a dark box behind the text that fades out toward the middle of the screen. It fades with the message, and during a crossfade it changes width smoothly from one message to the next. 0% leaves out the backdrop. |
 | Message Corner | Bottom Left | The corner of the screen the messages show in: Bottom Left, Bottom Right, Top Left, or Top Right. They align to its side, so in a right corner they are right-aligned and grow to the left. |
 | Message Offset X | 0 px | Moves the messages sideways, away from their corner toward the middle of the screen, from 0 to 10000. Type the exact number into the field. |
