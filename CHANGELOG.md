@@ -21,7 +21,7 @@ What changes for players in each release of Music Replacer. The format follows [
 * The debug overlay's Waiting and Measuring rows always show, so the overlay keeps its height. While nothing counts down or needs measuring, they are greyed out and say so, such as `none` or `all measured`.
 * With several bosses in the fight, the boss override folder of the one that came first plays until that boss dies or despawns, so bosses that come back to back no longer change the music each time. Before, the boss that came last took over.
 * Character select keeps its music while you pick a mission or wait for one from there, as some mods allow. Before, the game's music played.
-* Every loading screen plays the Loading folder, wherever it leads, and Mission Briefing plays only in the briefing, also when you join a mission in progress. Before, a loading screen on the way into a mission that lasted over 3 seconds played Mission Briefing.
+* Every loading screen plays the Loading folder, wherever it leads, and Mission Briefing plays only in the briefing, also when you join a mission in progress. Before, the loading screen back to the hub after leaving the preparation screen played Mission Briefing, and so did a loading screen on the way into a mission that lasted over 3 seconds.
 
 ### Fixes
 
