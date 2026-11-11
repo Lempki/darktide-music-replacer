@@ -11,7 +11,8 @@
 --	* A captain's or a daemonhost's encounter window counts as a boss only with its setting on.
 --	  Scripted captains appear during events, and event music wins over bosses, so the setting only matters for random ones.
 --	* Encounter windows are tracked per boss unit, since several bosses can be open at once and a start can repeat.
---	  A window stays open until its own end event, which the game sends when the boss dies or despawns.
+--	  A window stays open until its own end event, which the game sends once the boss has died or despawned.
+--	  After a death, that event can come a few seconds later.
 --	  A boss that the game leaves stuck somewhere keeps its window open, just as it keeps the game's own boss music.
 --	* A boss only counts in a mission, never in the hub or on a loading screen.
 --	  Boss windows are also cleared by every loading screen, so a window whose end event never came cannot reach the next level.
@@ -21,7 +22,7 @@
 --	  Entering combat is never delayed.
 --	* The game drops "boss" for a second or two now and then while the boss is still alive.
 --	  So `boss` holds for `boss_hold_seconds` after it quiets, but only until the last boss window that counts has closed.
---	  A boss's death sends its end event, so boss music never outlasts the boss.
+--	  The end event ends the hold at once, so boss music outlasts the boss only until the game reports it gone.
 --	* "horde_low" and "horde_high" resolve "horde", below bosses. The game plays its own horde music for both.
 --	  The game reports a horde only while at least 5 enemies are aggroed, so it drops out for a second or two mid-horde.
 --	  So `horde` holds for `horde_hold_seconds`, whose default is shorter than the combat hold's, since a horde ends for good.
@@ -963,7 +964,7 @@ function Context.init(mod, detail_logger, logger)
 		if closed then
 			open_bosses[unit] = nil
 
-			-- The game sends the end event when the boss dies or despawns, so its music has nothing left to bridge.
+			-- The game sends the end event once the boss has died or despawned, so its music has nothing left to bridge.
 			if counts_as_boss(mod, closed) and not current_boss_breed(mod) then
 				boss_fight_over = true
 				hold_named.boss.remaining = 0

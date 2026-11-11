@@ -87,7 +87,7 @@ These lines also show up with Detailed Logging on:
 |---|---|
 | `[hold] combat quiet, holding combat for 8.0s more` | The game's state for that context went quiet, and its Music Holds setting keeps the context for the seconds shown. |
 | `[raw] boss_encounter_start breed=chaos_spawn` | A boss's encounter window opened, named by its breed. A breed that counts as a boss names the `boss` override folder. |
-| `[raw] boss_encounter_end breed=chaos_spawn` | That window closed, as when the boss dies or despawns. Once no boss that counts is left, the Boss Music Hold ends at once. |
+| `[raw] boss_encounter_end breed=chaos_spawn` | That window closed, once the boss died or despawned. After a death, it can come a few seconds after the boss probe's `gone` line. Once no boss that counts is left, the Boss Music Hold ends at once. |
 
 ## The boss probe
 

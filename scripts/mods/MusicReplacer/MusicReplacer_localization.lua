@@ -565,7 +565,7 @@ local strings = {
 	boss_hold_seconds_tooltip = {
 		en = "How long boss music keeps playing after the game stops reporting a boss that is still alive. " ..
 			"The game drops that signal for a moment now and then during a boss fight. " ..
-			"Boss music still ends as soon as the boss dies.\n\n" ..
+			"Boss music still ends once the game reports the boss gone, which can be a few seconds after it dies.\n\n" ..
 			"Set to " .. highlight("0") .. " to follow the game exactly.",
 	},
 	event_hold_seconds = {

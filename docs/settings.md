@@ -74,7 +74,7 @@ One dropdown per situation except Meat Grinder, which has a group of its own bel
 
 | Setting | Default | What it does |
 |---|---|---|
-| Boss Music for Captains | Off | Plays your boss music while a captain is in the fight, from the moment it engages until it dies. Off leaves captains to the game's music. During an event, event music still plays. |
+| Boss Music for Captains | Off | Plays your boss music while a captain is in the fight, from the moment it engages until the game reports it gone. Off leaves captains to the game's music. During an event, event music still plays. |
 | Boss Music for Daemonhosts | Off | Plays your boss music while an angered daemonhost is alive. Off follows the game, which plays no music for daemonhosts. |
 
 ## Music Holds
@@ -85,7 +85,7 @@ Each hold goes from 0 to 30 seconds. Set one to 0 to follow the game exactly.
 |---|---|---|
 | Combat Music Hold | 8 seconds | How long combat music keeps playing after a fight quiets down, so a short lull does not switch to explore music. It also covers Expedition Combat. |
 | Horde Music Hold | 3 seconds | How long horde music keeps playing after the game stops reporting a horde. The game drops that signal for a moment whenever few enemies are on you, so a short hold keeps the song from switching away and back. |
-| Boss Music Hold | 3 seconds | How long boss music keeps playing after the game stops reporting a boss that is still alive. The game drops that signal for a moment now and then during a boss fight. Boss music still ends as soon as the boss dies. |
+| Boss Music Hold | 3 seconds | How long boss music keeps playing after the game stops reporting a boss that is still alive. The game drops that signal for a moment now and then during a boss fight. Boss music still ends once the game reports the boss gone, which can be a few seconds after it dies. |
 | Event Music Hold | 5 seconds | How long event music keeps playing after the game ends an event's music. Some events pause their music for a few seconds between stages, so a short hold keeps the event's song from starting over at every stage. |
 
 ## Debug
