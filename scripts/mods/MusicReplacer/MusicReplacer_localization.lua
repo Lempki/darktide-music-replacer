@@ -97,7 +97,7 @@ local strings = {
 	},
 	previous_song_keybind_tooltip = {
 		en = "Within the first 3 seconds of a song, crossfades back to the song that played before it in this situation. " ..
-			"Pressing it again keeps going back.\n\n" ..
+			"Pressing it again keeps going back. With Shuffle off, it goes to the song before in name order.\n\n" ..
 			"Later into a song, or with no earlier song, it starts the song playing now over. " ..
 			"A new situation starts with no earlier songs, and so does a switch to an override folder, or a replay after a rescan or a changed setting.",
 	},
