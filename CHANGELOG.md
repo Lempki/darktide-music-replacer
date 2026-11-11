@@ -12,13 +12,14 @@ What changes for players in each release of Music Replacer. The format follows [
 * A Let Songs Finish setting, off by default, in the Playback group. Turned on, a song plays to its end before a situation that ranks the same or lower takes over, such as explore after a fight. A switch to a situation that ranks higher, to the game's music, or to silence still happens at once, and Next Song ends the wait.
 * A Skip choice joins Custom, Vanilla, and Silence for the mission situations that rank above another, such as Combat, Boss, and Event. A skipped situation lets the one ranked below it play on, such as explore through fights with Combat skipped. The skipped situation's own game music stays silenced while your songs play, and the debug overlay's tag names it, such as `Custom, boss skipped`.
 * The debug overlay has Fade in and Fade out rows, with each fade's level and seconds left while the music fades, and the name of the song fading out.
+* With Detailed Logging on, the log names each boss in the level when it appears, picks or loses a target, and is gone, with its distance from you.
 
 ### Changes
 
 * A folder plays each of its songs once before any song repeats, instead of only avoiding the song that just played.
 * Next Song returns to the songs Previous Song went back past before it moves on to a new one, and so does a song that ends by itself.
 * The debug overlay's Waiting and Measuring rows always show, so the overlay keeps its height. While nothing counts down or needs measuring, they are greyed out and say so, such as `none` or `all measured`.
-* With several bosses in the fight, the boss override folder of the one that came first plays until that boss dies or leaves the fight, so bosses that come back to back no longer change the music each time. Before, the boss that came last took over.
+* With several bosses in the fight, the boss override folder of the one that came first plays until that boss dies or despawns, so bosses that come back to back no longer change the music each time. Before, the boss that came last took over.
 * Character select keeps its music while you pick a mission or wait for one from there, as some mods allow. Before, the game's music played.
 
 ### Fixes
