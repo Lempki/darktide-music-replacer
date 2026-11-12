@@ -4,6 +4,8 @@ What changes for players in each release of Music Replacer. The format follows [
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-12
+
 ### Features
 
 * A Shuffle setting, on by default, in the Playback group. Turned off, each folder plays in the order File Explorer sorts it by name, and continues after the song it played last. Previous Song then goes to the song before in that order, and from the first song to the last.
@@ -68,6 +70,7 @@ What changes for players in each release of Music Replacer. The format follows [
 
 First public release.
 
-[Unreleased]: https://github.com/Lempki/darktide-music-replacer/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/Lempki/darktide-music-replacer/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/Lempki/darktide-music-replacer/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/Lempki/darktide-music-replacer/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Lempki/darktide-music-replacer/releases/tag/v1.0.0
