@@ -11,6 +11,8 @@ Every setting of Music Replacer, with its default. The settings are in the in-ga
 
 ## Playback
 
+![Shuffle plays every song once before any repeats, or in name order when off. Repeat Song loops the song playing now with no gap. Let Songs Finish lets a song play to its end before explore takes over after a fight.](images/playback-settings.png)
+
 | Setting | Default | What it does |
 |---|---|---|
 | Shuffle | On | Plays each folder's songs in a random order, each once before any song repeats. A new round never starts with the song that ended the last one. A folder's round lasts until the game closes, so a short visit to a situation does not start it over. Turned off, each folder plays in the order File Explorer sorts it by name, where `2.mp3` comes before `10.mp3`, and starts over after its last song. A folder continues after the song it played last. A change takes effect at the next song. Turning Shuffle on also starts [Previous Song](#playback-controls) with no earlier songs, as a new situation does. |
@@ -22,6 +24,8 @@ Every setting of Music Replacer, with its default. The settings are in the in-ga
 ## Playback Controls
 
 Keys that control the song playing now, and the setting that goes with them. Every key starts unbound. DMF runs keybinds even while you type in chat, so a key that is not a letter, such as one on the numpad or an F-key, works best. Each press shows a short message, see [On-Screen Messages](#on-screen-messages). A press while none of your songs plays, as in a situation set to Vanilla or Silence or with an empty folder, says so and changes nothing.
+
+![Previous Song, Restart Song, and Next Song move through the folder. Pause / Resume pauses the song and resumes it where it stopped. Remove from Rotation asks on the first press and removes the song on the second.](images/playback-controls.png)
 
 | Setting | Default | What it does |
 |---|---|---|

@@ -4,7 +4,7 @@ Music Replacer is a mod for Warhammer 40,000: Darktide that plays your own music
 
 Download it from [Nexus Mods](https://www.nexusmods.com/warhammer40kdarktide/mods/1464).
 
-![How Music Replacer works: the game's music state names the situation, the mod plays a random song from that situation's folder, and the new song crossfades in while the game's music stays silent.](docs/images/how-it-works.png)
+![How Music Replacer works: the game's music state names the situation, the mod plays the next song from that situation's folder, and the new song crossfades in while the game's music stays silent. Each situation can be set to Custom, Vanilla, Silence, or Skip.](docs/images/how-it-works.png)
 
 ## Quickstart
 
