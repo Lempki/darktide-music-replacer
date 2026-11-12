@@ -103,6 +103,8 @@ Each hold goes from 0 to 30 seconds. Set one to 0 to follow the game exactly.
 
 The debug overlay shows, from the top:
 
+![The debug overlay on a loading screen: Loading with a green Custom tag, the loading folder, the song with its bar and time, the Level meter with the Loudness marker and +0.9 dB, Fade in and Fade out during a crossfade, a greyed-out Waiting row, and Measuring at 10 / 44.](images/debug-overlay.png)
+
 * **The situation,** by its name in the mod options, with a tag for what plays there. The tag is green for Custom, gold for Vanilla, and red for Silence. When the game's music plays for a reason, the tag says so, for example `Vanilla, no songs` or `Vanilla, its songs would not play`. It also names a skipped situation that is going on, such as `Custom, boss skipped`. While no situation applies, it names the reason instead, such as Cutscene or Mission Intro. Unknown Music State means the game reports a music state the mod does not know, and No situation covers everything else.
 * **The folder** that plays, and the override names the moment looks for.
 * **The song,** with a bar that shows how far it has played, and its time and length. While no song of yours plays, this line says what plays instead.
