@@ -1,7 +1,8 @@
 -- The constant UI element that draws the on-screen message in a corner of the screen.
--- on_screen_message.lua adds and removes it, and times the lines it draws.
--- Every line is drawn at the same spot at its own opacity, so during a crossfade one text fades into the next.
--- A backdrop like the debug overlay's sits behind the text and fades out toward the middle of the screen.
+-- on_screen_message.lua adds and removes it, and times the lines it draws and where each one is.
+-- The newest line sits at the corner, and the previous one beside it, away from the corner and smaller.
+-- A line is drawn at its own opacity, size, and place every frame, so a pushed line slides and shrinks into the previous line's place.
+-- Each line has a backdrop like the debug overlay's, which fits its text and fades out toward the middle of the screen.
 
 require("scripts/ui/constant_elements/constant_element_base")
 
@@ -15,6 +16,9 @@ local FONT_SIZE = 16
 local LINE_HEIGHT = 24
 local BACKDROP_PADDING = 4
 local FADE_WIDTH = 80
+
+-- The space between the newest line's backdrop and the previous line's, none, so the two backdrops read as one block.
+local LINE_GAP = 0
 local FONT_TYPE = "proxima_nova_medium"
 
 -- Text is placed in a pass far wider than itself, so it never wraps.
@@ -35,34 +39,21 @@ local function line_id(index)
 	return "line_" .. index
 end
 
--- Each line is drawn one layer above the one before it, so the newest is on top.
-local function text_pass(index)
-	local id = line_id(index)
-	return {
-		pass_type = "text",
-		value_id = id,
-		value = "",
-		style_id = id,
-		style = {
-			font_type = FONT_TYPE,
-			font_size = FONT_SIZE,
-			drop_shadow = true,
-			text_color = { 0, 0, 0, 0 },
-			text_horizontal_alignment = "left",
-			text_vertical_alignment = "center",
-			horizontal_alignment = "left",
-			vertical_alignment = "bottom",
-			size = { TEXT_ROOM, LINE_HEIGHT },
-			offset = { 0, 0, index + 1 },
-		},
-	}
+local function backdrop_id(index)
+	return "backdrop_" .. index
 end
 
-local function backdrop_passes()
+local function backdrop_fade_id(index)
+	return "backdrop_fade_" .. index
+end
+
+-- Each line is drawn one layer above the one before it, so the newest is on top.
+-- Every backdrop sits below every text, so a line leaving over the previous one never hides its text.
+local function line_passes(index)
 	return {
 		{
 			pass_type = "rect",
-			style_id = "backdrop",
+			style_id = backdrop_id(index),
 			style = {
 				color = { 0, BACKDROP_RGB[1], BACKDROP_RGB[2], BACKDROP_RGB[3] },
 				horizontal_alignment = "left",
@@ -73,7 +64,7 @@ local function backdrop_passes()
 		},
 		{
 			pass_type = "texture_uv",
-			style_id = "backdrop_fade",
+			style_id = backdrop_fade_id(index),
 			value = "content/ui/materials/gradients/gradient_horizontal",
 			style = {
 				color = { 0, BACKDROP_RGB[1], BACKDROP_RGB[2], BACKDROP_RGB[3] },
@@ -84,14 +75,34 @@ local function backdrop_passes()
 				uvs = FADE_RIGHT_UVS,
 			},
 		},
+		{
+			pass_type = "text",
+			value_id = line_id(index),
+			value = "",
+			style_id = line_id(index),
+			style = {
+				font_type = FONT_TYPE,
+				font_size = FONT_SIZE,
+				drop_shadow = true,
+				text_color = { 0, 0, 0, 0 },
+				text_horizontal_alignment = "left",
+				text_vertical_alignment = "center",
+				horizontal_alignment = "left",
+				vertical_alignment = "bottom",
+				size = { TEXT_ROOM, LINE_HEIGHT },
+				offset = { 0, 0, index + 1 },
+			},
+		},
 	}
 end
 
 -- `OnScreenMessage` is the loaded on_screen_message.lua. Returns the element class.
 return function(OnScreenMessage)
-	local passes = backdrop_passes()
+	local passes = {}
 	for index = 1, OnScreenMessage.MAX_LINES do
-		passes[#passes + 1] = text_pass(index)
+		for _, pass in ipairs(line_passes(index)) do
+			passes[#passes + 1] = pass
+		end
 	end
 
 	local definitions = {
@@ -117,30 +128,25 @@ return function(OnScreenMessage)
 	end
 
 	-- `look` is OnScreenMessage.look(): the size, the ARGB color, the corner, the offsets inward from it, and the backdrop's opacity.
-	-- The backdrop sits at the corner, and the text inside it by the padding, aligned to the corner's side so it grows away from the corner.
+	-- Each backdrop sits toward the corner, and its text inside it by the padding, aligned to the corner's side so it grows away from the corner.
+	-- The sizes and places change as lines slide, so _draw_lines sets them every frame.
 	function Element:set_layout(look)
 		local style = self._widgets_by_name.message.style
 		local placement = OnScreenMessage.placement(look)
-		local padding = BACKDROP_PADDING * look.scale
 		for index = 1, OnScreenMessage.MAX_LINES do
 			local line_style = style[line_id(index)]
-			line_style.font_size = FONT_SIZE * look.scale
-			line_style.size[1] = TEXT_ROOM * look.scale
-			line_style.size[2] = LINE_HEIGHT * look.scale
 			line_style.horizontal_alignment = placement.horizontal
 			line_style.text_horizontal_alignment = placement.horizontal
 			line_style.vertical_alignment = placement.vertical
-			line_style.offset[1] = placement.x + placement.toward_x * padding
-			line_style.offset[2] = placement.y + placement.toward_y * padding
 			line_style.text_color[2] = look.color[2]
 			line_style.text_color[3] = look.color[3]
 			line_style.text_color[4] = look.color[4]
+			for _, id in ipairs({ backdrop_id(index), backdrop_fade_id(index) }) do
+				style[id].horizontal_alignment = placement.horizontal
+				style[id].vertical_alignment = placement.vertical
+			end
+			style[backdrop_fade_id(index)].uvs = placement.horizontal == "left" and FADE_RIGHT_UVS or FADE_LEFT_UVS
 		end
-		for _, id in ipairs({ "backdrop", "backdrop_fade" }) do
-			style[id].horizontal_alignment = placement.horizontal
-			style[id].vertical_alignment = placement.vertical
-		end
-		style.backdrop_fade.uvs = placement.horizontal == "left" and FADE_RIGHT_UVS or FADE_LEFT_UVS
 
 		self._alpha = look.color[1]
 		self._backdrop_alpha = 255 * look.backdrop_opacity
@@ -150,7 +156,8 @@ return function(OnScreenMessage)
 		self._widths = {}
 	end
 
-	-- The drawn width of `text`, measured once per text and size.
+	-- The drawn width of `text` at the newest line's size, measured once per text and size.
+	-- A smaller line's width is this one scaled, so a line that shrinks is not measured at every size it passes through.
 	-- It is measured without the text's alignment, since an aligned measure can span the whole box the text sits in.
 	function Element:_width(ui_renderer, text)
 		local width = self._widths[text]
@@ -161,47 +168,63 @@ return function(OnScreenMessage)
 		return width
 	end
 
-	-- Sizes the backdrop around `width` of text at `opacity`, a share, from its corner, and places its fade on the side away from the corner.
-	function Element:_place_backdrop(width, opacity)
+	-- Sizes and places the line at `index`, with `text` at `opacity`, a share, at `place`, 0 at the corner and 1 in the previous line's place.
+	-- A line in the previous line's place sits right beyond the newest line's backdrop, so the two never overlap.
+	function Element:_place_line(ui_renderer, index, text, opacity, place)
 		local style = self._widgets_by_name.message.style
 		local placement = self._placement
-		local s = self._scale
+		local line_scale = 1 + (OnScreenMessage.PREVIOUS_SCALE - 1) * place
+		local s = self._scale * line_scale
 		local padding = BACKDROP_PADDING * s
 
-		local box_width = math.ceil(width + 2 * padding)
+		local newest_box_height = math.ceil(LINE_HEIGHT * self._scale + 2 * BACKDROP_PADDING * self._scale)
+		local away = place * (newest_box_height + LINE_GAP * self._scale)
+		local x = placement.x
+		local y = placement.y + placement.toward_y * away
+
+		local box_width = math.ceil(self:_width(ui_renderer, text) * line_scale + 2 * padding)
 		local box_height = math.ceil(LINE_HEIGHT * s + 2 * padding)
 
-		local backdrop = style.backdrop
-		backdrop.offset[1] = placement.x
-		backdrop.offset[2] = placement.y
+		local line_style = style[line_id(index)]
+		line_style.font_size = FONT_SIZE * s
+		line_style.size[1] = TEXT_ROOM * s
+		line_style.size[2] = LINE_HEIGHT * s
+		line_style.offset[1] = x + placement.toward_x * padding
+		line_style.offset[2] = y + placement.toward_y * padding
+		line_style.text_color[1] = math.floor(self._alpha * opacity + 0.5)
+
+		local backdrop = style[backdrop_id(index)]
+		backdrop.offset[1] = x
+		backdrop.offset[2] = y
 		backdrop.size[1] = box_width
 		backdrop.size[2] = box_height
 
-		local fade = style.backdrop_fade
-		fade.offset[1] = placement.x + placement.toward_x * box_width
-		fade.offset[2] = placement.y
+		local fade = style[backdrop_fade_id(index)]
+		fade.offset[1] = x + placement.toward_x * box_width
+		fade.offset[2] = y
 		fade.size[1] = FADE_WIDTH * s
 		fade.size[2] = box_height
 
-		local alpha = math.floor(self._backdrop_alpha * opacity + 0.5)
-		backdrop.color[1] = alpha
-		fade.color[1] = alpha
+		local backdrop_alpha = math.floor(self._backdrop_alpha * opacity + 0.5)
+		backdrop.color[1] = backdrop_alpha
+		fade.color[1] = backdrop_alpha
 	end
 
-	-- Moves the message on and gives each pass its line's text and opacity, or an empty text, and fits the backdrop to them.
+	-- Moves the message on and gives each line its text, size, place, and opacity, and hides the passes no line uses.
 	function Element:_draw_lines(dt, ui_renderer)
 		OnScreenMessage.advance(dt)
 
 		local widget = self._widgets_by_name.message
 		local line_count = OnScreenMessage.line_count()
 		for index = 1, OnScreenMessage.MAX_LINES do
-			local id = line_id(index)
 			if index <= line_count then
-				local text, opacity = OnScreenMessage.line(index)
-				widget.content[id] = text
-				widget.style[id].text_color[1] = math.floor(self._alpha * math.max(0, math.min(1, opacity)) + 0.5)
+				local text, opacity, place = OnScreenMessage.line(index)
+				widget.content[line_id(index)] = text
+				self:_place_line(ui_renderer, index, text, math.max(0, math.min(1, opacity)), place)
 			else
-				widget.content[id] = ""
+				widget.content[line_id(index)] = ""
+				widget.style[backdrop_id(index)].color[1] = 0
+				widget.style[backdrop_fade_id(index)].color[1] = 0
 			end
 		end
 
@@ -209,9 +232,6 @@ return function(OnScreenMessage)
 		if line_count == 0 and next(self._widths) then
 			self._widths = {}
 		end
-
-		local width, opacity = OnScreenMessage.backdrop(function(text) return self:_width(ui_renderer, text) end)
-		self:_place_backdrop(width, opacity)
 	end
 
 	function Element:update(dt, t, ui_renderer, render_settings, input_service)

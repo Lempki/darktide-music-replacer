@@ -249,7 +249,8 @@ return {
 						setting_id = "message_scale",
 						type = "numeric",
 						tooltip = "message_scale_tooltip",
-						default_value = 100,
+						-- Small enough that both lines fit below the player portrait in the bottom left corner at the game's default HUD Scale.
+						default_value = 85,
 						range = { 50, 200 },
 						decimals_number = 0,
 						unit_text = "percent_unit",

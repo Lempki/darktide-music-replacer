@@ -1,4 +1,4 @@
--- Pins on_screen_message.lua: how the on-screen message fades in, holds, fades out, and gives way to a newer one.
+-- Pins on_screen_message.lua: how the on-screen message fades in, holds, fades out, and is pushed aside by a newer one.
 -- It also pins adding and removing its element on the game's constant UI.
 -- The constant UI is a stand-in with the fields and functions the game's own has.
 
@@ -65,17 +65,18 @@ local function load_with_element(constant_elements, failing)
 	return OnScreenMessage, made, lines
 end
 
--- The lines showing now, oldest first, each as its text and opacity.
+-- The lines showing now, oldest first, each as its text, opacity, and place.
 local function lines_of(OnScreenMessage)
 	local lines = {}
 	for index = 1, OnScreenMessage.line_count() do
-		local text, opacity = OnScreenMessage.line(index)
-		lines[#lines + 1] = { text = text, opacity = opacity }
+		local text, opacity, place = OnScreenMessage.line(index)
+		lines[#lines + 1] = { text = text, opacity = opacity, place = place }
 	end
 	return lines
 end
 
 -- Checks the texts and opacities showing now, with opacities compared to within rounding.
+-- An expected line's third value, when given, is its place: 0 at the corner and 1 in the previous line's place.
 local function assert_lines(OnScreenMessage, expected)
 	local lines = lines_of(OnScreenMessage)
 	local texts = {}
@@ -91,6 +92,10 @@ local function assert_lines(OnScreenMessage, expected)
 	for index, line in ipairs(expected) do
 		local opacity = lines[index].opacity
 		assert_equal(math.abs(opacity - line[2]) < 1e-9, true, line[1] .. "'s opacity " .. tostring(opacity))
+		if line[3] then
+			local place = lines[index].place
+			assert_equal(math.abs(place - line[3]) < 1e-9, true, line[1] .. "'s place " .. tostring(place))
+		end
 	end
 end
 
@@ -131,44 +136,71 @@ describe("on_screen_message.lua", function()
 		assert_equal(OnScreenMessage.line_count(), 0)
 	end)
 
-	it("crossfades to a different message over 0.3 s, the old line fading out over the new one", function()
+	it("pushes the message showing into the previous line's place over 0.3 s, as a different one fades in at the corner", function()
 		local OnScreenMessage = load_on_screen_message()
 
 		OnScreenMessage.show("Next")
 		OnScreenMessage.advance(0.4)
 		OnScreenMessage.show("Previous")
-		assert_lines(OnScreenMessage, { { "Next", 1 }, { "Previous", 0 } })
+		assert_lines(OnScreenMessage, { { "Next", 1, 0 }, { "Previous", 0, 0 } })
 
-		OnScreenMessage.advance(0.06)
-		assert_lines(OnScreenMessage, { { "Next", 0.8 }, { "Previous", 0.2 } })
+		OnScreenMessage.advance(0.15)
+		assert_lines(OnScreenMessage, { { "Next", 1, 0.5 }, { "Previous", 0.5, 0 } })
 
-		OnScreenMessage.advance(0.25)
-		assert_lines(OnScreenMessage, { { "Previous", 1 } })
+		OnScreenMessage.advance(0.15)
+		assert_lines(OnScreenMessage, { { "Next", 1, 1 }, { "Previous", 1, 0 } })
 	end)
 
-	it("fades a replaced line out from the opacity it had, at the crossfade's rate", function()
+	it("keeps a pushed message's own timer, so it fades out when it would have, before the newer one", function()
 		local OnScreenMessage = load_on_screen_message()
 
 		OnScreenMessage.show("Next")
-		OnScreenMessage.advance(0.2)
-		OnScreenMessage.show("Previous")
-		OnScreenMessage.advance(0.06)
-
-		assert_lines(OnScreenMessage, { { "Next", 0.3 }, { "Previous", 0.2 } })
-	end)
-
-	it("gives the new message its own full hold after the crossfade", function()
-		local OnScreenMessage = load_on_screen_message()
-
-		OnScreenMessage.show("Next")
+		OnScreenMessage.advance(0.4)
 		OnScreenMessage.advance(2)
 		OnScreenMessage.show("Previous")
-		OnScreenMessage.advance(0.3)
-		OnScreenMessage.advance(4)
-		assert_lines(OnScreenMessage, { { "Previous", 1 } })
+		OnScreenMessage.advance(2)
+		assert_lines(OnScreenMessage, { { "Next", 1, 1 }, { "Previous", 1, 0 } })
+
+		OnScreenMessage.advance(0.5)
+		assert_lines(OnScreenMessage, { { "Next", 0.5, 1 }, { "Previous", 1, 0 } })
+
+		OnScreenMessage.advance(0.5)
+		assert_lines(OnScreenMessage, { { "Previous", 1, 0 } })
+
+		OnScreenMessage.advance(1.3)
+		assert_lines(OnScreenMessage, { { "Previous", 1, 0 } })
 
 		OnScreenMessage.advance(1)
 		assert_equal(OnScreenMessage.line_count(), 0)
+	end)
+
+	it("pushes the previous message out when a third shows, fading it out where it was over 0.3 s", function()
+		local OnScreenMessage = load_on_screen_message()
+
+		OnScreenMessage.show("A")
+		OnScreenMessage.advance(0.4)
+		OnScreenMessage.show("B")
+		OnScreenMessage.advance(0.4)
+		OnScreenMessage.show("C")
+		assert_lines(OnScreenMessage, { { "A", 1, 1 }, { "B", 1, 0 }, { "C", 0, 0 } })
+
+		OnScreenMessage.advance(0.15)
+		assert_lines(OnScreenMessage, { { "A", 0.5, 1 }, { "B", 1, 0.5 }, { "C", 0.5, 0 } })
+
+		OnScreenMessage.advance(0.15)
+		assert_lines(OnScreenMessage, { { "B", 1, 1 }, { "C", 1, 0 } })
+	end)
+
+	it("shows a text again at the corner while its older copy leaves the previous line's place", function()
+		local OnScreenMessage = load_on_screen_message()
+
+		OnScreenMessage.show("A")
+		OnScreenMessage.advance(0.4)
+		OnScreenMessage.show("B")
+		OnScreenMessage.advance(0.4)
+		OnScreenMessage.show("A")
+
+		assert_lines(OnScreenMessage, { { "A", 1, 1 }, { "B", 1, 0 }, { "A", 0, 0 } })
 	end)
 
 	it("keeps the line of the same text shown again, and fades it back in from the opacity it has", function()
@@ -199,7 +231,7 @@ describe("on_screen_message.lua", function()
 		assert_equal(OnScreenMessage.line_count(), 0)
 	end)
 
-	it("keeps at most 3 lines fading out, dropping the faintest rather than the oldest", function()
+	it("keeps at most 2 lines leaving, dropping the faintest rather than the oldest", function()
 		local OnScreenMessage = load_on_screen_message()
 
 		OnScreenMessage.show("A")
@@ -209,11 +241,11 @@ describe("on_screen_message.lua", function()
 		OnScreenMessage.show("C")
 		OnScreenMessage.advance(0.03)
 		OnScreenMessage.show("D")
-		assert_lines(OnScreenMessage, { { "A", 0.6 }, { "B", 0.2 }, { "C", 0.1 }, { "D", 0 } })
+		assert_lines(OnScreenMessage, { { "A", 0.9, 1 }, { "B", 0.4, 1 }, { "C", 0.1, 0 }, { "D", 0, 0 } })
 
 		OnScreenMessage.show("E")
 
-		assert_lines(OnScreenMessage, { { "A", 0.6 }, { "B", 0.2 }, { "C", 0.1 }, { "E", 0 } })
+		assert_lines(OnScreenMessage, { { "A", 0.9, 1 }, { "B", 0.4, 1 }, { "D", 0, 0 }, { "E", 0, 0 } })
 	end)
 
 	it("carries a long frame's time through the fade in and the hold into the fade out", function()
@@ -225,20 +257,20 @@ describe("on_screen_message.lua", function()
 		assert_lines(OnScreenMessage, { { "Next", 0.4 } })
 	end)
 
-	it("carries a long frame past the crossfade into the new message's hold", function()
+	it("carries a long frame past the push into the new message's hold", function()
 		local OnScreenMessage = load_on_screen_message()
 
 		OnScreenMessage.show("Next")
 		OnScreenMessage.advance(0.4)
 		OnScreenMessage.show("Previous")
 		OnScreenMessage.advance(0.5)
-		assert_lines(OnScreenMessage, { { "Previous", 1 } })
+		assert_lines(OnScreenMessage, { { "Next", 1, 1 }, { "Previous", 1, 0 } })
 
 		OnScreenMessage.advance(3.8)
-		assert_lines(OnScreenMessage, { { "Previous", 1 } })
+		assert_lines(OnScreenMessage, { { "Next", 0.7, 1 }, { "Previous", 1, 0 } })
 
 		OnScreenMessage.advance(0.5)
-		assert_lines(OnScreenMessage, { { "Previous", 0.5 } })
+		assert_lines(OnScreenMessage, { { "Next", 0.2, 1 }, { "Previous", 0.5, 0 } })
 	end)
 
 	it("holds and fades out for as long as its timing says", function()
@@ -297,6 +329,9 @@ describe("on_screen_message.lua", function()
 		local OnScreenMessage = load_on_screen_message()
 		OnScreenMessage.show("Next")
 		OnScreenMessage.advance(0.4)
+		OnScreenMessage.show("Restart")
+		OnScreenMessage.advance(0.4)
+		OnScreenMessage.show("Pause")
 
 		OnScreenMessage.set_enabled(false)
 		assert_equal(OnScreenMessage.line_count(), 0)
@@ -310,11 +345,11 @@ describe("on_screen_message.lua", function()
 end)
 
 describe("on_screen_message.lua look", function()
-	it("starts at its normal size, in muted grey at 85% opacity, in the bottom left corner, on a 70% backdrop", function()
+	it("starts at 85% size, in muted grey at 85% opacity, in the bottom left corner, on a 70% backdrop", function()
 		local OnScreenMessage = load_on_screen_message()
 
 		assert_deep_equal(OnScreenMessage.look(),
-			{ scale = 1, color = { 217, 200, 200, 195 }, corner = "bottom_left", offset_x = 0, offset_y = 0, backdrop_opacity = 0.7 })
+			{ scale = 0.85, color = { 217, 200, 200, 195 }, corner = "bottom_left", offset_x = 0, offset_y = 0, backdrop_opacity = 0.7 })
 	end)
 
 	it("takes the look it is given", function()
@@ -374,46 +409,6 @@ describe("on_screen_message.lua placement", function()
 			{ horizontal = "left", vertical = "top", toward_x = 1, toward_y = 1, x = 10, y = 20 })
 		assert_deep_equal(placement("top_right", 10, 20),
 			{ horizontal = "right", vertical = "top", toward_x = -1, toward_y = 1, x = -10, y = 20 })
-	end)
-end)
-
-describe("on_screen_message.lua backdrop", function()
-	local WIDTHS = { Next = 100, ["Previous song"] = 200 }
-	local function width_of(text)
-		return WIDTHS[text]
-	end
-
-	it("has no width and no opacity while nothing shows", function()
-		local OnScreenMessage = load_on_screen_message()
-
-		local width, opacity = OnScreenMessage.backdrop(width_of)
-
-		assert_equal(width, 0)
-		assert_equal(opacity, 0)
-	end)
-
-	it("fits one line, and fades with it", function()
-		local OnScreenMessage = load_on_screen_message()
-		OnScreenMessage.show("Next")
-		OnScreenMessage.advance(0.2)
-
-		local width, opacity = OnScreenMessage.backdrop(width_of)
-
-		assert_equal(width, 100)
-		assert_equal(math.abs(opacity - 0.5) < 1e-9, true, tostring(opacity))
-	end)
-
-	it("blends from the old line's width to the new one's during a crossfade, at full opacity", function()
-		local OnScreenMessage = load_on_screen_message()
-		OnScreenMessage.show("Next")
-		OnScreenMessage.advance(0.4)
-		OnScreenMessage.show("Previous song")
-		OnScreenMessage.advance(0.15)
-
-		local width, opacity = OnScreenMessage.backdrop(width_of)
-
-		assert_equal(math.abs(width - 150) < 1e-9, true, tostring(width))
-		assert_equal(math.abs(opacity - 1) < 1e-9, true, tostring(opacity))
 	end)
 end)
 

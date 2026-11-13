@@ -1,5 +1,6 @@
--- The short on-screen message, such as a playback key's: one line that fades in, holds, and fades out.
--- A new message takes the place of the one showing, which fades out under it, so the text never jumps or flickers.
+-- The short on-screen message, such as a playback key's: a line that fades in, holds, and fades out.
+-- A new message pushes the one showing away from the corner, where it shrinks to the previous line's size and keeps its own timer.
+-- A message pushed out of the previous line's place fades out there, so the text never jumps or flickers.
 -- It shows while For Key Presses or For Song Changes is on, which both are by default.
 --
 -- The lines are drawn by an element in the game's constant UI, which constant_element_slot.lua keeps there.
@@ -21,14 +22,18 @@ local FADE_IN_SECONDS = 0.4
 local hold_seconds = 4
 local fade_out_seconds = 1
 
--- How long a new message takes to replace the one showing: the old one fades out and the new one in, at once.
-local CROSSFADE_SECONDS = 0.3
+-- How long a push takes: the line showing slides into the previous line's place, and the new one fades in where it was.
+-- A line pushed out of the previous line's place fades out over the same time.
+local PUSH_SECONDS = 0.3
 
--- Keys pressed in quick succession leave several messages fading out at once. Past this many, the faintest goes.
-local MAX_FADING_OUT = 3
+-- The previous line's size, as a share of the newest line's, so the newest stands out and both fit beside the game's HUD.
+OnScreenMessage.PREVIOUS_SCALE = 0.75
 
--- The most lines that show at once, so the element knows how many to draw: those fading out and the newest.
-OnScreenMessage.MAX_LINES = MAX_FADING_OUT + 1
+-- Keys pressed in quick succession leave several lines leaving at once. Past this many, the faintest goes.
+local MAX_LEAVING = 2
+
+-- The most lines that show at once, so the element knows how many to draw: those leaving, the previous, and the newest.
+OnScreenMessage.MAX_LINES = MAX_LEAVING + 2
 
 -- The Message Color setting's default, as ARGB: a muted grey at 85% opacity.
 local DEFAULT_COLOR = { 217, 200, 200, 195 }
@@ -51,8 +56,11 @@ local DEFAULT_BACKDROP_OPACITY = 0.7
 
 -- How the message looks, from its settings: its size as a factor, its ARGB color, its corner, and its backdrop's opacity as a share.
 -- Its offsets are how far it moves inward from the corner, in the UI's pixels.
+-- The Message Size setting's default, as a factor, small enough that both lines fit below the player portrait in the bottom left corner.
+local DEFAULT_SCALE = 0.85
+
 local look = {
-	scale = 1,
+	scale = DEFAULT_SCALE,
 	color = DEFAULT_COLOR,
 	corner = DEFAULT_CORNER,
 	offset_x = 0,
@@ -60,27 +68,32 @@ local look = {
 	backdrop_opacity = DEFAULT_BACKDROP_OPACITY,
 }
 
--- The message showing now, or nil: its text, its opacity as a share, its phase, and the seconds left of its hold.
+-- A message: its text, its opacity as a share, its phase, and the seconds left of its hold.
 -- Its phase is "in", "hold", or "out".
+
+-- The newest message, at the corner, or nil.
 local current = nil
 
--- The messages a newer one replaced, oldest first, each with its text and opacity.
-local fading_out = {}
+-- The message before it, or nil, with `push`, how far it has slid from the corner into the previous line's place, as a share.
+local previous = nil
 
--- The oldest line is not always the faintest: a message replaced while it was still fading in is fainter than the full one before it.
+-- The messages pushed out of the previous line's place, oldest first, each with its text and opacity, fading out where they were.
+local leaving = {}
+
+-- The oldest line is not always the faintest: a message pushed out while it was still fading in is fainter than the full one before it.
 -- Dropping the faintest keeps a line that is still clearly visible from vanishing at once.
 local function drop_faintest()
 	local faintest = 1
-	for index = 2, #fading_out do
-		if fading_out[index].opacity < fading_out[faintest].opacity then
+	for index = 2, #leaving do
+		if leaving[index].opacity < leaving[faintest].opacity then
 			faintest = index
 		end
 	end
-	table.remove(fading_out, faintest)
+	table.remove(leaving, faintest)
 end
 
--- Shows `text`, replacing the message showing now. Does nothing while the messages are turned off.
--- The same text again keeps its line and starts its hold over, since two copies of one text crossfading look brighter for a moment.
+-- Shows `text` at the corner, pushing the message showing there into the previous line's place. Does nothing while the messages are turned off.
+-- The same text again keeps its line and starts its hold over, since a copy of it in the previous line's place would only repeat it.
 function OnScreenMessage.show(text)
 	if not enabled then
 		return
@@ -94,11 +107,15 @@ function OnScreenMessage.show(text)
 
 	local fade_in_seconds = FADE_IN_SECONDS
 	if current then
-		fading_out[#fading_out + 1] = { text = current.text, opacity = current.opacity }
-		if #fading_out > MAX_FADING_OUT then
-			drop_faintest()
+		if previous then
+			leaving[#leaving + 1] = { text = previous.text, opacity = previous.opacity }
+			if #leaving > MAX_LEAVING then
+				drop_faintest()
+			end
 		end
-		fade_in_seconds = CROSSFADE_SECONDS
+		previous = current
+		previous.push = 0
+		fade_in_seconds = PUSH_SECONDS
 	end
 
 	current = { text = text, opacity = 0, phase = "in", fade_in_seconds = fade_in_seconds }
@@ -110,81 +127,83 @@ function OnScreenMessage.seconds_shown()
 	return FADE_IN_SECONDS + hold_seconds + fade_out_seconds
 end
 
--- Moves the fades and the hold on by `dt` seconds. Call every frame the message is drawn.
-function OnScreenMessage.advance(dt)
-	for index = #fading_out, 1, -1 do
-		local line = fading_out[index]
-		line.opacity = line.opacity - dt / CROSSFADE_SECONDS
-		if line.opacity <= 0 then
-			table.remove(fading_out, index)
-		end
-	end
-
-	-- A frame longer than a phase carries its rest into the next, so a slow frame does not stretch the message.
+-- Moves `message` through its fade in, hold, and fade out by `dt` seconds.
+-- Returns the message, or nil once it has faded out.
+-- A frame longer than a phase carries its rest into the next, so a slow frame does not stretch the message.
+local function advance_message(message, dt)
 	local seconds = dt
-	while current and seconds > 0 do
-		if current.phase == "in" then
-			local needed = (1 - current.opacity) * current.fade_in_seconds
+	while seconds > 0 do
+		if message.phase == "in" then
+			local needed = (1 - message.opacity) * message.fade_in_seconds
 			if seconds < needed then
-				current.opacity = current.opacity + seconds / current.fade_in_seconds
+				message.opacity = message.opacity + seconds / message.fade_in_seconds
 				seconds = 0
 			else
-				current.opacity = 1
-				current.phase = "hold"
-				current.hold_left = hold_seconds
+				message.opacity = 1
+				message.phase = "hold"
+				message.hold_left = hold_seconds
 				seconds = seconds - needed
 			end
-		elseif current.phase == "hold" then
-			if seconds < current.hold_left then
-				current.hold_left = current.hold_left - seconds
+		elseif message.phase == "hold" then
+			if seconds < message.hold_left then
+				message.hold_left = message.hold_left - seconds
 				seconds = 0
 			else
-				current.phase = "out"
-				seconds = seconds - current.hold_left
+				message.phase = "out"
+				seconds = seconds - message.hold_left
 			end
 		elseif fade_out_seconds <= 0 then
-			current = nil
+			return nil
 		else
-			current.opacity = current.opacity - seconds / fade_out_seconds
+			message.opacity = message.opacity - seconds / fade_out_seconds
 			seconds = 0
-			if current.opacity <= 0 then
-				current = nil
+			if message.opacity <= 0 then
+				return nil
 			end
 		end
 	end
+	return message
 end
 
--- How many lines show now: the messages fading out under a newer one, and the newest.
+-- Moves the fades, the holds, and the push on by `dt` seconds. Call every frame the message is drawn.
+function OnScreenMessage.advance(dt)
+	for index = #leaving, 1, -1 do
+		local line = leaving[index]
+		line.opacity = line.opacity - dt / PUSH_SECONDS
+		if line.opacity <= 0 then
+			table.remove(leaving, index)
+		end
+	end
+
+	if previous then
+		previous.push = math.min(1, previous.push + dt / PUSH_SECONDS)
+		previous = advance_message(previous, dt)
+	end
+	if current then
+		current = advance_message(current, dt)
+	end
+end
+
+-- How many lines show now: those leaving, the previous, and the newest.
 function OnScreenMessage.line_count()
-	return #fading_out + (current and 1 or 0)
+	return #leaving + (previous and 1 or 0) + (current and 1 or 0)
 end
 
--- The text and opacity of the line at `index`, oldest first, so the newest is drawn last, on top.
+-- The line at `index`, oldest first, so the newest is drawn last, on top.
+-- Returns its text, its opacity as a share, and its place: 0 at the corner, 1 in the previous line's place, and the share of the way between while it slides.
 function OnScreenMessage.line(index)
-	local line = fading_out[index] or current
-	return line.text, line.opacity
+	if index <= #leaving then
+		local line = leaving[index]
+		return line.text, line.opacity, 1
+	end
+	if previous and index == #leaving + 1 then
+		return previous.text, previous.opacity, previous.push
+	end
+	return current.text, current.opacity, 0
 end
 
 function OnScreenMessage.look()
 	return look
-end
-
--- The backdrop behind the lines showing now: its width, from `width_of(text)` for each line, and its opacity as a share.
--- During a crossfade it blends from the old line's width to the new one's by their opacities, so it never jumps.
--- Returns 0, 0 while no line shows.
-function OnScreenMessage.backdrop(width_of)
-	local total_opacity = 0
-	local weighted_width = 0
-	for index = 1, OnScreenMessage.line_count() do
-		local line_text, opacity = OnScreenMessage.line(index)
-		total_opacity = total_opacity + opacity
-		weighted_width = weighted_width + width_of(line_text) * opacity
-	end
-
-	if total_opacity <= 0 then
-		return 0, 0
-	end
-	return weighted_width / total_opacity, math.min(1, total_opacity)
 end
 
 -- Where the message's backdrop sits for `new_look`: the side it aligns to on each axis, and the offset of its outer corner.
@@ -264,7 +283,7 @@ function OnScreenMessage.set_enabled(on, new_look)
 	enabled = on == true
 	if new_look then
 		look = {
-			scale = new_look.scale or 1,
+			scale = new_look.scale or DEFAULT_SCALE,
 			color = checked_color(new_look.color),
 			-- The corner comes from the saved settings too, so an unknown one keeps the default.
 			corner = CORNERS[new_look.corner] and new_look.corner or DEFAULT_CORNER,
@@ -278,7 +297,8 @@ function OnScreenMessage.set_enabled(on, new_look)
 	if not enabled then
 		-- A message from before the messages were turned off would show again once they are back on.
 		current = nil
-		fading_out = {}
+		previous = nil
+		leaving = {}
 		slot:remove()
 		return
 	end
