@@ -4,6 +4,10 @@ What changes for players in each release of Music Replacer. The format follows [
 
 ## [Unreleased]
 
+### Changes
+
+* Even Out Loudness is on by default, so songs from different sources play at about the same loudness from the start. If you already have the mod, your setting stays as it is.
+
 ## [1.2.0] - 2026-11-12
 
 ### Features

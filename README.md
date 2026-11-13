@@ -51,7 +51,7 @@ Everything below is optional detail.
 * Lets you try out any situation's songs in Meat Grinder, or play a folder of its own there.
 * Has optional keys to skip to the next or previous song, restart or pause the song playing now, or remove it from rotation.
 * Names each new song, and what each key did, in a short message in a corner of the screen, on every screen, loading screens included.
-* Can even out the loudness of your songs, without changing your files.
+* Evens out the loudness of your songs, without changing your files.
 * Lowers your music while a menu is open.
 * Has a debug overlay that shows which situation the mod sees and what it plays.
 * Picks up added, removed, and replaced files while the game runs.

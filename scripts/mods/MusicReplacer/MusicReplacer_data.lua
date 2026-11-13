@@ -207,7 +207,7 @@ return {
 						setting_id = "normalize_loudness",
 						type = "checkbox",
 						tooltip = "normalize_loudness_tooltip",
-						default_value = false,
+						default_value = true,
 					},
 				},
 			},

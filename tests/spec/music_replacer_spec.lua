@@ -533,8 +533,13 @@ describe("MusicReplacer.lua evening out loudness", function()
 		assert_equal(#harness.loudness.updates, updates)
 	end)
 
-	it("turns evening out on and off with its setting, applying it to the songs playing now", function()
+	it("evens out loudness by default", function()
 		local harness = in_hub()
+		assert_equal(harness.loudness.enabled, true)
+	end)
+
+	it("turns evening out on and off with its setting, applying it to the songs playing now", function()
+		local harness = in_hub(nil, { settings = { normalize_loudness = false } })
 		assert_equal(harness.loudness.enabled, false)
 
 		harness:set_setting("normalize_loudness", true)
