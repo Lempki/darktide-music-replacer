@@ -746,7 +746,8 @@ describe("MusicReplacer.lua on-screen messages", function()
 
 		assert_equal(harness.on_screen_message.enabled, true)
 		assert_deep_equal(harness.on_screen_message.look,
-			{ scale = 0.85, color = { 217, 200, 200, 195 }, corner = "bottom_left", offset_x = 0, offset_y = 0, backdrop_opacity = 0.7 })
+			{ scale = 0.85, color = { 217, 200, 200, 195 }, notice_color = { 217, 235, 180, 80 }, error_color = { 217, 240, 100, 90 },
+				corner = "bottom_left", offset_x = 0, offset_y = 0, backdrop_opacity = 0.7 })
 		assert_deep_equal(harness.on_screen_message.timing, { 4, 1 })
 	end)
 
@@ -755,6 +756,8 @@ describe("MusicReplacer.lua on-screen messages", function()
 
 		harness:set_setting("message_scale", 150)
 		harness:set_setting("message_color", { 255, 10, 20, 30 })
+		harness:set_setting("notice_color", { 255, 40, 50, 60 })
+		harness:set_setting("error_color", { 255, 70, 80, 90 })
 		harness:set_setting("message_corner", "top_right")
 		harness:set_setting("message_backdrop_opacity", 25)
 		harness:set_setting("message_offset_x", 300)
@@ -763,7 +766,8 @@ describe("MusicReplacer.lua on-screen messages", function()
 		harness:set_setting("message_fade_out_seconds", 0)
 
 		assert_deep_equal(harness.on_screen_message.look,
-			{ scale = 1.5, color = { 255, 10, 20, 30 }, corner = "top_right", offset_x = 300, offset_y = 40, backdrop_opacity = 0.25 })
+			{ scale = 1.5, color = { 255, 10, 20, 30 }, notice_color = { 255, 40, 50, 60 }, error_color = { 255, 70, 80, 90 },
+				corner = "top_right", offset_x = 300, offset_y = 40, backdrop_opacity = 0.25 })
 		assert_deep_equal(harness.on_screen_message.timing, { 5.5, 0 })
 	end)
 

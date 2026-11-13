@@ -344,17 +344,74 @@ describe("on_screen_message.lua", function()
 	end)
 end)
 
+describe("on_screen_message.lua kinds", function()
+	-- The kind of each line showing now, oldest first.
+	local function kinds_of(OnScreenMessage)
+		local kinds = {}
+		for index = 1, OnScreenMessage.line_count() do
+			local _, _, _, kind = OnScreenMessage.line(index)
+			kinds[index] = kind
+		end
+		return kinds
+	end
+
+	it("shows a message of the message kind unless told another, and an unknown kind as a message", function()
+		local OnScreenMessage = load_on_screen_message()
+
+		OnScreenMessage.show("Next")
+		OnScreenMessage.show("Pause", "sparkly")
+
+		assert_deep_equal(kinds_of(OnScreenMessage), { "message", "message" })
+	end)
+
+	it("keeps each line's kind as it is pushed aside and pushed out", function()
+		local OnScreenMessage = load_on_screen_message()
+
+		OnScreenMessage.show("Could not play", "error")
+		OnScreenMessage.show("42 songs", "notice")
+		OnScreenMessage.show("Next")
+
+		assert_deep_equal(kinds_of(OnScreenMessage), { "error", "notice", "message" })
+	end)
+
+	it("pushes the same text aside when it shows again as another kind", function()
+		local OnScreenMessage = load_on_screen_message()
+
+		OnScreenMessage.show("Same", "notice")
+		OnScreenMessage.advance(0.4)
+		OnScreenMessage.show("Same", "error")
+
+		assert_lines(OnScreenMessage, { { "Same", 1, 0 }, { "Same", 0, 0 } })
+		assert_deep_equal(kinds_of(OnScreenMessage), { "notice", "error" })
+	end)
+
+	it("logs every message it shows, with its kind, and none while turned off", function()
+		local OnScreenMessage = load_on_screen_message()
+		local logged = {}
+		OnScreenMessage.init(function(line) logged[#logged + 1] = line end, {})
+
+		OnScreenMessage.show("Next song: a.mp3")
+		OnScreenMessage.show("Could not play", "error")
+		OnScreenMessage.set_enabled(false)
+		OnScreenMessage.show("Pause")
+
+		assert_deep_equal(logged, { "[on-screen message] message: Next song: a.mp3", "[on-screen message] error: Could not play" })
+	end)
+end)
+
 describe("on_screen_message.lua look", function()
 	it("starts at 85% size, in muted grey at 85% opacity, in the bottom left corner, on a 70% backdrop", function()
 		local OnScreenMessage = load_on_screen_message()
 
 		assert_deep_equal(OnScreenMessage.look(),
-			{ scale = 0.85, color = { 217, 200, 200, 195 }, corner = "bottom_left", offset_x = 0, offset_y = 0, backdrop_opacity = 0.7 })
+			{ scale = 0.85, color = { 217, 200, 200, 195 }, notice_color = { 217, 235, 180, 80 }, error_color = { 217, 240, 100, 90 },
+				corner = "bottom_left", offset_x = 0, offset_y = 0, backdrop_opacity = 0.7 })
 	end)
 
 	it("takes the look it is given", function()
 		local OnScreenMessage = load_on_screen_message()
-		local look = { scale = 1.5, color = { 255, 10, 20, 30 }, corner = "top_right", offset_x = 300, offset_y = 40, backdrop_opacity = 0 }
+		local look = { scale = 1.5, color = { 255, 10, 20, 30 }, notice_color = { 255, 40, 50, 60 }, error_color = { 255, 70, 80, 90 },
+			corner = "top_right", offset_x = 300, offset_y = 40, backdrop_opacity = 0 }
 
 		OnScreenMessage.set_enabled(true, look)
 
@@ -376,6 +433,15 @@ describe("on_screen_message.lua look", function()
 		OnScreenMessage.set_enabled(true, { scale = 1, color = { 217, 200, 200, 195 }, corner = "middle", offset_x = 0, offset_y = 0 })
 
 		assert_equal(OnScreenMessage.look().corner, "bottom_left")
+	end)
+
+	it("keeps the default notice and error colors when the saved ones are not four numbers", function()
+		local OnScreenMessage = load_on_screen_message()
+
+		OnScreenMessage.set_enabled(true, { scale = 1, notice_color = { 255, 10 }, error_color = "red", offset_x = 0, offset_y = 0 })
+
+		assert_deep_equal(OnScreenMessage.look().notice_color, { 217, 235, 180, 80 })
+		assert_deep_equal(OnScreenMessage.look().error_color, { 217, 240, 100, 90 })
 	end)
 
 	it("keeps the default color when the saved color is not four numbers", function()
@@ -441,7 +507,8 @@ describe("on_screen_message.lua element", function()
 		local OnScreenMessage, made = load_with_element(new_constant_elements())
 		OnScreenMessage.set_enabled(true)
 
-		local look = { scale = 2, color = { 255, 10, 20, 30 }, corner = "top_left", offset_x = 5, offset_y = 6, backdrop_opacity = 0.5 }
+		local look = { scale = 2, color = { 255, 10, 20, 30 }, notice_color = { 255, 40, 50, 60 }, error_color = { 255, 70, 80, 90 },
+			corner = "top_left", offset_x = 5, offset_y = 6, backdrop_opacity = 0.5 }
 
 		OnScreenMessage.set_enabled(true, look)
 

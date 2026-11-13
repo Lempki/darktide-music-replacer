@@ -38,6 +38,14 @@ OnScreenMessage.MAX_LINES = MAX_LEAVING + 2
 -- The Message Color setting's default, as ARGB: a muted grey at 85% opacity.
 local DEFAULT_COLOR = { 217, 200, 200, 195 }
 
+-- The Notice Color and Error Color settings' defaults, as ARGB at the same opacity: an amber and a red that read well on the dark backdrop.
+local DEFAULT_NOTICE_COLOR = { 217, 235, 180, 80 }
+local DEFAULT_ERROR_COLOR = { 217, 240, 100, 90 }
+
+-- The kinds of message, each drawn in its own color.
+-- A message is a song change or a key press, a notice is something the player needs to know, and an error is something that went wrong.
+local KINDS = { message = true, notice = true, error = true }
+
 local create_element = nil
 local log = function() end
 local enabled = false
@@ -54,21 +62,23 @@ local DEFAULT_CORNER = "bottom_left"
 -- The Message Backdrop Opacity setting's default, as a share, the same as the debug overlay's backdrop.
 local DEFAULT_BACKDROP_OPACITY = 0.7
 
--- How the message looks, from its settings: its size as a factor, its ARGB color, its corner, and its backdrop's opacity as a share.
--- Its offsets are how far it moves inward from the corner, in the UI's pixels.
 -- The Message Size setting's default, as a factor, small enough that both lines fit below the player portrait in the bottom left corner.
 local DEFAULT_SCALE = 0.85
 
+-- How the message looks, from its settings: its size as a factor, each kind's ARGB color, its corner, and its backdrop's opacity.
+-- Its offsets are how far it moves inward from the corner, in the UI's pixels.
 local look = {
 	scale = DEFAULT_SCALE,
 	color = DEFAULT_COLOR,
+	notice_color = DEFAULT_NOTICE_COLOR,
+	error_color = DEFAULT_ERROR_COLOR,
 	corner = DEFAULT_CORNER,
 	offset_x = 0,
 	offset_y = 0,
 	backdrop_opacity = DEFAULT_BACKDROP_OPACITY,
 }
 
--- A message: its text, its opacity as a share, its phase, and the seconds left of its hold.
+-- A message: its text, its kind, its opacity as a share, its phase, and the seconds left of its hold.
 -- Its phase is "in", "hold", or "out".
 
 -- The newest message, at the corner, or nil.
@@ -77,7 +87,7 @@ local current = nil
 -- The message before it, or nil, with `push`, how far it has slid from the corner into the previous line's place, as a share.
 local previous = nil
 
--- The messages pushed out of the previous line's place, oldest first, each with its text and opacity, fading out where they were.
+-- The messages pushed out of the previous line's place, oldest first, each with its text, kind, and opacity, fading out where they were.
 local leaving = {}
 
 -- The oldest line is not always the faintest: a message pushed out while it was still fading in is fainter than the full one before it.
@@ -92,14 +102,18 @@ local function drop_faintest()
 	table.remove(leaving, faintest)
 end
 
--- Shows `text` at the corner, pushing the message showing there into the previous line's place. Does nothing while the messages are turned off.
--- The same text again keeps its line and starts its hold over, since a copy of it in the previous line's place would only repeat it.
-function OnScreenMessage.show(text)
+-- Shows `text` at the corner, pushing the message there into the previous line's place. Does nothing while the messages are off.
+-- `kind` is "message", the default, "notice", or "error", and sets the color it is drawn in.
+-- Every message shown is also logged, since a message is gone after a few seconds.
+-- The same text of the same kind again keeps its line and starts its hold over, since a copy of it beside it would only repeat it.
+function OnScreenMessage.show(text, kind)
 	if not enabled then
 		return
 	end
+	kind = KINDS[kind] and kind or "message"
+	log("[on-screen message] " .. kind .. ": " .. text)
 
-	if current and current.text == text then
+	if current and current.text == text and current.kind == kind then
 		current.phase = "in"
 		current.fade_in_seconds = FADE_IN_SECONDS
 		return
@@ -108,7 +122,7 @@ function OnScreenMessage.show(text)
 	local fade_in_seconds = FADE_IN_SECONDS
 	if current then
 		if previous then
-			leaving[#leaving + 1] = { text = previous.text, opacity = previous.opacity }
+			leaving[#leaving + 1] = { text = previous.text, kind = previous.kind, opacity = previous.opacity }
 			if #leaving > MAX_LEAVING then
 				drop_faintest()
 			end
@@ -118,7 +132,7 @@ function OnScreenMessage.show(text)
 		fade_in_seconds = PUSH_SECONDS
 	end
 
-	current = { text = text, opacity = 0, phase = "in", fade_in_seconds = fade_in_seconds }
+	current = { text = text, kind = kind, opacity = 0, phase = "in", fade_in_seconds = fade_in_seconds }
 end
 
 -- How long a message shown now stays on screen: its fade in, the Message Duration, and the Message Fade Out.
@@ -190,16 +204,17 @@ function OnScreenMessage.line_count()
 end
 
 -- The line at `index`, oldest first, so the newest is drawn last, on top.
--- Returns its text, its opacity as a share, and its place: 0 at the corner, 1 in the previous line's place, and the share of the way between while it slides.
+-- Returns its text, its opacity as a share, its place, and its kind.
+-- Its place is 0 at the corner, 1 in the previous line's place, and the share of the way between while it slides.
 function OnScreenMessage.line(index)
 	if index <= #leaving then
 		local line = leaving[index]
-		return line.text, line.opacity, 1
+		return line.text, line.opacity, 1, line.kind
 	end
 	if previous and index == #leaving + 1 then
-		return previous.text, previous.opacity, previous.push
+		return previous.text, previous.opacity, previous.push, previous.kind
 	end
-	return current.text, current.opacity, 0
+	return current.text, current.opacity, 0, current.kind
 end
 
 function OnScreenMessage.look()
@@ -231,14 +246,14 @@ function OnScreenMessage.set_timing(new_hold_seconds, new_fade_out_seconds)
 	fade_out_seconds = new_fade_out_seconds
 end
 
--- The color comes from the saved settings, so anything but four numbers keeps the default.
-local function checked_color(color)
+-- A color comes from the saved settings, so anything but four numbers keeps `default`.
+local function checked_color(color, default)
 	if type(color) ~= "table" then
-		return DEFAULT_COLOR
+		return default
 	end
 	for index = 1, 4 do
 		if type(color[index]) ~= "number" then
-			return DEFAULT_COLOR
+			return default
 		end
 	end
 	return { color[1], color[2], color[3], color[4] }
@@ -276,6 +291,7 @@ end
 
 -- Turns the messages on or off and sets how they look.
 -- `new_look.scale` sizes the text as a factor, and `new_look.color` is its ARGB color, whose alpha also sets its opacity.
+-- `new_look.notice_color` and `new_look.error_color` are the same for notices and errors.
 -- `new_look.corner` is a Message Corner choice, such as "bottom_left".
 -- `new_look.offset_x` and `new_look.offset_y` move it inward from that corner, in the UI's pixels.
 -- `new_look.backdrop_opacity` is how opaque the backdrop behind it is, as a share.
@@ -284,7 +300,9 @@ function OnScreenMessage.set_enabled(on, new_look)
 	if new_look then
 		look = {
 			scale = new_look.scale or DEFAULT_SCALE,
-			color = checked_color(new_look.color),
+			color = checked_color(new_look.color, DEFAULT_COLOR),
+			notice_color = checked_color(new_look.notice_color, DEFAULT_NOTICE_COLOR),
+			error_color = checked_color(new_look.error_color, DEFAULT_ERROR_COLOR),
 			-- The corner comes from the saved settings too, so an unknown one keeps the default.
 			corner = CORNERS[new_look.corner] and new_look.corner or DEFAULT_CORNER,
 			-- Moving past the corner only pushes the message off the screen, so the offsets start at 0.

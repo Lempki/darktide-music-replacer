@@ -207,6 +207,18 @@ local strings = {
 	message_color_tooltip = {
 		en = "The color of the on-screen messages. Its alpha sets how opaque they are.",
 	},
+	notice_color = {
+		en = "Notice Color",
+	},
+	notice_color_tooltip = {
+		en = "The color of notices, the on-screen messages about something you need to know.",
+	},
+	error_color = {
+		en = "Error Color",
+	},
+	error_color_tooltip = {
+		en = "The color of the on-screen messages about something that went wrong.",
+	},
 	pixels_unit = {
 		en = "px",
 	},

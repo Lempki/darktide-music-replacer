@@ -982,6 +982,8 @@ local ON_SCREEN_MESSAGE_SETTINGS = {
 	song_change_messages = true,
 	message_scale = true,
 	message_color = true,
+	notice_color = true,
+	error_color = true,
 	message_corner = true,
 	message_backdrop_opacity = true,
 	message_offset_x = true,
@@ -996,6 +998,8 @@ local function apply_on_screen_message_settings()
 	OnScreenMessage.set_enabled(any_on, {
 		scale = mod:get("message_scale") / 100,
 		color = mod:get("message_color"),
+		notice_color = mod:get("notice_color"),
+		error_color = mod:get("error_color"),
 		corner = mod:get("message_corner"),
 		offset_x = mod:get("message_offset_x"),
 		offset_y = mod:get("message_offset_y"),

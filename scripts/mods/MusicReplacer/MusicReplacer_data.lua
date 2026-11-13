@@ -264,6 +264,22 @@ return {
 						has_alpha = true,
 					},
 					{
+						-- ARGB, an amber at the same 85% opacity as Message Color.
+						setting_id = "notice_color",
+						type = "color",
+						tooltip = "notice_color_tooltip",
+						default_value = { 217, 235, 180, 80 },
+						has_alpha = true,
+					},
+					{
+						-- ARGB, a red at the same 85% opacity as Message Color.
+						setting_id = "error_color",
+						type = "color",
+						tooltip = "error_color_tooltip",
+						default_value = { 217, 240, 100, 90 },
+						has_alpha = true,
+					},
+					{
 						setting_id = "message_backdrop_opacity",
 						type = "numeric",
 						tooltip = "message_backdrop_opacity_tooltip",

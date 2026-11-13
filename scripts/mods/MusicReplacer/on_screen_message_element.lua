@@ -128,7 +128,7 @@ return function(OnScreenMessage)
 	end
 
 	-- `look` is OnScreenMessage.look(): the size, the ARGB color, the corner, the offsets inward from it, and the backdrop's opacity.
-	-- Each backdrop sits toward the corner, and its text inside it by the padding, aligned to the corner's side so it grows away from the corner.
+	-- Each backdrop sits toward the corner, and its text inside it by the padding, aligned to the corner's side to grow away from it.
 	-- The sizes and places change as lines slide, so _draw_lines sets them every frame.
 	function Element:set_layout(look)
 		local style = self._widgets_by_name.message.style
@@ -138,9 +138,6 @@ return function(OnScreenMessage)
 			line_style.horizontal_alignment = placement.horizontal
 			line_style.text_horizontal_alignment = placement.horizontal
 			line_style.vertical_alignment = placement.vertical
-			line_style.text_color[2] = look.color[2]
-			line_style.text_color[3] = look.color[3]
-			line_style.text_color[4] = look.color[4]
 			for _, id in ipairs({ backdrop_id(index), backdrop_fade_id(index) }) do
 				style[id].horizontal_alignment = placement.horizontal
 				style[id].vertical_alignment = placement.vertical
@@ -148,7 +145,7 @@ return function(OnScreenMessage)
 			style[backdrop_fade_id(index)].uvs = placement.horizontal == "left" and FADE_RIGHT_UVS or FADE_LEFT_UVS
 		end
 
-		self._alpha = look.color[1]
+		self._colors = { message = look.color, notice = look.notice_color, error = look.error_color }
 		self._backdrop_alpha = 255 * look.backdrop_opacity
 		self._scale = look.scale
 		self._placement = placement
@@ -169,8 +166,9 @@ return function(OnScreenMessage)
 	end
 
 	-- Sizes and places the line at `index`, with `text` at `opacity`, a share, at `place`, 0 at the corner and 1 in the previous line's place.
+	-- It is drawn in the color of its `kind`, whose alpha the opacity scales.
 	-- A line in the previous line's place sits right beyond the newest line's backdrop, so the two never overlap.
-	function Element:_place_line(ui_renderer, index, text, opacity, place)
+	function Element:_place_line(ui_renderer, index, text, opacity, place, kind)
 		local style = self._widgets_by_name.message.style
 		local placement = self._placement
 		local line_scale = 1 + (OnScreenMessage.PREVIOUS_SCALE - 1) * place
@@ -191,7 +189,11 @@ return function(OnScreenMessage)
 		line_style.size[2] = LINE_HEIGHT * s
 		line_style.offset[1] = x + placement.toward_x * padding
 		line_style.offset[2] = y + placement.toward_y * padding
-		line_style.text_color[1] = math.floor(self._alpha * opacity + 0.5)
+		local color = self._colors[kind] or self._colors.message
+		line_style.text_color[1] = math.floor(color[1] * opacity + 0.5)
+		line_style.text_color[2] = color[2]
+		line_style.text_color[3] = color[3]
+		line_style.text_color[4] = color[4]
 
 		local backdrop = style[backdrop_id(index)]
 		backdrop.offset[1] = x
@@ -218,9 +220,9 @@ return function(OnScreenMessage)
 		local line_count = OnScreenMessage.line_count()
 		for index = 1, OnScreenMessage.MAX_LINES do
 			if index <= line_count then
-				local text, opacity, place = OnScreenMessage.line(index)
+				local text, opacity, place, kind = OnScreenMessage.line(index)
 				widget.content[line_id(index)] = text
-				self:_place_line(ui_renderer, index, text, math.max(0, math.min(1, opacity)), place)
+				self:_place_line(ui_renderer, index, text, math.max(0, math.min(1, opacity)), place, kind)
 			else
 				widget.content[line_id(index)] = ""
 				widget.style[backdrop_id(index)].color[1] = 0
