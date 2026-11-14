@@ -149,8 +149,33 @@ return function(OnScreenMessage)
 		self._backdrop_alpha = 255 * look.backdrop_opacity
 		self._scale = look.scale
 		self._placement = placement
-		-- Widths depend on the font size, so they are measured again.
+		-- Widths depend on the font size, so they are measured and fitted again.
 		self._widths = {}
+		self._fitted = {}
+	end
+
+	-- `text` as drawn: whole, or cut with an ellipsis where it would grow past `max_width`. Fitted once per text, size, and width.
+	function Element:_fit(ui_renderer, text, max_width)
+		local fitted = self._fitted[text]
+		if not fitted then
+			fitted = OnScreenMessage.fit(text, max_width, function(candidate) return self:_width(ui_renderer, candidate) end)
+			self._fitted[text] = fitted
+		end
+		return fitted
+	end
+
+	-- The widest a text is drawn, as OnScreenMessage.MAX_TEXT_SHARE of the screen's width in this element's units.
+	-- The screen node fits the whole screen, which the game measures as its width in pixels over the draw scale, as here.
+	-- So the share holds on an ultrawide screen and at any HUD Scale.
+	-- A new width forgets the texts fitted to the old one.
+	function Element:_max_text_width()
+		local screen_width = RESOLUTION_LOOKUP.width / (self._draw_scale or RESOLUTION_LOOKUP.scale)
+		local max_width = screen_width * OnScreenMessage.MAX_TEXT_SHARE
+		if max_width ~= self._fitted_max_width then
+			self._fitted_max_width = max_width
+			self._fitted = {}
+		end
+		return max_width
 	end
 
 	-- The drawn width of `text` at the newest line's size, measured once per text and size.
@@ -218,9 +243,11 @@ return function(OnScreenMessage)
 
 		local widget = self._widgets_by_name.message
 		local line_count = OnScreenMessage.line_count()
+		local max_width = self:_max_text_width()
 		for index = 1, OnScreenMessage.MAX_LINES do
 			if index <= line_count then
-				local text, opacity, place, kind = OnScreenMessage.line(index)
+				local full_text, opacity, place, kind = OnScreenMessage.line(index)
+				local text = self:_fit(ui_renderer, full_text, max_width)
 				widget.content[line_id(index)] = text
 				self:_place_line(ui_renderer, index, text, math.max(0, math.min(1, opacity)), place, kind)
 			else
@@ -233,10 +260,14 @@ return function(OnScreenMessage)
 		-- Every song name gets measured once, so the widths are forgotten whenever nothing shows, and they never pile up.
 		if line_count == 0 and next(self._widths) then
 			self._widths = {}
+			self._fitted = {}
 		end
 	end
 
 	function Element:update(dt, t, ui_renderer, render_settings, input_service)
+		-- The game sets the draw scale to the HUD Scale for this element just before calling it, so it is current after the player changes it.
+		self._draw_scale = render_settings and render_settings.scale
+
 		-- This runs inside the game's own UI update, so a failure here only freezes the message.
 		local ok, err = pcall(self._draw_lines, self, dt, ui_renderer)
 		if not ok then

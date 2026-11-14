@@ -423,6 +423,44 @@ describe("on_screen_message.lua kinds", function()
 	end)
 end)
 
+describe("on_screen_message.lua fit", function()
+	-- Every character is 10 wide, and the ellipsis too.
+	local function width_of(text)
+		local _, characters = text:gsub("[%z\1-\127\194-\244][\128-\191]*", "")
+		return characters * 10
+	end
+
+	it("keeps a text that fits whole", function()
+		local OnScreenMessage = load_on_screen_message()
+
+		assert_equal(OnScreenMessage.fit("Next song", 90, width_of), "Next song")
+	end)
+
+	it("cuts a longer text to the most characters that fit beside an ellipsis", function()
+		local OnScreenMessage = load_on_screen_message()
+
+		assert_equal(OnScreenMessage.fit("Now playing: song", 90, width_of), "Now play…")
+	end)
+
+	it("drops spaces left before the ellipsis", function()
+		local OnScreenMessage = load_on_screen_message()
+
+		assert_equal(OnScreenMessage.fit("Now playing: song", 50, width_of), "Now…")
+	end)
+
+	it("never splits a character that takes several bytes", function()
+		local OnScreenMessage = load_on_screen_message()
+
+		assert_equal(OnScreenMessage.fit("曲名：夜の街を歩く", 50, width_of), "曲名：夜…")
+	end)
+
+	it("shows only the ellipsis when not even one character fits beside it", function()
+		local OnScreenMessage = load_on_screen_message()
+
+		assert_equal(OnScreenMessage.fit("Next", 15, width_of), "…")
+	end)
+end)
+
 describe("on_screen_message.lua look", function()
 	it("starts at 85% size, in muted grey at 85% opacity, in the bottom left corner, on a 70% backdrop", function()
 		local OnScreenMessage = load_on_screen_message()

@@ -29,6 +29,15 @@ local PUSH_SECONDS = 0.3
 -- The previous line's size, as a share of the newest line's, so the newest stands out and both fit beside the game's HUD.
 OnScreenMessage.PREVIOUS_SCALE = 0.75
 
+-- The widest a line's text is drawn at the newest line's size, as a share of the screen's width.
+-- A longer text, such as a long song name, is cut and ends with an ellipsis, so it stays clear of the HUD in the middle of the bottom row.
+OnScreenMessage.MAX_TEXT_SHARE = 1 / 3
+
+local ELLIPSIS = "…"
+
+-- One character of UTF-8 text: a lead byte and its continuation bytes, so a cut never splits a character such as a Japanese one.
+local CHARACTER_PATTERN = "[%z\1-\127\194-\244][\128-\191]*"
+
 -- Keys pressed in quick succession leave several lines leaving at once. Past this many, the faintest goes.
 local MAX_LEAVING = 2
 
@@ -219,6 +228,34 @@ function OnScreenMessage.line(index)
 		return previous.text, previous.opacity, previous.push, previous.kind
 	end
 	return current.text, current.opacity, 0, current.kind
+end
+
+-- `text` as it fits in `max_width`, with `width_of(text)` its drawn width: whole when it fits, or cut with an ellipsis.
+-- The cut keeps as many whole characters as fit beside the ellipsis, found by halving, so a long text is measured only a few times.
+function OnScreenMessage.fit(text, max_width, width_of)
+	if width_of(text) <= max_width then
+		return text
+	end
+
+	local characters = {}
+	for character in text:gmatch(CHARACTER_PATTERN) do
+		characters[#characters + 1] = character
+	end
+
+	-- `kept` characters always fit beside the ellipsis, and more than `limit` never do.
+	local kept = 0
+	local limit = #characters
+	while kept < limit do
+		local middle = math.ceil((kept + limit) / 2)
+		if width_of(table.concat(characters, "", 1, middle) .. ELLIPSIS) <= max_width then
+			kept = middle
+		else
+			limit = middle - 1
+		end
+	end
+
+	local cut = table.concat(characters, "", 1, kept):gsub("%s+$", "")
+	return cut .. ELLIPSIS
 end
 
 function OnScreenMessage.look()

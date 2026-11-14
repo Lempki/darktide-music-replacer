@@ -12,6 +12,7 @@ What changes for players in each release of Music Replacer. The format follows [
 ### Changes
 
 * The mod's errors show as on-screen messages in Error Color instead of in the chat, where the game and other mods post too. Each says what went wrong and that the details are in `diagnostic.log`, where the full reason goes.
+* An on-screen message wider than a third of the screen, such as one with a long song name, is cut there and ends with `…`, instead of reaching across the screen. `diagnostic.log` keeps the whole text.
 * Every on-screen message is also written to `diagnostic.log`, since a message shows for only a few seconds.
 * Even Out Loudness is on by default, so songs from different sources play at about the same loudness from the start. If you already have the mod, your setting stays as it is.
 * A new on-screen message pushes the one showing away from the corner, where it shrinks to three quarters of its size and stays for the rest of its own Message Duration, instead of crossfading it away. Two messages close together are now both readable.
