@@ -228,6 +228,12 @@ local function show_message(text_id, ...)
 	OnScreenMessage.show(message_text(text_id, ...))
 end
 
+-- Shows the error message `text_id` in Error Color.
+-- Its details are logged by the caller, so the message itself stays short and points to diagnostic.log.
+local function show_error(text_id)
+	OnScreenMessage.show(message_text(text_id), "error")
+end
+
 local play_context
 local play_track
 
@@ -1024,6 +1030,7 @@ Playlist.init({ usable_entries = Library.usable_entries, find_file = Library.fin
 Playlist.set_shuffle(mod:get("shuffle"))
 Context.on_state_change(Suppression.on_state_change)
 Context.on_state_change(ResumePoints.on_state_change)
+Context.on_failure(function() show_error("error_game_change") end)
 Context.init(mod, log_detail, log)
 
 -- A level can end without a loading screen, as a story mission does when its debrief cutscene leads into the hub.
@@ -1073,6 +1080,11 @@ mod.on_all_mods_loaded = function()
 	OnScreenMessage.init(log, { create_element = create_on_screen_message_element })
 	apply_on_screen_message_settings()
 
+	-- The log is first opened at the top of this file, before the messages can show, so a failure to open it shows here.
+	if DiagnosticLog.open_error() then
+		show_error("error_log_unavailable")
+	end
+
 	-- A mod can hook a method only once, so this one hook serves both Suppression and EventProbe.
 	-- EventProbe sees every event first, even one Suppression stops.
 	mod:hook(CLASS.WwiseWorld, "trigger_resource_event", function(func, wwise_world, event_name, ...)
@@ -1085,7 +1097,7 @@ mod.on_all_mods_loaded = function()
 	if playback_lost then
 		local reason = tostring(AudioClient.error())
 		log("[player] unavailable: " .. reason)
-		mod:error("Music Replacer could not start Windows audio playback, so the game's music plays as usual: %s", reason)
+		show_error("error_audio_unavailable")
 	end
 
 	-- The context can resolve before Library and AudioClient are ready.

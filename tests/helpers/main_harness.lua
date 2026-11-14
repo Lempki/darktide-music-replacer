@@ -123,6 +123,7 @@ local function new_audio_client()
 	local module = setmetatable({}, { __index = client })
 
 	function module.available() return client.available end
+	function module.error() return client.error_text end
 	function module.is_playing() return client.current ~= nil end
 	function module.elapsed() return client.elapsed end
 	function module.position() return client.position end
@@ -236,10 +237,13 @@ end
 
 -- A stand-in for on_screen_message.lua that keeps whether it is on, how it looks, its timing, and every text it was asked to show.
 local function new_on_screen_message()
-	local on_screen_message = { enabled = false, look = nil, timing = nil, shown = {} }
+	local on_screen_message = { enabled = false, look = nil, timing = nil, shown = {}, kinds = {} }
 
 	function on_screen_message.init() end
-	function on_screen_message.show(text) on_screen_message.shown[#on_screen_message.shown + 1] = text end
+	function on_screen_message.show(text, kind)
+		on_screen_message.shown[#on_screen_message.shown + 1] = text
+		on_screen_message.kinds[#on_screen_message.kinds + 1] = kind or "message"
+	end
 	-- The real module's 0.4 s fade in, then the hold and the fade out its timing sets.
 	function on_screen_message.seconds_shown() return 0.4 + on_screen_message.timing[1] + on_screen_message.timing[2] end
 	function on_screen_message.set_timing(hold_seconds, fade_out_seconds) on_screen_message.timing = { hold_seconds, fade_out_seconds } end
@@ -255,6 +259,8 @@ end
 -- * `files`: each context's files for the library stand-in, as { name, duration } lists.
 -- * `settings`: overrides of the mod's default settings, which every other setting reads as, as in the game.
 -- * `turned_off`: the mod starts turned off in the mod options, as DMF reports with on_disabled(true).
+-- * `audio_error`: Windows audio playback cannot start, for this reason.
+-- * `log_open_error`: diagnostic.log could not be opened, for this reason.
 function MainHarness.new(options)
 	options = options or {}
 
@@ -265,6 +271,10 @@ function MainHarness.new(options)
 
 	local library = new_library(options.files or {})
 	local client = new_audio_client()
+	if options.audio_error then
+		client.available = false
+		client.error_text = options.audio_error
+	end
 	local loudness = new_loudness()
 	local overlay = new_overlay()
 	local on_screen_message = new_on_screen_message()
@@ -288,6 +298,7 @@ function MainHarness.new(options)
 				write = function(line) lines[#lines + 1] = line end,
 				detail = function(line) lines[#lines + 1] = line end,
 				folder = function() return "C:/AppData/Fatshark/Darktide/MusicReplacer" end,
+				open_error = function() return options.log_open_error end,
 			},
 			native_ffi = {},
 			media_decoder = { init = noop, shutdown = noop },

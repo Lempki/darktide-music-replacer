@@ -208,6 +208,16 @@ local strings = {
 	song_now_playing = {
 		en = "Now playing: %s",
 	},
+	-- The error messages stay short, since a message shows for a few seconds, and the details go to diagnostic.log.
+	error_audio_unavailable = {
+		en = "Windows audio playback could not start, so the game's music plays. Details in diagnostic.log.",
+	},
+	error_game_change = {
+		en = "The music could not follow a change in the game. Details in diagnostic.log.",
+	},
+	error_log_unavailable = {
+		en = "diagnostic.log could not be opened, so nothing is logged this launch.",
+	},
 	message_scale = {
 		en = "Message Size",
 	},

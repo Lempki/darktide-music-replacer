@@ -786,6 +786,29 @@ describe("MusicReplacer.lua on-screen messages", function()
 		assert_equal(harness.on_screen_message.enabled, true)
 	end)
 
+	it("show an error when Windows audio playback cannot start, with its reason only in the log", function()
+		local harness = MainHarness.new({ files = TWO_HUB_SONGS, audio_error = "no audio device" })
+
+		assert_equal(harness:last_on_screen_message(), "<error_audio_unavailable>")
+		assert_equal(harness.on_screen_message.kinds[#harness.on_screen_message.kinds], "error")
+		assert_equal(harness:logged("[player] unavailable: no audio device"), true)
+	end)
+
+	it("show an error when diagnostic.log could not be opened", function()
+		local harness = MainHarness.new({ files = TWO_HUB_SONGS, log_open_error = "disk full" })
+
+		assert_equal(harness:last_on_screen_message(), "<error_log_unavailable>")
+		assert_equal(harness.on_screen_message.kinds[#harness.on_screen_message.kinds], "error")
+	end)
+
+	it("show no error at startup when playback and the log both work", function()
+		local harness = in_hub()
+
+		for _, kind in ipairs(harness.on_screen_message.kinds) do
+			assert_equal(kind ~= "error", true)
+		end
+	end)
+
 	it("show notices and errors by default, each following its own setting", function()
 		local harness = in_hub()
 		assert_deep_equal(harness.on_screen_message.shown_kinds, { notice = true, error = true })

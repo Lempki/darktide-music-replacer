@@ -33,17 +33,30 @@ describe("context.lua", function()
 		assert_equal(engine:wwise_state("music_zone"), "hub")
 	end)
 
-	it("reports a failing listener with its error text intact, even with a percent sign in it", function()
-		local engine, Context = load_context()
+	it("logs a failing listener with its error text intact, even with a percent sign in it, and tells its failure listeners", function()
+		local engine = FakeEngine.new()
+		local Context = engine:load("context")
+		local lines = {}
+		local failures = 0
 		Context.on_change(function() error("disk at 100% full", 0) end)
 		Context.on_state_change(function() error("volume at 50% now", 0) end)
+		Context.on_failure(function() failures = failures + 1 end)
+		Context.init(engine.mod, nil, function(line) lines[#lines + 1] = line end)
 
 		engine:set_state("music_game_state", "loading")
 
-		assert_deep_equal(engine.messages, {
-			{ level = "error", text = "Music Replacer could not follow a change of the game's music state: volume at 50% now" },
-			{ level = "error", text = "Music Replacer could not switch the music for a change in the game: disk at 100% full" },
+		local failure_lines = {}
+		for _, line in ipairs(lines) do
+			if line:find("could not", 1, true) then
+				failure_lines[#failure_lines + 1] = line
+			end
+		end
+		assert_deep_equal(failure_lines, {
+			"[context] could not follow a change of the game's music state: volume at 50% now",
+			"[context] could not switch the music for a change in the game: disk at 100% full",
 		})
+		assert_equal(failures, 2)
+		assert_deep_equal(engine.messages, {})
 	end)
 
 	it("lets the game's combat group decide again at each mission's end whether it runs an Expedition", function()

@@ -43,6 +43,9 @@ local MESSAGE_ARGUMENTS = {
 	control_repeat_song_on = 0,
 	control_repeat_song_off = 0,
 	override_folder_label = 2,
+	error_audio_unavailable = 0,
+	error_game_change = 0,
+	error_log_unavailable = 0,
 }
 
 -- How many values `text` formats, leaving out the "%%" that shows a percent sign.

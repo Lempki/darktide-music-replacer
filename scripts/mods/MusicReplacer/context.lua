@@ -115,6 +115,15 @@ local mission_listeners = {}
 local listeners_registered = false
 local log_detail = function() end -- It does nothing unless Context.init is given a real logger.
 local log = function() end -- The same for the important lines, which are always logged.
+local failure_listeners = {}
+
+-- A listener that fails is logged with its error, and Context.on_failure's listeners tell the player.
+local function listener_failed(description, err)
+	log("[context] " .. description .. ": " .. tostring(err))
+	for _, listener in ipairs(failure_listeners) do
+		listener()
+	end
+end
 
 -- The holds that keep a context playing for a while after the game's state for it went quiet, in the order resolve() checks them.
 -- Each is named after the context it keeps, and `remaining` is its seconds left.
@@ -654,7 +663,7 @@ local function recompute(mod)
 	for _, listener in ipairs(change_listeners) do
 		local ok, err = pcall(listener, resolved_context, old_context, boss_breed)
 		if not ok then
-			mod:error("Music Replacer could not switch the music for a change in the game: %s", tostring(err))
+			listener_failed("could not switch the music for a change in the game", err)
 		end
 	end
 end
@@ -785,6 +794,12 @@ function Context.on_mission_change(listener)
 	mission_listeners[#mission_listeners + 1] = listener
 end
 
+-- Register a function to call, with no arguments, whenever one of the listeners above fails.
+-- The failure and its error are already logged when it is called.
+function Context.on_failure(listener)
+	failure_listeners[#failure_listeners + 1] = listener
+end
+
 -- Register a function to call on every real transition of a music state group, after context.lua has tracked it.
 -- The listener receives (group_name, new_state) for music_combat, music_zone, music_game_state, music_objective, and expeditions_intensity.
 function Context.on_state_change(listener)
@@ -894,7 +909,7 @@ local function track_transition(mod, group_name, current, new_state)
 	for _, listener in ipairs(state_listeners) do
 		local ok, err = pcall(listener, group_name, new_state)
 		if not ok then
-			mod:error("Music Replacer could not follow a change of the game's music state: %s", tostring(err))
+			listener_failed("could not follow a change of the game's music state", err)
 		end
 	end
 
@@ -1018,7 +1033,7 @@ function Context.update(mod, dt)
 		for _, listener in ipairs(mission_listeners) do
 			local ok, err = pcall(listener, current_mission_name, template)
 			if not ok then
-				mod:error("Music Replacer could not follow a change of mission: %s", tostring(err))
+				listener_failed("could not follow a change of mission", err)
 			end
 		end
 	end

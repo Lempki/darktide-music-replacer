@@ -125,14 +125,16 @@ describe("diagnostic_log.lua", function()
 		assert_equal(stops, 1)
 	end)
 
-	it("reports a log file it cannot open, with the reason intact", function()
+	it("keeps why it could not open its file, and sends the reason intact to the game's console log", function()
 		local fs = new_file_system()
 		fs.io.open = function() return nil, "disk 100% full" end
 		local DiagnosticLog, engine = load_log(fs, false)
+		assert_equal(DiagnosticLog.open_error(), nil)
 
 		DiagnosticLog.write("[context] nil -> hub")
 
-		assert_deep_equal(engine.messages, { { level = "error", text = "Music Replacer could not open diagnostic.log: disk 100% full" } })
+		assert_equal(DiagnosticLog.open_error(), "disk 100% full")
+		assert_deep_equal(engine.messages, { { level = "info", text = "could not open diagnostic.log: disk 100% full" } })
 	end)
 
 	it("creates its folder through Windows instead of starting cmd.exe", function()

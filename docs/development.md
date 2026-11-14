@@ -42,7 +42,7 @@ Pull requests and [issues](https://github.com/Lempki/darktide-music-replacer/iss
 
 ### Translations
 
-The mod options and the on-screen messages take their text from `scripts/mods/MusicReplacer/MusicReplacer_localization.lua`. The debug overlay's own texts stay in English, since the overlay is a diagnostic tool read in bug reports, and so does the error shown when Windows audio playback cannot start. Each string is a table with one entry per language, keyed by the game's language ID, such as `en` for English and `de` for German. DMF shows a string in the game's language, and falls back to `en` when that language has none.
+The mod options and the on-screen messages take their text from `scripts/mods/MusicReplacer/MusicReplacer_localization.lua`. The debug overlay's own texts stay in English, since the overlay is a diagnostic tool read in bug reports, and so do the details of each error, which go to `diagnostic.log`. Each string is a table with one entry per language, keyed by the game's language ID, such as `en` for English and `de` for German. DMF shows a string in the game's language, and falls back to `en` when that language has none.
 
 * To add a language, add an entry next to `en` in every string, for example `de = "..."`.
 * The situation dropdowns build their English tooltips with `source_tooltip()`. A translation writes each tooltip as its own full text instead, since the sentence order differs between languages.

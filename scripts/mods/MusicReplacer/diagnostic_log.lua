@@ -20,6 +20,7 @@ local MAX_BYTES = 10 * 1024 * 1024
 local mod = nil -- Set by DiagnosticLog.init, needed for the mod options and error reporting.
 local log_file = nil
 local log_file_attempted = false
+local open_error = nil -- Why the log file could not be opened, or nil.
 
 -- DMF keeps a persistent table through a mod reload, so a reload continues this launch's file instead of starting a new one.
 local launch_state = {}
@@ -88,7 +89,9 @@ local function get_log_file()
 
 	local file, err = _io.open(path, file_mode)
 	if not file then
-		mod:error("Music Replacer could not open diagnostic.log: %s", tostring(err))
+		-- With no file of its own, the reason goes to the game's console log, and the main mod file shows an error message.
+		open_error = tostring(err)
+		mod:info("could not open diagnostic.log: %s", open_error)
 		return nil
 	end
 
@@ -135,6 +138,11 @@ function DiagnosticLog.detail(line)
 	if mod:get("diagnostic_mode") then
 		write_line(line)
 	end
+end
+
+-- Why the log file could not be opened, or nil while it is open or not yet tried.
+function DiagnosticLog.open_error()
+	return open_error
 end
 
 -- The folder in %APPDATA% that holds this log, also used for the mod's other files, or nil when it cannot be found.
