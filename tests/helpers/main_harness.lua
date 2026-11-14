@@ -196,6 +196,7 @@ local function new_loudness()
 	function loudness.forget_failures() loudness.failures_forgotten = loudness.failures_forgotten + 1 end
 	function loudness.forget(file_path) loudness.forgotten[#loudness.forgotten + 1] = file_path end
 	function loudness.set_files() end
+	function loudness.on_measured(listener) loudness.measured_listener = listener end
 	function loudness.update(playing_file_path, playing_folder, playing_context)
 		loudness.updates[#loudness.updates + 1] = { file_path = playing_file_path, folder = playing_folder, context = playing_context }
 	end

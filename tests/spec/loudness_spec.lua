@@ -258,6 +258,30 @@ describe("loudness.lua same songs", function()
 		assert_equal(Loudness.describe("combat/a.mp3"):match("^%-16.0 LUFS") ~= nil, true)
 	end)
 
+	it("tells its listeners how many songs it measured once nothing is left, leaving out a song it could not open", function()
+		local Loudness = load_loudness({ ["audio/hub/a.mp3"] = 12, ["audio/hub/b.mp3"] = 20, ["audio/hub/c.mp3"] = false })
+		local counts = {}
+		Loudness.on_measured(function(count) counts[#counts + 1] = count end)
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3" }, { "hub/b.mp3" }, { "hub/c.mp3" } }))
+
+		measure_all(Loudness, "hub")
+
+		assert_deep_equal(counts, { 2 })
+	end)
+
+	it("tells its listeners nothing when no song needed measuring", function()
+		local Loudness = load_loudness({ ["audio/hub/a.mp3"] = 12 }, "1\t-12.00\t0.50000\thub/a.mp3\n")
+		local counts = {}
+		Loudness.on_measured(function(count) counts[#counts + 1] = count end)
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3" } }))
+
+		measure_all(Loudness, "hub")
+
+		assert_deep_equal(counts, {})
+	end)
+
 	it("writes loudness.txt and the summary line when the last song of a batch cannot be opened", function()
 		local Loudness, test = load_loudness({ ["audio/hub/a.mp3"] = 12, ["audio/hub/b.mp3"] = false })
 		Loudness.set_enabled(true)

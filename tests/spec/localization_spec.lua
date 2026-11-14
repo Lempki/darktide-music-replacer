@@ -55,6 +55,8 @@ local MESSAGE_ARGUMENTS = {
 	notice_skipped_unopenable_file = 0,
 	notice_skipped_unopenable_files = 1,
 	notice_skipped_files = 3,
+	notice_measured_song = 0,
+	notice_measured_songs = 1,
 }
 
 -- How many values `text` formats, leaving out the "%%" that shows a percent sign.

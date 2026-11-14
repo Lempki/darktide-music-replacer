@@ -273,6 +273,15 @@ local function show_listing_checked(counts)
 	show_files_skipped(counts)
 end
 
+-- Says how many songs Even Out Loudness measured, so a player knows it has finished and every song now plays evened out.
+local function show_songs_measured(count)
+	if count == 1 then
+		show_notice("notice_measured_song")
+	else
+		show_notice("notice_measured_songs", count)
+	end
+end
+
 local play_context
 local play_track
 
@@ -1123,6 +1132,7 @@ mod.on_all_mods_loaded = function()
 	Loudness.set_enabled(mod:get("normalize_loudness"))
 	Library.on_listed(Loudness.set_files)
 	Library.on_checked(show_listing_checked)
+	Loudness.on_measured(show_songs_measured)
 	AudioClient.init(log, { player = Player, disk_path = Library.disk_path, level_of = Loudness.level, is_measured = Loudness.is_measured })
 	AudioClient.set_volume(custom_volume())
 	AudioClient.set_fade_seconds(mod:get("fade_seconds"))

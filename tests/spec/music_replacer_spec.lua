@@ -875,6 +875,17 @@ describe("MusicReplacer.lua on-screen messages", function()
 		assert_equal(harness:last_on_screen_message(), "<notice_found_songs: 4, 2>")
 	end)
 
+	it("show a notice of how many songs Even Out Loudness measured once it is done", function()
+		local harness = in_hub()
+
+		harness.loudness.measured_listener(12)
+		assert_equal(harness:last_on_screen_message(), "<notice_measured_songs: 12>")
+		assert_equal(harness.on_screen_message.kinds[#harness.on_screen_message.kinds], "notice")
+
+		harness.loudness.measured_listener(1)
+		assert_equal(harness:last_on_screen_message(), "<notice_measured_song>")
+	end)
+
 	it("show notices and errors by default, each following its own setting", function()
 		local harness = in_hub()
 		assert_deep_equal(harness.on_screen_message.shown_kinds, { notice = true, error = true })

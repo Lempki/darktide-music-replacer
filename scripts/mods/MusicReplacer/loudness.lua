@@ -54,6 +54,7 @@ local active = nil -- The song being measured: file_path, stamp, decoder, meter,
 -- A song also leaves for good when opening it, allocating its buffer, or reading it to its end fails.
 local batch_done = 0
 local measured_count = 0 -- Songs measured since the last summary line.
+local measured_listeners = {}
 local unsaved_count = 0 -- Songs measured since loudness.txt was last written.
 
 -- Writing loudness.txt rewrites the whole file on the game's thread, so a first measuring of a large library writes it in batches.
@@ -209,8 +210,12 @@ local function song_done()
 
 	if #pending == 0 and measured_count > 0 then
 		log(string.format("[loudness] measured %d song(s), %.1f s of measuring spread over the updates", measured_count, measured_ms / 1000))
+		local count = measured_count
 		measured_count = 0
 		measured_ms = 0
+		for _, listener in ipairs(measured_listeners) do
+			listener(count)
+		end
 	end
 end
 
@@ -318,6 +323,13 @@ function Loudness.init(options)
 	is_removed = options.is_removed or is_removed
 	cache_path = options.folder and (options.folder .. "/" .. CACHE_FILE_NAME)
 	load_cache()
+end
+
+-- Registers a function to call with how many songs were measured, once measuring has nothing left to do.
+-- Songs taken over from the same file in another folder, and songs that could not be measured, are not counted.
+-- Nothing calls it when no song needed measuring.
+function Loudness.on_measured(listener)
+	measured_listeners[#measured_listeners + 1] = listener
 end
 
 -- Turns evening out on or off. Measuring only runs while it is on.

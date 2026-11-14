@@ -268,6 +268,14 @@ local strings = {
 	notice_skipped_files = {
 		en = "Skipped %s files: %s in other formats, %s Windows cannot open. Details in diagnostic.log.",
 	},
+	-- Shown once Even Out Loudness has measured every song that needed it.
+	notice_measured_song = {
+		en = "Even Out Loudness measured 1 song.",
+	},
+	-- %s is the number of songs, two or more.
+	notice_measured_songs = {
+		en = "Even Out Loudness measured %s songs.",
+	},
 	message_scale = {
 		en = "Message Size",
 	},
