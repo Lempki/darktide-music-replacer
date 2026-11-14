@@ -234,6 +234,24 @@ local function show_error(text_id)
 	OnScreenMessage.show(message_text(text_id), "error")
 end
 
+-- Shows the notice `text_id`, formatted with `...`, in Notice Color.
+local function show_notice(text_id, ...)
+	OnScreenMessage.show(message_text(text_id, ...), "notice")
+end
+
+-- Says how many songs the mod found once a listing has been checked, so a new player sees it works, or where songs go when there are none.
+local function show_songs_found(counts)
+	if counts.songs == 0 then
+		show_notice("notice_no_songs")
+	elseif counts.songs == 1 then
+		show_notice("notice_found_song")
+	elseif counts.folders == 1 then
+		show_notice("notice_found_songs_in_folder", counts.songs)
+	else
+		show_notice("notice_found_songs", counts.songs, counts.folders)
+	end
+end
+
 local play_context
 local play_track
 
@@ -1083,6 +1101,7 @@ mod.on_all_mods_loaded = function()
 	})
 	Loudness.set_enabled(mod:get("normalize_loudness"))
 	Library.on_listed(Loudness.set_files)
+	Library.on_checked(show_songs_found)
 	AudioClient.init(log, { player = Player, disk_path = Library.disk_path, level_of = Loudness.level, is_measured = Loudness.is_measured })
 	AudioClient.set_volume(custom_volume())
 	AudioClient.set_fade_seconds(mod:get("fade_seconds"))

@@ -232,6 +232,22 @@ local strings = {
 	look_custom = {
 		en = "Custom",
 	},
+	-- The notices say what the mod found once it has listed and checked the audio folders, at launch and whenever they change.
+	-- Its songs and folders count every folder, so a song in two folders counts twice.
+	notice_no_songs = {
+		en = "No songs found. Put them in the folders in mods\\MusicReplacer\\audio.",
+	},
+	notice_found_song = {
+		en = "Found 1 song.",
+	},
+	-- %s is the number of songs, two or more.
+	notice_found_songs_in_folder = {
+		en = "Found %s songs in 1 folder.",
+	},
+	-- The first %s is the number of songs, and the second the number of folders, two or more of each.
+	notice_found_songs = {
+		en = "Found %s songs in %s folders.",
+	},
 	message_scale = {
 		en = "Message Size",
 	},

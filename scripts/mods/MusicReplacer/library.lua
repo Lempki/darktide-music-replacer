@@ -12,6 +12,7 @@
 -- Where Windows cannot watch the folders, as on some network drives, only the Rescan Audio Folders button lists them again.
 -- A missing or empty folder resolves to nil here, which is the caller's signal to fall back to the game's music.
 -- Every listing is passed on to the Library.on_listed listeners, which is how the loudness measurements learn of changed files.
+-- Once its files are measured, the Library.on_checked listeners learn how many songs Windows can play, and in how many folders.
 -- A song the player removed from rotation stays on disk, but no listing holds it, so nothing picks, finds, or measures it.
 
 local Library = {}
@@ -48,6 +49,8 @@ local unplayable = {} -- file_path -> true once Windows could not open the file.
 local stamps = {} -- file_path -> its size and write time at the last listing.
 local previous_stamps = {} -- The stamps of the listing before, so an unchanged file keeps what was measured of it.
 local listed_listeners = {}
+local checked_listeners = {}
+local checking = false -- True from a listing until every file it listed has been measured.
 local is_removed = function() return false end -- file_path -> true for a song removed from rotation.
 
 -- file_path -> seconds, or false when the file could not be measured.
@@ -149,6 +152,29 @@ local function scan_folders(what)
 	for _, listener in ipairs(listed_listeners) do
 		listener(entries)
 	end
+
+	checking = true
+end
+
+-- Tells the Library.on_checked listeners how many listed songs Windows can play, and how many folders hold them.
+local function report_checked()
+	local counts = { songs = 0, folders = 0 }
+	for _, key in ipairs(each_folder_key()) do
+		local playable = 0
+		for _, file_path in ipairs(lists[key]) do
+			if not unplayable[file_path] then
+				playable = playable + 1
+			end
+		end
+		counts.songs = counts.songs + playable
+		if playable > 0 then
+			counts.folders = counts.folders + 1
+		end
+	end
+
+	for _, listener in ipairs(checked_listeners) do
+		listener(counts)
+	end
 end
 
 local function measure_next_duration()
@@ -242,6 +268,13 @@ function Library.on_listed(listener)
 	listed_listeners[#listed_listeners + 1] = listener
 end
 
+-- Registers a function to call once every file of a listing has been measured, when it is known which ones Windows can play.
+-- It is called with { songs, folders }: the listed songs Windows can play, and the folders, overrides included, that hold any.
+-- A listing that comes before the measuring finishes replaces it, so only the newer one is reported.
+function Library.on_checked(listener)
+	checked_listeners[#checked_listeners + 1] = listener
+end
+
 -- Asks for every folder to be listed again on the next update, and every file to be measured again.
 -- The button is how a player asks to retry a file that would not play, so it does not keep what was measured before.
 -- It also creates a context's folder again that was deleted while the game runs, so the player needs no restart for it.
@@ -284,6 +317,13 @@ function Library.update(dt)
 	end
 
 	measure_next_duration()
+
+	-- A listing with nothing to measure is reported on the update after it, the same as one whose last file was just measured.
+	-- A listing about to be replaced by this update's is not reported.
+	if checking and not measure_queue[measure_index] and not rescan_requested then
+		checking = false
+		report_checked()
+	end
 
 	-- The first listing counts as a finished rescan too, since the title screen's context resolves before it, with no files yet.
 	if waiting_to_scan then

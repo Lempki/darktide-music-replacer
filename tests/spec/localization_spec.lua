@@ -46,6 +46,10 @@ local MESSAGE_ARGUMENTS = {
 	error_audio_unavailable = 0,
 	error_game_change = 0,
 	error_log_unavailable = 0,
+	notice_no_songs = 0,
+	notice_found_song = 0,
+	notice_found_songs_in_folder = 1,
+	notice_found_songs = 2,
 }
 
 -- How many values `text` formats, leaving out the "%%" that shows a percent sign.

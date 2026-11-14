@@ -293,6 +293,76 @@ describe("library.lua listing", function()
 	end)
 end)
 
+describe("library.lua checking a listing", function()
+	-- Returns a library.lua that has listed `disk`, the fake folders, and every count its on_checked listener was called with.
+	local function checked_library(disk, lengths, broken)
+		local engine = FakeEngine.new()
+		local Library = engine:load("library")
+		local folders = new_audio_folders(disk, lengths or {}, {}, broken)
+		local checks = {}
+		Library.on_checked(function(counts) checks[#checks + 1] = counts end)
+		Library.init(nil, folders)
+		Library.update(0.016)
+		return Library, folders, checks
+	end
+
+	it("reports the songs and the folders that hold them once every file is measured, override folders included", function()
+		local Library, _, checks = checked_library({ hub = { "a.mp3" }, boss = { "b.mp3", "c.mp3" }, ["boss/chaos_spawn"] = { "d.mp3" } })
+
+		for _ = 1, 3 do
+			Library.update(0.016)
+		end
+		assert_deep_equal(checks, {})
+
+		Library.update(0.016)
+		assert_deep_equal(checks, { { songs = 4, folders = 3 } })
+	end)
+
+	it("leaves out a file Windows cannot open, and a folder with no song it can play", function()
+		local Library, _, checks = checked_library({ hub = { "bad.mp3" }, combat = { "good.mp3" } }, {}, { ["hub/bad.mp3"] = "unsupported" })
+
+		Library.update(0.016)
+		Library.update(0.016)
+
+		assert_deep_equal(checks, { { songs = 1, folders = 1 } })
+	end)
+
+	it("reports no songs on the update after a listing of empty folders", function()
+		local Library, _, checks = checked_library({})
+
+		Library.update(0.016)
+
+		assert_deep_equal(checks, { { songs = 0, folders = 0 } })
+	end)
+
+	it("reports a listing with nothing new to measure on the update after it", function()
+		local Library, folders, checks = checked_library({ hub = { "a.mp3" } })
+		Library.update(0.016)
+		folders.measured = {}
+
+		Library.request_listing()
+		Library.update(0.016)
+		Library.update(0.016)
+
+		assert_deep_equal(folders.measured, {})
+		assert_deep_equal(checks, { { songs = 1, folders = 1 }, { songs = 1, folders = 1 } })
+	end)
+
+	it("reports only the newer listing when one comes before the measuring finishes", function()
+		local disk = { hub = { "a.mp3", "b.mp3" } }
+		local Library, _, checks = checked_library(disk)
+		Library.update(0.016)
+
+		disk.hub = { "a.mp3", "b.mp3", "c.mp3" }
+		Library.request_rescan()
+		for _ = 1, 10 do
+			Library.update(0.016)
+		end
+
+		assert_deep_equal(checks, { { songs = 3, folders = 1 } })
+	end)
+end)
+
 describe("library.lua watching the folders", function()
 	it("watches the audio folder once it has created the folders", function()
 		local _, folders = listed_library({})

@@ -824,6 +824,34 @@ describe("MusicReplacer.lua on-screen messages", function()
 		end
 	end)
 
+	it("show a notice of how many songs were found once a listing is checked, in as many folders", function()
+		local harness = in_hub()
+
+		harness.library.checked_listener({ songs = 128, folders = 9 })
+
+		assert_equal(harness:last_on_screen_message(), "<notice_found_songs: 128, 9>")
+		assert_equal(harness.on_screen_message.kinds[#harness.on_screen_message.kinds], "notice")
+	end)
+
+	it("name one song, or songs in one folder, with texts of their own", function()
+		local harness = in_hub()
+
+		harness.library.checked_listener({ songs = 1, folders = 1 })
+		assert_equal(harness:last_on_screen_message(), "<notice_found_song>")
+
+		harness.library.checked_listener({ songs = 5, folders = 1 })
+		assert_equal(harness:last_on_screen_message(), "<notice_found_songs_in_folder: 5>")
+	end)
+
+	it("show where songs go when no folder has any", function()
+		local harness = in_hub()
+
+		harness.library.checked_listener({ songs = 0, folders = 0 })
+
+		assert_equal(harness:last_on_screen_message(), "<notice_no_songs>")
+		assert_equal(harness.on_screen_message.kinds[#harness.on_screen_message.kinds], "notice")
+	end)
+
 	it("show notices and errors by default, each following its own setting", function()
 		local harness = in_hub()
 		assert_deep_equal(harness.on_screen_message.shown_kinds, { notice = true, error = true })

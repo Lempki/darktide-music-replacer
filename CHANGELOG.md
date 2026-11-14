@@ -9,6 +9,7 @@ What changes for players in each release of Music Replacer. The format follows [
 * Notice Color and Error Color settings in the On-Screen Messages group color the messages about something you need to know and about something that went wrong, amber and red by default.
 * For Notices and For Errors settings in the On-Screen Messages group, both on by default, turn each of those kinds of message off on its own. A notice or error that does not show is still written to `diagnostic.log`.
 * A Look setting in the On-Screen Messages group, Default or Custom, keeps the group short. Custom shows the settings for the messages' size, colors, backdrop, corner, and offsets, and Default draws the default look while your changes stay saved. If you changed the look before, choose Custom to get it back.
+* A notice says how many songs the mod found and in how many folders, such as `Found 128 songs in 9 folders.`, once it has checked them at launch, after Rescan Audio Folders, and after your files change. With no songs, it says where to put them.
 
 ### Changes
 

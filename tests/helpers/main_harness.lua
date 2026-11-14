@@ -39,6 +39,7 @@ local function new_library(files)
 	function library.request_listing() library.rescan_requested = true end
 	function library.shutdown() end
 	function library.on_listed(listener) library.listed_listeners[#library.listed_listeners + 1] = listener end
+	function library.on_checked(listener) library.checked_listener = listener end
 	function library.request_rescan() library.rescan_requested = true end
 	function library.has_files(folder_key) return #listed(folder_key) > 0 end
 	function library.disk_path(file_path) return file_path end
