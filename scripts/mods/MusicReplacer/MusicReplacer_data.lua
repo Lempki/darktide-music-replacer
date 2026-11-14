@@ -477,6 +477,16 @@ return {
 							},
 						},
 					},
+					{
+						-- It sits outside Debug Overlay's own settings, so it shows while the overlay is off.
+						setting_id = "debug_overlay_keybind",
+						type = "keybind",
+						tooltip = "debug_overlay_keybind_tooltip",
+						default_value = {},
+						keybind_trigger = "pressed",
+						keybind_type = "function_call",
+						function_name = "toggle_debug_overlay",
+					},
 				},
 			},
 		},

@@ -891,6 +891,14 @@ end
 
 -- The Toggle Shuffle key. It changes the setting itself, so the mod options show the new choice and it lasts.
 -- It works whatever plays, since it only decides what the next pick does.
+-- Turns the Debug Overlay setting itself on or off, so the checkbox follows and the choice stays after a restart.
+-- The overlay showing or hiding is the only feedback, so no message shows.
+mod.toggle_debug_overlay = function()
+	local is_on = not mod:get("debug_overlay")
+	mod:set("debug_overlay", is_on, true)
+	log(string.format("[control] debug overlay %s", is_on and "on" or "off"))
+end
+
 mod.toggle_shuffle = function()
 	local is_on = not mod:get("shuffle")
 	mod:set("shuffle", is_on, true)

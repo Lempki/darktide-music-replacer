@@ -32,7 +32,7 @@ Everything below is optional detail.
 | …give one kind of boss its own music. | Make a folder named after the boss inside `boss`, such as `boss\chaos_spawn\`. [Override folders](docs/override-folders.md#folder-names) lists every name. |
 | …give one mission its own music. | Make a folder named after the mission's code inside the folders you want, such as `explore\spillway\` and `combat\spillway\`. [game-internals.md](docs/game-internals.md) lists every mission's code. |
 | …give an Operation its own music. | Make `event\op_train\` for Rolling Steel or `event\op_no_mans_land\` for No Man's Land, since Operations play `event` all the way through. |
-| …find out which folder plays right now. | Turn on Debug Overlay in the mod options. It shows the folder that plays and the override names the moment looks for. |
+| …find out which folder plays right now. | Turn on Debug Overlay in the mod options, or bind Toggle Debug Overlay to show it with a key. It shows the folder that plays and the override names the moment looks for. |
 | …try out my songs without starting a mission. | In Meat Grinder, set its Music to One Situation and pick the situation. |
 | …skip a song, or never hear it again. | Bind Next Song or Remove from Rotation under Playback Controls in the mod options. |
 | …see which song is playing. | It shows by default: each new song's name appears for a few seconds in the bottom left corner. The On-Screen Messages group in the mod options turns it off, and its Look setting, set to Custom, changes its size, colors, and position. |

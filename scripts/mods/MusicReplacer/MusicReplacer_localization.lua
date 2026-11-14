@@ -691,6 +691,12 @@ local strings = {
 			"It shows on every screen, loading screens included.\n\n" ..
 			"Useful for checking which music a moment counts as.",
 	},
+	debug_overlay_keybind = {
+		en = "Toggle Debug Overlay",
+	},
+	debug_overlay_keybind_tooltip = {
+		en = "Shows or hides the debug overlay, the same as turning Debug Overlay on or off.",
+	},
 	debug_overlay_scale = {
 		en = "Overlay Size",
 	},

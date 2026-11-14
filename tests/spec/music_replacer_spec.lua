@@ -1592,6 +1592,20 @@ describe("MusicReplacer.lua Shuffle", function()
 		assert_equal(harness:last_on_screen_message(), "<control_shuffle_on>")
 	end)
 
+	it("shows and hides the debug overlay with its key, saves the choice, and shows no message", function()
+		local harness = in_hub()
+		local shown = #harness.on_screen_message.shown
+
+		harness.mod.toggle_debug_overlay()
+		assert_equal(harness.settings.debug_overlay, true)
+		assert_equal(harness.overlay.enabled, true)
+
+		harness.mod.toggle_debug_overlay()
+		assert_equal(harness.settings.debug_overlay, false)
+		assert_equal(harness.overlay.enabled, false)
+		assert_equal(#harness.on_screen_message.shown, shown)
+	end)
+
 	it("toggles while no song of yours plays, since it only decides the next pick", function()
 		local harness = in_hub({ hub = {} })
 
