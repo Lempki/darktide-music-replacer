@@ -10,11 +10,11 @@ Download it from [Nexus Mods](https://www.nexusmods.com/warhammer40kdarktide/mod
 
 1. Install Music Replacer like any other Darktide mod, by hand or through a mod manager such as Vortex. It needs [Darktide Mod Loader](https://www.nexusmods.com/warhammer40kdarktide/mods/19) and [DMF](https://www.nexusmods.com/warhammer40kdarktide/mods/8) 26.10.22 or newer, with `MusicReplacer` listed below `dmf` in `mod_load_order.txt`.
 2. Put your songs into the folders you want music for, inside the **installed** mod folder: `...\Warhammer 40,000 DARKTIDE\mods\MusicReplacer\audio\`. It comes with one folder per situation. Most people start with `hub`, `explore`, `combat`, `horde`, and `boss`. Wherever you add no songs, the game's music plays as usual.
-3. Start the game and play.
+3. Start the game and play. Shortly after launch, an amber notice in the bottom left corner says how many songs the mod found, or where to put them if it found none.
 
 That is all it takes. A few things to know:
 
-* The formats that work are `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, and `.wma`. Other files, such as `.ogg` and `.opus`, are ignored, so convert those to a supported format first. File names in any language work.
+* The formats that work are `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, and `.wma`. Audio in other formats, such as `.ogg` and `.opus`, is skipped, and a notice says how many files were skipped, so convert those to a supported format first. File names in any language work.
 * You can add, remove, or replace files while the game runs, and the mod picks them up by itself 3 seconds after files stop changing. A song that is playing finishes, even if you remove its file, and if it was a folder's only song, it keeps looping until the music changes.
 * Put songs directly inside the folders. Folders inside them are [override folders](docs/override-folders.md), which are optional. If a situation's folder goes missing, the mod creates it again when the game starts or when you press Rescan Audio Folders.
 * Every folder and when it plays is listed under [Where your music plays](#where-your-music-plays).
