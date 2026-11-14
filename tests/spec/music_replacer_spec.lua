@@ -745,15 +745,14 @@ describe("MusicReplacer.lua on-screen messages", function()
 		local harness = in_hub()
 
 		assert_equal(harness.on_screen_message.enabled, true)
-		assert_deep_equal(harness.on_screen_message.look,
-			{ scale = 0.85, color = { 217, 200, 200, 195 }, notice_color = { 217, 235, 180, 80 }, error_color = { 217, 240, 100, 90 },
-				corner = "bottom_left", offset_x = 0, offset_y = 0, backdrop_opacity = 0.7 })
+		assert_deep_equal(harness.on_screen_message.look, {})
 		assert_deep_equal(harness.on_screen_message.timing, { 4, 1 })
 	end)
 
-	it("follow their settings", function()
+	it("follow their settings while Look is Custom", function()
 		local harness = in_hub()
 
+		harness:set_setting("message_look", "custom")
 		harness:set_setting("message_scale", 150)
 		harness:set_setting("message_color", { 255, 10, 20, 30 })
 		harness:set_setting("notice_color", { 255, 40, 50, 60 })
@@ -769,6 +768,22 @@ describe("MusicReplacer.lua on-screen messages", function()
 			{ scale = 1.5, color = { 255, 10, 20, 30 }, notice_color = { 255, 40, 50, 60 }, error_color = { 255, 70, 80, 90 },
 				corner = "top_right", offset_x = 300, offset_y = 40, backdrop_opacity = 0.25 })
 		assert_deep_equal(harness.on_screen_message.timing, { 5.5, 0 })
+	end)
+
+	it("draw the default look while Look is Default, and the custom one again once Custom is chosen", function()
+		local harness = in_hub()
+		harness:set_setting("message_look", "custom")
+		harness:set_setting("message_scale", 150)
+		harness:set_setting("message_corner", "top_right")
+
+		harness:set_setting("message_look", "default")
+
+		assert_deep_equal(harness.on_screen_message.look, {})
+
+		harness:set_setting("message_look", "custom")
+
+		assert_equal(harness.on_screen_message.look.scale, 1.5)
+		assert_equal(harness.on_screen_message.look.corner, "top_right")
 	end)
 
 	it("stay on while any of the four kinds is on, and turn off once all are off", function()

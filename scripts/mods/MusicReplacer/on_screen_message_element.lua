@@ -11,11 +11,12 @@ local UIWidget = require("scripts/managers/ui/ui_widget")
 local UIWorkspaceSettings = require("scripts/settings/ui/ui_workspace_settings")
 
 -- These are the sizes at 100%, and they scale with the Message Size setting.
+-- They are small enough that both lines fit below the player portrait in the bottom left corner at the game's default HUD Scale.
 -- The padding is the space between the backdrop's edges and the text.
-local FONT_SIZE = 16
-local LINE_HEIGHT = 24
-local BACKDROP_PADDING = 4
-local FADE_WIDTH = 80
+local FONT_SIZE = 13.6
+local LINE_HEIGHT = 20.4
+local BACKDROP_PADDING = 3.4
+local FADE_WIDTH = 68
 
 -- The space between the newest line's backdrop and the previous line's, none, so the two backdrops read as one block.
 local LINE_GAP = 0
@@ -25,7 +26,7 @@ local FONT_TYPE = "proxima_nova_medium"
 local TEXT_ROOM = 2000
 
 -- The game measures text a little narrower than it draws it, so measured widths get this much extra.
-local MEASURE_SLACK = 6
+local MEASURE_SLACK = 5.1
 
 -- The same dark backdrop as the debug overlay's.
 local BACKDROP_RGB = { 12, 13, 11 }

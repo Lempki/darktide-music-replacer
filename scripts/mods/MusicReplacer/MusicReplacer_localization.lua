@@ -218,6 +218,20 @@ local strings = {
 	error_log_unavailable = {
 		en = "diagnostic.log could not be opened, so nothing is logged this launch.",
 	},
+	message_look = {
+		en = "Look",
+	},
+	message_look_tooltip = {
+		en = "How the on-screen messages look.\n\n" ..
+			highlight("Default") .. " draws them in their default size, colors, and corner.\n" ..
+			highlight("Custom") .. " shows the settings to change that. Your changes stay saved while Default is chosen.",
+	},
+	look_default = {
+		en = "Default",
+	},
+	look_custom = {
+		en = "Custom",
+	},
 	message_scale = {
 		en = "Message Size",
 	},

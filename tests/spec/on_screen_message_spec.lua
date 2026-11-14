@@ -462,11 +462,11 @@ describe("on_screen_message.lua fit", function()
 end)
 
 describe("on_screen_message.lua look", function()
-	it("starts at 85% size, in muted grey at 85% opacity, in the bottom left corner, on a 70% backdrop", function()
+	it("starts at 100% size, in muted grey at 85% opacity, in the bottom left corner, on a 70% backdrop", function()
 		local OnScreenMessage = load_on_screen_message()
 
 		assert_deep_equal(OnScreenMessage.look(),
-			{ scale = 0.85, color = { 217, 200, 200, 195 }, notice_color = { 217, 235, 180, 80 }, error_color = { 217, 240, 100, 90 },
+			{ scale = 1, color = { 217, 200, 200, 195 }, notice_color = { 217, 235, 180, 80 }, error_color = { 217, 240, 100, 90 },
 				corner = "bottom_left", offset_x = 0, offset_y = 0, backdrop_opacity = 0.7 })
 	end)
 
@@ -478,6 +478,18 @@ describe("on_screen_message.lua look", function()
 		OnScreenMessage.set_enabled(true, look)
 
 		assert_deep_equal(OnScreenMessage.look(), look)
+	end)
+
+	it("returns to the default look when given a look with no values", function()
+		local OnScreenMessage = load_on_screen_message()
+		OnScreenMessage.set_enabled(true, { scale = 1.5, color = { 255, 10, 20, 30 }, notice_color = { 255, 40, 50, 60 },
+			error_color = { 255, 70, 80, 90 }, corner = "top_right", offset_x = 300, offset_y = 40, backdrop_opacity = 0 })
+
+		OnScreenMessage.set_enabled(true, {})
+
+		assert_deep_equal(OnScreenMessage.look(),
+			{ scale = 1, color = { 217, 200, 200, 195 }, notice_color = { 217, 235, 180, 80 }, error_color = { 217, 240, 100, 90 },
+				corner = "bottom_left", offset_x = 0, offset_y = 0, backdrop_opacity = 0.7 })
 	end)
 
 	it("treats a saved negative offset as 0, so the message never moves past its corner", function()

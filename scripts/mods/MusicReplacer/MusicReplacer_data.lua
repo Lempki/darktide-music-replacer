@@ -258,79 +258,91 @@ return {
 						unit_text = "seconds_unit",
 					},
 					{
-						setting_id = "message_scale",
-						type = "numeric",
-						tooltip = "message_scale_tooltip",
-						-- Small enough that both lines fit below the player portrait in the bottom left corner at the game's default HUD Scale.
-						default_value = 85,
-						range = { 50, 200 },
-						decimals_number = 0,
-						unit_text = "percent_unit",
-					},
-					{
-						-- ARGB. The alpha, 217, is 85% opacity.
-						setting_id = "message_color",
-						type = "color",
-						tooltip = "message_color_tooltip",
-						default_value = { 217, 200, 200, 195 },
-						has_alpha = true,
-					},
-					{
-						-- ARGB, an amber at the same 85% opacity as Message Color.
-						setting_id = "notice_color",
-						type = "color",
-						tooltip = "notice_color_tooltip",
-						default_value = { 217, 235, 180, 80 },
-						has_alpha = true,
-					},
-					{
-						-- ARGB, a red at the same 85% opacity as Message Color.
-						setting_id = "error_color",
-						type = "color",
-						tooltip = "error_color_tooltip",
-						default_value = { 217, 240, 100, 90 },
-						has_alpha = true,
-					},
-					{
-						setting_id = "message_backdrop_opacity",
-						type = "numeric",
-						tooltip = "message_backdrop_opacity_tooltip",
-						default_value = 70,
-						range = { 0, 100 },
-						decimals_number = 0,
-						unit_text = "percent_unit",
-					},
-					{
-						setting_id = "message_corner",
+						-- Default draws the default look and hides the look's settings, which keep their values for when Custom is chosen again.
+						setting_id = "message_look",
 						type = "dropdown",
-						tooltip = "message_corner_tooltip",
-						default_value = "bottom_left",
+						tooltip = "message_look_tooltip",
+						default_value = "default",
 						options = {
-							{ text = "corner_bottom_left", value = "bottom_left" },
-							{ text = "corner_bottom_right", value = "bottom_right" },
-							{ text = "corner_top_left", value = "top_left" },
-							{ text = "corner_top_right", value = "top_right" },
+							{ text = "look_default", value = "default" },
+							{ text = "look_custom", value = "custom", show_widgets = { 1, 2, 3, 4, 5, 6, 7, 8 } },
 						},
-					},
-					{
-						-- The range is wide enough for any screen, so it assumes no resolution or aspect ratio.
-						-- DMF lets a player type the exact number.
-						setting_id = "message_offset_x",
-						type = "numeric",
-						tooltip = "message_offset_x_tooltip",
-						default_value = 0,
-						range = { 0, 10000 },
-						decimals_number = 0,
-						unit_text = "pixels_unit",
-					},
-					{
-						setting_id = "message_offset_y",
-						type = "numeric",
-						tooltip = "message_offset_y_tooltip",
-						default_value = 0,
-						range = { 0, 10000 },
-						decimals_number = 0,
-						unit_text = "pixels_unit",
+						sub_widgets = {
+							{
+								setting_id = "message_scale",
+								type = "numeric",
+								tooltip = "message_scale_tooltip",
+								default_value = 100,
+								range = { 50, 200 },
+								decimals_number = 0,
+								unit_text = "percent_unit",
+							},
+							{
+								-- ARGB. The alpha, 217, is 85% opacity.
+								setting_id = "message_color",
+								type = "color",
+								tooltip = "message_color_tooltip",
+								default_value = { 217, 200, 200, 195 },
+								has_alpha = true,
+							},
+							{
+								-- ARGB, an amber at the same 85% opacity as Message Color.
+								setting_id = "notice_color",
+								type = "color",
+								tooltip = "notice_color_tooltip",
+								default_value = { 217, 235, 180, 80 },
+								has_alpha = true,
+							},
+							{
+								-- ARGB, a red at the same 85% opacity as Message Color.
+								setting_id = "error_color",
+								type = "color",
+								tooltip = "error_color_tooltip",
+								default_value = { 217, 240, 100, 90 },
+								has_alpha = true,
+							},
+							{
+								setting_id = "message_backdrop_opacity",
+								type = "numeric",
+								tooltip = "message_backdrop_opacity_tooltip",
+								default_value = 70,
+								range = { 0, 100 },
+								decimals_number = 0,
+								unit_text = "percent_unit",
+							},
+							{
+								setting_id = "message_corner",
+								type = "dropdown",
+								tooltip = "message_corner_tooltip",
+								default_value = "bottom_left",
+								options = {
+									{ text = "corner_bottom_left", value = "bottom_left" },
+									{ text = "corner_bottom_right", value = "bottom_right" },
+									{ text = "corner_top_left", value = "top_left" },
+									{ text = "corner_top_right", value = "top_right" },
+								},
+							},
+							{
+								-- The range is wide enough for any screen, so it assumes no resolution or aspect ratio.
+								-- DMF lets a player type the exact number.
+								setting_id = "message_offset_x",
+								type = "numeric",
+								tooltip = "message_offset_x_tooltip",
+								default_value = 0,
+								range = { 0, 10000 },
+								decimals_number = 0,
+								unit_text = "pixels_unit",
+							},
+							{
+								setting_id = "message_offset_y",
+								type = "numeric",
+								tooltip = "message_offset_y_tooltip",
+								default_value = 0,
+								range = { 0, 10000 },
+								decimals_number = 0,
+								unit_text = "pixels_unit",
+							},
+						},
 					},
 				},
 			},

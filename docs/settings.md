@@ -58,7 +58,8 @@ A message is one line of text on a backdrop in the corner of the screen that Mes
 | For Errors | On | Shows a message in Error Color when something goes wrong. Off, an error is still written to `diagnostic.log`. |
 | Message Duration | 4 seconds | How long a message stays at full opacity before it fades out, from 1 to 10 seconds. With Message Fade Out, it also sets how long a second press of Remove from Rotation counts. |
 | Message Fade Out | 1 second | How long a message takes to fade out, from 0 to 3 seconds. Set it to 0 to hide a message at once. |
-| Message Size | 85% | How big the messages are, from 50% to 200%, on top of the game's HUD Scale setting. |
+| Look | Default | Default draws the messages in the default look below. Custom shows the settings below, from Message Size to Message Offset Y, and draws the messages as they set. Your changes stay saved while Default is chosen. |
+| Message Size | 100% | How big the messages are, from 50% to 200%, on top of the game's HUD Scale setting. At 100% and the game's default HUD Scale, both lines fit below the player portrait in the bottom left corner. |
 | Message Color | Grey, 85% opacity | The messages' color, picked with DMF's color picker. Its alpha sets how opaque they are. |
 | Notice Color | Amber, 85% opacity | The color of notices, the messages about something you need to know. |
 | Error Color | Red, 85% opacity | The color of the messages about something that went wrong. |

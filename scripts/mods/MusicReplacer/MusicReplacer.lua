@@ -988,6 +988,7 @@ local ON_SCREEN_MESSAGE_SETTINGS = {
 	song_change_messages = true,
 	notice_messages = true,
 	error_messages = true,
+	message_look = true,
 	message_scale = true,
 	message_color = true,
 	notice_color = true,
@@ -1000,13 +1001,9 @@ local ON_SCREEN_MESSAGE_SETTINGS = {
 	message_fade_out_seconds = true,
 }
 
--- The element stays on screen while any of the four kinds of message is on.
--- Key presses and song changes check their own settings before they show, and on_screen_message.lua checks notices and errors.
-local function apply_on_screen_message_settings()
-	local any_on = mod:get("key_press_messages") == true or mod:get("song_change_messages") == true
-		or mod:get("notice_messages") == true or mod:get("error_messages") == true
-	OnScreenMessage.set_shown_kinds({ notice = mod:get("notice_messages"), error = mod:get("error_messages") })
-	OnScreenMessage.set_enabled(any_on, {
+-- The look the player set, used while Look is Custom.
+local function custom_message_look()
+	return {
 		scale = mod:get("message_scale") / 100,
 		color = mod:get("message_color"),
 		notice_color = mod:get("notice_color"),
@@ -1015,7 +1012,21 @@ local function apply_on_screen_message_settings()
 		offset_x = mod:get("message_offset_x"),
 		offset_y = mod:get("message_offset_y"),
 		backdrop_opacity = mod:get("message_backdrop_opacity") / 100,
-	})
+	}
+end
+
+-- The element stays on screen while any of the four kinds of message is on.
+-- Key presses and song changes check their own settings before they show, and on_screen_message.lua checks notices and errors.
+local function apply_on_screen_message_settings()
+	local any_on = mod:get("key_press_messages") == true or mod:get("song_change_messages") == true
+		or mod:get("notice_messages") == true or mod:get("error_messages") == true
+	OnScreenMessage.set_shown_kinds({ notice = mod:get("notice_messages"), error = mod:get("error_messages") })
+	-- A look with no values draws every default.
+	local look = {}
+	if mod:get("message_look") == "custom" then
+		look = custom_message_look()
+	end
+	OnScreenMessage.set_enabled(any_on, look)
 	OnScreenMessage.set_timing(mod:get("message_seconds"), mod:get("message_fade_out_seconds"))
 end
 

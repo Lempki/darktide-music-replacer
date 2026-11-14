@@ -75,8 +75,8 @@ local DEFAULT_CORNER = "bottom_left"
 -- The Message Backdrop Opacity setting's default, as a share, the same as the debug overlay's backdrop.
 local DEFAULT_BACKDROP_OPACITY = 0.7
 
--- The Message Size setting's default, as a factor, small enough that both lines fit below the player portrait in the bottom left corner.
-local DEFAULT_SCALE = 0.85
+-- The Message Size setting's default, as a factor.
+local DEFAULT_SCALE = 1
 
 -- How the message looks, from its settings: its size as a factor, each kind's ARGB color, its corner, and its backdrop's opacity.
 -- Its offsets are how far it moves inward from the corner, in the UI's pixels.
