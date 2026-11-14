@@ -252,6 +252,27 @@ local function show_songs_found(counts)
 	end
 end
 
+-- Says how many files were skipped and why, after the count, so a player knows to convert a file or look at the log.
+local function show_files_skipped(counts)
+	local other_formats, unopenable = counts.other_formats, counts.unopenable
+	if other_formats > 0 and unopenable > 0 then
+		show_notice("notice_skipped_files", other_formats + unopenable, other_formats, unopenable)
+	elseif other_formats == 1 then
+		show_notice("notice_skipped_format_file")
+	elseif other_formats > 1 then
+		show_notice("notice_skipped_format_files", other_formats)
+	elseif unopenable == 1 then
+		show_notice("notice_skipped_unopenable_file")
+	elseif unopenable > 1 then
+		show_notice("notice_skipped_unopenable_files", unopenable)
+	end
+end
+
+local function show_listing_checked(counts)
+	show_songs_found(counts)
+	show_files_skipped(counts)
+end
+
 local play_context
 local play_track
 
@@ -1101,7 +1122,7 @@ mod.on_all_mods_loaded = function()
 	})
 	Loudness.set_enabled(mod:get("normalize_loudness"))
 	Library.on_listed(Loudness.set_files)
-	Library.on_checked(show_songs_found)
+	Library.on_checked(show_listing_checked)
 	AudioClient.init(log, { player = Player, disk_path = Library.disk_path, level_of = Loudness.level, is_measured = Loudness.is_measured })
 	AudioClient.set_volume(custom_volume())
 	AudioClient.set_fade_seconds(mod:get("fade_seconds"))

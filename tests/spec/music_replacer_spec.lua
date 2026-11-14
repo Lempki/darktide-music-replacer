@@ -827,7 +827,7 @@ describe("MusicReplacer.lua on-screen messages", function()
 	it("show a notice of how many songs were found once a listing is checked, in as many folders", function()
 		local harness = in_hub()
 
-		harness.library.checked_listener({ songs = 128, folders = 9 })
+		harness.library.checked_listener({ songs = 128, folders = 9, other_formats = 0, unopenable = 0 })
 
 		assert_equal(harness:last_on_screen_message(), "<notice_found_songs: 128, 9>")
 		assert_equal(harness.on_screen_message.kinds[#harness.on_screen_message.kinds], "notice")
@@ -836,20 +836,43 @@ describe("MusicReplacer.lua on-screen messages", function()
 	it("name one song, or songs in one folder, with texts of their own", function()
 		local harness = in_hub()
 
-		harness.library.checked_listener({ songs = 1, folders = 1 })
+		harness.library.checked_listener({ songs = 1, folders = 1, other_formats = 0, unopenable = 0 })
 		assert_equal(harness:last_on_screen_message(), "<notice_found_song>")
 
-		harness.library.checked_listener({ songs = 5, folders = 1 })
+		harness.library.checked_listener({ songs = 5, folders = 1, other_formats = 0, unopenable = 0 })
 		assert_equal(harness:last_on_screen_message(), "<notice_found_songs_in_folder: 5>")
 	end)
 
 	it("show where songs go when no folder has any", function()
 		local harness = in_hub()
 
-		harness.library.checked_listener({ songs = 0, folders = 0 })
+		harness.library.checked_listener({ songs = 0, folders = 0, other_formats = 0, unopenable = 0 })
 
 		assert_equal(harness:last_on_screen_message(), "<notice_no_songs>")
 		assert_equal(harness.on_screen_message.kinds[#harness.on_screen_message.kinds], "notice")
+	end)
+
+	it("follow the songs found with how many files were skipped and why", function()
+		local harness = in_hub()
+		local function skipped(other_formats, unopenable)
+			harness.library.checked_listener({ songs = 4, folders = 2, other_formats = other_formats, unopenable = unopenable })
+			return harness:last_on_screen_message()
+		end
+
+		assert_equal(skipped(1, 0), "<notice_skipped_format_file>")
+		assert_equal(skipped(3, 0), "<notice_skipped_format_files: 3>")
+		assert_equal(skipped(0, 1), "<notice_skipped_unopenable_file>")
+		assert_equal(skipped(0, 2), "<notice_skipped_unopenable_files: 2>")
+		assert_equal(skipped(2, 1), "<notice_skipped_files: 3, 2, 1>")
+		assert_equal(harness.on_screen_message.kinds[#harness.on_screen_message.kinds], "notice")
+	end)
+
+	it("show no skipped-files notice when nothing was skipped", function()
+		local harness = in_hub()
+
+		harness.library.checked_listener({ songs = 4, folders = 2, other_formats = 0, unopenable = 0 })
+
+		assert_equal(harness:last_on_screen_message(), "<notice_found_songs: 4, 2>")
 	end)
 
 	it("show notices and errors by default, each following its own setting", function()

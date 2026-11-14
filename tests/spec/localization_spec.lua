@@ -50,6 +50,11 @@ local MESSAGE_ARGUMENTS = {
 	notice_found_song = 0,
 	notice_found_songs_in_folder = 1,
 	notice_found_songs = 2,
+	notice_skipped_format_file = 0,
+	notice_skipped_format_files = 1,
+	notice_skipped_unopenable_file = 0,
+	notice_skipped_unopenable_files = 1,
+	notice_skipped_files = 3,
 }
 
 -- How many values `text` formats, leaving out the "%%" that shows a percent sign.
@@ -78,9 +83,9 @@ describe("MusicReplacer_localization.lua", function()
 		local strings = load_strings()
 		local failures = {}
 
-		-- The key messages take up to two arguments, such as where a song plays and its name, which the format ignores for every other string.
+		-- The messages take up to three arguments, such as the counts of skipped files, which the format ignores for every other string.
 		for text_id, translations in pairs(strings) do
-			local ok, err = pcall(string.format, translations.en, "Hub", "song.mp3")
+			local ok, err = pcall(string.format, translations.en, "Hub", "song.mp3", "3")
 			if not ok then
 				failures[#failures + 1] = text_id .. ": " .. tostring(err)
 			end

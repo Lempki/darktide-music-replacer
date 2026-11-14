@@ -248,6 +248,26 @@ local strings = {
 	notice_found_songs = {
 		en = "Found %s songs in %s folders.",
 	},
+	-- The skipped files follow the songs found, and their names and reasons are in diagnostic.log.
+	notice_skipped_format_file = {
+		en = "Skipped 1 file in a format the mod does not play. Details in diagnostic.log.",
+	},
+	-- %s is the number of files, two or more.
+	notice_skipped_format_files = {
+		en = "Skipped %s files in formats the mod does not play. Details in diagnostic.log.",
+	},
+	notice_skipped_unopenable_file = {
+		en = "Skipped 1 file Windows cannot open. Details in diagnostic.log.",
+	},
+	-- %s is the number of files, two or more.
+	notice_skipped_unopenable_files = {
+		en = "Skipped %s files Windows cannot open. Details in diagnostic.log.",
+	},
+	-- The first %s is the number of files skipped.
+	-- The second is those in a format the mod does not play, and the third those Windows cannot open.
+	notice_skipped_files = {
+		en = "Skipped %s files: %s in other formats, %s Windows cannot open. Details in diagnostic.log.",
+	},
 	message_scale = {
 		en = "Message Size",
 	},

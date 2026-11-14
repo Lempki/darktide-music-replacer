@@ -46,6 +46,7 @@ local lists = {} -- folder key, a context name or "context/override", -> file pa
 local override_folders = {} -- context_name -> its override folder keys, sorted.
 local reported_missing = {} -- file_path -> true once a missing file has been logged.
 local unplayable = {} -- file_path -> true once Windows could not open the file.
+local other_formats = {} -- The file paths of the last listing's audio files in a format the mod does not play.
 local stamps = {} -- file_path -> its size and write time at the last listing.
 local previous_stamps = {} -- The stamps of the listing before, so an unchanged file keeps what was measured of it.
 local listed_listeners = {}
@@ -66,7 +67,11 @@ end
 local function list_folder(folder_key)
 	local file_paths = {}
 
-	local names, name_stamps = AudioFolders.list(AUDIO_ROOT .. "/" .. folder_key)
+	local names, name_stamps, other_names = AudioFolders.list(AUDIO_ROOT .. "/" .. folder_key)
+
+	for _, name in ipairs(other_names or {}) do
+		other_formats[#other_formats + 1] = folder_key .. "/" .. name
+	end
 
 	for _, name in ipairs(names or {}) do
 		local file_path = folder_key .. "/" .. name
@@ -116,6 +121,7 @@ local function scan_folders(what)
 	stamps = {}
 	lists = {}
 	override_folders = {}
+	other_formats = {}
 
 	for _, context_name in ipairs(CONTEXTS) do
 		lists[context_name] = list_folder(context_name)
@@ -141,6 +147,10 @@ local function scan_folders(what)
 
 	reported_missing = {}
 	log(string.format("[library] %s: %s", what, describe_counts()))
+	table.sort(other_formats)
+	for _, file_path in ipairs(other_formats) do
+		log(string.format("[library] %s is in a format the mod does not play, skipping it", file_path))
+	end
 
 	local entries = {}
 	for _, key in ipairs(each_folder_key()) do
@@ -156,13 +166,15 @@ local function scan_folders(what)
 	checking = true
 end
 
--- Tells the Library.on_checked listeners how many listed songs Windows can play, and how many folders hold them.
+-- Tells the Library.on_checked listeners how many listed songs Windows can play, the folders that hold them, and the files skipped.
 local function report_checked()
-	local counts = { songs = 0, folders = 0 }
+	local counts = { songs = 0, folders = 0, other_formats = #other_formats, unopenable = 0 }
 	for _, key in ipairs(each_folder_key()) do
 		local playable = 0
 		for _, file_path in ipairs(lists[key]) do
-			if not unplayable[file_path] then
+			if unplayable[file_path] then
+				counts.unopenable = counts.unopenable + 1
+			else
 				playable = playable + 1
 			end
 		end
@@ -269,7 +281,9 @@ function Library.on_listed(listener)
 end
 
 -- Registers a function to call once every file of a listing has been measured, when it is known which ones Windows can play.
--- It is called with { songs, folders }: the listed songs Windows can play, and the folders, overrides included, that hold any.
+-- It is called with { songs, folders, other_formats, unopenable }.
+-- `songs` counts the listed songs Windows can play, and `folders` the folders, overrides included, that hold any.
+-- `other_formats` counts the audio files in a format the mod does not play, and `unopenable` the listed files Windows could not open.
 -- A listing that comes before the measuring finishes replaces it, so only the newer one is reported.
 function Library.on_checked(listener)
 	checked_listeners[#checked_listeners + 1] = listener

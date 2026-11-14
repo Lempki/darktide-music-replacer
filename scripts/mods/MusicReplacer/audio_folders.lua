@@ -8,6 +8,13 @@ local AudioFolders = {}
 -- Ogg and Opus are left out, since Microsoft's Web Media Extensions only add them for Store apps.
 local EXTENSIONS = { mp3 = true, m4a = true, aac = true, wav = true, flac = true, wma = true }
 
+-- Audio and video formats a player could drop in that the mod does not play, so a listing can say they were skipped.
+-- Any other file, such as cover art, desktop.ini, or a playlist, is not audio and is left out without a word.
+local OTHER_AUDIO_EXTENSIONS = {
+	ogg = true, oga = true, opus = true, aif = true, aiff = true, ape = true, wv = true, mka = true, webm = true,
+	mp4 = true, mid = true, midi = true, tta = true, dsf = true, dff = true, mpc = true, spx = true,
+}
+
 local INVALID_HANDLE = -1
 local INVALID_FILE_ATTRIBUTES = 0xFFFFFFFF
 local FILE_ATTRIBUTE_DIRECTORY = 0x10
@@ -69,9 +76,11 @@ end
 
 -- The audio files directly inside `folder`, a UTF-8 path, sorted by name as File Explorer does. Nil when the folder does not exist.
 -- The second value maps each name to a stamp of its size and write time, which changes whenever the file does.
+-- The third lists the names of audio files in a format the mod does not play, such as Ogg, unsorted.
 function AudioFolders.list(folder)
 	local names = {}
 	local stamps = {}
+	local other_formats = {}
 
 	local found = for_each_entry(folder, function(data)
 		if not is_directory(data.dwFileAttributes) then
@@ -81,6 +90,8 @@ function AudioFolders.list(folder)
 				names[#names + 1] = name
 				local write_time = data.ftLastWriteTime
 				stamps[name] = string.format("%.0f:%.0f:%.0f", data.nFileSizeHigh * 4294967296 + data.nFileSizeLow, write_time.high, write_time.low)
+			elseif extension and OTHER_AUDIO_EXTENSIONS[extension:lower()] then
+				other_formats[#other_formats + 1] = name
 			end
 		end
 	end)
@@ -90,7 +101,7 @@ function AudioFolders.list(folder)
 	end
 
 	sort_like_explorer(names)
-	return names, stamps
+	return names, stamps, other_formats
 end
 
 -- The names of the folders directly inside `folder`, a UTF-8 path, sorted. Nil when the folder does not exist.

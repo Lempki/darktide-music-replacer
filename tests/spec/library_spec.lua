@@ -7,8 +7,9 @@ local ROOT = "./../mods/MusicReplacer/audio"
 -- A fake audio_folders.lua over `disk`, which maps a context to its file names, and `lengths`, which maps a file path to seconds.
 -- `missing` lists file paths that are listed but gone from disk, and `broken` maps a file path Windows cannot open to why.
 -- Setting `changes` to true makes the watcher report a change on its next check, and `watch_error` makes watching fail.
+-- `other_formats` maps a folder key to the names of its audio files in a format the mod does not play.
 local function new_audio_folders(disk, lengths, missing, broken)
-	local folders = { created = {}, measured = {}, missing = missing or {}, broken = broken or {}, changes = false, closed = false }
+	local folders = { created = {}, measured = {}, missing = missing or {}, broken = broken or {}, changes = false, closed = false, other_formats = {} }
 
 	function folders.available() return true end
 	-- Each file's stamp is its name and how many times the folder was listed, as if every file changed between listings.
@@ -22,7 +23,7 @@ local function new_audio_folders(disk, lengths, missing, broken)
 		for _, name in ipairs(names) do
 			stamps[name] = name .. "@" .. folders.listings
 		end
-		return { unpack(names) }, stamps
+		return { unpack(names) }, stamps, { unpack(folders.other_formats[folder:sub(#ROOT + 2)] or {}) }
 	end
 	-- An override folder is a key with a slash, such as "boss/chaos_spawn", listed under its context.
 	function folders.subfolders(folder)
@@ -315,7 +316,7 @@ describe("library.lua checking a listing", function()
 		assert_deep_equal(checks, {})
 
 		Library.update(0.016)
-		assert_deep_equal(checks, { { songs = 4, folders = 3 } })
+		assert_deep_equal(checks, { { songs = 4, folders = 3, other_formats = 0, unopenable = 0 } })
 	end)
 
 	it("leaves out a file Windows cannot open, and a folder with no song it can play", function()
@@ -324,7 +325,32 @@ describe("library.lua checking a listing", function()
 		Library.update(0.016)
 		Library.update(0.016)
 
-		assert_deep_equal(checks, { { songs = 1, folders = 1 } })
+		assert_deep_equal(checks, { { songs = 1, folders = 1, other_formats = 0, unopenable = 1 } })
+	end)
+
+	it("counts and logs each audio file in a format the mod does not play, apart from the files Windows cannot open", function()
+		local engine = FakeEngine.new()
+		local Library = engine:load("library")
+		local folders = new_audio_folders({ hub = { "a.mp3" }, combat = {} }, {}, {}, {})
+		folders.other_formats = { hub = { "b.ogg" }, combat = { "c.opus" } }
+		local checks, lines = {}, {}
+		Library.on_checked(function(counts) checks[#checks + 1] = counts end)
+		Library.init(function(line) lines[#lines + 1] = line end, folders)
+
+		Library.update(0.016)
+		Library.update(0.016)
+
+		assert_deep_equal(checks, { { songs = 1, folders = 1, other_formats = 2, unopenable = 0 } })
+		local skipped = {}
+		for _, line in ipairs(lines) do
+			if line:find("format the mod does not play", 1, true) then
+				skipped[#skipped + 1] = line
+			end
+		end
+		assert_deep_equal(skipped, {
+			"[library] combat/c.opus is in a format the mod does not play, skipping it",
+			"[library] hub/b.ogg is in a format the mod does not play, skipping it",
+		})
 	end)
 
 	it("reports no songs on the update after a listing of empty folders", function()
@@ -332,7 +358,7 @@ describe("library.lua checking a listing", function()
 
 		Library.update(0.016)
 
-		assert_deep_equal(checks, { { songs = 0, folders = 0 } })
+		assert_deep_equal(checks, { { songs = 0, folders = 0, other_formats = 0, unopenable = 0 } })
 	end)
 
 	it("reports a listing with nothing new to measure on the update after it", function()
@@ -345,7 +371,7 @@ describe("library.lua checking a listing", function()
 		Library.update(0.016)
 
 		assert_deep_equal(folders.measured, {})
-		assert_deep_equal(checks, { { songs = 1, folders = 1 }, { songs = 1, folders = 1 } })
+		assert_deep_equal(checks, { { songs = 1, folders = 1, other_formats = 0, unopenable = 0 }, { songs = 1, folders = 1, other_formats = 0, unopenable = 0 } })
 	end)
 
 	it("reports only the newer listing when one comes before the measuring finishes", function()
@@ -359,7 +385,7 @@ describe("library.lua checking a listing", function()
 			Library.update(0.016)
 		end
 
-		assert_deep_equal(checks, { { songs = 3, folders = 1 } })
+		assert_deep_equal(checks, { { songs = 3, folders = 1, other_formats = 0, unopenable = 0 } })
 	end)
 end)
 
