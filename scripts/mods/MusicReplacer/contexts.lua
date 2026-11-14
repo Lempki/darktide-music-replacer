@@ -23,6 +23,7 @@ Contexts.list = {
 	{ id = "loading", silences = "music_game_state", loading_screen = true, mission_overrides = false },
 	{ id = "mission_preparation", silences = "music_game_state" },
 	{ id = "mission_briefing", silences = "music_game_state", loading_screen = true },
+	{ id = "mission_intro", silences = "music_game_state" },
 	{ id = "explore", priority = 1, resume = "always" },
 	{ id = "combat", priority = 2, resume = "always" },
 	{ id = "horde", priority = 3, resume = "sequence" },

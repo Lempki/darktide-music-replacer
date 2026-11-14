@@ -346,7 +346,6 @@ describe("debug_overlay.lua view", function()
 		local DebugOverlay = load_overlay(new_constant_elements())
 
 		assert_equal(DebugOverlay.view({ status = "Vanilla", idle = "cutscene" }).situation, "Cutscene")
-		assert_equal(DebugOverlay.view({ status = "Vanilla", idle = "intro" }).situation, "Mission Intro")
 		assert_equal(DebugOverlay.view({ status = "Vanilla", idle = "unknown_state" }).situation, "Unknown Music State")
 		assert_equal(DebugOverlay.view({ status = "Vanilla" }).situation, "No situation")
 	end)

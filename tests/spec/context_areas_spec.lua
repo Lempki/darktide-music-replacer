@@ -229,7 +229,7 @@ describe("context.lua areas", function()
 	end)
 
 	-- The game sends a mission's zone partway through the briefing.
-	it("stays on mission_briefing through the briefing once the mission zone has arrived, and resolves no context during the intro", function()
+	it("stays on mission_briefing through the briefing once the mission zone has arrived, then resolves mission_intro during the intro", function()
 		local harness = Harness.new()
 		harness:cold_start_to_hub()
 		harness:leave_hub()
@@ -246,11 +246,11 @@ describe("context.lua areas", function()
 
 		harness:state("music_game_state", "mission_intro")
 
-		assert_equal(harness:current(), nil)
+		assert_equal(harness:current(), "mission_intro")
 
 		harness:state("music_game_state", "mission")
 
-		assert_deep_equal(harness.changes, { "mission_preparation", "loading", "mission_briefing", "nil", "combat" })
+		assert_deep_equal(harness.changes, { "mission_preparation", "loading", "mission_briefing", "mission_intro", "combat" })
 	end)
 
 	it("treats the zone \"None\" like no zone at all", function()

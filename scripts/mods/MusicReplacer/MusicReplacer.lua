@@ -510,8 +510,9 @@ local MAX_DEBOUNCE_SECONDS = 3
 -- The briefing after the preparation screen takes the normal wait, since nothing that brief comes between them.
 -- A level reached from a loading screen can start an intro or a cutscene a moment later, as the prologue does.
 -- So the first situation after a loading screen waits as long.
--- The hub and the preparation screen are left out, since nothing replaces them a moment after they arrive.
-local SETTLED_ARRIVALS = { hub = true, mission_preparation = true }
+-- The hub, the preparation screen, and the intro are left out, since nothing replaces them a moment after they arrive.
+-- The intro lasts about 5 seconds, so the long wait would leave its song almost no time.
+local SETTLED_ARRIVALS = { hub = true, mission_preparation = true, mission_intro = true }
 local LOADING_DEBOUNCE_SECONDS = 3
 local LOADING_CONTEXTS = {}
 for _, context in ipairs(Contexts.list) do

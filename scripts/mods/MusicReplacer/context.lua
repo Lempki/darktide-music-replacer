@@ -44,7 +44,7 @@
 --	  That ends the trip after a few seconds.
 --	  The mission preparation screen, where the party gathers before a mission, resolves "mission_preparation".
 --	  The game reports it as "loadout" in every game mode.
---	  The mission's intro resolves no context and keeps the game's stinger.
+--	* The mission's intro resolves "mission_intro" for as long as the game reports it, whatever zone has arrived.
 --	* Meat Grinder has no `wwise_state`, so it is recognized by its mission name instead.
 --	  Its own setting decides what it resolves: "meat_grinder" through every fight, one situation the player picks, or the mission contexts.
 --	* Some missions never report a zone.
@@ -501,6 +501,10 @@ local function resolve(mod)
 		return "mission_preparation"
 	end
 
+	if music_game_state == "mission_intro" then
+		return "mission_intro"
+	end
+
 	if not IN_WORLD_GAME_STATES[music_game_state] then
 		return nil
 	end
@@ -691,14 +695,12 @@ function Context.current()
 	return resolved_context
 end
 
--- Why no context resolves now, for the debug overlay: "cutscene", "intro", or "unknown_state", else nil.
+-- Why no context resolves now, for the debug overlay: "cutscene" or "unknown_state", else nil.
 function Context.idle_reason()
 	if resolved_context then
 		return nil
 	elseif CUTSCENE_GAME_STATES[music_game_state] then
 		return "cutscene"
-	elseif music_game_state == "mission_intro" then
-		return "intro"
 	elseif music_combat ~= nil and not KNOWN_COMBAT_STATES[music_combat] then
 		return "unknown_state"
 	end

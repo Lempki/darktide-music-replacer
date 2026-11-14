@@ -608,7 +608,7 @@ describe("MusicReplacer.lua loading", function()
 		assert_equal(harness:playing(), "mission_preparation/p.mp3")
 	end)
 
-	it("plays the loading folder on a long loading screen before the preparation screen, and a fresh song in the briefing, then the game's stinger, then explore", function()
+	it("plays the loading folder on a long loading screen before the preparation screen, a fresh song in the briefing, the game's intro music with no intro songs, then explore", function()
 		local harness = in_hub_with(FILES)
 		harness:leave_hub()
 		harness:wait(5)
@@ -638,6 +638,29 @@ describe("MusicReplacer.lua loading", function()
 		harness:settle()
 
 		assert_equal(harness:playing(), "explore/x.mp3")
+	end)
+
+	it("plays the intro folder within the normal wait after the briefing, with the game's intro music and its stinger silenced", function()
+		local files = { mission_intro = { { name = "i.mp3", duration = 300 } } }
+		for context_name, songs in pairs(FILES) do
+			files[context_name] = songs
+		end
+		local harness = in_hub_with(files)
+		harness:leave_hub()
+		harness:state("music_game_state", "mission_briefing")
+		harness:state("music_zone", "zone_3")
+		harness:mission("lm_cooling")
+		harness:wait(3.1)
+		harness:set_setting("source_mission_briefing", "game")
+		harness:settle()
+
+		harness:state("music_game_state", "mission_intro")
+		local stinger_id = CLASS.WwiseWorld.trigger_resource_event({}, "wwise/events/cinematics/play_mission_intro_stinger_generic")
+		harness:settle()
+
+		assert_equal(harness:playing(), "mission_intro/i.mp3")
+		assert_equal(harness.engine:wwise_state("music_game_state"), "None")
+		assert_deep_equal(harness.engine.stopped_events, { stinger_id })
 	end)
 
 	it("starts the briefing song within the normal wait after the preparation screen, so the game's briefing music barely plays", function()

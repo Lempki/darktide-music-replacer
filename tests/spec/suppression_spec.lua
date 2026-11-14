@@ -298,16 +298,17 @@ end)
 describe("suppression.lua cutscene music", function()
 	local CUTSCENE_MUSIC = "wwise/events/cinematics/play_cs03_music_116bpm"
 
-	it("stops any cutscene music still playing once a custom song takes over, and only once", function()
+	it("stops any cutscene music and intro stinger still playing once a custom song takes over, and only once", function()
 		local engine, Suppression = load_suppression()
 		Suppression.watch_event({}, CUTSCENE_MUSIC, 7)
 		Suppression.watch_event({}, "wwise/events/cinematics/play_mission_intro_stinger_generic", 8)
 		Suppression.watch_event({}, "wwise/events/ui/play_ui_click", 9)
+		Suppression.watch_event({}, "wwise/events/cinematics/play_cs_foley_npc_guard", 10)
 
+		Suppression.engage("mission_intro")
 		Suppression.engage("explore")
-		Suppression.engage("combat")
 
-		assert_deep_equal(engine.stopped_events, { 7 })
+		assert_deep_equal(engine.stopped_events, { 7, 8 })
 	end)
 
 	it("forgets cutscene music at a loading screen, since its level and Wwise world are gone", function()

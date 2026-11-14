@@ -16,6 +16,10 @@ local SUPPRESSED_MUSIC_EVENT_PATTERNS = { "events/music/play_exploration" }
 local CUTSCENE_EVENT_PREFIX = "events/cinematics/"
 local CUTSCENE_MUSIC_WORD = "music"
 
+-- The mission's intro starts this stinger alongside its music state, a moment before the mod can take over.
+-- So it is remembered like a cutscene's music, and stopped once a custom song or silence takes over.
+local INTRO_STINGER_EVENT = "events/cinematics/play_mission_intro_stinger"
+
 -- At most this many cutscene music events are remembered, the newest ones, since a level only has a few cutscenes.
 local MAX_CUTSCENE_EVENTS = 8
 
@@ -150,10 +154,14 @@ function Suppression.should_stop_event(event_name)
 end
 
 -- The trigger_resource_event hook calls this for every event that keeps playing, with its world and playing ID.
--- Cutscene music is remembered, so it can be stopped once a custom song takes over.
+-- Cutscene music and the intro's stinger are remembered, so they can be stopped once a custom song takes over.
 function Suppression.watch_event(wwise_world, event_name, playing_id)
-	if type(event_name) ~= "string" or not event_name:find(CUTSCENE_EVENT_PREFIX, 1, true)
-		or not event_name:find(CUTSCENE_MUSIC_WORD, 1, true) then
+	if type(event_name) ~= "string" then
+		return
+	end
+
+	local is_cutscene_music = event_name:find(CUTSCENE_EVENT_PREFIX, 1, true) and event_name:find(CUTSCENE_MUSIC_WORD, 1, true)
+	if not is_cutscene_music and not event_name:find(INTRO_STINGER_EVENT, 1, true) then
 		return
 	end
 

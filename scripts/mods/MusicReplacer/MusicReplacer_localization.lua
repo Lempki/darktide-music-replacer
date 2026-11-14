@@ -458,10 +458,13 @@ local strings = {
 		en = "Mission Briefing",
 	},
 	source_mission_briefing_tooltip = {
-		en = source_tooltip(
-			"in the briefing after the preparation screen, and when joining a mission in progress",
-			"The intro itself keeps the game's music."
-		),
+		en = source_tooltip("in the briefing after the preparation screen, and when joining a mission in progress"),
+	},
+	source_mission_intro = {
+		en = "Mission Intro",
+	},
+	source_mission_intro_tooltip = {
+		en = source_tooltip("in the mission's intro, where the squad walks in before the mission starts"),
 	},
 	source_explore = {
 		en = "Explore",

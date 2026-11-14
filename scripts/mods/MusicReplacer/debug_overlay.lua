@@ -61,7 +61,7 @@ local function plain(text)
 end
 
 -- What the overlay names a moment that resolves no situation, by the reason context.lua gives.
-local IDLE_NAMES = { cutscene = "Cutscene", intro = "Mission Intro", unknown_state = "Unknown Music State" }
+local IDLE_NAMES = { cutscene = "Cutscene", unknown_state = "Unknown Music State" }
 
 -- The choice a status names, which colors its tag: "custom", "silence", or "game" for every reason the game's music plays.
 local function kind_of(status)

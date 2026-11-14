@@ -95,8 +95,8 @@ describe("library.lua listing", function()
 
 		assert_equal(folders.created[1], ROOT)
 		assert_equal(folders.created[2], ROOT .. "/title_screen")
-		assert_equal(folders.created[21], ROOT .. "/meat_grinder")
-		assert_equal(#folders.created, 21)
+		assert_equal(folders.created[22], ROOT .. "/meat_grinder")
+		assert_equal(#folders.created, 22)
 	end)
 
 	it("creates the folders again when Rescan Audio Folders is pressed, so one deleted while the game runs comes back", function()
@@ -107,7 +107,7 @@ describe("library.lua listing", function()
 
 		assert_equal(folders.created[1], ROOT)
 		assert_equal(folders.created[3], ROOT .. "/character_select")
-		assert_equal(#folders.created, 21)
+		assert_equal(#folders.created, 22)
 	end)
 
 	it("leaves the folders alone on a listing the watcher asks for", function()
