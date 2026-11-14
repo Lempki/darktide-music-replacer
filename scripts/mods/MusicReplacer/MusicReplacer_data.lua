@@ -228,6 +228,18 @@ return {
 						default_value = true,
 					},
 					{
+						setting_id = "notice_messages",
+						type = "checkbox",
+						tooltip = "notice_messages_tooltip",
+						default_value = true,
+					},
+					{
+						setting_id = "error_messages",
+						type = "checkbox",
+						tooltip = "error_messages_tooltip",
+						default_value = true,
+					},
+					{
 						setting_id = "message_seconds",
 						type = "numeric",
 						tooltip = "message_seconds_tooltip",

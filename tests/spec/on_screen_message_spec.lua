@@ -385,7 +385,7 @@ describe("on_screen_message.lua kinds", function()
 		assert_deep_equal(kinds_of(OnScreenMessage), { "notice", "error" })
 	end)
 
-	it("logs every message it shows, with its kind, and none while turned off", function()
+	it("logs every message with its kind, even while turned off", function()
 		local OnScreenMessage = load_on_screen_message()
 		local logged = {}
 		OnScreenMessage.init(function(line) logged[#logged + 1] = line end, {})
@@ -395,7 +395,31 @@ describe("on_screen_message.lua kinds", function()
 		OnScreenMessage.set_enabled(false)
 		OnScreenMessage.show("Pause")
 
-		assert_deep_equal(logged, { "[on-screen message] message: Next song: a.mp3", "[on-screen message] error: Could not play" })
+		assert_deep_equal(logged, {
+			"[on-screen message] message: Next song: a.mp3",
+			"[on-screen message] error: Could not play",
+			"[on-screen message] message: Pause",
+		})
+	end)
+
+	it("hides notices and errors whose kind is turned off, still logging them", function()
+		local OnScreenMessage = load_on_screen_message()
+		local logged = {}
+		OnScreenMessage.init(function(line) logged[#logged + 1] = line end, {})
+		OnScreenMessage.set_shown_kinds({ notice = false, error = true })
+
+		OnScreenMessage.show("42 songs", "notice")
+		OnScreenMessage.show("Could not play", "error")
+		OnScreenMessage.show("Next")
+
+		assert_deep_equal(kinds_of(OnScreenMessage), { "error", "message" })
+		assert_equal(logged[1], "[on-screen message] notice: 42 songs")
+
+		OnScreenMessage.set_shown_kinds({ notice = true, error = false })
+		OnScreenMessage.show("Could not open", "error")
+		OnScreenMessage.show("41 songs", "notice")
+
+		assert_deep_equal(kinds_of(OnScreenMessage), { "error", "message", "notice" })
 	end)
 end)
 

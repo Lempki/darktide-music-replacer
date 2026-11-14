@@ -980,6 +980,8 @@ end
 local ON_SCREEN_MESSAGE_SETTINGS = {
 	key_press_messages = true,
 	song_change_messages = true,
+	notice_messages = true,
+	error_messages = true,
 	message_scale = true,
 	message_color = true,
 	notice_color = true,
@@ -992,9 +994,12 @@ local ON_SCREEN_MESSAGE_SETTINGS = {
 	message_fade_out_seconds = true,
 }
 
--- The element stays on screen while either kind of message is on, and each kind checks its own setting before it shows.
+-- The element stays on screen while any of the four kinds of message is on.
+-- Key presses and song changes check their own settings before they show, and on_screen_message.lua checks notices and errors.
 local function apply_on_screen_message_settings()
 	local any_on = mod:get("key_press_messages") == true or mod:get("song_change_messages") == true
+		or mod:get("notice_messages") == true or mod:get("error_messages") == true
+	OnScreenMessage.set_shown_kinds({ notice = mod:get("notice_messages"), error = mod:get("error_messages") })
 	OnScreenMessage.set_enabled(any_on, {
 		scale = mod:get("message_scale") / 100,
 		color = mod:get("message_color"),

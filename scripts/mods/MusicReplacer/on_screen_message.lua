@@ -1,7 +1,7 @@
 -- The short on-screen message, such as a playback key's: a line that fades in, holds, and fades out.
 -- A new message pushes the one showing away from the corner, where it shrinks to the previous line's size and keeps its own timer.
 -- A message pushed out of the previous line's place fades out there, so the text never jumps or flickers.
--- It shows while For Key Presses or For Song Changes is on, which both are by default.
+-- It shows while For Key Presses, For Song Changes, For Notices, or For Errors is on, which all are by default.
 --
 -- The lines are drawn by an element in the game's constant UI, which constant_element_slot.lua keeps there.
 -- The constant UI is drawn on every screen, so the message also shows on loading screens and the mission briefing.
@@ -45,6 +45,10 @@ local DEFAULT_ERROR_COLOR = { 217, 240, 100, 90 }
 -- The kinds of message, each drawn in its own color.
 -- A message is a song change or a key press, a notice is something the player needs to know, and an error is something that went wrong.
 local KINDS = { message = true, notice = true, error = true }
+
+-- The kinds that show, from For Notices and For Errors.
+-- The caller checks For Key Presses and For Song Changes itself, since both of them show the message kind.
+local shown_kinds = { message = true, notice = true, error = true }
 
 local create_element = nil
 local log = function() end
@@ -102,16 +106,16 @@ local function drop_faintest()
 	table.remove(leaving, faintest)
 end
 
--- Shows `text` at the corner, pushing the message there into the previous line's place. Does nothing while the messages are off.
--- `kind` is "message", the default, "notice", or "error", and sets the color it is drawn in.
--- Every message shown is also logged, since a message is gone after a few seconds.
+-- Shows `text` at the corner, pushing the message there into the previous line's place.
+-- `kind` sets the color it is drawn in, and is "message" unless told otherwise.
+-- Every message is logged, even while its kind or all the messages are off, since a message is gone after a few seconds.
 -- The same text of the same kind again keeps its line and starts its hold over, since a copy of it beside it would only repeat it.
 function OnScreenMessage.show(text, kind)
-	if not enabled then
-		return
-	end
 	kind = KINDS[kind] and kind or "message"
 	log("[on-screen message] " .. kind .. ": " .. text)
+	if not enabled or not shown_kinds[kind] then
+		return
+	end
 
 	if current and current.text == text and current.kind == kind then
 		current.phase = "in"
@@ -237,6 +241,12 @@ function OnScreenMessage.placement(new_look)
 		x = toward_x * new_look.offset_x,
 		y = toward_y * new_look.offset_y,
 	}
+end
+
+-- Sets whether notices and errors show, from `kinds.notice` and `kinds.error`.
+-- A kind turned off is still logged when shown.
+function OnScreenMessage.set_shown_kinds(kinds)
+	shown_kinds = { message = true, notice = kinds.notice == true, error = kinds.error == true }
 end
 
 -- Sets how long a message stays at full opacity, and how long it then takes to fade out, both in seconds.

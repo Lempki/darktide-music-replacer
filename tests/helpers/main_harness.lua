@@ -244,6 +244,7 @@ local function new_on_screen_message()
 	function on_screen_message.seconds_shown() return 0.4 + on_screen_message.timing[1] + on_screen_message.timing[2] end
 	function on_screen_message.set_timing(hold_seconds, fade_out_seconds) on_screen_message.timing = { hold_seconds, fade_out_seconds } end
 	function on_screen_message.set_enabled(on, look) on_screen_message.enabled, on_screen_message.look = on, look end
+	function on_screen_message.set_shown_kinds(kinds) on_screen_message.shown_kinds = { notice = kinds.notice, error = kinds.error } end
 	function on_screen_message.update() end
 	function on_screen_message.shutdown() end
 

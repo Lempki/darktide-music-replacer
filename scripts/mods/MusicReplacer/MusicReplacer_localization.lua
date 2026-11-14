@@ -176,6 +176,20 @@ local strings = {
 			"when a situation starts its music, when a song ends and the next one plays, and when a song resumes where it stopped.\n\n" ..
 			"While For Key Presses is off, it also names the song a Playback Controls key starts.",
 	},
+	notice_messages = {
+		en = "For Notices",
+	},
+	notice_messages_tooltip = {
+		en = "Shows notices, the messages about something you need to know, in Notice Color.\n\n" ..
+			highlight("Off") .. " shows no notice. Each one is still written to diagnostic.log.",
+	},
+	error_messages = {
+		en = "For Errors",
+	},
+	error_messages_tooltip = {
+		en = "Shows a message in Error Color when something goes wrong.\n\n" ..
+			highlight("Off") .. " shows no error message. Each error is still written to diagnostic.log.",
+	},
 	message_seconds = {
 		en = "Message Duration",
 	},

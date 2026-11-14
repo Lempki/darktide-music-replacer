@@ -771,20 +771,33 @@ describe("MusicReplacer.lua on-screen messages", function()
 		assert_deep_equal(harness.on_screen_message.timing, { 5.5, 0 })
 	end)
 
-	it("stay on while either kind is on, and turn off once both are off", function()
+	it("stay on while any of the four kinds is on, and turn off once all are off", function()
 		local harness = in_hub()
 
 		harness:set_setting("key_press_messages", false)
+		harness:set_setting("song_change_messages", false)
+		harness:set_setting("notice_messages", false)
 		assert_equal(harness.on_screen_message.enabled, true)
 
-		harness:set_setting("song_change_messages", false)
+		harness:set_setting("error_messages", false)
 		assert_equal(harness.on_screen_message.enabled, false)
 
-		harness:set_setting("key_press_messages", true)
+		harness:set_setting("notice_messages", true)
 		assert_equal(harness.on_screen_message.enabled, true)
 	end)
 
-	it("show no message for a key press while both kinds are off, and the key still works", function()
+	it("show notices and errors by default, each following its own setting", function()
+		local harness = in_hub()
+		assert_deep_equal(harness.on_screen_message.shown_kinds, { notice = true, error = true })
+
+		harness:set_setting("notice_messages", false)
+		assert_deep_equal(harness.on_screen_message.shown_kinds, { notice = false, error = true })
+
+		harness:set_setting("error_messages", false)
+		assert_deep_equal(harness.on_screen_message.shown_kinds, { notice = false, error = false })
+	end)
+
+	it("show no message for a key press while key presses and song changes are off, and the key still works", function()
 		local harness = in_hub()
 		harness:set_setting("key_press_messages", false)
 		harness:set_setting("song_change_messages", false)

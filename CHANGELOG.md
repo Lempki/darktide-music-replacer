@@ -7,11 +7,11 @@ What changes for players in each release of Music Replacer. The format follows [
 ### Features
 
 * Notice Color and Error Color settings in the On-Screen Messages group color the messages about something you need to know and about something that went wrong, amber and red by default.
+* For Notices and For Errors settings in the On-Screen Messages group, both on by default, turn each of those kinds of message off on its own. A notice or error that does not show is still written to `diagnostic.log`.
 
 ### Changes
 
 * Every on-screen message is also written to `diagnostic.log`, since a message shows for only a few seconds.
-
 * Even Out Loudness is on by default, so songs from different sources play at about the same loudness from the start. If you already have the mod, your setting stays as it is.
 * A new on-screen message pushes the one showing away from the corner, where it shrinks to three quarters of its size and stays for the rest of its own Message Duration, instead of crossfading it away. Two messages close together are now both readable.
 * Message Size is 85% by default, so both lines fit below the player portrait in the bottom left corner. If you already have the mod, your setting stays as it is.
