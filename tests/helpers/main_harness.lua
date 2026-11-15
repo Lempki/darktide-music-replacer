@@ -282,6 +282,8 @@ function MainHarness.new(options)
 	local on_screen_message = new_on_screen_message()
 	local lines = {}
 	local noop = function() end
+	-- The next read the bosses stand-in returns, which bosses() sets.
+	local boss_read = {}
 
 	local engine = FakeEngine.new({
 		settings = settings,
@@ -294,6 +296,16 @@ function MainHarness.new(options)
 			debug_overlay = overlay,
 			on_screen_message = on_screen_message,
 			loudness_meter = {},
+			bosses = {
+				init = noop,
+				update = function()
+					local bosses = boss_read.bosses
+					boss_read.bosses = nil
+					if bosses then
+						return bosses, 0.25
+					end
+				end,
+			},
 			diagnostic_log = {
 				init = noop,
 				close = noop,
@@ -311,7 +323,7 @@ function MainHarness.new(options)
 	})
 
 	local harness = setmetatable({ engine = engine, mod = engine.mod, library = library, client = client, loudness = loudness, overlay = overlay,
-		on_screen_message = on_screen_message, lines = lines, settings = settings }, MainHarness)
+		on_screen_message = on_screen_message, lines = lines, settings = settings, boss_read = boss_read }, MainHarness)
 
 	engine:load("MusicReplacer")
 	if options.turned_off then
@@ -327,6 +339,16 @@ end
 
 function MainHarness:tick(dt)
 	self.mod.update(dt)
+end
+
+-- Hands the mod one read of the bosses alive, through its update, as bosses.lua does a few times a second.
+-- Each boss is { unit, breed, distance }, and weakened when given.
+function MainHarness:bosses(bosses)
+	for _, boss in ipairs(bosses) do
+		boss.weakened = boss.weakened == true
+	end
+	self.boss_read.bosses = bosses
+	self:tick(0)
 end
 
 -- Changes a setting the way DMF does, which calls the mod's on_setting_changed.

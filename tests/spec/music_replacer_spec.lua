@@ -1192,6 +1192,75 @@ describe("MusicReplacer.lua override folders", function()
 		assert_equal(harness:logged("[playback] boss: switching from the boss folder to the boss/chaos_spawn folder"), true)
 	end)
 
+	it("plays Boss's songs for Boss Approaching while its own folders have none", function()
+		local harness = in_cooling({
+			boss = { { name = "b.mp3", duration = 300 } },
+			["boss/chaos_spawn"] = { { name = "spawn.mp3", duration = 300 } },
+		})
+
+		harness:bosses({ { unit = "spawn", breed = "chaos_spawn", distance = 60 } })
+		harness:settle()
+
+		assert_equal(harness:playing(), "boss/chaos_spawn/spawn.mp3")
+	end)
+
+	it("plays Boss Approaching's own songs once its folder has some", function()
+		local harness = in_cooling({
+			boss = { { name = "b.mp3", duration = 300 } },
+			boss_approaching = { { name = "near.mp3", duration = 300 } },
+		})
+
+		harness:bosses({ { unit = "spawn", breed = "chaos_spawn", distance = 60 } })
+		harness:settle()
+
+		assert_equal(harness:playing(), "boss_approaching/near.mp3")
+	end)
+
+	it("keeps the song from Boss's folder playing when Boss takes over from Boss Approaching", function()
+		local harness = in_cooling({
+			boss = { { name = "b.mp3", duration = 300 }, { name = "c.mp3", duration = 300 } },
+		})
+		harness:bosses({ { unit = "spawn", breed = "chaos_spawn", distance = 60 } })
+		harness:settle()
+		assert_equal(harness:playing(), "boss/b.mp3")
+
+		harness:state("music_combat", "boss")
+		harness:settle()
+
+		assert_equal(#harness.client.plays, 1)
+		assert_equal(harness:playing(), "boss/b.mp3")
+		assert_equal(harness:logged("[playback] boss: continuing boss/b.mp3 from the boss folder"), true)
+
+		-- The kept song ends as Boss's song, so Boss plays the next one.
+		harness:finish_song(300)
+		assert_equal(harness:last_play().file_path, "boss/c.mp3")
+	end)
+
+	it("names Boss's folder in a key's message while Boss Approaching plays its songs", function()
+		local harness = in_cooling({ boss = { { name = "b.mp3", duration = 300 } } })
+		harness:bosses({ { unit = "spawn", breed = "chaos_spawn", distance = 60 } })
+		harness:settle()
+
+		harness.mod.next_song()
+
+		assert_equal(harness:last_on_screen_message(), "<control_only_song: <source_boss>, b.mp3>")
+	end)
+
+	it("starts a new song when Boss takes over from Boss Approaching's own songs", function()
+		local harness = in_cooling({
+			boss = { { name = "b.mp3", duration = 300 } },
+			boss_approaching = { { name = "near.mp3", duration = 300 } },
+		})
+		harness:bosses({ { unit = "spawn", breed = "chaos_spawn", distance = 60 } })
+		harness:settle()
+
+		harness:state("music_combat", "boss")
+		harness:settle()
+
+		assert_equal(harness:playing(), "boss/b.mp3")
+		assert_equal(#harness.client.plays, 2)
+	end)
+
 	it("falls back to the context's own folder once an override folder's songs would not play", function()
 		local harness = in_cooling({
 			boss = { { name = "b.mp3", duration = 300 } },

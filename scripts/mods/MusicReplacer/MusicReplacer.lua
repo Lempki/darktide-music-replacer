@@ -173,16 +173,31 @@ local function remember_folder_song()
 	end
 end
 
--- The folders `context_name` can play from, in order: its override folders that have songs, then its own.
-local function folders_for(context_name)
+-- A situation whose folders have no songs plays from another situation's folders instead.
+-- Boss Approaching is the start of a boss fight, so a player who fills only Boss's folders hears them from the moment a boss comes near.
+local FALLBACK_FOLDERS = { boss_approaching = "boss" }
+
+-- The folders under `main_folder` that `context_name` can play from, in order: the override folders that have songs, then the main one.
+local function folders_under(context_name, main_folder)
 	local folders = {}
 	for _, key in ipairs(Context.override_keys(mod, context_name)) do
-		local folder = context_name .. "/" .. key:lower()
+		local folder = main_folder .. "/" .. key:lower()
 		if not gave_up[folder] and not emptied[folder] and Library.has_files(folder) then
 			folders[#folders + 1] = folder
 		end
 	end
-	folders[#folders + 1] = context_name
+	folders[#folders + 1] = main_folder
+	return folders
+end
+
+-- The folders `context_name` can play from, in order: its override folders that have songs, then its own.
+-- With none of them holding songs, those of its fallback situation, looked up by the same override names.
+local function folders_for(context_name)
+	local folders = folders_under(context_name, context_name)
+	local fallback = FALLBACK_FOLDERS[context_name]
+	if fallback and #folders == 1 and not Library.has_files(context_name) then
+		return folders_under(context_name, fallback)
+	end
 	return folders
 end
 
@@ -328,8 +343,8 @@ local function track_opts(context_name, folder, track)
 				if quick_ends[folder] >= MAX_QUICK_ENDS then
 					gave_up[folder] = true
 
-					-- An override folder gives way to the next folder, which play_context picks below.
-					if folder ~= context_name then
+					-- An override folder, one inside a situation's folder, gives way to the next folder, which play_context picks below.
+					if folder:find("/", 1, true) then
 						log(string.format("[playback] %s: %d tracks in a row from the %s folder ended within %ds, trying the next folder until the folders are rescanned",
 							context_name, MAX_QUICK_ENDS, folder, QUICK_END_SECONDS))
 					else
@@ -393,6 +408,8 @@ play_context = function(context_name, is_new_context)
 	end
 
 	-- Whatever the context plays now replaces a paused song.
+	local was_paused = paused
+	local playing_folder = current_folder
 	paused = false
 	current_folder = nil
 
@@ -435,9 +452,26 @@ play_context = function(context_name, is_new_context)
 		lost_track = nil
 	end
 
+	local candidates = folders_for(context_name)
+
+	-- A song from the folder the new situation plays too keeps playing, as when Boss takes over Boss Approaching that played Boss's songs.
+	-- The situations then sound like one piece of music, with only the new situation's ending.
+	if is_new_context and not was_paused and playing_track and candidates[1] == playing_folder and AudioClient.is_playing() then
+		local kept_path, kept_duration, kept_only = Library.find_file(playing_folder, playing_track.file_path)
+		local kept = { file_path = kept_path, duration = kept_duration, is_only_file = kept_only }
+		if kept_path and AudioClient.retarget(kept_path, track_opts(context_name, playing_folder, kept)) then
+			Suppression.engage(context_name)
+			current_folder = playing_folder
+			playing_track = { context_name = context_name, file_path = kept_path, duration = kept_duration, is_only_file = kept_only }
+			log(string.format("[playback] %s: continuing %s from the %s folder", context_name, kept_path, playing_folder))
+			return
+		end
+	end
+
 	-- The first folder with a song to play wins, so an override folder whose files are gone gives way to the next.
+	-- The last folder is the situation's main one, or its fallback's, which gives way to the game's music.
 	local folder, file_path, duration, is_only_file, start_position
-	for _, candidate in ipairs(folders_for(context_name)) do
+	for index, candidate in ipairs(candidates) do
 		folder = candidate
 		if gave_up[folder] then
 			break
@@ -454,7 +488,7 @@ play_context = function(context_name, is_new_context)
 		else
 			file_path, duration, is_only_file, start_position = choose_file(folder, resume_path, resume_position)
 		end
-		if file_path or folder == context_name then
+		if file_path or index == #candidates then
 			break
 		end
 
@@ -654,16 +688,18 @@ local function song_position()
 	return AudioClient.position()
 end
 
--- The folder playing now as the player knows it: the situation's name, and an override folder's name after it.
+-- The folder playing now as the player knows it: its situation's name, and an override folder's name after it.
 -- An example is "Boss (chaos_spawn)".
+-- The situation is the folder's own, which is Boss while Boss Approaching plays Boss's songs.
 -- A removal lasts beyond this situation, so its messages say where the song was taken out.
 -- The pattern that joins the two names is localized too, since languages set such a name apart in their own ways.
 local function folder_label()
-	local situation = mod:localize("source_" .. current_context)
-	if current_folder == current_context then
+	local main_folder, override = current_folder:match("^([^/]+)/?(.*)$")
+	local situation = mod:localize("source_" .. main_folder)
+	if override == "" then
 		return situation
 	end
-	return mod:localize("override_folder_label", situation, current_folder:match("[^/]+$"))
+	return mod:localize("override_folder_label", situation, override)
 end
 
 -- `control` names the key in the log.

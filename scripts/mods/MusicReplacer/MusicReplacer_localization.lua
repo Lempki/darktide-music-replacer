@@ -11,14 +11,15 @@ end
 -- Builds the English tooltip of a situation dropdown, since every one offers the same choices.
 -- `note`, if given, is one more sentence about that situation.
 -- `skipped`, given for a situation that offers Skip, says what plays while it is skipped.
+-- `empty`, if given, says what an empty folder plays instead of the game's music.
 -- A translation writes its own full text instead, since the sentence order differs between languages.
-local function source_tooltip(when, note, skipped)
+local function source_tooltip(when, note, skipped, empty)
 	return "What plays " .. when .. ".\n\n" ..
 		highlight("Custom") .. " plays your songs from its folder. " ..
 		highlight("Vanilla") .. " always plays the game's music, and " .. highlight("Silence") .. " plays nothing." ..
 		(skipped and " " .. highlight("Skip") .. " passes it over, so " .. skipped .. "." or "") ..
 		(note and " " .. note or "") ..
-		"\n\nWith " .. highlight("Custom") .. ", an empty folder plays the game's music."
+		"\n\nWith " .. highlight("Custom") .. ", an empty folder plays " .. (empty or "the game's music") .. "."
 end
 
 local strings = {
@@ -489,7 +490,8 @@ local strings = {
 	},
 	source_boss_approaching_tooltip = {
 		en = source_tooltip("while a boss is near you, before its fight starts", nil,
-			"a horde, combat, or explore plays until the fight starts"),
+			"a horde, combat, or explore plays until the fight starts",
+			highlight("Boss") .. "'s songs, and the song goes on playing once the fight starts"),
 	},
 	source_boss = {
 		en = "Boss",
