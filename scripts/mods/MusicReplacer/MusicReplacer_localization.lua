@@ -648,7 +648,9 @@ local strings = {
 	captain_boss_music_tooltip = {
 		en = "Counts captains as bosses: " .. highlight("Boss Approaching") .. " plays while one is near, " ..
 			"and " .. highlight("Boss") .. " from its HP bar until it is gone.\n\n" ..
-			highlight("Off") .. " leaves captains to the game's music. During an event, event music still plays.",
+			highlight("Off") .. " leaves captains to the game's music.\n\n" ..
+			"A captain that comes as part of a mission event, such as the Karnak Twins, plays " .. highlight("Event") .. ", which outranks " ..
+			highlight("Boss") .. ".",
 	},
 	daemonhost_boss_music = {
 		en = "Boss Music for Daemonhosts",

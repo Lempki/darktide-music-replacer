@@ -84,10 +84,10 @@ One dropdown per situation except Meat Grinder, which has a group of its own bel
 | Setting | Default | What it does |
 |---|---|---|
 | Boss Distance | 80 m | How close a boss has to be for Boss Approaching to play, from 20 m to 160 m. It lets go once the boss is 40 m farther away than that, so moving back and forth at the edge keeps the music steady. The default is the distance the game's own boss music uses. Daemonhosts use Daemonhost Distance instead. |
-| Boss Music for Captains | Off | Counts captains as bosses: Boss Approaching while one is near, and Boss from its HP bar until the game reports it gone. Off leaves captains to the game's music. During an event, event music still plays. |
+| Boss Music for Captains | Off | Counts captains as bosses: Boss Approaching while one is near, and Boss from its HP bar until the game reports it gone. Off leaves captains to the game's music. A captain that comes as part of a mission event, such as the Karnak Twins, plays Event, which outranks Boss. |
+| Boss Music for Weakened Monstrosities | Off | Counts a weakened monstrosity, one the game spawns with less than its full health, as a boss for Boss Approaching and Boss. Off follows the game, which plays no boss music for them. |
 | Boss Music for Daemonhosts | Off | Counts daemonhosts as bosses: Boss Approaching while one is within Daemonhost Distance, and Boss from its HP bar, which shows once it is angered, until the game reports it gone. Off follows the game, which plays no music for daemonhosts. |
 | Daemonhost Distance | 20 m | How close a daemonhost has to be for Boss Approaching to play, from 5 m to 80 m, with Boss Music for Daemonhosts on. It lets go once the daemonhost is 40 m farther away than that. Some levels keep you near a sleeping daemonhost for a long time, so this is shorter than the 80 m other bosses use. |
-| Boss Music for Weakened Monstrosities | Off | Counts a weakened monstrosity, one the game spawns with less than its full health, as a boss for Boss Approaching and Boss. Off follows the game, which plays no boss music for them. |
 
 ## Music Holds
 

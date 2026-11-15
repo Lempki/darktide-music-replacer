@@ -402,6 +402,12 @@ return {
 						default_value = false,
 					},
 					{
+						setting_id = "weakened_boss_music",
+						type = "checkbox",
+						tooltip = "weakened_boss_music_tooltip",
+						default_value = false,
+					},
+					{
 						setting_id = "daemonhost_boss_music",
 						type = "checkbox",
 						tooltip = "daemonhost_boss_music_tooltip",
@@ -415,12 +421,6 @@ return {
 						range = { 5, 80 },
 						decimals_number = 0,
 						unit_text = "meters_unit",
-					},
-					{
-						setting_id = "weakened_boss_music",
-						type = "checkbox",
-						tooltip = "weakened_boss_music_tooltip",
-						default_value = false,
 					},
 				},
 			},
