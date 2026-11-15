@@ -75,9 +75,14 @@ function Harness:set_setting(setting_id, value)
 	self.Context.refresh(self.engine.mod)
 end
 
--- Returns a new fake boss unit for boss_start() and boss_end().
-function Harness:new_boss(breed_name)
-	return { extension = { _breed = { name = breed_name } } }
+-- The breeds whose data in the game turns their HP bar off.
+local NO_HP_BAR_BREEDS = { renegade_wizard = true, chaos_mutator_daemonhost = true }
+
+-- Returns a new fake boss unit for boss_start() and boss_end(), weakened when `options.weakened` is true.
+function Harness:new_boss(breed_name, options)
+	local weakened = options ~= nil and options.weakened == true
+	local breed = { name = breed_name, boss_health_bar_disabled = NO_HP_BAR_BREEDS[breed_name] }
+	return { extension = { _breed = breed, is_weakened = function() return weakened end } }
 end
 
 function Harness:boss_start(boss)

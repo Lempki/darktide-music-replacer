@@ -37,8 +37,10 @@ describe("context.lua operations", function()
 		local harness = in_operation("op_no_mans_land", "operations")
 		harness:clear_changes()
 
+		local boss = harness:new_boss("chaos_spawn")
 		harness:state("music_combat", "horde_high")
-		harness:state("music_combat", "boss")
+		harness:boss_start(boss)
+		harness:boss_end(boss)
 		harness:state("music_combat", "None")
 		harness:wait(30)
 

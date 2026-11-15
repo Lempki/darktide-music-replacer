@@ -117,6 +117,7 @@ describe("context.lua Meat Grinder with One Situation", function()
 		harness:state("music_combat", "normal")
 		assert_equal(harness:current(), "combat")
 
+		harness:boss_start(harness:new_boss("chaos_spawn"))
 		harness:state("music_combat", "boss")
 		harness:wait(30)
 		assert_equal(harness:current(), "explore")

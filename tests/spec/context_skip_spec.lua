@@ -41,6 +41,7 @@ describe("context.lua Skip", function()
 		local harness = in_mission({ source_boss = "skip" })
 
 		harness:combat({ boss_near = true })
+		harness:boss_start(harness:new_boss("chaos_spawn"))
 
 		assert_equal(harness:current(), "explore")
 		assert_deep_equal(harness.Context.skipped(), { "boss" })
@@ -99,7 +100,7 @@ describe("context.lua Skip", function()
 
 	it("takes over or gives way at once when the setting changes during its situation", function()
 		local harness = in_mission()
-		harness:state("music_combat", "boss")
+		harness:boss_start(harness:new_boss("chaos_spawn"))
 		assert_equal(harness:current(), "boss")
 
 		harness:set_setting("source_boss", "skip")

@@ -1176,22 +1176,6 @@ describe("MusicReplacer.lua override folders", function()
 		assert_equal(harness:playing(), "explore/x.mp3")
 	end)
 
-	it("switches to the boss's folder once the game names the boss, after its music already started", function()
-		local harness = in_cooling({
-			boss = { { name = "b.mp3", duration = 300 } },
-			["boss/chaos_spawn"] = { { name = "spawn.mp3", duration = 300 } },
-		})
-		harness:state("music_combat", "boss")
-		harness:settle()
-		assert_equal(harness:playing(), "boss/b.mp3")
-
-		harness:boss_start(harness:new_boss("chaos_spawn"))
-		harness:wait(0.6)
-
-		assert_equal(harness:playing(), "boss/chaos_spawn/spawn.mp3")
-		assert_equal(harness:logged("[playback] boss: switching from the boss folder to the boss/chaos_spawn folder"), true)
-	end)
-
 	it("plays Boss's songs for Boss Approaching while its own folders have none", function()
 		local harness = in_cooling({
 			boss = { { name = "b.mp3", duration = 300 } },
@@ -1224,7 +1208,7 @@ describe("MusicReplacer.lua override folders", function()
 		harness:settle()
 		assert_equal(harness:playing(), "boss/b.mp3")
 
-		harness:state("music_combat", "boss")
+		harness:boss_start(harness:new_boss("chaos_spawn"))
 		harness:settle()
 
 		assert_equal(#harness.client.plays, 1)
@@ -1254,7 +1238,7 @@ describe("MusicReplacer.lua override folders", function()
 		harness:bosses({ { unit = "spawn", breed = "chaos_spawn", distance = 60 } })
 		harness:settle()
 
-		harness:state("music_combat", "boss")
+		harness:boss_start(harness:new_boss("chaos_spawn"))
 		harness:settle()
 
 		assert_equal(harness:playing(), "boss/b.mp3")
@@ -2273,26 +2257,30 @@ describe("MusicReplacer.lua the Pause / Resume key", function()
 		assert_equal(harness.engine:wwise_state("music_zone"), "None")
 	end)
 
-	it("switches to a boss's override folder only once the paused song resumes", function()
+	-- The first boss to come near names the folder, so the folder changes once it is gone while another stays near.
+	it("switches to another override folder only once the paused song resumes", function()
 		local harness = MainHarness.new({ files = {
-			boss = { { name = "b.mp3", duration = 300 } },
-			["boss/chaos_spawn"] = { { name = "spawn.mp3", duration = 300 } },
+			boss_approaching = { { name = "a.mp3", duration = 300 } },
+			["boss_approaching/chaos_spawn"] = { { name = "spawn.mp3", duration = 300 } },
 		} })
 		harness:cold_start_to_hub()
 		harness:leave_hub()
 		harness:enter_mission("lm_cooling", "zone_3")
-		harness:state("music_combat", "boss")
+		local ogryn = { unit = "ogryn", breed = "chaos_plague_ogryn", distance = 60 }
+		harness:bosses({ ogryn })
+		harness:bosses({ ogryn, { unit = "spawn", breed = "chaos_spawn", distance = 50 } })
 		harness:settle()
+		assert_equal(harness:playing(), "boss_approaching/a.mp3")
 		press(harness, "pause_song")
 
-		harness:boss_start(harness:new_boss("chaos_spawn"))
+		harness:bosses({ { unit = "spawn", breed = "chaos_spawn", distance = 50 } })
 		harness:wait(0.6)
 		assert_equal(harness:playing(), nil)
 
 		press(harness, "pause_song")
-		assert_equal(harness:playing(), "boss/b.mp3")
+		assert_equal(harness:playing(), "boss_approaching/a.mp3")
 		harness:wait(0.6)
-		assert_equal(harness:playing(), "boss/chaos_spawn/spawn.mp3")
+		assert_equal(harness:playing(), "boss_approaching/chaos_spawn/spawn.mp3")
 	end)
 
 	it("ends the pause when Next Song plays another song", function()

@@ -497,7 +497,7 @@ local strings = {
 		en = "Boss",
 	},
 	source_boss_tooltip = {
-		en = source_tooltip("while a monstrosity is near you", nil,
+		en = source_tooltip("in a boss fight, from the moment the boss's HP bar shows until the boss is gone", nil,
 			"the horde, combat, or explore going on plays through boss fights"),
 	},
 	source_event = {
@@ -663,15 +663,6 @@ local strings = {
 	horde_hold_seconds_tooltip = {
 		en = "How long horde music keeps playing after the game stops reporting a horde. " ..
 			"The game drops that signal for a moment whenever few enemies are on you.\n\n" ..
-			"Set to " .. highlight("0") .. " to follow the game exactly.",
-	},
-	boss_hold_seconds = {
-		en = "Boss Music Hold",
-	},
-	boss_hold_seconds_tooltip = {
-		en = "How long boss music keeps playing after the game stops reporting a boss that is still alive. " ..
-			"The game drops that signal for a moment now and then during a boss fight. " ..
-			"Boss music still ends once the game reports the boss gone, which can be a few seconds after it dies.\n\n" ..
 			"Set to " .. highlight("0") .. " to follow the game exactly.",
 	},
 	event_hold_seconds = {

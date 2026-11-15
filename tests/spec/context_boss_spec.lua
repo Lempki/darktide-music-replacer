@@ -1,4 +1,4 @@
--- Pins how context.lua resolves bosses from the boss music state and the boss encounter events.
+-- Pins how context.lua resolves bosses from the boss encounter events, which open and close with a boss's HP bar.
 
 local Harness = require("tests.helpers.context_harness")
 
@@ -13,87 +13,128 @@ local function in_mission(zone, settings)
 	return harness
 end
 
-describe("context.lua boss signals", function()
-	it("resolves boss from the boss music state", function()
+describe("context.lua boss fights", function()
+	it("resolves boss from a monstrosity's HP bar until its window closes", function()
+		local harness = in_mission("zone_3")
+		local boss = harness:new_boss("chaos_spawn")
+
+		harness:boss_start(boss)
+		assert_equal(harness:current(), "boss")
+
+		harness:boss_end(boss)
+		assert_deep_equal(harness.changes, { "boss", "explore" })
+	end)
+
+	it("resolves boss in a zoneless mission", function()
+		local harness = in_mission(nil)
+
+		harness:boss_start(harness:new_boss("chaos_spawn"))
+
+		assert_equal(harness:current(), "boss")
+	end)
+
+	-- The game reports "boss" from the moment a monstrosity comes near, before anyone has hurt it.
+	it("resolves no boss from the boss music state alone", function()
 		local harness = in_mission("zone_3")
 
 		harness:state("music_combat", "boss")
 
-		assert_equal(harness:current(), "boss")
+		assert_equal(harness:current(), "explore")
 	end)
 
-	it("resolves boss from the boss music state in a zoneless mission", function()
-		local harness = in_mission(nil)
-
-		harness:state("music_combat", "boss")
-
-		assert_equal(harness:current(), "boss")
-	end)
-
-	-- renegade_captain and renegade_wizard never set the boss music state, and the game plays no boss music for them.
-	it("resolves no boss from the encounter events alone", function()
-		local harness = in_mission("zone_2_depths")
-		local boss = harness:new_boss("renegade_captain")
-
+	-- The game's boss music state can drop for a moment while the boss lives, which the window does not.
+	it("keeps boss for as long as the window is open, whatever the boss music state does", function()
+		local harness = in_mission("zone_3")
+		local boss = harness:new_boss("chaos_ogryn_houndmaster")
+		harness:combat({ boss_near = true })
 		harness:boss_start(boss)
+
+		harness:combat({})
+		harness:wait(60)
+		harness:combat({ boss_near = true })
+
+		assert_deep_equal(harness.changes, { "boss" })
+	end)
+
+	it("plays the fight going on once the boss's window closes", function()
+		local harness = in_mission("zone_3")
+		local boss = harness:new_boss("chaos_spawn")
+		harness:combat({ boss_near = true, intensity = 40 })
+		harness:boss_start(boss)
+
+		harness:boss_end(boss)
+
+		assert_equal(harness:current(), "combat")
+	end)
+
+	it("stays on boss until every window that counts has closed", function()
+		local harness = in_mission("zone_3")
+		local first = harness:new_boss("chaos_spawn")
+		local second = harness:new_boss("chaos_plague_ogryn")
+		harness:boss_start(first)
+		harness:boss_start(second)
+
+		harness:boss_end(first)
+		assert_equal(harness:current(), "boss")
+
+		harness:boss_end(second)
+		assert_equal(harness:current(), "explore")
+	end)
+
+	it("leaves out a weakened monstrosity, as the game's boss music does", function()
+		local harness = in_mission("zone_3")
+
+		harness:boss_start(harness:new_boss("chaos_spawn", { weakened = true }))
+
+		assert_equal(harness:current(), "explore")
+	end)
+
+	-- Rodin Karnak in Spillway opens an encounter window, though his breed turns his HP bar off.
+	it("leaves out a boss whose breed shows no HP bar", function()
+		local harness = in_mission("zone_2_depths", { captain_boss_music = true, daemonhost_boss_music = true })
+
+		harness:boss_start(harness:new_boss("renegade_wizard"))
+
+		assert_equal(harness:current(), "explore")
+	end)
+
+	-- renegade_captain gets no boss music in the game, so its window counts only with its setting on.
+	it("resolves no boss from a captain's window with its setting off", function()
+		local harness = in_mission("zone_2_depths")
+
+		harness:boss_start(harness:new_boss("renegade_captain"))
 
 		assert_equal(harness:current(), "explore")
 		assert_deep_equal(harness.changes, {})
 	end)
 
-	-- The boss music state can come more than a minute before the encounter start event.
-	it("resolves boss from the boss music state long before the start event", function()
-		local harness = in_mission("zone_3")
-		local boss = harness:new_boss("chaos_ogryn_houndmaster")
+	it("resolves no boss in an Expedition, which keeps to its own situations", function()
+		local harness = Harness.new()
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness:enter_mission("exp_wastes", "expeditions")
+		harness.engine:set_mission("exp_wastes", { game_mode_name = "expedition" })
+		harness:tick(0)
+		harness:state("music_combat", "no_combat")
 
-		harness:state("music_combat", "boss")
-		harness:wait(79)
-		harness:boss_start(boss)
-		harness:boss_end(boss)
-		harness:state("music_combat", "None")
+		harness:boss_start(harness:new_boss("chaos_spawn"))
 
-		assert_deep_equal(harness.changes, { "boss", "explore" })
+		assert_equal(harness:current(), "explore")
 	end)
 
-	-- The boss music state can stay on for minutes with no start event, as it does for a raid's final boss.
-	it("keeps boss for a boss with no start event until the boss music state ends", function()
-		local harness = in_mission("zone_5")
-
-		harness:state("music_combat", "boss")
-		harness:wait(720)
-
-		assert_equal(harness:current(), "boss")
-
-		harness:state("music_game_state", "victory")
-
-		assert_deep_equal(harness.changes, { "boss", "victory" })
-	end)
-
-	-- The combat hold starts only from normal or horde combat, so a boss that ends straight into "None" gets only its own hold.
-	it("follows a boss with combat and its hold only when combat is still going", function()
+	it("offers the breed of the first open window as the boss's override folder, until that window closes", function()
 		local harness = in_mission("zone_3")
+		local first = harness:new_boss("chaos_spawn")
+		local second = harness:new_boss("chaos_plague_ogryn")
 
-		harness:state("music_combat", "boss")
-		harness:state("music_combat", "normal")
-		harness:state("music_combat", "None")
-		harness:wait(7.8)
+		harness:boss_start(first)
+		harness:boss_start(second)
+		local while_first = harness.Context.override_keys(harness.engine.mod, "boss")[1]
+		harness:boss_end(first)
+		local after_first = harness.Context.override_keys(harness.engine.mod, "boss")[1]
 
-		assert_equal(harness:current(), "combat")
-
-		harness:wait(0.3)
-
-		assert_deep_equal(harness.changes, { "boss", "combat", "explore" })
-	end)
-
-	it("offers the breed of the open encounter as the boss's override folder", function()
-		local harness = in_mission("zone_3")
-		local boss = harness:new_boss("chaos_spawn")
-
-		harness:state("music_combat", "boss")
-		harness:boss_start(boss)
-
-		assert_equal(harness:current(), "boss")
-		assert_equal(harness.Context.override_keys(harness.engine.mod, "boss")[1], "chaos_spawn")
+		assert_equal(while_first, "chaos_spawn")
+		assert_equal(after_first, "chaos_plague_ogryn")
 	end)
 
 	-- The log names the breed of a change, and a window left open under an event says nothing about the event's music.
@@ -105,127 +146,9 @@ describe("context.lua boss signals", function()
 		end)
 
 		harness:boss_start(harness:new_boss("chaos_spawn"))
-		harness:state("music_combat", "boss")
 		harness:state("music_objective", "kill_event")
 
 		assert_deep_equal(breeds, { "boss=chaos_spawn", "event=nil" })
-	end)
-end)
-
-describe("context.lua boss hold", function()
-	-- The game can drop the boss music state for a second or two while the boss is still alive.
-	it("holds boss through a short gap in the boss music state while the boss's window is open", function()
-		local harness = in_mission("zone_3")
-		local boss = harness:new_boss("chaos_ogryn_houndmaster")
-		harness:state("music_combat", "boss")
-		harness:boss_start(boss)
-
-		harness:state("music_combat", "None")
-		harness:wait(2.8)
-		assert_equal(harness:current(), "boss")
-
-		harness:state("music_combat", "boss")
-		assert_deep_equal(harness.changes, { "boss" })
-	end)
-
-	it("lets the hold run out after the setting's seconds", function()
-		local harness = in_mission("zone_3", { boss_hold_seconds = 5 })
-		harness:state("music_combat", "boss")
-
-		harness:state("music_combat", "None")
-		harness:wait(4.8)
-		assert_equal(harness:current(), "boss")
-
-		harness:wait(0.3)
-		assert_deep_equal(harness.changes, { "boss", "explore" })
-	end)
-
-	-- A monstrosity can leave the boss music state a few seconds before its encounter end event.
-	it("ends the hold at once when the boss's window closes", function()
-		local harness = in_mission("zone_3")
-		local boss = harness:new_boss("chaos_beast_of_nurgle")
-		harness:state("music_combat", "boss")
-		harness:boss_start(boss)
-		harness:state("music_combat", "None")
-
-		harness:boss_end(boss)
-
-		assert_equal(harness:current(), "explore")
-	end)
-
-	it("adds no hold when the boss's window closes before the boss music state ends", function()
-		local harness = in_mission("zone_3")
-		local boss = harness:new_boss("chaos_spawn")
-		harness:state("music_combat", "boss")
-		harness:boss_start(boss)
-
-		harness:boss_end(boss)
-		harness:state("music_combat", "normal")
-
-		assert_equal(harness:current(), "combat")
-	end)
-
-	it("keeps holding while another boss's window is still open", function()
-		local harness = in_mission("zone_3")
-		local first = harness:new_boss("chaos_spawn")
-		local second = harness:new_boss("chaos_plague_ogryn")
-		harness:state("music_combat", "boss")
-		harness:boss_start(first)
-		harness:boss_start(second)
-		harness:state("music_combat", "None")
-
-		harness:boss_end(first)
-
-		assert_equal(harness:current(), "boss")
-	end)
-
-	it("ignores the window of a daemonhost that plays no boss music", function()
-		local harness = in_mission("zone_3")
-		local daemonhost = harness:new_boss("chaos_daemonhost")
-		harness:boss_start(daemonhost)
-		harness:state("music_combat", "boss")
-		harness:state("music_combat", "None")
-
-		harness:boss_end(daemonhost)
-
-		assert_equal(harness:current(), "boss")
-	end)
-
-	it("holds again in the next boss fight after the last boss died", function()
-		local harness = in_mission("zone_3")
-		local boss = harness:new_boss("chaos_spawn")
-		harness:state("music_combat", "boss")
-		harness:boss_start(boss)
-		harness:boss_end(boss)
-		harness:state("music_combat", "None")
-
-		harness:state("music_combat", "boss")
-		harness:state("music_combat", "None")
-
-		assert_equal(harness:current(), "boss")
-		assert_deep_equal(harness.changes, { "boss", "explore", "boss" })
-	end)
-
-	it("keeps combat's own hold running under the held boss", function()
-		local harness = in_mission("zone_3")
-		harness:state("music_combat", "boss")
-
-		harness:state("music_combat", "normal")
-		harness:state("music_combat", "None")
-		harness:wait(3.1)
-		assert_equal(harness:current(), "combat")
-
-		harness:wait(5)
-		assert_deep_equal(harness.changes, { "boss", "combat", "explore" })
-	end)
-
-	it("follows the game exactly with the hold set to 0", function()
-		local harness = in_mission("zone_3", { boss_hold_seconds = 0 })
-		harness:state("music_combat", "boss")
-
-		harness:state("music_combat", "None")
-
-		assert_equal(harness:current(), "explore")
 	end)
 end)
 
@@ -264,8 +187,9 @@ describe("context.lua daemonhosts", function()
 		assert_deep_equal(harness.changes, { "boss", "explore" })
 	end)
 
-	it("counts every daemonhost breed with the setting on", function()
-		for _, breed in ipairs({ "chaos_daemonhost", "chaos_daemonhost_torment", "chaos_mutator_daemonhost" }) do
+	-- The mutators' daemonhost shows no HP bar, so it never counts.
+	it("counts every daemonhost breed that shows an HP bar with the setting on", function()
+		for _, breed in ipairs({ "chaos_daemonhost", "chaos_daemonhost_torment" }) do
 			local harness = in_mission("zone_3", { daemonhost_boss_music = true })
 			local daemonhost = harness:new_boss(breed)
 
@@ -285,7 +209,7 @@ describe("context.lua daemonhosts", function()
 	end)
 end)
 
--- Encounter windows only decide a boss for daemonhosts with the setting on, so these use that setting.
+-- These use a daemonhost with its setting on, whose window opens as it notices the player.
 describe("context.lua boss encounter windows", function()
 	-- A daemonhost can stay angered for a long time while the players avoid it.
 	it("keeps a window open for as long as the encounter lasts", function()

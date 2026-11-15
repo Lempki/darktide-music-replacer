@@ -5,10 +5,13 @@
 -- Resolution rules that are not obvious from the code:
 --	* The hub is told apart from a mission by `music_zone`, since `music_game_state` is "mission" for both.
 --	  The hub zone wins over every mission state, since quitting mid-event or mid-last-stand can leave `music_objective` set.
---	* A boss is active while Wwise reports `music_combat == "boss"`, which is when the game plays its own boss music.
---	  Bosses that only open an encounter window get no boss music in the game, so they get none here either.
---	  Those are captains, daemonhosts, and Rodin Karnak in Spillway, which the game's boss music check leaves out by their breed tags.
+--	* A boss fight is the boss's encounter window, which opens with its HP bar and closes once the boss has died or despawned.
+--	  A monstrosity opens it when first hurt, and a captain or a daemonhost when it notices the player.
+--	  The window never closes while the boss lives, so the fight needs no hold.
+--	  A breed whose data turns its HP bar off, such as Rodin Karnak in Spillway, opens a window with no bar, which does not count.
+--	  His fight is the event it is part of.
 --	* A captain's or a daemonhost's encounter window counts as a boss only with its setting on.
+--	  A weakened monstrosity gets none of the game's boss music, so its window does not count either.
 --	  Scripted captains appear during events, and event music wins over bosses, so the setting only matters for random ones.
 --	* Encounter windows are tracked per boss unit, since several bosses can be open at once and a start can repeat.
 --	  A window stays open until its own end event, which the game sends once the boss has died or despawned.
@@ -20,15 +23,12 @@
 --	* `music_combat` flips on and off every few seconds in real combat.
 --	  So `combat` holds for `combat_hold_seconds` after combat quiets, and a lull does not drop to `explore`.
 --	  Entering combat is never delayed.
---	* The game drops "boss" for a second or two now and then while the boss is still alive.
---	  So `boss` holds for `boss_hold_seconds` after it quiets, but only until the last boss window that counts has closed.
---	  The end event ends the hold at once, so boss music outlasts the boss only until the game reports it gone.
 --	* A boss within BOSS_APPROACH_METERS of the player resolves "boss_approaching", between horde and boss.
 --	  It outranks a horde, as the game's own boss music does.
 --	  It stays approaching until it is farther away than BOSS_LET_GO_METERS, so moving back and forth at the edge keeps the music steady.
 --	  A daemonhost sleeps where it is put, and some levels keep the player near one for long, so it has distances of its own.
 --	  A weakened monstrosity gets none of the game's boss music, so it does not approach either.
---	  An Expedition keeps to its own situations, so no boss approaches there.
+--	* An Expedition keeps to its own situations, so no boss approaches or fights there.
 --	* The game reports "boss" in place of every other combat state once a boss has come near, for as long as any monstrosity lives.
 --	  So the mod asks the game's own combat check again with the boss check left out, and combat and hordes follow that answer.
 --	  A boss left far behind then still lets fights and hordes play their music.
@@ -143,7 +143,6 @@ end
 -- Its setting always has a value, since DMF writes every setting's default before the mod's script runs.
 local HOLDS = {
 	{ name = "event", setting_id = "event_hold_seconds", remaining = 0 },
-	{ name = "boss", setting_id = "boss_hold_seconds", remaining = 0 },
 	{ name = "horde", setting_id = "horde_hold_seconds", remaining = 0 },
 	{ name = "combat", setting_id = "combat_hold_seconds", remaining = 0 },
 	-- An Expedition's fights flip on and off as often as ordinary ones, so they share the combat hold's setting.
@@ -156,10 +155,6 @@ for _, hold in ipairs(HOLDS) do
 end
 
 local active_hold = nil -- The name of the hold the resolved context comes from, else nil.
-
--- True once the last open boss window that counts has closed, so the boss hold ends with the boss.
--- A new window that counts, or a boss fight that starts over, clears it.
-local boss_fight_over = false
 
 local MISSION_OUTCOME_CONTEXTS = { victory = "victory", defeat = "defeat" }
 
@@ -303,23 +298,12 @@ local function opted_in(mod, boss)
 end
 
 -- A captain or daemonhost with its setting off plays no boss music, so its window does not count.
+-- Nor does a weakened monstrosity's, or the window of a boss that shows no HP bar.
 local function counts_as_boss(mod, boss)
+	if boss.weakened or boss.no_hp_bar then
+		return false
+	end
 	return not OPT_IN_BOSS_SETTINGS[boss.breed] or opted_in(mod, boss)
-end
-
-local function is_boss_active(mod)
-	if music_combat == "boss" then
-		return true
-	end
-
-	-- Other bosses count through music_combat alone, as the game's boss music does, so only an opted-in window adds one.
-	for _, boss in pairs(open_bosses) do
-		if opted_in(mod, boss) then
-			return true
-		end
-	end
-
-	return false
 end
 
 -- Breed name of the earliest opened encounter window that counts as a boss, or nil when none does.
@@ -335,6 +319,10 @@ local function current_boss_breed(mod)
 	end
 
 	return first and first.breed
+end
+
+local function is_boss_active(mod)
+	return mission_mode ~= "expeditions" and current_boss_breed(mod) ~= nil
 end
 
 local function is_daemonhost(breed)
@@ -428,7 +416,6 @@ local function is_expedition_fight_active()
 end
 
 hold_named.event.is_active = is_event_active
-hold_named.boss.is_active = is_boss_active
 hold_named.horde.is_active = is_horde_active
 hold_named.combat.is_active = is_combat_active
 hold_named.expedition_combat.is_active = is_expedition_fight_active
@@ -631,24 +618,6 @@ local function resolve(mod)
 	end
 
 	if takes_over(mod, "boss", is_boss_active(mod)) then
-		-- A boss after other music is a new fight, even when no window announced it.
-		if resolved_context ~= "boss" then
-			boss_fight_over = false
-		end
-
-		if not boss_fight_over then
-			start_hold(mod, "boss")
-		end
-
-		return "boss"
-	end
-
-	if not is_skipped(mod, "boss") and holding("boss") then
-		-- Combat that goes on under the held boss starts its own hold, which takes over once the boss hold ends.
-		if is_combat_active() then
-			start_hold(mod, "combat")
-		end
-
 		return "boss"
 	end
 
@@ -832,12 +801,7 @@ function Context.menu_open()
 end
 
 -- Resolves again after a setting change.
--- A boss that a setting just turned off is no gap in its fight, so the boss hold ends at once.
 function Context.refresh(mod)
-	if not current_boss_breed(mod) then
-		hold_named.boss.remaining = 0
-	end
-
 	recompute(mod)
 end
 
@@ -1068,6 +1032,15 @@ function Context.init(mod, detail_logger, logger)
 		return breed and breed.name or "<unknown>"
 	end
 
+	local function is_weakened(boss_extension)
+		return boss_extension ~= nil and boss_extension.is_weakened ~= nil and boss_extension:is_weakened() == true
+	end
+
+	local function shows_no_hp_bar(boss_extension)
+		local breed = boss_extension and boss_extension._breed
+		return breed ~= nil and breed.boss_health_bar_disabled == true
+	end
+
 	-- Managers.event:register needs the callback as a string method name, looked up on the registered object.
 	-- Passing a function registers without error, then crashes the game when the event fires.
 	-- A repeated start for an open unit keeps its window as it is, and is not logged.
@@ -1078,15 +1051,12 @@ function Context.init(mod, detail_logger, logger)
 		end
 
 		local breed_name = breed_name_of(boss_extension)
-		log_detail(string.format("[raw] boss_encounter_start breed=%s", breed_name))
+		local weakened = is_weakened(boss_extension)
+		log_detail(string.format("[raw] boss_encounter_start breed=%s%s", breed_name, weakened and ", weakened" or ""))
 
 		if unit then
 			boss_open_order = boss_open_order + 1
-			open_bosses[unit] = { breed = breed_name, order = boss_open_order }
-
-			if counts_as_boss(mod, open_bosses[unit]) then
-				boss_fight_over = false
-			end
+			open_bosses[unit] = { breed = breed_name, order = boss_open_order, weakened = weakened, no_hp_bar = shows_no_hp_bar(boss_extension) }
 		end
 
 		recompute(mod)
@@ -1095,15 +1065,8 @@ function Context.init(mod, detail_logger, logger)
 	function mod:on_boss_end(unit, boss_extension)
 		log_detail(string.format("[raw] boss_encounter_end breed=%s", breed_name_of(boss_extension)))
 
-		local closed = unit and open_bosses[unit]
-		if closed then
+		if unit then
 			open_bosses[unit] = nil
-
-			-- The game sends the end event once the boss has died or despawned, so its music has nothing left to bridge.
-			if counts_as_boss(mod, closed) and not current_boss_breed(mod) then
-				boss_fight_over = true
-				hold_named.boss.remaining = 0
-			end
 		end
 
 		recompute(mod)

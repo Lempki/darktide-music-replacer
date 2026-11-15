@@ -66,14 +66,14 @@ describe("context.lua boss_approaching", function()
 		assert_equal(harness:current(), "boss_approaching")
 	end)
 
-	it("ranks above a horde, and below the boss music state", function()
+	it("ranks above a horde, and below the boss's fight", function()
 		local harness = in_mission()
 
 		harness:state("music_combat", "horde_high")
 		harness:bosses({ spawn_at(30) })
 		assert_equal(harness:current(), "boss_approaching")
 
-		harness:state("music_combat", "boss")
+		harness:boss_start(harness:new_boss("chaos_spawn"))
 		assert_equal(harness:current(), "boss")
 	end)
 

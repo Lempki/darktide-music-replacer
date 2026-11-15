@@ -93,10 +93,11 @@ describe("context.lua hordes", function()
 	it("gives way to a boss, and returns once the boss is gone while the horde lasts", function()
 		local harness = in_mission(3)
 
+		local boss = harness:new_boss("chaos_spawn")
+
 		harness:state("music_combat", "horde_high")
-		harness:state("music_combat", "boss")
-		harness:state("music_combat", "horde_high")
-		harness:wait(3.1)
+		harness:boss_start(boss)
+		harness:boss_end(boss)
 
 		assert_deep_equal(harness.changes, { "horde", "boss", "horde" })
 	end)
