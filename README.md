@@ -60,7 +60,7 @@ Everything below is optional detail.
 
 * It does not change sound effects or voice lines, only the music.
 * It does not affect your squadmates. They hear their own game's music.
-* It does not play your music during mission intros and cutscenes. The game's music plays there.
+* It does not play your music during cutscenes. The game's music plays there.
 * It does not download or stream anything. It plays only the files in its own audio folders.
 
 ## How it plays your music
@@ -77,7 +77,7 @@ Windows "N" editions leave out Media Foundation, so on one, install Microsoft's 
 
 ## Where your music plays
 
-The folders most people fill first are in bold. Each folder plays in one situation. The music switches about half a second after the situation changes, so a moment that flickers does not restart the song. Into a loading screen, other than the briefing after the preparation screen, it waits 3 seconds, and so does the first situation after a loading screen, other than the hub and the preparation screen. The Music Holds settings also keep combat, horde, boss, and event music going for a few seconds, so a short lull does not switch the music at once.
+The folders most people fill first are in bold. Each folder plays in one situation. The music switches about half a second after the situation changes, so a moment that flickers does not restart the song. Into a loading screen, other than the briefing after the preparation screen, it waits 3 seconds, and so does the first situation after a loading screen, other than the hub, the preparation screen, and the mission's intro. The Music Holds settings also keep combat, horde, boss, and event music going for a few seconds, so a short lull does not switch the music at once.
 
 | Folder | When it plays |
 |---|---|
@@ -86,7 +86,8 @@ The folders most people fill first are in bold. Each folder plays in one situati
 | **`hub`** | In the Mourningstar. |
 | `loading` | On every loading screen, wherever it leads: after starting the game, into a mission and out of one, and on the way to Meat Grinder. |
 | `mission_preparation` | On the mission preparation screen of every game mode, where the party gathers before a mission and can still change loadouts. |
-| `mission_briefing` | In the briefing after the preparation screen (or when you join a mission in progress). The mission's intro keeps the game's music. |
+| `mission_briefing` | In the briefing after the preparation screen (or when you join a mission in progress). |
+| `mission_intro` | In the cutscene that opens a mission, before you can move. The game's intro stinger stops once your song or Silence takes over. |
 | **`explore`** | In a mission while nothing threatens you. |
 | **`combat`** | In a mission while enemies attack you, outside a horde or a boss fight. |
 | **`horde`** | During a horde. |

@@ -38,7 +38,7 @@ What each `music_game_state` value plays, by the dropdowns in Music per Situatio
 | `loadout`, `loadout_ready` | The Mission Preparation music. These states are the mission preparation screen. |
 | `mission_briefing` | The Mission Briefing music. |
 | `loading`, `mission_loading` | The Loading music, wherever the loading screen leads. |
-| `mission_intro` | The game's music. This state is the mission's intro. |
+| `mission_intro` | The Mission Intro music. This state is the cutscene that opens a mission. |
 | `victory`, `game_score_win` | The Victory music, until the loading screen. `game_score_win` is the score screen. |
 | `defeat`, `game_score_lose` | The Defeat music, until the loading screen. `game_score_lose` is the score screen. |
 | `cinematic`, `cinematic_pot` | The game's music. These states are cutscenes, which never get custom music. Story cutscenes use `cinematic`, and the hub's own, such as Path of Trust and the hub location intros, use `cinematic_pot`. |
@@ -57,7 +57,7 @@ Wwise events start sounds, and a few of them are music.
 
 * `wwise/events/music/play_exploration_music` and `wwise/events/music/play_exploration_the_machine_spiri_1`, `_3`, and `_4` fire during hordes and around mission event sequences, such as holding a position or minigames.
 * `wwise/events/cinematics/play_outro_win_generic_01` and `wwise/events/ui/play_ui_eor_start_stinger` fire during a mission's victory. Neither has "music" in its name.
-* `wwise/events/cinematics/play_mission_intro_stinger_generic` fires at the start of a mission's intro.
+* `wwise/events/cinematics/play_mission_intro_stinger_generic` fires at the start of a mission's intro, together with the `mission_intro` game state.
 * Events under `wwise/events/cinematics/` with `music` in their name, such as `play_cs01_cs02_music_combat` or `play_cs03_music_116bpm`, start a cutscene's music.
 
 ## How the mod silences it
@@ -71,10 +71,10 @@ Each line below shows up in the log with Detailed Logging on.
 | `[suppress] forcing music_combat normal -> None` | The game's combat, horde, and boss music is off. It shows when the silencing starts while `music_combat` has a value other than `None`. It stays off through every later change of `music_combat` until the custom song stops. |
 | `[suppress] forcing expeditions_intensity normal -> None` | The same for `expeditions_intensity`. The mod forces and restores it together with `music_combat`, in every context. |
 | `[suppress] forcing music_zone hub -> None` | The game's hub music is off while a custom `hub` song plays. |
-| `[suppress] forcing music_game_state victory -> None` | The game's music for `title_screen`, `character_select`, `loading`, `mission_preparation`, `mission_briefing`, `victory`, or `defeat` is off while a custom song for that context plays. |
+| `[suppress] forcing music_game_state victory -> None` | The game's music for `title_screen`, `character_select`, `loading`, `mission_preparation`, `mission_briefing`, `mission_intro`, `victory`, or `defeat` is off while a custom song for that context plays. |
 | `[suppress] forcing music_objective fortification_event -> None` | The game's music for `event`, `last_stand`, or `mortis_trials_wave` is off while a custom song for any mission context plays. Each of them outranks the other mission contexts, so another one plays during them only while they are set to Skip. |
 | `[suppress] stopped the game's music event: wwise/events/music/play_exploration_music` | The mod stopped the game's exploration music event as it started, since a custom song plays. It stops every event whose name contains `events/music/play_exploration`. |
-| `[suppress] stopped the cutscene's music event: wwise/events/cinematics/play_cs03_music_116bpm` | A custom song took over after a cutscene, so the mod stopped that cutscene's music event, which can run on after the cutscene ends. It shows for each of the current level's last 8 cutscene music events, even one that had already ended. When a level ends, or the mod is turned off, the mod forgets its cutscene music, since the game stops it and its Wwise world goes away. |
+| `[suppress] stopped the cutscene's music event: wwise/events/cinematics/play_cs03_music_116bpm` | A custom song took over after a cutscene, so the mod stopped that cutscene's music event, which can run on after the cutscene ends. The intro's stinger, `play_mission_intro_stinger_generic`, is stopped the same way and logs the same line. It shows for each of the current level's last 8 cutscene music events, even one that had already ended. When a level ends, or the mod is turned off, the mod forgets its cutscene music, since the game stops it and its Wwise world goes away. |
 | `[suppress] restoring music_zone to hub` | The group is back at the game's value, and the game's music with it. It shows when the custom song stops, or when the next context does not silence that group. Each restored group logs its own line. |
 
 A silenced state does not show up as a `[raw]` line, since the `[raw]` lines always show the game's values. An exploration music event that fires while the mod is not silencing the game's music is not stopped, so the game's music plays as usual.

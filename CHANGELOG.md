@@ -12,6 +12,7 @@ What changes for players in each release of Music Replacer. The format follows [
 * A notice says how many songs the mod found and in how many folders, such as `Found 128 songs in 9 folders.`, once it has checked them at launch, after Rescan Audio Folders, and after your files change. With no songs, it says where to put them. When files were skipped, a second notice says how many and why: a format the mod does not play, such as `.ogg` or `.opus`, or a file Windows cannot open. `diagnostic.log` names each one.
 * A notice says how many songs Even Out Loudness measured once it has measured every song that needed it, such as `Even Out Loudness measured 12 songs.` Nothing shows when no song needed measuring.
 * A Toggle Debug Overlay key in the Debug group shows or hides the debug overlay, so you can check it in a mission without opening the mod options. It starts unbound.
+* Mission Intro is a situation of its own, with a `mission_intro` folder and the choice of Custom, Vanilla, or Silence in Music per Situation. With your songs or Silence, the game's intro music and its stinger stop. With the folder empty, the intro keeps the game's music as before.
 
 ### Changes
 

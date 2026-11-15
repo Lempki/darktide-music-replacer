@@ -464,7 +464,7 @@ local strings = {
 		en = "Mission Intro",
 	},
 	source_mission_intro_tooltip = {
-		en = source_tooltip("in the mission's intro, where the squad walks in before the mission starts"),
+		en = source_tooltip("in the cutscene that opens a mission, before you can move"),
 	},
 	source_explore = {
 		en = "Explore",
