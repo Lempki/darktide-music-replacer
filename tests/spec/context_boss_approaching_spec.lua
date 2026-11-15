@@ -132,6 +132,47 @@ describe("context.lua boss_approaching", function()
 		assert_equal(harness:current(), "explore")
 	end)
 
+	it("lets go at the Boss Let-Go Distance", function()
+		local harness = in_mission({ boss_let_go_meters = 200 })
+
+		harness:bosses({ spawn_at(60) })
+		harness:bosses({ spawn_at(200) })
+		assert_equal(harness:current(), "boss_approaching")
+
+		harness:bosses({ spawn_at(201) })
+		assert_equal(harness:current(), "explore")
+	end)
+
+	it("lets a daemonhost approach at the Daemonhost Distance, and go 40 m beyond it", function()
+		local harness = in_mission({ daemonhost_boss_music = true, daemonhost_approach_meters = 50 })
+		local function daemonhost_at(distance)
+			return { unit = DAEMONHOST, breed = "chaos_daemonhost", distance = distance }
+		end
+
+		harness:bosses({ daemonhost_at(51) })
+		assert_equal(harness:current(), "explore")
+
+		harness:bosses({ daemonhost_at(50) })
+		harness:bosses({ daemonhost_at(90) })
+		assert_equal(harness:current(), "boss_approaching")
+
+		harness:bosses({ daemonhost_at(91) })
+		assert_equal(harness:current(), "explore")
+	end)
+
+	it("counts a weakened monstrosity with its setting on, and follows the setting at once", function()
+		local harness = in_mission()
+
+		harness:bosses({ { unit = SPAWN, breed = "chaos_spawn", distance = 30, weakened = true } })
+		assert_equal(harness:current(), "explore")
+
+		harness:set_setting("weakened_boss_music", true)
+		assert_equal(harness:current(), "boss_approaching")
+
+		harness:set_setting("weakened_boss_music", false)
+		assert_equal(harness:current(), "explore")
+	end)
+
 	it("names the first boss to come near in its override folders, until it is gone", function()
 		local harness = in_mission()
 		local ogryn = { unit = OGRYN, breed = "chaos_plague_ogryn", distance = 70 }

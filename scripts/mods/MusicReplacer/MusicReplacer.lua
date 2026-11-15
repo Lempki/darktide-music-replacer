@@ -1267,6 +1267,7 @@ end
 local RESOLVING_SETTINGS = {
 	captain_boss_music = true,
 	daemonhost_boss_music = true,
+	weakened_boss_music = true,
 	source_meat_grinder = true,
 	meat_grinder_situation = true,
 }

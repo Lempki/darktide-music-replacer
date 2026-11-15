@@ -601,6 +601,9 @@ local strings = {
 		en = "Volume",
 	},
 	-- DMF formats this string, since the mod names it, so it shows as a single percent sign.
+	meters_unit = {
+		en = "m",
+	},
 	percent_unit = {
 		en = "%%",
 	},
@@ -630,6 +633,15 @@ local strings = {
 	boss_music = {
 		en = "Boss Music",
 	},
+	boss_let_go_meters = {
+		en = "Boss Let-Go Distance",
+	},
+	boss_let_go_meters_tooltip = {
+		en = "How far away a boss that came near has to get before " .. highlight("Boss Approaching") .. " lets it go. " ..
+			"A boss starts to approach within 80 m, the distance the game's own boss music uses, " ..
+			"so the gap between the two keeps the music steady while you move back and forth at the edge.\n\n" ..
+			"Daemonhosts use " .. highlight("Daemonhost Distance") .. " instead.",
+	},
 	captain_boss_music = {
 		en = "Boss Music for Captains",
 	},
@@ -643,6 +655,21 @@ local strings = {
 	daemonhost_boss_music_tooltip = {
 		en = "Plays your boss music while an angered daemonhost is alive.\n\n" ..
 			highlight("Off") .. " follows the game, which plays no music for daemonhosts.",
+	},
+	daemonhost_approach_meters = {
+		en = "Daemonhost Distance",
+	},
+	daemonhost_approach_meters_tooltip = {
+		en = "How close a daemonhost has to be for " .. highlight("Boss Approaching") .. " to play, " ..
+			"with " .. highlight("Boss Music for Daemonhosts") .. " on. It lets go once the daemonhost is 40 m farther away than that.\n\n" ..
+			"Some levels keep you near a sleeping daemonhost for a long time, so this is shorter than the 80 m other bosses use.",
+	},
+	weakened_boss_music = {
+		en = "Boss Music for Weakened Monstrosities",
+	},
+	weakened_boss_music_tooltip = {
+		en = "Plays your boss music for a weakened monstrosity, one the game spawns with less than its full health.\n\n" ..
+			highlight("Off") .. " follows the game, which plays no boss music for them.",
 	},
 
 	music_holds = {

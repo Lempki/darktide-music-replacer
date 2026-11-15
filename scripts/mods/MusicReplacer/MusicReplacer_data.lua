@@ -386,6 +386,16 @@ return {
 				type = "group",
 				sub_widgets = {
 					{
+						setting_id = "boss_let_go_meters",
+						type = "numeric",
+						tooltip = "boss_let_go_meters_tooltip",
+						default_value = 120,
+						-- Bosses start to approach within 80 m, so letting go any nearer would switch the music at the edge.
+						range = { 80, 300 },
+						decimals_number = 0,
+						unit_text = "meters_unit",
+					},
+					{
 						setting_id = "captain_boss_music",
 						type = "checkbox",
 						tooltip = "captain_boss_music_tooltip",
@@ -395,6 +405,21 @@ return {
 						setting_id = "daemonhost_boss_music",
 						type = "checkbox",
 						tooltip = "daemonhost_boss_music_tooltip",
+						default_value = false,
+					},
+					{
+						setting_id = "daemonhost_approach_meters",
+						type = "numeric",
+						tooltip = "daemonhost_approach_meters_tooltip",
+						default_value = 20,
+						range = { 5, 80 },
+						decimals_number = 0,
+						unit_text = "meters_unit",
+					},
+					{
+						setting_id = "weakened_boss_music",
+						type = "checkbox",
+						tooltip = "weakened_boss_music_tooltip",
 						default_value = false,
 					},
 				},

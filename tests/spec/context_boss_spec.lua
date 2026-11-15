@@ -89,6 +89,14 @@ describe("context.lua boss fights", function()
 		assert_equal(harness:current(), "explore")
 	end)
 
+	it("counts a weakened monstrosity with its setting on", function()
+		local harness = in_mission("zone_3", { weakened_boss_music = true })
+
+		harness:boss_start(harness:new_boss("chaos_spawn", { weakened = true }))
+
+		assert_equal(harness:current(), "boss")
+	end)
+
 	-- Rodin Karnak in Spillway opens an encounter window, though his breed turns his HP bar off.
 	it("leaves out a boss whose breed shows no HP bar", function()
 		local harness = in_mission("zone_2_depths", { captain_boss_music = true, daemonhost_boss_music = true })

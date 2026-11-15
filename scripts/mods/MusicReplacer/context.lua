@@ -11,7 +11,7 @@
 --	  A breed whose data turns its HP bar off, such as Rodin Karnak in Spillway, opens a window with no bar, which does not count.
 --	  His fight is the event it is part of.
 --	* A captain's or a daemonhost's encounter window counts as a boss only with its setting on.
---	  A weakened monstrosity gets none of the game's boss music, so its window does not count either.
+--	  A weakened monstrosity gets none of the game's boss music, so its window counts only with its setting on too.
 --	  Scripted captains appear during events, and event music wins over bosses, so the setting only matters for random ones.
 --	* Encounter windows are tracked per boss unit, since several bosses can be open at once and a start can repeat.
 --	  A window stays open until its own end event, which the game sends once the boss has died or despawned.
@@ -25,9 +25,10 @@
 --	  Entering combat is never delayed.
 --	* A boss within BOSS_APPROACH_METERS of the player resolves "boss_approaching", between horde and boss.
 --	  It outranks a horde, as the game's own boss music does.
---	  It stays approaching until it is farther away than BOSS_LET_GO_METERS, so moving back and forth at the edge keeps the music steady.
---	  A daemonhost sleeps where it is put, and some levels keep the player near one for long, so it has distances of its own.
---	  A weakened monstrosity gets none of the game's boss music, so it does not approach either.
+--	  It stays approaching until it is farther away than the Boss Let-Go Distance.
+--	  So moving back and forth at the edge keeps the music steady.
+--	  A daemonhost sleeps where it is put, and some levels keep the player near one for long, so it has a distance of its own.
+--	  A weakened monstrosity gets none of the game's boss music, so it neither approaches nor fights without its setting.
 --	* An Expedition keeps to its own situations, so no boss approaches or fights there.
 --	* The game reports "boss" in place of every other combat state once a boss has come near, for as long as any monstrosity lives.
 --	  So the mod asks the game's own combat check again with the boss check left out, and combat and hordes follow that answer.
@@ -174,11 +175,10 @@ local OPT_IN_BOSS_SETTINGS = {
 }
 
 -- The distance in meters at which a boss starts to approach, which is the game's own boss_trigger_distance for its boss music.
--- A boss approaching stays so until it is farther away than the let-go distance.
+-- A boss approaching stays so until it is farther away than the let-go distance, which is a setting.
 local BOSS_APPROACH_METERS = 80
-local BOSS_LET_GO_METERS = 120
-local DAEMONHOST_APPROACH_METERS = 20
-local DAEMONHOST_LET_GO_METERS = 60
+-- How much farther than its own distance a daemonhost lets go, which is a setting of its own.
+local DAEMONHOST_LET_GO_MARGIN_METERS = 40
 
 -- The music_objective value the game sets while one player of the team is alive.
 local LAST_MAN_STANDING = "last_man_standing"
@@ -301,9 +301,9 @@ local function opted_in(mod, boss)
 end
 
 -- A captain or daemonhost with its setting off plays no boss music, so its window does not count.
--- Nor does a weakened monstrosity's, or the window of a boss that shows no HP bar.
+-- Nor does a weakened monstrosity's with its setting off, or the window of a boss that shows no HP bar.
 local function counts_as_boss(mod, boss)
-	if boss.weakened or boss.no_hp_bar then
+	if boss.no_hp_bar or (boss.weakened and not mod:get("weakened_boss_music")) then
 		return false
 	end
 	return not OPT_IN_BOSS_SETTINGS[boss.breed] or opted_in(mod, boss)
@@ -1187,16 +1187,19 @@ function Context.on_bosses(mod, bosses)
 	for _, boss in ipairs(bosses) do
 		alive[boss.unit] = true
 		local approaching = approaching_bosses[boss.unit]
-		local daemonhost = is_daemonhost(boss.breed)
-		local approach_meters = daemonhost and DAEMONHOST_APPROACH_METERS or BOSS_APPROACH_METERS
-		local let_go_meters = daemonhost and DAEMONHOST_LET_GO_METERS or BOSS_LET_GO_METERS
+		local approach_meters = BOSS_APPROACH_METERS
+		local let_go_meters = mod:get("boss_let_go_meters")
+		if is_daemonhost(boss.breed) then
+			approach_meters = mod:get("daemonhost_approach_meters")
+			let_go_meters = approach_meters + DAEMONHOST_LET_GO_MARGIN_METERS
+		end
 
-		if boss.distance and not boss.weakened and not finished_bosses[boss.unit] then
+		if boss.distance and not finished_bosses[boss.unit] then
 			if not approaching and boss.distance <= approach_meters then
 				boss_approach_order = boss_approach_order + 1
-				approaching_bosses[boss.unit] = { breed = boss.breed, order = boss_approach_order }
+				approaching_bosses[boss.unit] = { breed = boss.breed, order = boss_approach_order, weakened = boss.weakened }
 				changed = true
-				-- A captain or daemonhost with its setting off is still followed, so turning the setting on mid-fight takes effect at once.
+				-- A boss whose setting is off is still followed, so turning the setting on mid-fight takes effect at once.
 				local plays_no_music = not counts_as_boss(mod, approaching_bosses[boss.unit])
 				log_detail(string.format("[boss] %s approaching, %.0f m away%s",
 					boss.breed, boss.distance, plays_no_music and ", which plays no boss music by its setting" or ""))
