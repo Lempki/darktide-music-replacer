@@ -88,7 +88,7 @@ These lines also show up with Detailed Logging on:
 | `[hold] combat quiet, holding combat for 8.0s more` | The game's state for that context went quiet, and its Music Holds setting keeps the context for the seconds shown. |
 | `[raw] music_combat under boss: None -> normal` | What the game's combat check reports with its boss check left out, while `music_combat` is `boss`. Combat and hordes follow it. |
 | `[boss] chaos_spawn approaching, 78 m away` | A boss came within its distance, so Boss Approaching can play. `which plays no boss music by its setting` follows for a captain, daemonhost, or weakened monstrosity whose setting is off. |
-| `[boss] chaos_spawn let go, 121 m away` | That boss got farther away than its let-go distance. |
+| `[boss] chaos_spawn let go, 121 m away` | That boss got more than 40 m farther away than its distance. |
 | `[raw] boss_encounter_start breed=chaos_spawn` | A boss's encounter window opened with its HP bar, named by its breed, and Boss starts if the boss counts. `weakened` follows for a weakened monstrosity. A breed that counts as a boss names the `boss` override folder. |
 | `[raw] boss_encounter_end breed=chaos_spawn` | That window closed, once the boss died or despawned, so its Boss ends and it no longer approaches. After a death, it can come a few seconds after the boss probe's `gone` line. |
 

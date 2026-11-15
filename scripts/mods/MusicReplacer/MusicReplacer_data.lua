@@ -386,12 +386,12 @@ return {
 				type = "group",
 				sub_widgets = {
 					{
-						setting_id = "boss_let_go_meters",
+						setting_id = "boss_approach_meters",
 						type = "numeric",
-						tooltip = "boss_let_go_meters_tooltip",
-						default_value = 120,
-						-- Bosses start to approach within 80 m, so letting go any nearer would switch the music at the edge.
-						range = { 80, 300 },
+						tooltip = "boss_approach_meters_tooltip",
+						-- The game's own boss music starts within 80 m.
+						default_value = 80,
+						range = { 20, 160 },
 						decimals_number = 0,
 						unit_text = "meters_unit",
 					},

@@ -83,7 +83,7 @@ One dropdown per situation except Meat Grinder, which has a group of its own bel
 
 | Setting | Default | What it does |
 |---|---|---|
-| Boss Let-Go Distance | 120 m | How far away a boss that came near has to get before Boss Approaching lets it go, from 80 m to 300 m. A boss starts to approach within 80 m, the distance the game's own boss music uses, so the gap between the two keeps the music steady while you move back and forth at the edge. Daemonhosts use Daemonhost Distance instead. |
+| Boss Distance | 80 m | How close a boss has to be for Boss Approaching to play, from 20 m to 160 m. It lets go once the boss is 40 m farther away than that, so moving back and forth at the edge keeps the music steady. The default is the distance the game's own boss music uses. Daemonhosts use Daemonhost Distance instead. |
 | Boss Music for Captains | Off | Counts captains as bosses: Boss Approaching while one is near, and Boss from its HP bar until the game reports it gone. Off leaves captains to the game's music. During an event, event music still plays. |
 | Boss Music for Daemonhosts | Off | Counts daemonhosts as bosses: Boss Approaching while one is within Daemonhost Distance, and Boss from its HP bar, which shows once it is angered, until the game reports it gone. Off follows the game, which plays no music for daemonhosts. |
 | Daemonhost Distance | 20 m | How close a daemonhost has to be for Boss Approaching to play, from 5 m to 80 m, with Boss Music for Daemonhosts on. It lets go once the daemonhost is 40 m farther away than that. Some levels keep you near a sleeping daemonhost for a long time, so this is shorter than the 80 m other bosses use. |
@@ -93,7 +93,7 @@ One dropdown per situation except Meat Grinder, which has a group of its own bel
 
 Each hold goes from 0 to 30 seconds. Set one to 0 to follow the game exactly.
 
-A hold is there for a signal that the game turns off and on again within what is one stretch of music. Boss and Boss Approaching need none. A boss's HP bar never drops while it lives, and a boss stays near until Boss Let-Go Distance, which keeps that music steady by distance instead.
+A hold is there for a signal that the game turns off and on again within what is one stretch of music. Boss and Boss Approaching need none. A boss's HP bar never drops while it lives, and a boss stays near until it is 40 m beyond its distance, which keeps that music steady by distance instead.
 
 | Setting | Default | What it does |
 |---|---|---|

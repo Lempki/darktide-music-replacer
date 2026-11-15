@@ -132,14 +132,17 @@ describe("context.lua boss_approaching", function()
 		assert_equal(harness:current(), "explore")
 	end)
 
-	it("lets go at the Boss Let-Go Distance", function()
-		local harness = in_mission({ boss_let_go_meters = 200 })
+	it("approaches at the Boss Distance, and lets go 40 m beyond it", function()
+		local harness = in_mission({ boss_approach_meters = 30 })
 
-		harness:bosses({ spawn_at(60) })
-		harness:bosses({ spawn_at(200) })
+		harness:bosses({ spawn_at(31) })
+		assert_equal(harness:current(), "explore")
+
+		harness:bosses({ spawn_at(30) })
+		harness:bosses({ spawn_at(70) })
 		assert_equal(harness:current(), "boss_approaching")
 
-		harness:bosses({ spawn_at(201) })
+		harness:bosses({ spawn_at(71) })
 		assert_equal(harness:current(), "explore")
 	end)
 

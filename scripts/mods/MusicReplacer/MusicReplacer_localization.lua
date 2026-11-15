@@ -633,13 +633,13 @@ local strings = {
 	boss_music = {
 		en = "Boss Music",
 	},
-	boss_let_go_meters = {
-		en = "Boss Let-Go Distance",
+	boss_approach_meters = {
+		en = "Boss Distance",
 	},
-	boss_let_go_meters_tooltip = {
-		en = "How far away a boss that came near has to get before " .. highlight("Boss Approaching") .. " lets it go. " ..
-			"A boss starts to approach within 80 m, the distance the game's own boss music uses, " ..
-			"so the gap between the two keeps the music steady while you move back and forth at the edge.\n\n" ..
+	boss_approach_meters_tooltip = {
+		en = "How close a boss has to be for " .. highlight("Boss Approaching") .. " to play. " ..
+			"It lets go once the boss is 40 m farther away than that, so moving back and forth at the edge keeps the music steady.\n\n" ..
+			"The default, " .. highlight("80 m") .. ", is the distance the game's own boss music uses. " ..
 			"Daemonhosts use " .. highlight("Daemonhost Distance") .. " instead.",
 	},
 	captain_boss_music = {

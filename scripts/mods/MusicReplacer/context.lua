@@ -23,9 +23,9 @@
 --	* `music_combat` flips on and off every few seconds in real combat.
 --	  So `combat` holds for `combat_hold_seconds` after combat quiets, and a lull does not drop to `explore`.
 --	  Entering combat is never delayed.
---	* A boss within BOSS_APPROACH_METERS of the player resolves "boss_approaching", between horde and boss.
+--	* A boss within the Boss Distance of the player resolves "boss_approaching", between horde and boss.
 --	  It outranks a horde, as the game's own boss music does.
---	  It stays approaching until it is farther away than the Boss Let-Go Distance.
+--	  It stays approaching until it is LET_GO_MARGIN_METERS farther away than that.
 --	  So moving back and forth at the edge keeps the music steady.
 --	  A daemonhost sleeps where it is put, and some levels keep the player near one for long, so it has a distance of its own.
 --	  A weakened monstrosity gets none of the game's boss music, so it neither approaches nor fights without its setting.
@@ -174,11 +174,9 @@ local OPT_IN_BOSS_SETTINGS = {
 	cultist_captain = "captain_boss_music",
 }
 
--- The distance in meters at which a boss starts to approach, which is the game's own boss_trigger_distance for its boss music.
--- A boss approaching stays so until it is farther away than the let-go distance, which is a setting.
-local BOSS_APPROACH_METERS = 80
--- How much farther than its own distance a daemonhost lets go, which is a setting of its own.
-local DAEMONHOST_LET_GO_MARGIN_METERS = 40
+-- How much farther away than its approach distance a boss has to get before it lets go.
+-- The approach distances are settings, so a fixed margin keeps the let-go distance beyond them whatever they are set to.
+local LET_GO_MARGIN_METERS = 40
 
 -- The music_objective value the game sets while one player of the team is alive.
 local LAST_MAN_STANDING = "last_man_standing"
@@ -1187,12 +1185,8 @@ function Context.on_bosses(mod, bosses)
 	for _, boss in ipairs(bosses) do
 		alive[boss.unit] = true
 		local approaching = approaching_bosses[boss.unit]
-		local approach_meters = BOSS_APPROACH_METERS
-		local let_go_meters = mod:get("boss_let_go_meters")
-		if is_daemonhost(boss.breed) then
-			approach_meters = mod:get("daemonhost_approach_meters")
-			let_go_meters = approach_meters + DAEMONHOST_LET_GO_MARGIN_METERS
-		end
+		local approach_meters = mod:get(is_daemonhost(boss.breed) and "daemonhost_approach_meters" or "boss_approach_meters")
+		local let_go_meters = approach_meters + LET_GO_MARGIN_METERS
 
 		if boss.distance and not finished_bosses[boss.unit] then
 			if not approaching and boss.distance <= approach_meters then
