@@ -646,14 +646,16 @@ local strings = {
 		en = "Boss Music for Captains",
 	},
 	captain_boss_music_tooltip = {
-		en = "Plays your boss music while a captain is in the fight.\n\n" ..
+		en = "Counts captains as bosses: " .. highlight("Boss Approaching") .. " plays while one is near, " ..
+			"and " .. highlight("Boss") .. " from its HP bar until it is gone.\n\n" ..
 			highlight("Off") .. " leaves captains to the game's music. During an event, event music still plays.",
 	},
 	daemonhost_boss_music = {
 		en = "Boss Music for Daemonhosts",
 	},
 	daemonhost_boss_music_tooltip = {
-		en = "Plays your boss music while an angered daemonhost is alive.\n\n" ..
+		en = "Counts daemonhosts as bosses: " .. highlight("Boss Approaching") .. " plays while one is within " ..
+			highlight("Daemonhost Distance") .. ", and " .. highlight("Boss") .. " from its HP bar, which shows once it is angered, until it is gone.\n\n" ..
 			highlight("Off") .. " follows the game, which plays no music for daemonhosts.",
 	},
 	daemonhost_approach_meters = {

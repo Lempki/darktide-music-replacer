@@ -77,7 +77,7 @@ Windows "N" editions leave out Media Foundation, so on one, install Microsoft's 
 
 ## Where your music plays
 
-The folders most people fill first are in bold. Each folder plays in one situation. The music switches about half a second after the situation changes, so a moment that flickers does not restart the song. Into a loading screen, other than the briefing after the preparation screen, it waits 3 seconds, and so does the first situation after a loading screen, other than the hub, the preparation screen, and the mission's intro. The Music Holds settings also keep combat, horde, boss, and event music going for a few seconds, so a short lull does not switch the music at once.
+The folders most people fill first are in bold. Each folder plays in one situation. The music switches about half a second after the situation changes, so a moment that flickers does not restart the song. Into a loading screen, other than the briefing after the preparation screen, it waits 3 seconds, and so does the first situation after a loading screen, other than the hub, the preparation screen, and the mission's intro. The Music Holds settings also keep combat, horde, and event music going for a few seconds, so a short lull does not switch the music at once.
 
 | Folder | When it plays |
 |---|---|
@@ -91,7 +91,8 @@ The folders most people fill first are in bold. Each folder plays in one situati
 | **`explore`** | In a mission while nothing threatens you. |
 | **`combat`** | In a mission while enemies attack you, outside a horde or a boss fight. |
 | **`horde`** | During a horde. |
-| **`boss`** | While a monstrosity is near you, such as a Chaos Spawn, a Beast of Nurgle, a Plague Ogryn, or an Ogryn Houndmaster. This is when the game plays its own boss music. Captains and angered daemonhosts get boss music only with their settings on. A scripted boss, such as Rodin Karnak in Spillway, gets no boss music, since the game does not report it as a boss. |
+| `boss_approaching` | While a boss is near you, before its fight starts. A boss comes near within 80 m, the distance the game's own boss music uses, and stays near until it is farther away than Boss Let-Go Distance, 120 m by default, or gone. It outranks a horde, as the game's boss music does. With its folder empty, it does what Boss is set to, so your `boss` songs start as the boss comes near and go on playing into the fight. |
+| **`boss`** | In a boss fight, from the moment the boss's HP bar shows until the game reports the boss gone. A Chaos Spawn, a Beast of Nurgle, or a Plague Ogryn shows it once it is first hurt, and an Ogryn Houndmaster once it notices you. Captains and daemonhosts count only with their settings on, and so do weakened monstrosities, which the game's own boss music leaves out. A boss that shows no HP bar, such as Rodin Karnak in Spillway, has no Boss, and his fight plays `event`. Neither boss folder plays in an Expedition, which keeps to its own situations. |
 | `event` | While a mission event plays its music, such as a holdout, a hacking event, an escape, or a scripted boss fight like those in Spillway. It outranks boss, horde, combat, and explore music, as the game's event music does. In Operations, such as Rolling Steel and No Man's Land, it plays for the whole mission, since the game scripts their music from start to end. The prologue, Tancred Bastion, scripts its music the same way, so it mostly plays this folder too. |
 | `last_stand` | While only one player of the team is left alive. It outranks events, Mortis Trials waves and breaks, the Expedition extraction, bosses, hordes, combat, and explore. Victory and defeat still take over. |
 | `victory`, `defeat` | From the moment a mission is won (`victory`) or lost (`defeat`) until the loading screen or a cutscene. It covers the closing shot of the mission and the score screen after it. |
@@ -113,7 +114,7 @@ The Music per Situation group has one dropdown per folder above, named after it,
 | Custom | Your songs from the situation's folder. With an empty folder, the game's music plays. This is the default. |
 | Vanilla | Always the game's music, even with songs in the folder, so you can turn one situation off without moving files. |
 | Silence | Nothing. The game's music is silenced too. |
-| Skip | The situation ranked below it, as if this one were not going on, such as explore through fights with `combat` skipped. While your songs or silence play instead, the skipped situation's own game music stays silenced. With the situation below set to Vanilla, the game's music plays as the game picks it. Skip is offered for `combat`, `horde`, `boss`, `event`, `last_stand`, `mortis_trials_wave`, `expedition_combat`, and `expedition_extraction`. |
+| Skip | The situation ranked below it, as if this one were not going on, such as explore through fights with `combat` skipped. While your songs or silence play instead, the skipped situation's own game music stays silenced. With the situation below set to Vanilla, the game's music plays as the game picks it. Skip is offered for `combat`, `horde`, `boss_approaching`, `boss`, `event`, `last_stand`, `mortis_trials_wave`, `expedition_combat`, and `expedition_extraction`. |
 
 A changed choice applies at once, even to the situation that is playing.
 
