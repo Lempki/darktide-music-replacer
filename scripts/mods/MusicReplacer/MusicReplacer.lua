@@ -10,6 +10,7 @@ local RemovedSongs = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/rem
 local ResumePoints = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/resume_points")
 local EventProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/event_probe")
 local MissionProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/mission_probe")
+local Bosses = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/bosses")
 local BossProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/boss_probe")
 local NativeFfi = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/native_ffi")
 local MediaDecoder = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/media_decoder")
@@ -1091,6 +1092,7 @@ end
 Suppression.init(log_detail)
 EventProbe.init(log_detail)
 MissionProbe.init(log)
+Bosses.init(log)
 BossProbe.init(log_detail)
 Context.on_mission_change(MissionProbe.on_mission_change)
 ResumePoints.init(mod)
@@ -1293,9 +1295,12 @@ mod.update = function(dt)
 	Context.update(mod, dt)
 	expire_removal(dt)
 
-	-- The boss probe only feeds the detailed log, so it reads nothing while that is off.
+	-- The bosses only feed the detailed log, so they are read only while that is on.
 	if mod:get("diagnostic_mode") then
-		BossProbe.update(dt)
+		local bosses, elapsed = Bosses.update(dt)
+		if bosses then
+			BossProbe.observe(bosses, elapsed)
+		end
 	end
 
 	if Library.update(dt) then

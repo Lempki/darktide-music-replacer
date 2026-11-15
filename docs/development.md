@@ -149,6 +149,7 @@ darktide-music-replacer/
 │   ├── debug_overlay_element.lua        # The debug overlay's on-screen element.
 │   ├── event_probe.lua                  # Logs the game's Wwise event names, and changes nothing.
 │   ├── mission_probe.lua                # Logs the current mission's name and type, and changes nothing.
+│   ├── bosses.lua                       # Reads the bosses alive in the level, with each one's distance and target.
 │   ├── boss_probe.lua                   # Logs each boss's arrival, targets, and departure, and changes nothing.
 │   ├── MusicReplacer_data.lua           # DMF mod-options widgets.
 │   └── MusicReplacer_localization.lua   # Mod options and on-screen message strings.
