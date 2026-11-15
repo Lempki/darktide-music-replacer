@@ -389,9 +389,24 @@ local function is_combat_active()
 	return state == "normal" or state == "horde_low" or state == "horde_high"
 end
 
+-- Whether a context borrows its fallback's folders, as MusicReplacer.lua tells from the files, through Context.set_borrowing().
+local borrows_folders = function() return false end
+
 -- True when the context is set to Skip, so resolve() passes it over for the one ranked below.
+-- A context that borrows its fallback's folders follows its fallback's choice, so it is passed over while its fallback is skipped.
 local function is_skipped(mod, context_name)
-	return Contexts.can_skip(context_name) and mod:get("source_" .. context_name) == "skip"
+	if not Contexts.can_skip(context_name) then
+		return false
+	end
+
+	local source = mod:get("source_" .. context_name)
+	if source == "skip" then
+		return true
+	end
+
+	local fallback = Contexts.fallback(context_name)
+	local follows_fallback = source ~= "game" and source ~= "silence" and fallback ~= nil and borrows_folders(context_name)
+	return follows_fallback and is_skipped(mod, fallback)
 end
 
 local skipped_now = {} -- The skipped contexts whose state was active at the last resolve, highest first.
@@ -1193,6 +1208,12 @@ function Context.on_bosses(mod, bosses)
 	if changed then
 		recompute(mod)
 	end
+end
+
+-- `borrows(context_name)` returns true while that context's own folders have no songs, so it borrows its fallback's.
+-- Its choice then follows its fallback's, Skip included, which this module resolves.
+function Context.set_borrowing(borrows)
+	borrows_folders = borrows
 end
 
 -- Call from the main mod file's mod.on_unload.

@@ -11,6 +11,9 @@
 --	  A ranked context set to Skip leaves the ranking, so context.lua resolves the one below it instead.
 --	* resume: "always" when its song continues whenever it returns, "sequence" when only within one horde, fight, or event.
 --	* loading_screen: true for a loading screen's context, which waits longer before it takes over.
+--	* fallback: the context whose choice and folders it follows while its own choice is Custom and its own folders have no songs.
+--	  Boss Approaching is the start of a boss fight, so a player who fills only Boss's folders hears them from the moment a boss comes near.
+--	  It then also does what Boss is set to, so skipping or silencing boss music covers the approach too.
 --	* mission_overrides: false for a context that belongs to no one mission, so no mission code or game mode names its override folders.
 --	  Without it, such a folder would apply only when the game happens to name a mission early or late, which no player could rely on.
 
@@ -27,7 +30,7 @@ Contexts.list = {
 	{ id = "explore", priority = 1, resume = "always" },
 	{ id = "combat", priority = 2, resume = "always" },
 	{ id = "horde", priority = 3, resume = "sequence" },
-	{ id = "boss_approaching", priority = 4, resume = "sequence" },
+	{ id = "boss_approaching", priority = 4, resume = "sequence", fallback = "boss" },
 	{ id = "boss", priority = 5, resume = "sequence" },
 	{ id = "event", silences = "music_objective", priority = 6, resume = "sequence" },
 	{ id = "last_stand", silences = "music_objective", priority = 7 },
@@ -53,6 +56,12 @@ end
 -- The entry for `id`, or nil for a context the catalog does not know.
 function Contexts.get(id)
 	return id and by_id[id]
+end
+
+-- The context whose choice and folders `id` follows while its own folders are empty, or nil.
+function Contexts.fallback(id)
+	local context = by_id[id]
+	return context and context.fallback
 end
 
 -- True when the context can be set to Skip, which lets the context ranked below it play instead.

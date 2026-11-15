@@ -95,11 +95,18 @@ local context_status = "Vanilla"
 
 local SOURCE_NAMES = { custom = "Custom", game = "Vanilla", silence = "Silence" }
 
+local borrows_folders -- Set below, once the folder lookup it needs exists.
+
 -- What a context plays, from its setting: "custom", "game", or "silence".
 -- Any other stored value plays as "custom", so a value from an option the dropdown does not offer still plays custom songs.
+-- A context that borrows its fallback's folders plays what its fallback is set to.
 local function source_of(context_name)
 	local source = mod:get("source_" .. context_name)
-	return SOURCE_NAMES[source] and source or "custom"
+	source = SOURCE_NAMES[source] and source or "custom"
+	if source == "custom" and borrows_folders(context_name) then
+		return source_of(Contexts.fallback(context_name))
+	end
+	return source
 end
 
 -- The volume settings are percentages of the music's normal level.
@@ -173,10 +180,6 @@ local function remember_folder_song()
 	end
 end
 
--- A situation whose folders have no songs plays from another situation's folders instead.
--- Boss Approaching is the start of a boss fight, so a player who fills only Boss's folders hears them from the moment a boss comes near.
-local FALLBACK_FOLDERS = { boss_approaching = "boss" }
-
 -- The folders under `main_folder` that `context_name` can play from, in order: the override folders that have songs, then the main one.
 local function folders_under(context_name, main_folder)
 	local folders = {}
@@ -190,15 +193,18 @@ local function folders_under(context_name, main_folder)
 	return folders
 end
 
+-- True when `context_name` has a fallback, as contexts.lua names it, and none of its own folders has songs.
+borrows_folders = function(context_name)
+	return Contexts.fallback(context_name) ~= nil and #folders_under(context_name, context_name) == 1 and not Library.has_files(context_name)
+end
+
 -- The folders `context_name` can play from, in order: its override folders that have songs, then its own.
--- With none of them holding songs, those of its fallback situation, looked up by the same override names.
+-- A context that borrows its fallback's folders plays those, looked up by its own override names.
 local function folders_for(context_name)
-	local folders = folders_under(context_name, context_name)
-	local fallback = FALLBACK_FOLDERS[context_name]
-	if fallback and #folders == 1 and not Library.has_files(context_name) then
-		return folders_under(context_name, fallback)
+	if borrows_folders(context_name) then
+		return folders_under(context_name, Contexts.fallback(context_name))
 	end
-	return folders
+	return folders_under(context_name, context_name)
 end
 
 local function folder_for(context_name)
@@ -1138,6 +1144,7 @@ Context.on_state_change(Suppression.on_state_change)
 Context.on_state_change(ResumePoints.on_state_change)
 Context.on_failure(function() show_error("error_game_change") end)
 Context.init(mod, log_detail, log)
+Context.set_borrowing(borrows_folders)
 
 -- A level can end without a loading screen, as a story mission does when its debrief cutscene leads into the hub.
 -- The game stops every mission sound there and destroys the level's Wwise world, so the cutscene music is forgotten too.
@@ -1178,6 +1185,10 @@ mod.on_all_mods_loaded = function()
 	})
 	Loudness.set_enabled(mod:get("normalize_loudness"))
 	Library.on_listed(Loudness.set_files)
+	-- Whether a context borrows its fallback's folders, and so its choice, depends on the files, so a new listing resolves again.
+	Library.on_listed(function()
+		Context.refresh(mod)
+	end)
 	Library.on_checked(show_listing_checked)
 	Loudness.on_measured(show_songs_measured)
 	AudioClient.init(log, { player = Player, disk_path = Library.disk_path, level_of = Loudness.level, is_measured = Loudness.is_measured })
@@ -1301,8 +1312,10 @@ mod.on_setting_changed = function(setting_id)
 		play_context(next_context, true)
 	elseif setting_id == "resume_songs" and not mod:get("resume_songs") then
 		ResumePoints.forget_all()
-	elseif enabled and current_context and setting_id == "source_" .. current_context then
-		-- The context playing now follows its new setting at once. A custom song that is already playing keeps playing.
+	elseif enabled and current_context and (setting_id == "source_" .. current_context
+		or (borrows_folders(current_context) and setting_id == "source_" .. Contexts.fallback(current_context))) then
+		-- The context playing now follows its new setting at once, or its fallback's, which it follows while it borrows its folders.
+		-- A custom song that is already playing keeps playing.
 		local source = source_of(current_context)
 		if source == "game" or source == "silence" or not AudioClient.is_playing() then
 			replay_current_context()

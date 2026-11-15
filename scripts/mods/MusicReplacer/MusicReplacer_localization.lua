@@ -491,7 +491,8 @@ local strings = {
 	source_boss_approaching_tooltip = {
 		en = source_tooltip("while a boss is near you, before its fight starts", nil,
 			"a horde, combat, or explore plays until the fight starts",
-			highlight("Boss") .. "'s songs, and the song goes on playing once the fight starts"),
+			"whatever " .. highlight("Boss") .. " is set to, " .. highlight("Skip") .. " included, " ..
+				"and Boss's songs go on playing once the fight starts"),
 	},
 	source_boss = {
 		en = "Boss",
