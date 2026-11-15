@@ -139,7 +139,7 @@ describe("contexts.lua Skip", function()
 		end
 
 		assert_deep_equal(offered, {
-			"combat", "horde", "boss", "event", "last_stand", "mortis_trials_wave", "expedition_combat", "expedition_extraction",
+			"combat", "horde", "boss_approaching", "boss", "event", "last_stand", "mortis_trials_wave", "expedition_combat", "expedition_extraction",
 		})
 	end)
 end)

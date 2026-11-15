@@ -1295,10 +1295,11 @@ mod.update = function(dt)
 	Context.update(mod, dt)
 	expire_removal(dt)
 
-	-- The bosses only feed the detailed log, so they are read only while that is on.
-	if mod:get("diagnostic_mode") then
-		local bosses, elapsed = Bosses.update(dt)
-		if bosses then
+	local bosses, elapsed = Bosses.update(dt)
+	if bosses then
+		Context.on_bosses(mod, bosses)
+		-- The boss probe only feeds the detailed log.
+		if mod:get("diagnostic_mode") then
 			BossProbe.observe(bosses, elapsed)
 		end
 	end

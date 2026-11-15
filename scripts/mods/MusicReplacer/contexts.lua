@@ -27,19 +27,20 @@ Contexts.list = {
 	{ id = "explore", priority = 1, resume = "always" },
 	{ id = "combat", priority = 2, resume = "always" },
 	{ id = "horde", priority = 3, resume = "sequence" },
-	{ id = "boss", priority = 4, resume = "sequence" },
-	{ id = "event", silences = "music_objective", priority = 5, resume = "sequence" },
-	{ id = "last_stand", silences = "music_objective", priority = 6 },
+	{ id = "boss_approaching", priority = 4, resume = "sequence" },
+	{ id = "boss", priority = 5, resume = "sequence" },
+	{ id = "event", silences = "music_objective", priority = 6, resume = "sequence" },
+	{ id = "last_stand", silences = "music_objective", priority = 7 },
 	{ id = "victory", silences = "music_game_state" },
 	{ id = "defeat", silences = "music_game_state" },
 	-- Mortis Trials' wave and break rank like event and explore, which they replace there.
-	{ id = "mortis_trials_wave", silences = "music_objective", priority = 5, resume = "always" },
+	{ id = "mortis_trials_wave", silences = "music_objective", priority = 6, resume = "always" },
 	{ id = "mortis_trials_break", priority = 1, resume = "always" },
 	-- An Expedition rates its fights, safe rooms, and extraction instead of hordes and bosses.
 	-- Its fights and safe rooms take turns with explore like combat and explore, and its extraction is a finale like an event.
 	{ id = "expedition_combat", priority = 2, resume = "always" },
 	{ id = "expedition_safe_room", priority = 1, resume = "always" },
-	{ id = "expedition_extraction", priority = 5 },
+	{ id = "expedition_extraction", priority = 6 },
 	-- Meat Grinder is where players try out loadouts and songs, so it has a settings group of its own.
 	{ id = "meat_grinder", own_settings = true },
 }

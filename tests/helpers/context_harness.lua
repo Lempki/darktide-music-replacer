@@ -88,6 +88,15 @@ function Harness:boss_end(boss)
 	self.engine:fire_event("boss_encounter_end", boss, boss.extension)
 end
 
+-- Hands context.lua one read of the bosses alive, as bosses.lua does a few times a second.
+-- Each boss is { unit, breed, distance }, and weakened when given.
+function Harness:bosses(bosses)
+	for _, boss in ipairs(bosses) do
+		boss.weakened = boss.weakened == true
+	end
+	self.Context.on_bosses(self.engine.mod, bosses)
+end
+
 -- Forgets the contexts recorded so far, so a spec can check only what follows.
 function Harness:clear_changes()
 	self.changes = {}

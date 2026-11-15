@@ -484,6 +484,13 @@ local strings = {
 	source_horde_tooltip = {
 		en = source_tooltip("during a horde", nil, "combat plays through hordes"),
 	},
+	source_boss_approaching = {
+		en = "Boss Approaching",
+	},
+	source_boss_approaching_tooltip = {
+		en = source_tooltip("while a boss is near you, before its fight starts", nil,
+			"a horde, combat, or explore plays until the fight starts"),
+	},
 	source_boss = {
 		en = "Boss",
 	},
