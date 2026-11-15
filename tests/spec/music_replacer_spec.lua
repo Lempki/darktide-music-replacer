@@ -1299,6 +1299,16 @@ describe("MusicReplacer.lua override folders", function()
 		assert_equal(harness:playing(), "boss_approaching/near.mp3")
 	end)
 
+	it("logs a daemonhost that comes near with its setting off as one that plays no boss music", function()
+		local harness = in_cooling({ explore = { { name = "x.mp3", duration = 300 } } })
+
+		harness:bosses({ { unit = "daemonhost", breed = "chaos_daemonhost", distance = 10 } })
+		harness:settle()
+
+		assert_equal(harness:logged("[boss] chaos_daemonhost approaching, 10 m away, which plays no boss music by its setting"), true)
+		assert_equal(harness:playing(), "explore/x.mp3")
+	end)
+
 	it("starts a new song when Boss takes over from Boss Approaching's own songs", function()
 		local harness = in_cooling({
 			boss = { { name = "b.mp3", duration = 300 } },

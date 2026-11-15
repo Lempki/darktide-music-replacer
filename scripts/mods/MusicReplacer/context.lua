@@ -114,6 +114,9 @@ local mission_outcome = nil -- "victory" or "defeat" from that game state until 
 local open_bosses = {} -- Boss unit -> { breed = name, order = n } for every open encounter window.
 local boss_open_order = 0 -- Counts up with every newly opened window, so the earliest one can be found.
 local approaching_bosses = {} -- Boss unit -> { breed = name, order = n } for every boss near enough, until it is far enough away again.
+-- Boss unit -> true once its encounter window has closed.
+-- The game sends the end event as the boss dies, a moment before the boss leaves the list of the living, so it must not approach again.
+local finished_bosses = {}
 local boss_approach_order = 0 -- Counts up with every boss that comes near, so the first one can be found.
 
 local resolved_context = nil -- Last computed context string, for example "hub".
@@ -876,6 +879,7 @@ local function track_transition(mod, group_name, current, new_state)
 			combat_under_boss = nil
 			open_bosses = {}
 			approaching_bosses = {}
+			finished_bosses = {}
 			-- A new zone starts fresh, not partway through the last hold.
 			for _, hold in ipairs(HOLDS) do
 				hold.remaining = 0
@@ -925,6 +929,7 @@ local function track_transition(mod, group_name, current, new_state)
 		if new_state == "loading" then
 			open_bosses = {}
 			approaching_bosses = {}
+			finished_bosses = {}
 		end
 	elseif group_name == "music_objective" then
 		log_detail(describe_transition(group_name, current, new_state))
@@ -1082,6 +1087,8 @@ function Context.init(mod, detail_logger, logger)
 
 		if unit then
 			open_bosses[unit] = nil
+			approaching_bosses[unit] = nil
+			finished_bosses[unit] = true
 		end
 
 		recompute(mod)
@@ -1172,7 +1179,7 @@ end
 
 -- Call with each read from Bosses.update, which lists every boss alive and its distance from the player.
 -- A boss comes near within its approach distance, and stays near until it is farther than its let-go distance or gone.
--- A distance the engine refused to measure leaves the boss as it was.
+-- A boss whose fight has ended stays gone, and a distance the engine refused to measure leaves the boss as it was.
 function Context.on_bosses(mod, bosses)
 	local alive = {}
 	local changed = false
@@ -1184,12 +1191,15 @@ function Context.on_bosses(mod, bosses)
 		local approach_meters = daemonhost and DAEMONHOST_APPROACH_METERS or BOSS_APPROACH_METERS
 		local let_go_meters = daemonhost and DAEMONHOST_LET_GO_METERS or BOSS_LET_GO_METERS
 
-		if boss.distance and not boss.weakened then
+		if boss.distance and not boss.weakened and not finished_bosses[boss.unit] then
 			if not approaching and boss.distance <= approach_meters then
 				boss_approach_order = boss_approach_order + 1
 				approaching_bosses[boss.unit] = { breed = boss.breed, order = boss_approach_order }
 				changed = true
-				log_detail(string.format("[boss] %s approaching, %.0f m away", boss.breed, boss.distance))
+				-- A captain or daemonhost with its setting off is still followed, so turning the setting on mid-fight takes effect at once.
+				local plays_no_music = not counts_as_boss(mod, approaching_bosses[boss.unit])
+				log_detail(string.format("[boss] %s approaching, %.0f m away%s",
+					boss.breed, boss.distance, plays_no_music and ", which plays no boss music by its setting" or ""))
 			elseif approaching and boss.distance > let_go_meters then
 				approaching_bosses[boss.unit] = nil
 				changed = true
@@ -1202,6 +1212,11 @@ function Context.on_bosses(mod, bosses)
 		if not alive[unit] then
 			approaching_bosses[unit] = nil
 			changed = true
+		end
+	end
+	for unit in pairs(finished_bosses) do
+		if not alive[unit] then
+			finished_bosses[unit] = nil
 		end
 	end
 

@@ -77,6 +77,23 @@ describe("context.lua boss_approaching", function()
 		assert_equal(harness:current(), "boss")
 	end)
 
+	-- The game ends the window as the boss dies, a moment before the boss leaves the list of the living.
+	it("goes from boss to what is going on once the boss's window closes, with no approach in between", function()
+		local harness = in_mission()
+		local boss = harness:new_boss("chaos_spawn")
+		local function read_at(distance)
+			harness:bosses({ { unit = boss, breed = "chaos_spawn", distance = distance } })
+		end
+
+		read_at(30)
+		harness:boss_start(boss)
+		harness:boss_end(boss)
+		read_at(30)
+		harness:bosses({})
+
+		assert_deep_equal(harness.changes, { "boss_approaching", "boss", "explore" })
+	end)
+
 	it("plays whatever ranks below while it is set to Skip", function()
 		local harness = in_mission({ source_boss_approaching = "skip" })
 
