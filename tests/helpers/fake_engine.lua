@@ -242,8 +242,22 @@ function FakeEngine.new(options)
 
 	package.loaded[WWISE_GAME_SYNC_MANAGER] = new_wwise_game_sync_manager(engine)
 
-	-- The game's combat state group class, with the one method the mod hooks.
-	package.loaded[WWISE_STATE_GROUP_COMBAT] = { on_gameplay_shutdown = function() end }
+	-- The game's combat state group class, with the methods the mod hooks.
+	-- _default_wwise_state follows the game's order, boss before horde before combat, from the music parameters it is given.
+	package.loaded[WWISE_STATE_GROUP_COMBAT] = {
+		on_gameplay_shutdown = function() end,
+		_default_wwise_state = function(self)
+			local parameters = self._music_parameter_extension
+			if parameters:boss_near() then
+				return "boss"
+			elseif parameters:horde_near() then
+				return "horde_high"
+			elseif parameters:intensity_percent() > 0 then
+				return "normal"
+			end
+			return "None"
+		end,
+	}
 
 	-- The game's mission templates by mission name, filled by set_mechanism_mission().
 	package.loaded[MISSION_TEMPLATES] = engine.mission_templates
@@ -259,6 +273,20 @@ end
 -- Sets a Wwise state group the way the game does, through any hooks the mod installed.
 function FakeEngine:set_state(group_name, state)
 	self.wwise_game_sync:_set_state(group_name, state)
+end
+
+-- Runs one tick of the game's combat state group with `parameters`, { boss_near, horde_near, intensity }, and sets the state it picks.
+-- It goes through the mod's hooks, as the game does every tick.
+function FakeEngine:combat_tick(parameters)
+	local extension = {
+		boss_near = function() return parameters.boss_near == true end,
+		horde_near = function() return parameters.horde_near == true end,
+		intensity_percent = function() return parameters.intensity or 0 end,
+	}
+	local combat_group = { _music_parameter_extension = extension }
+	local state = package.loaded[WWISE_STATE_GROUP_COMBAT]._default_wwise_state(combat_group)
+	self:set_state("music_combat", state)
+	return state
 end
 
 -- Sets a state group without going through any hook, as the game does while DMF has the mod's hooks disabled.

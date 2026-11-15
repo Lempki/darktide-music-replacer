@@ -29,6 +29,9 @@
 --	  A daemonhost sleeps where it is put, and some levels keep the player near one for long, so it has distances of its own.
 --	  A weakened monstrosity gets none of the game's boss music, so it does not approach either.
 --	  An Expedition keeps to its own situations, so no boss approaches there.
+--	* The game reports "boss" in place of every other combat state once a boss has come near, for as long as any monstrosity lives.
+--	  So the mod asks the game's own combat check again with the boss check left out, and combat and hordes follow that answer.
+--	  A boss left far behind then still lets fights and hordes play their music.
 --	* "horde_low" and "horde_high" resolve "horde", below bosses. The game plays its own horde music for both.
 --	  The game reports a horde only while at least 5 enemies are aggroed, so it drops out for a second or two mid-horde.
 --	  So `horde` holds for `horde_hold_seconds`, whose default is shorter than the combat hold's, since a horde ends for good.
@@ -89,6 +92,8 @@ local WwiseStateGroupCombat = require("scripts/managers/wwise_game_sync/wwise_st
 
 -- The game's current value of each state group, as the hook last saw it.
 local music_combat = nil
+-- What the game's combat check reports with its boss check left out, while music_combat is "boss", else nil.
+local combat_under_boss = nil
 local music_zone = nil
 local music_game_state = nil
 local music_objective = nil
@@ -354,8 +359,17 @@ local function is_boss_approaching(mod)
 	return mission_mode ~= "expeditions" and first_approaching_boss(mod) ~= nil
 end
 
+-- The combat state that decides combat and hordes: the game's own, or the one under its boss state.
+local function fight_state()
+	if music_combat == "boss" then
+		return combat_under_boss or "None"
+	end
+	return music_combat
+end
+
 local function is_horde_active()
-	return music_combat == "horde_low" or music_combat == "horde_high"
+	local state = fight_state()
+	return state == "horde_low" or state == "horde_high"
 end
 
 -- Starts the named hold at its full length, while its state is still active.
@@ -383,7 +397,8 @@ local function is_event_active()
 end
 
 local function is_combat_active()
-	return music_combat == "normal" or music_combat == "horde_low" or music_combat == "horde_high"
+	local state = fight_state()
+	return state == "normal" or state == "horde_low" or state == "horde_high"
 end
 
 -- True when the context is set to Skip, so resolve() passes it over for the one ranked below.
@@ -879,6 +894,7 @@ local function track_transition(mod, group_name, current, new_state)
 			-- A real zone change clears both boss signals, since either can get stuck on its own.
 			-- The tracked combat state corrects itself on the next transition, and a boss window still open keeps the boss active.
 			music_combat = nil
+			combat_under_boss = nil
 			open_bosses = {}
 			approaching_bosses = {}
 			-- A new zone starts fresh, not partway through the last hold.
@@ -966,6 +982,50 @@ local function track_transition(mod, group_name, current, new_state)
 	end
 end
 
+-- The game's music parameters as its combat check sees them, but with no boss near.
+local function without_boss_check(parameters)
+	return setmetatable({ boss_near = function() return false end }, {
+		__index = function(_, key)
+			local field = parameters[key]
+			if type(field) == "function" then
+				return function(_, ...) return field(parameters, ...) end
+			end
+			return field
+		end,
+	})
+end
+
+local reported_under_boss_failure = false
+
+-- What the game's combat check `check` reports for `combat_group` with its boss check left out, or nil when that fails.
+-- It is the game's own check, so the mod follows the game's rules for combat and hordes instead of copying them.
+local function check_without_boss(check, combat_group)
+	local proxy = setmetatable({ _music_parameter_extension = without_boss_check(combat_group._music_parameter_extension) }, { __index = combat_group })
+	local ok, state = pcall(check, proxy)
+	if ok then
+		return state
+	end
+	if not reported_under_boss_failure then
+		reported_under_boss_failure = true
+		log("[context] could not read the combat under the game's boss state: " .. tostring(state))
+	end
+	return nil
+end
+
+-- Follows the combat under the boss state, as the game's combat check reports it on every tick.
+-- Leaving the boss state is a transition of music_combat itself, which resolves again, so only a change under it does so here.
+local function track_combat_under_boss(mod, state)
+	if state == combat_under_boss then
+		return
+	end
+
+	log_detail(string.format("[raw] music_combat under boss: %s -> %s", tostring(combat_under_boss), tostring(state)))
+	combat_under_boss = state
+	if music_combat == "boss" then
+		recompute(mod)
+	end
+end
+
 -- Hands the game's own return values back through the hook, so the hook stays invisible to the game.
 local function after_set_state(mod, group_name, current, new_state, is_transition, ...)
 	if is_transition then
@@ -987,6 +1047,12 @@ function Context.init(mod, detail_logger, logger)
 	-- Clearing the decision as each mission ends makes the next mission decide again.
 	mod:hook_safe(WwiseStateGroupCombat, "on_gameplay_shutdown", function(self)
 		self._is_expedition_init = nil
+	end)
+
+	mod:hook(WwiseStateGroupCombat, "_default_wwise_state", function(func, self)
+		local state = func(self)
+		track_combat_under_boss(mod, state == "boss" and check_without_boss(func, self) or nil)
+		return state
 	end)
 
 	mod:hook(WwiseGameSyncManager, "_set_state", function(func, self, group_name, new_state)

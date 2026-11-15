@@ -20,6 +20,7 @@ What changes for players in each release of Music Replacer. The format follows [
 * An on-screen message wider than a third of the screen, such as one with a long song name, is cut there and ends with `…`, instead of reaching across the screen. `diagnostic.log` keeps the whole text.
 * Every on-screen message is also written to `diagnostic.log`, since a message shows for only a few seconds.
 * Even Out Loudness is on by default, so songs from different sources play at about the same loudness from the start. If you already have the mod, your setting stays as it is.
+* With Boss set to Skip, hordes and fights during a boss fight play their own music for as long as they go on. Before, the game's boss state hid them, so a horde or fight played only while its hold lasted, and explore after that.
 * A new on-screen message pushes the one showing away from the corner, where it shrinks to three quarters of its size and stays for the rest of its own Message Duration, instead of crossfading it away. Two messages close together are now both readable.
 * The on-screen messages are 15% smaller at the same Message Size, so at 100% both lines fit below the player portrait in the bottom left corner.
 

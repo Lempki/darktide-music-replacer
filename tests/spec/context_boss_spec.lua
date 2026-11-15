@@ -353,6 +353,33 @@ describe("context.lua boss encounter windows", function()
 	end)
 end)
 
+describe("context.lua combat under the game's boss state", function()
+	it("leaves the game's own combat state as it is", function()
+		local harness = in_mission("zone_3")
+
+		assert_equal(harness:combat({ boss_near = true, intensity = 40 }), "boss")
+		assert_equal(harness.engine:wwise_state("music_combat"), "boss")
+	end)
+
+	it("logs once when the game's combat check fails without the boss, and counts no fight under it", function()
+		local lines = {}
+		local harness = Harness.new({ source_boss = "skip" }, function(line) lines[#lines + 1] = line end)
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness:enter_mission("lm_cooling", "zone_3")
+		local broken = function() error("no intensity", 0) end
+		local extension = { boss_near = function() return true end, intensity_percent = broken, horde_near = broken }
+		local check = package.loaded["scripts/managers/wwise_game_sync/wwise_state_groups/wwise_state_group_combat"]._default_wwise_state
+
+		assert_equal(check({ _music_parameter_extension = extension }), "boss")
+		check({ _music_parameter_extension = extension })
+		harness:state("music_combat", "boss")
+
+		assert_deep_equal(lines, { "[context] could not read the combat under the game's boss state: no intensity" })
+		assert_equal(harness:current(), "explore")
+	end)
+end)
+
 describe("context.lua bosses outside missions", function()
 	-- Meat Grinder's boss dummies leave the boss music state set after leaving, until the next mission's intro ends.
 	it("resolves loading, not a boss, on the loading screen after Meat Grinder, with the boss music state stuck", function()

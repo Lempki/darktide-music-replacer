@@ -88,6 +88,11 @@ function Harness:boss_end(boss)
 	self.engine:fire_event("boss_encounter_end", boss, boss.extension)
 end
 
+-- Runs one tick of the game's combat check with `parameters`, { boss_near, horde_near, intensity }, as FakeEngine:combat_tick does.
+function Harness:combat(parameters)
+	return self.engine:combat_tick(parameters)
+end
+
 -- Hands context.lua one read of the bosses alive, as bosses.lua does a few times a second.
 -- Each boss is { unit, breed, distance }, and weakened when given.
 function Harness:bosses(bosses)

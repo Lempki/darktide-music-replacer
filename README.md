@@ -113,7 +113,7 @@ The Music per Situation group has one dropdown per folder above, named after it,
 | Custom | Your songs from the situation's folder. With an empty folder, the game's music plays. This is the default. |
 | Vanilla | Always the game's music, even with songs in the folder, so you can turn one situation off without moving files. |
 | Silence | Nothing. The game's music is silenced too. |
-| Skip | The situation ranked below it, as if this one were not going on, such as explore through fights with `combat` skipped. The game reports a boss fight in place of the fight around it, so with `boss` skipped, a horde or fight plays only while its hold lasts, and explore after that. While your songs or silence play instead, the skipped situation's own game music stays silenced. With the situation below set to Vanilla, the game's music plays as the game picks it. Skip is offered for `combat`, `horde`, `boss`, `event`, `last_stand`, `mortis_trials_wave`, `expedition_combat`, and `expedition_extraction`. |
+| Skip | The situation ranked below it, as if this one were not going on, such as explore through fights with `combat` skipped. While your songs or silence play instead, the skipped situation's own game music stays silenced. With the situation below set to Vanilla, the game's music plays as the game picks it. Skip is offered for `combat`, `horde`, `boss`, `event`, `last_stand`, `mortis_trials_wave`, `expedition_combat`, and `expedition_extraction`. |
 
 A changed choice applies at once, even to the situation that is playing.
 
