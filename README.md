@@ -79,7 +79,17 @@ Windows "N" editions leave out Media Foundation, so on one, install Microsoft's 
 
 The folders most people fill first are in bold. Each folder plays in one situation. The music switches about half a second after the situation changes, so a moment that flickers does not restart the song. Into a loading screen, other than the briefing after the preparation screen, it waits 3 seconds, and so does the first situation after a loading screen, other than the hub, the preparation screen, and the mission's intro. The Music Holds settings also keep combat, horde, and event music going for a few seconds, so a short lull does not switch the music at once.
 
-In a mission, the most urgent situation going on plays. From the most urgent down, they are Last Stand; Event, Mortis Trials Wave, and Expedition Extraction; Boss; Boss Approaching; Horde; Combat and Expedition Combat; and Explore, Mortis Trials Break, and Expedition Safe Room. Victory and Defeat take over from all of them.
+In a mission, the most urgent situation going on plays. From the most urgent down:
+
+1. Last Stand.
+2. Event, Mortis Trials Wave, and Expedition Extraction.
+3. Boss.
+4. Boss Approaching.
+5. Horde.
+6. Combat and Expedition Combat.
+7. Explore, Mortis Trials Break, and Expedition Safe Room.
+
+Victory and Defeat take over from all of them.
 
 | Folder | When it plays |
 |---|---|
