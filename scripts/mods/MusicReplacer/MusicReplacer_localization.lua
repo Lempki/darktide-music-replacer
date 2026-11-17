@@ -68,7 +68,7 @@ local strings = {
 		en = "Let Songs Finish",
 	},
 	let_songs_finish_tooltip = {
-		en = "When the music would switch to a less urgent situation, such as from a fight back to exploring, the song playing now plays to its end first. " ..
+		en = "When the music would switch to a less urgent situation, such as from Combat back to Explore, the song playing now plays to its end first. " ..
 			"A looping song plays to the end of its loop.\n\n" ..
 			"A switch to a more urgent situation, to the game's music, or to silence still happens at once. Next Song moves on right away.",
 	},
@@ -76,8 +76,8 @@ local strings = {
 		en = "Resume Songs",
 	},
 	resume_songs_tooltip = {
-		en = "Explore, combat, Mortis Trials, and Expedition fight and safe room songs continue where they stopped when their music comes back.\n\n" ..
-			"Horde, boss, and event songs also continue after an interruption, as long as that horde, boss fight, or event lasts. " ..
+		en = "Explore, Combat, Mortis Trials Wave and Break, Expedition Combat, and Expedition Safe Room songs continue where they stopped when their music comes back.\n\n" ..
+			"Horde, Boss Approaching, Boss, and Event songs also continue after an interruption, as long as that horde, boss fight, or event lasts. " ..
 			"Every mission and hub visit starts with fresh songs.",
 	},
 
@@ -477,20 +477,20 @@ local strings = {
 		en = "Combat",
 	},
 	source_combat_tooltip = {
-		en = source_tooltip("in a mission while enemies attack you, outside a horde or a boss fight", nil, "explore plays through fights"),
+		en = source_tooltip("in a mission while enemies attack you, outside a horde or a boss fight", nil, "Explore plays through fights"),
 	},
 	source_horde = {
 		en = "Horde",
 	},
 	source_horde_tooltip = {
-		en = source_tooltip("during a horde", nil, "combat plays through hordes"),
+		en = source_tooltip("during a horde", nil, "Combat plays through hordes"),
 	},
 	source_boss_approaching = {
 		en = "Boss Approaching",
 	},
 	source_boss_approaching_tooltip = {
 		en = source_tooltip("while a boss is near you, before its fight starts", nil,
-			"a horde, combat, or explore plays until the fight starts",
+			"Horde, Combat, or Explore plays until the fight starts",
 			"whatever " .. highlight("Boss") .. " is set to, " .. highlight("Skip") .. " included, " ..
 				"and Boss's songs go on playing once the fight starts"),
 	},
@@ -499,21 +499,21 @@ local strings = {
 	},
 	source_boss_tooltip = {
 		en = source_tooltip("in a boss fight, from the moment the boss's HP bar shows until the boss is gone", nil,
-			"the horde, combat, or explore going on plays through boss fights"),
+			"Horde, Combat, or Explore, whichever is going on, plays through boss fights"),
 	},
 	source_event = {
 		en = "Event",
 	},
 	source_event_tooltip = {
 		en = source_tooltip("while a mission event plays its music, and through a whole Operation", nil,
-			"whatever is less urgent, such as combat or explore, plays through events"),
+			"whatever is less urgent, such as Combat or Explore, plays through events"),
 	},
 	source_last_stand = {
 		en = "Last Stand",
 	},
 	source_last_stand_tooltip = {
 		en = source_tooltip("while only one player of the team is left alive", nil,
-			"whatever is less urgent, such as a boss fight or combat, plays through a last stand"),
+			"whatever is less urgent, such as Boss or Combat, plays through a last stand"),
 	},
 	source_victory = {
 		en = "Victory",
@@ -531,7 +531,7 @@ local strings = {
 		en = "Mortis Trials Wave",
 	},
 	source_mortis_trials_wave_tooltip = {
-		en = source_tooltip("in Mortis Trials, during a wave or an objective round, through to the final win", nil, "the break's music plays through waves"),
+		en = source_tooltip("in Mortis Trials, during a wave or an objective round, through to the final win", nil, "Mortis Trials Break plays through waves"),
 	},
 	source_mortis_trials_break = {
 		en = "Mortis Trials Break",
@@ -543,7 +543,7 @@ local strings = {
 		en = "Expedition Combat",
 	},
 	source_expedition_combat_tooltip = {
-		en = source_tooltip("during a fight in an Expedition", nil, "explore plays through an Expedition's fights"),
+		en = source_tooltip("during a fight in an Expedition", nil, "Explore plays through an Expedition's fights"),
 	},
 	source_expedition_safe_room = {
 		en = "Expedition Safe Room",
@@ -556,7 +556,7 @@ local strings = {
 	},
 	source_expedition_extraction_tooltip = {
 		en = source_tooltip("while an Expedition's extraction runs", nil,
-			"whatever is less urgent, such as Expedition Combat or explore, plays through the extraction"),
+			"whatever is less urgent, such as Expedition Combat or Explore, plays through the extraction"),
 	},
 
 	meat_grinder = {
@@ -574,11 +574,11 @@ local strings = {
 			highlight("Silence") .. " plays nothing, as in the game. " ..
 			highlight("Meat Grinder Folder") .. " plays your songs from its folder all through the visit, whatever the dummies do. " ..
 			highlight("One Situation") .. " plays the situation you choose, to try out its songs. " ..
-			highlight("Like a Mission") .. " follows the game as a mission does, with explore, combat, and boss music.\n\n" ..
+			highlight("Like a Mission") .. " follows the game as a mission does, with Explore, Combat, and Boss.\n\n" ..
 			"Every situation keeps its own choice in Music per Situation. " ..
 			"With " .. highlight("Meat Grinder Folder") .. ", an empty folder plays the game's music, which is none there. " ..
 			"Since Darktide 1.13.0, the boss dummies stand there from the start, so " .. highlight("Like a Mission") ..
-			" plays boss music for as long as one of them is still alive. It works best with a mod that gives you control over the dummies.",
+			" plays Boss for as long as one of them is still alive. It works best with a mod that gives you control over the dummies.",
 	},
 	meat_grinder_folder = {
 		en = "Meat Grinder Folder",
@@ -686,14 +686,14 @@ local strings = {
 		en = "Combat Music Hold",
 	},
 	combat_hold_seconds_tooltip = {
-		en = "How long combat music keeps playing after a fight quiets down, so a short lull does not switch to explore music.\n\n" ..
+		en = "How long Combat keeps playing after a fight quiets down, so a short lull does not switch to Explore.\n\n" ..
 			"Set to " .. highlight("0") .. " to follow the game exactly.",
 	},
 	horde_hold_seconds = {
 		en = "Horde Music Hold",
 	},
 	horde_hold_seconds_tooltip = {
-		en = "How long horde music keeps playing after the game stops reporting a horde. " ..
+		en = "How long Horde keeps playing after the game stops reporting a horde. " ..
 			"The game drops that signal for a moment whenever few enemies are on you.\n\n" ..
 			"Set to " .. highlight("0") .. " to follow the game exactly.",
 	},
@@ -701,7 +701,7 @@ local strings = {
 		en = "Event Music Hold",
 	},
 	event_hold_seconds_tooltip = {
-		en = "How long event music keeps playing after the game ends an event's music. " ..
+		en = "How long Event keeps playing after the game ends an event's music. " ..
 			"Some events pause their music for a few seconds between stages.\n\n" ..
 			"Set to " .. highlight("0") .. " to follow the game exactly.",
 	},

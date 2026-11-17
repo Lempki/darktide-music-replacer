@@ -44,10 +44,10 @@ Everything below is optional detail.
 * Loops a folder's only song seamlessly, with no gap added between its end and its start, and with Repeat Song on, any song.
 * Keeps a folder's only song playing when the next situation's folder also holds only that song, instead of starting it over.
 * Crossfades when the situation changes, and fades a song out at its end.
-* Continues a song from where it stopped once its situation comes back, such as explore music after a fight.
+* Continues a song from where it stopped once its situation comes back, such as Explore after a fight.
 * Can let a song play to its end before a less urgent situation takes over.
 * Follows the game's master and music volume sliders at once, without restarting the song.
-* Lets you choose Custom, Vanilla, or Silence for each situation, or Skip one, such as boss music, so the next less urgent situation plays on.
+* Lets you choose Custom, Vanilla, or Silence for each situation, or Skip one, such as Boss, so the next less urgent situation plays on.
 * Lets you try out any situation's songs in Meat Grinder, or play a folder of its own there.
 * Has optional keys to skip to the next or previous song, restart or pause the song playing now, or remove it from rotation.
 * Names each new song and what each key did, and says when something went wrong, in short messages in a corner of the screen, on every screen, loading screens included.
@@ -95,8 +95,8 @@ In a mission, the most urgent situation going on plays. From the most urgent dow
 | **`horde`** | During a horde. |
 | `boss_approaching` | While a boss is near you, before its fight starts. A boss comes near within Boss Distance, 80 m by default, the distance the game's own boss music uses, and stays near until it is 40 m farther away than that, or gone. It is more urgent than a horde, as the game's own boss music is. With its folder empty, it does what Boss is set to, so your `boss` songs start as the boss comes near and go on playing into the fight. |
 | **`boss`** | In a boss fight, from the moment the boss's HP bar shows until the game reports the boss gone. A Chaos Spawn, a Beast of Nurgle, or a Plague Ogryn shows it once it is first hurt, and an Ogryn Houndmaster once it notices you. Captains and daemonhosts count only with their settings on, and so do weakened monstrosities, which the game's own boss music leaves out. A boss that shows no HP bar, such as Rodin Karnak in Spillway, has no Boss, and his fight plays `event`. Neither boss folder plays in an Expedition, which keeps to its own situations. |
-| `event` | While a mission event plays its music, such as a holdout, a hacking event, an escape, or a scripted boss fight like those in Spillway. It is more urgent than boss, horde, combat, and explore music, as the game's own event music is. In Operations, such as Rolling Steel and No Man's Land, it plays for the whole mission, since the game scripts their music from start to end. The prologue, Tancred Bastion, scripts its music the same way, so it mostly plays this folder too. |
-| `last_stand` | While only one player of the team is left alive. It is more urgent than events, Mortis Trials waves and breaks, the Expedition extraction, bosses, hordes, combat, and explore. Victory and defeat still take over. |
+| `event` | While a mission event plays its music, such as a holdout, a hacking event, an escape, or a scripted boss fight like those in Spillway. It is more urgent than Boss, Horde, Combat, and Explore, as the game's own event music is. In Operations, such as Rolling Steel and No Man's Land, it plays for the whole mission, since the game scripts their music from start to end. The prologue, Tancred Bastion, scripts its music the same way, so it mostly plays this folder too. |
+| `last_stand` | While only one player of the team is left alive. It is more urgent than every other mission situation. Victory and Defeat still take over. |
 | `victory`, `defeat` | From the moment a mission is won (`victory`) or lost (`defeat`) until the loading screen or a cutscene. It covers the closing shot of the mission and the score screen after it. |
 | `mortis_trials_wave` | In Mortis Trials, during a wave or an objective round, through to the final win. Bosses, hordes, and fights do not interrupt it, since nearly every wave brings bosses. A last stand still takes over. |
 | `mortis_trials_break` | In Mortis Trials, between waves. |
@@ -116,7 +116,7 @@ The Music per Situation group has one dropdown per folder above, named after it,
 | Custom | Your songs from the situation's folder. With an empty folder, the game's music plays. This is the default. |
 | Vanilla | Always the game's music, even with songs in the folder, so you can turn one situation off without moving files. |
 | Silence | Nothing. The game's music is silenced too. |
-| Skip | The next less urgent situation, as if this one were not going on, such as explore through fights with `combat` skipped. While your songs or silence play instead, the skipped situation's own game music stays silenced. With that situation set to Vanilla, the game's music plays as the game picks it. Skip is offered for `combat`, `horde`, `boss_approaching`, `boss`, `event`, `last_stand`, `mortis_trials_wave`, `expedition_combat`, and `expedition_extraction`. |
+| Skip | The next less urgent situation, as if this one were not going on, such as Explore through fights with Combat skipped. While your songs or silence play instead, the skipped situation's own game music stays silenced. With that situation set to Vanilla, the game's music plays as the game picks it. Skip is offered for Combat, Horde, Boss Approaching, Boss, Event, Last Stand, Mortis Trials Wave, Expedition Combat, and Expedition Extraction. |
 
 A changed choice applies at once, even to the situation that is playing.
 
@@ -129,7 +129,7 @@ Meat Grinder is a good place to try out your songs, so it has a settings group o
 | Silence | Nothing, as in the game. This is the default. |
 | Meat Grinder Folder | Your songs from the `meat_grinder` folder, through every fight with the dummies, so trying out loadouts does not switch the song. With an empty folder, the game's music plays, which is none there. |
 | One Situation | The situation you pick under Situation, as if it were happening, to try out its songs. It plays by its own choice in Music per Situation, and with Boss, a boss dummy plays the `boss` override folder named after its breed. |
-| Like a Mission | The mission situations, as the game reports them: explore, combat while you hit the dummies, and boss while a boss dummy is alive. Since Darktide 1.13.0, the boss dummies stand in Meat Grinder from the start, so boss music plays for as long as one of them is still alive. It works best with a mod that gives you control over the dummies. |
+| Like a Mission | The mission situations, as the game reports them: Explore, Combat while you hit the dummies, and Boss while a boss dummy is alive. Since Darktide 1.13.0, the boss dummies stand in Meat Grinder from the start, so boss music plays for as long as one of them is still alive. It works best with a mod that gives you control over the dummies. |
 
 ## Settings
 
