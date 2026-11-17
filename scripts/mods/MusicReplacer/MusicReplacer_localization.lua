@@ -124,7 +124,7 @@ local strings = {
 		en = "Press twice to stop the song playing now from ever being picked in its folder again, and move on to another song. " ..
 			"The first press asks, and a second press removes the song while the question shows, as Message Duration and Message Fade Out set. " ..
 			"The file stays where it is, and a copy in another folder still plays there.\n\n" ..
-			"Removed songs are listed in removed.txt, beside the mod's log. " ..
+			"Removed songs are listed in removed.txt, beside diagnostic.log. " ..
 			"Restore Removed Songs puts them all back, and deleting a line from the file, then pressing Rescan, puts one back.",
 	},
 	restore_removed_songs = {

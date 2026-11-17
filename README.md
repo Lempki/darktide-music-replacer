@@ -154,7 +154,7 @@ Override folders are optional and for advanced use. A folder can hold folders of
 * **No game files are changed.** The mod creates its own audio folders and writes files only to its own folder in `%APPDATA%`.
 * **No extra programs or DLLs.** The mod uses the audio decoder and audio engine that come with Windows.
 * **The game's music is the fallback.** The game's music plays wherever the mod has no songs, cannot play them, or cannot start Windows audio at all. It also plays when a game update reports a music state the mod does not know yet, instead of your songs silencing something new. The game's music is only silenced once one of your songs is ready to play, or where you chose Silence.
-* **Broken files are skipped.** A file Windows cannot decode is skipped once the mod has checked it, shortly after launch, and the log names it. If three songs in a row from one folder fail to play, that folder gives way to the game's music until the game restarts or the folders are listed again. An override folder gives way to its parent folder instead.
+* **Broken files are skipped.** A file Windows cannot decode is skipped once the mod has checked it, shortly after launch, and `diagnostic.log` names it. If three songs in a row from one folder fail to play, that folder gives way to the game's music until the game restarts or the folders are listed again. An override folder gives way to its parent folder instead.
 * **Easy to turn off.** You can turn the mod off in the mod options at any time, and the game's music comes back at once.
 * **Your music files are never changed.** The mod only reads them.
 * **It stops with the game.** The music plays inside the game itself, so it stops when the game closes, even after a crash.
@@ -194,7 +194,7 @@ Fixes for common problems are in [docs/troubleshooting.md](docs/troubleshooting.
   * [Settings](docs/settings.md): every setting, its default, and the debug overlay's lines.
   * [Override folders](docs/override-folders.md): songs for a moment inside a situation, such as a kind of boss or the score screen, for a mission, or for a game mode.
   * [Troubleshooting](docs/troubleshooting.md): fixes, reporting a problem, the files the mod writes, and a lost audio device.
-* For reading the log:
+* For reading `diagnostic.log`:
   * [Wwise music states and events](docs/wwise-events.md): the game's music states, how the mod silences them, and tracing a sound.
   * [Game missions and modes](docs/game-internals.md): how the game reports its missions and modes.
 * For developers:

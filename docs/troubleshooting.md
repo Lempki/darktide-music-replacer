@@ -8,14 +8,14 @@ Fixes for common problems, how to report one, and what the mod writes where.
 * **A red message says "Windows audio playback could not start".** The mod could not start Windows' audio decoder or audio engine, so the game's music plays as usual. `diagnostic.log` gives the reason on its `[player] unavailable` line. On a Windows "N" edition, install the Media Feature Pack. If Windows had no audio output at that moment, the mod keeps trying and starts once there is one.
 * **One file never plays, or a notice says files were skipped.** A file in a format the mod does not play, such as `.ogg` or `.opus`, or one Windows cannot decode, is skipped. `diagnostic.log` names each skipped file. Convert it to a supported format, and the mod picks up the new file by itself.
 * **A situation plays the game's music although its folder has songs.** Turn on Debug Overlay and read the tag beside the situation. `Vanilla` means the situation is set to Vanilla. `Vanilla, no songs` means the mod found no playable file in that folder. `Vanilla, its songs would not play` means three songs in a row failed. `Vanilla, no audio output` means Windows audio is not available, or the mod gave up on it after repeated failures.
-* **A red message says "diagnostic.log could not be opened".** The mod could not write its log in `%APPDATA%\Fatshark\Darktide\MusicReplacer\`, so this launch is not logged, and the reason is in the game's console log. Your music still plays.
+* **A red message says "diagnostic.log could not be opened".** The mod could not write `diagnostic.log` in `%APPDATA%\Fatshark\Darktide\MusicReplacer\`, so this launch is not logged, and the reason is in the game's console log. Your music still plays.
 * **Changed files are not picked up.** The mod lists the folders again 3 seconds after files stop changing. On a drive where Windows cannot report changes, such as some network drives, press Rescan Audio Folders.
 
 ## Reporting a problem
 
 Open an [issue](https://github.com/Lempki/darktide-music-replacer/issues) on GitHub and attach these two files:
 
-* The mod's log from `%APPDATA%\Fatshark\Darktide\MusicReplacer\`. That is `diagnostic.log` if the problem happened in the current or last game session, or `diagnostic-prev.log` if it happened in the session before that.
+* `diagnostic.log` from `%APPDATA%\Fatshark\Darktide\MusicReplacer\` if the problem happened in the current or last game session, or `diagnostic-prev.log` from the same folder if it happened in the session before that.
 * The newest file in `%APPDATA%\Fatshark\Darktide\console_logs\`.
 
 A bug report on the mod's Nexus Mods page works too, but its form takes no files, so share them through a link instead.
