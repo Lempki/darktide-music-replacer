@@ -60,7 +60,7 @@ A message is one line of text on a backdrop in the corner of the screen that Mes
 | Message Fade Out | 1 second | How long a message takes to fade out, from 0 to 3 seconds. Set it to 0 to hide a message at once. |
 | Look | Default | Default draws the messages in the default look below. Custom shows the settings below, from Message Size to Message Offset Y, and draws the messages as they set. Your changes stay saved while Default is chosen. |
 | Message Size | 100% | How big the messages are, from 50% to 200%, on top of the game's HUD Scale setting. At 100% and the game's default HUD Scale, both lines fit below the player portrait in the bottom left corner. |
-| Message Color | Grey, 85% opacity | The messages' color, picked with DMF's color picker. Its alpha sets how opaque they are. |
+| Message Color | Grey, 85% opacity | The messages' color. Its opacity sets how see-through they are. |
 | Notice Color | Amber, 85% opacity | The color of notices, the messages about something you need to know. |
 | Error Color | Red, 85% opacity | The color of the messages about something that went wrong. |
 | Message Backdrop Opacity | 70% | How dark the backdrop behind the messages is, from 0% to 100%. The backdrop is the same as the debug overlay's: a dark box behind the text that fades out toward the middle of the screen. Each message has its own, which fits its text and fades and shrinks with it. 0% leaves out the backdrop. |

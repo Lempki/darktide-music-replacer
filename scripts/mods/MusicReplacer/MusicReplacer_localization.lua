@@ -91,7 +91,7 @@ local strings = {
 		en = "Crossfades to another song from the folder playing now. " ..
 			"With one song in the folder, that song keeps playing, and a paused one resumes where it stopped.\n\n" ..
 			"The next situation still starts its own pick, and the skipped song does not continue later. " ..
-			"DMF runs keybinds even while you type in chat, so a key that is not a letter, such as one on the numpad or an F-key, works best.",
+			"Keys also work while you type in chat, so a key that is not a letter, such as one on the numpad or an F-key, works best.",
 	},
 	previous_song_keybind = {
 		en = "Previous Song",
@@ -100,7 +100,8 @@ local strings = {
 		en = "Within the first 3 seconds of a song, crossfades back to the song that played before it in this situation. " ..
 			"Pressing it again keeps going back. With Shuffle off, it goes to the song before in name order.\n\n" ..
 			"Later into a song, or with no earlier song, it starts the song playing now over. " ..
-			"A new situation starts with no earlier songs, and so does a switch to an override folder, or a replay after a rescan or a changed setting.",
+			"A new situation starts with no earlier songs, and so does a replay after a rescan or a changed setting, " ..
+			"or a switch to an override folder, a folder inside the situation's folder that plays only in one case, such as one kind of boss.",
 	},
 	restart_song_keybind = {
 		en = "Restart Song",
@@ -288,7 +289,7 @@ local strings = {
 		en = "Message Color",
 	},
 	message_color_tooltip = {
-		en = "The color of the on-screen messages. Its alpha sets how opaque they are.",
+		en = "The color of the on-screen messages. Its opacity sets how see-through they are.",
 	},
 	notice_color = {
 		en = "Notice Color",
@@ -335,14 +336,14 @@ local strings = {
 		en = "Message Offset X",
 	},
 	message_offset_x_tooltip = {
-		en = "Moves the on-screen messages sideways, away from their corner toward the middle of the screen, in the game's UI pixels.\n\n" ..
+		en = "Moves the on-screen messages sideways, away from their corner toward the middle of the screen, in pixels.\n\n" ..
 			"At " .. highlight("0") .. ", their backdrop touches the corner's side.",
 	},
 	message_offset_y = {
 		en = "Message Offset Y",
 	},
 	message_offset_y_tooltip = {
-		en = "Moves the on-screen messages up or down, away from their corner toward the middle of the screen, in the game's UI pixels.\n\n" ..
+		en = "Moves the on-screen messages up or down, away from their corner toward the middle of the screen, in pixels.\n\n" ..
 			"At " .. highlight("0") .. ", their backdrop touches the corner's top or bottom edge.",
 	},
 	-- Where a song from an override folder plays, in the key messages below.
@@ -594,7 +595,8 @@ local strings = {
 	},
 	meat_grinder_situation_tooltip = {
 		en = "The situation that " .. highlight("One Situation") .. " plays in Meat Grinder, as if it were happening.\n\n" ..
-			"It plays by its choice in Music per Situation. With " .. highlight("Boss") .. ", a boss dummy plays the override folder named after its breed.",
+			"It plays by its choice in Music per Situation. With " .. highlight("Boss") .. ", a boss dummy plays the override folder named after its boss type, " ..
+			"a folder inside Boss's folder such as " .. highlight("boss\\chaos_spawn") .. ".",
 	},
 
 	volume = {
