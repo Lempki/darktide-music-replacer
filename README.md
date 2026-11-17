@@ -149,6 +149,12 @@ The settings are in the in-game mod options under Music Replacer, in ten groups:
 
 Override folders are optional and for advanced use. A folder can hold folders of its own, which play for a moment inside its situation, such as a kind of boss or the score screen, for a mission, or for a game mode. They are explained in [docs/override-folders.md](docs/override-folders.md).
 
+## Share your setup
+
+All your songs live in your `audio` folder, override folders included. To share your setup, zip that folder and send it. A player who puts it in place of their own `audio` folder hears the same songs in the same situations.
+
+Only the songs travel. Each player keeps their own mod options, such as Skip or Silence for a situation. Songs you took out with Remove from Rotation come back in the copy, and Even Out Loudness measures the songs again on the other player's PC.
+
 ## Safe by design
 
 * **No game files are changed.** The mod creates its own audio folders and writes files only to its own folder in `%APPDATA%`.
