@@ -22,14 +22,14 @@ The mod does not create these folders, so make the ones you want. Their names ar
 
 Every folder except `title_screen`, `character_select`, `hub`, and `loading` can hold these. Those four belong to no one mission, so the mod never looks for a mission's code or a game mode in them, even while the game already or still names a mission:
 
-* The mission's code, such as `spillway` or `km_enforcer_twins`. [game-internals.md](game-internals.md) lists every mission's code with its in-game name.
+* The mission's code, such as `spillway` or `km_enforcer_twins`. [Missions](#missions) lists every mission with its in-game name and folder name.
 * The game mode: `havoc`, `expeditions`, or `mortis_trials`.
 
 These folders can also hold the game's name for a moment inside them:
 
 | Folder | Names | When they play |
 |---|---|---|
-| `event` | The kind of event, such as `escape_event`, `fortification_event`, `twins_event`, or an Operation's stage: `operation_stage_1` to `_4` in Rolling Steel and `operation_2_stage_1` to `_4` in No Man's Land. [wwise-events.md](wwise-events.md) lists the kinds. | During that kind of event. |
+| `event` | The kind of event: `kill_event`, `kill_event_2`, `kill_event_3`, `twins_event`, `fortification_event`, `hacking_event`, `scanning_event`, `collect_event`, `demolition_event`, `escape_event`, `gauntlet_event`, `progression_stage_1` to `_4`, or `progression2_stage_1` to `_4`. In the prologue, `prologue_explore`, `prologue_combat`, or `prologue_end_event`. In an Operation, its stage: `operation_stage_1` to `_4` in Rolling Steel and `operation_2_stage_1` to `_4` in No Man's Land. | During that kind of event. |
 | `boss_approaching` | The same names as `boss`, and with Boss Music for Daemonhosts on, also `chaos_mutator_daemonhost`, which shows no HP bar. With the folder empty, it looks for the same names inside `boss`, such as `boss\chaos_spawn\`. | While that boss is near. With several, the one that came near first, until it is gone or far enough away. |
 | `boss` | `chaos_spawn`, `chaos_beast_of_nurgle`, `chaos_plague_ogryn`, `chaos_ogryn_houndmaster`. With Boss Music for Captains on, also `renegade_captain`, `cultist_captain`, `renegade_twin_captain`, `renegade_twin_captain_two`. With Boss Music for Daemonhosts on, also `chaos_daemonhost` and `chaos_daemonhost_torment`. | While that boss is in the fight. With several, the one that came first, until it dies or despawns, so bosses that come back to back do not change the music each time. |
 | `hub` | `mission_ready` | While your party is matchmaking, from choosing a mission until it starts. |
@@ -37,6 +37,44 @@ These folders can also hold the game's name for a moment inside them:
 | `victory`, `defeat` | `game_score_win`, `game_score_lose` | Once the score screen opens. The parent folder then plays only the closing shot of the mission. |
 | `mortis_trials_wave` | `horde_mode_wave`, `horde_mode_objective`, `horde_mode_wave_last`, `horde_mode_win` | During a wave, an objective round, the last wave, or the final win. |
 | `expedition_combat` | `low_combat`, `med_combat`, `high_combat` | At that fight level, which follows how alert the enemy is. The level can change during a fight, which switches the song, and a level that comes back continues its song. |
+
+## Missions
+
+A mission's folder is named after its code, which the game uses for it internally. For example, `explore\spillway\` plays while you explore Spillway.
+
+| Mission | Area | Folder name |
+|---|---|---|
+| Hab Dreyko | Chasm Terminus | `cm_habs` |
+| Ascension Riser 31 | Chasm Terminus | `dm_rise` |
+| Chasm Station HL-16-11 | Chasm Terminus | `km_station` |
+| Chasm Logistratum | Chasm Terminus | `lm_rails` |
+| Silo Cluster 18-66/a | The Torrent | `dm_stockpile` |
+| Vigil Station Oblivium | The Torrent | `hm_cartel` |
+| Magistrati Oubliette TM8-707 | The Torrent | `km_enforcer` |
+| The Orthus Offensive | The Torrent | `km_enforcer_twins` |
+| Spillway | The Torrent | `spillway` |
+| Smelter Complex HL-17-36 | Metalfab 36 | `dm_forge` |
+| Consignment Yard HL-17-36 | Metalfab 36 | `fm_cargo` |
+| Power Matrix HL-17-36 | Metalfab 36 | `lm_cooling` |
+| Relay Station TRS-150 | Hourglass | `dm_propaganda` |
+| Refinery Delta-17 | Hourglass | `hm_strain` |
+| Excise Vault Spireside-13 | Hourglass | `lm_scavenge` |
+| Archivum Sycorax | Throneside | `cm_archives` |
+| Enclavum Baross | Throneside | `fm_resurgence` |
+| Comms-Plex 154/2f | Throneside | `hm_complex` |
+| Warren 6-19 | The Carnival | `cm_raid` |
+| Mercantile HL-70-04 | The Carnival | `fm_armoury` |
+| Dark Communion | The Carnival | `km_heresy` |
+| Clandestium Gloriana | Void Sector Omega-12 | `core_research` |
+| Rolling Steel | Operations | `op_train` |
+| No Man's Land | Operations | `op_no_mans_land` |
+| Tancred Bastion, the prologue | | `prologue` |
+| Mortis Trials | | `psykhanium` |
+| Expeditions | | `exp_wastes` |
+| Meat Grinder | | `tg_shooting_range` |
+| Basic Training in the Psykhanium | | `om_basic_combat_01` |
+
+Havoc plays the ordinary missions, so their folders apply there too. For Havoc, Mortis Trials, and Expeditions as a whole, the game mode folders `havoc`, `mortis_trials`, and `expeditions` are simpler.
 
 ## Which one plays
 

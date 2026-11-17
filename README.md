@@ -30,7 +30,7 @@ Everything below is optional detail.
 | …hear no boss music, only what plays around it. | Set Boss to Skip under Music per Situation. Skip works for the other mission situations too, as [Choosing what plays](#choosing-what-plays) lists. |
 | …hear one song through a whole mission without it starting over. | Put a copy of that one file, and nothing else, into each folder you want it in, such as `explore`, `combat`, `horde`, and `boss`. |
 | …give one kind of boss its own music. | Make a folder named after the boss inside `boss`, such as `boss\chaos_spawn\`. [Override folders](docs/override-folders.md#folder-names) lists every name. |
-| …give one mission its own music. | Make a folder named after the mission's code inside the folders you want, such as `explore\spillway\` and `combat\spillway\`. [game-internals.md](docs/game-internals.md) lists every mission's code. |
+| …give one mission its own music. | Make a folder named after the mission's code inside the folders you want, such as `explore\spillway\` and `combat\spillway\`. [Override folders](docs/override-folders.md#missions) lists every mission's folder name. |
 | …give an Operation its own music. | Make `event\op_train\` for Rolling Steel or `event\op_no_mans_land\` for No Man's Land, since Operations play `event` all the way through. |
 | …find out which folder plays right now. | Turn on Debug Overlay in the mod options, or bind Toggle Debug Overlay to show it with a key. It shows the folder that plays and the override names the moment looks for. |
 | …try out my songs without starting a mission. | In Meat Grinder, set its Music to One Situation and pick the situation. |
