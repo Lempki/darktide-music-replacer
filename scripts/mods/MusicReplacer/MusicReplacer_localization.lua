@@ -68,9 +68,10 @@ local strings = {
 		en = "Let Songs Finish",
 	},
 	let_songs_finish_tooltip = {
-		en = "When the music would switch to a less urgent situation, such as from Combat back to Explore, the song playing now plays to its end first. " ..
-			"A looping song plays to the end of its loop.\n\n" ..
-			"A switch to a more urgent situation, to the game's music, or to silence still happens at once. Next Song moves on right away.",
+		en = "When the music would switch to a situation that is no more urgent, such as from Combat back to Explore, " ..
+			"the song playing now plays to its end first. A looping song plays to the end of the pass it is in.\n\n" ..
+			"A switch to a more urgent situation, to the game's music, to silence, or to a situation with no songs still happens at once. " ..
+			"Next Song moves on right away.",
 	},
 	resume_songs = {
 		en = "Resume Songs",
@@ -97,11 +98,9 @@ local strings = {
 		en = "Previous Song",
 	},
 	previous_song_keybind_tooltip = {
-		en = "Within the first 3 seconds of a song, crossfades back to the song that played before it in this situation. " ..
-			"Pressing it again keeps going back. With Shuffle off, it goes to the song before in name order.\n\n" ..
-			"Later into a song, or with no earlier song, it starts the song playing now over. " ..
-			"A new situation starts with no earlier songs, and so does a replay after a rescan or a changed setting, " ..
-			"or a switch to an override folder, a folder inside the situation's folder that plays only in one case, such as one kind of boss.",
+		en = "Within the first 3 seconds of a song, crossfades back to the song that played before it in this situation, " ..
+			"and each further press goes back one more.\n\n" ..
+			"Later into a song, or with no earlier song, it starts the song playing now over.",
 	},
 	restart_song_keybind = {
 		en = "Restart Song",
@@ -123,10 +122,8 @@ local strings = {
 	},
 	remove_song_keybind_tooltip = {
 		en = "Press twice to stop the song playing now from ever being picked in its folder again, and move on to another song. " ..
-			"The first press asks, and a second press removes the song while the question shows, as Message Duration and Message Fade Out set. " ..
-			"The file stays where it is, and a copy in another folder still plays there.\n\n" ..
-			"Removed songs are listed in removed.txt, beside diagnostic.log. " ..
-			"Restore Removed Songs puts them all back, and deleting a line from the file, then pressing Rescan Audio Folders, puts one back.",
+			"The file stays where it is.\n\n" ..
+			highlight("Restore Removed Songs") .. " puts every removed song back.",
 	},
 	restore_removed_songs = {
 		en = "Restore Removed Songs",
@@ -155,8 +152,6 @@ local strings = {
 	key_fade_seconds_tooltip = {
 		en = "How long the music crossfades when one of these keys changes the song, pauses it, or resumes it. " ..
 			"Fade Length still sets the fades when the situation changes and when a song ends by itself.\n\n" ..
-			"A key that starts the song playing now over jumps to its start in a tenth of a second, " ..
-			"so two copies of the song never play over each other. A paused song fades in from its start instead.\n\n" ..
 			"Set to " .. highlight("0") .. " to switch at once.",
 	},
 	on_screen_messages = {
@@ -576,10 +571,8 @@ local strings = {
 			highlight("Meat Grinder Folder") .. " plays your songs from its folder all through the visit, whatever the dummies do. " ..
 			highlight("One Situation") .. " plays the situation you choose, to try out its songs. " ..
 			highlight("Like a Mission") .. " follows the game as a mission does, with Explore, Combat, and Boss.\n\n" ..
-			"Every situation keeps its own choice in Music per Situation. " ..
-			"With " .. highlight("Meat Grinder Folder") .. ", an empty folder plays the game's music, which is none there. " ..
-			"Since Darktide 1.13.0, the boss dummies stand there from the start, so " .. highlight("Like a Mission") ..
-			" plays Boss for as long as one of them is still alive. It works best with a mod that gives you control over the dummies.",
+			"The boss dummies stand there from the start, so " .. highlight("Like a Mission") ..
+			" plays Boss for as long as one of them is still alive.",
 	},
 	meat_grinder_folder = {
 		en = "Meat Grinder Folder",
