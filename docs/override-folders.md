@@ -72,7 +72,7 @@ A mission's folder is named after its code, which the game uses for it internall
 | Mortis Trials | | `psykhanium` |
 | Expeditions | | `exp_wastes` |
 | Meat Grinder | | `tg_shooting_range` |
-| Basic Training in the Psykhanium | | `om_basic_combat_01` |
+| Basic Training and Advanced Training in the Psykhanium | | `om_basic_combat_01` |
 
 Havoc plays the ordinary missions, so their folders apply there too. For Havoc, Mortis Trials, and Expeditions as a whole, the game mode folders `havoc`, `mortis_trials`, and `expeditions` are simpler.
 
