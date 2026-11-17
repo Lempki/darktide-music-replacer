@@ -45,9 +45,9 @@ Everything below is optional detail.
 * Keeps a folder's only song playing when the next situation's folder also holds only that song, instead of starting it over.
 * Crossfades when the situation changes, and fades a song out at its end.
 * Continues a song from where it stopped once its situation comes back, such as explore music after a fight.
-* Can let a song play to its end before a calmer situation takes over.
+* Can let a song play to its end before a less urgent situation takes over.
 * Follows the game's master and music volume sliders at once, without restarting the song.
-* Lets you choose Custom, Vanilla, or Silence for each situation, or Skip one, such as boss music, so the situation below plays on.
+* Lets you choose Custom, Vanilla, or Silence for each situation, or Skip one, such as boss music, so the next less urgent situation plays on.
 * Lets you try out any situation's songs in Meat Grinder, or play a folder of its own there.
 * Has optional keys to skip to the next or previous song, restart or pause the song playing now, or remove it from rotation.
 * Names each new song and what each key did, and says when something went wrong, in short messages in a corner of the screen, on every screen, loading screens included.
@@ -79,6 +79,8 @@ Windows "N" editions leave out Media Foundation, so on one, install Microsoft's 
 
 The folders most people fill first are in bold. Each folder plays in one situation. The music switches about half a second after the situation changes, so a moment that flickers does not restart the song. Into a loading screen, other than the briefing after the preparation screen, it waits 3 seconds, and so does the first situation after a loading screen, other than the hub, the preparation screen, and the mission's intro. The Music Holds settings also keep combat, horde, and event music going for a few seconds, so a short lull does not switch the music at once.
 
+In a mission, the most urgent situation going on plays. From the most urgent down, they are Last Stand; Event, Mortis Trials Wave, and Expedition Extraction; Boss; Boss Approaching; Horde; Combat and Expedition Combat; and Explore, Mortis Trials Break, and Expedition Safe Room. Victory and Defeat take over from all of them.
+
 | Folder | When it plays |
 |---|---|
 | `title_screen` | On the title screen, before character select. |
@@ -91,10 +93,10 @@ The folders most people fill first are in bold. Each folder plays in one situati
 | **`explore`** | In a mission while nothing threatens you. |
 | **`combat`** | In a mission while enemies attack you, outside a horde or a boss fight. |
 | **`horde`** | During a horde. |
-| `boss_approaching` | While a boss is near you, before its fight starts. A boss comes near within Boss Distance, 80 m by default, the distance the game's own boss music uses, and stays near until it is 40 m farther away than that, or gone. It outranks a horde, as the game's boss music does. With its folder empty, it does what Boss is set to, so your `boss` songs start as the boss comes near and go on playing into the fight. |
+| `boss_approaching` | While a boss is near you, before its fight starts. A boss comes near within Boss Distance, 80 m by default, the distance the game's own boss music uses, and stays near until it is 40 m farther away than that, or gone. It is more urgent than a horde, as the game's own boss music is. With its folder empty, it does what Boss is set to, so your `boss` songs start as the boss comes near and go on playing into the fight. |
 | **`boss`** | In a boss fight, from the moment the boss's HP bar shows until the game reports the boss gone. A Chaos Spawn, a Beast of Nurgle, or a Plague Ogryn shows it once it is first hurt, and an Ogryn Houndmaster once it notices you. Captains and daemonhosts count only with their settings on, and so do weakened monstrosities, which the game's own boss music leaves out. A boss that shows no HP bar, such as Rodin Karnak in Spillway, has no Boss, and his fight plays `event`. Neither boss folder plays in an Expedition, which keeps to its own situations. |
-| `event` | While a mission event plays its music, such as a holdout, a hacking event, an escape, or a scripted boss fight like those in Spillway. It outranks boss, horde, combat, and explore music, as the game's event music does. In Operations, such as Rolling Steel and No Man's Land, it plays for the whole mission, since the game scripts their music from start to end. The prologue, Tancred Bastion, scripts its music the same way, so it mostly plays this folder too. |
-| `last_stand` | While only one player of the team is left alive. It outranks events, Mortis Trials waves and breaks, the Expedition extraction, bosses, hordes, combat, and explore. Victory and defeat still take over. |
+| `event` | While a mission event plays its music, such as a holdout, a hacking event, an escape, or a scripted boss fight like those in Spillway. It is more urgent than boss, horde, combat, and explore music, as the game's own event music is. In Operations, such as Rolling Steel and No Man's Land, it plays for the whole mission, since the game scripts their music from start to end. The prologue, Tancred Bastion, scripts its music the same way, so it mostly plays this folder too. |
+| `last_stand` | While only one player of the team is left alive. It is more urgent than events, Mortis Trials waves and breaks, the Expedition extraction, bosses, hordes, combat, and explore. Victory and defeat still take over. |
 | `victory`, `defeat` | From the moment a mission is won (`victory`) or lost (`defeat`) until the loading screen or a cutscene. It covers the closing shot of the mission and the score screen after it. |
 | `mortis_trials_wave` | In Mortis Trials, during a wave or an objective round, through to the final win. Bosses, hordes, and fights do not interrupt it, since nearly every wave brings bosses. A last stand still takes over. |
 | `mortis_trials_break` | In Mortis Trials, between waves. |
@@ -107,14 +109,14 @@ In Mortis Trials, the two Mortis Trials folders replace the mission folders from
 
 ## Choosing what plays
 
-The Music per Situation group has one dropdown per folder above, named after it, except `meat_grinder`. Each offers the first three choices below, and the mission situations that rank above another also offer Skip:
+The Music per Situation group has one dropdown per folder above, named after it, except `meat_grinder`. Each offers the first three choices below, and the mission situations that are more urgent than another also offer Skip:
 
 | Choice | What plays |
 |---|---|
 | Custom | Your songs from the situation's folder. With an empty folder, the game's music plays. This is the default. |
 | Vanilla | Always the game's music, even with songs in the folder, so you can turn one situation off without moving files. |
 | Silence | Nothing. The game's music is silenced too. |
-| Skip | The situation ranked below it, as if this one were not going on, such as explore through fights with `combat` skipped. While your songs or silence play instead, the skipped situation's own game music stays silenced. With the situation below set to Vanilla, the game's music plays as the game picks it. Skip is offered for `combat`, `horde`, `boss_approaching`, `boss`, `event`, `last_stand`, `mortis_trials_wave`, `expedition_combat`, and `expedition_extraction`. |
+| Skip | The next less urgent situation, as if this one were not going on, such as explore through fights with `combat` skipped. While your songs or silence play instead, the skipped situation's own game music stays silenced. With that situation set to Vanilla, the game's music plays as the game picks it. Skip is offered for `combat`, `horde`, `boss_approaching`, `boss`, `event`, `last_stand`, `mortis_trials_wave`, `expedition_combat`, and `expedition_extraction`. |
 
 A changed choice applies at once, even to the situation that is playing.
 

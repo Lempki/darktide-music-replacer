@@ -68,9 +68,9 @@ local strings = {
 		en = "Let Songs Finish",
 	},
 	let_songs_finish_tooltip = {
-		en = "When the music would switch to a calmer situation, such as from a fight back to exploring, the song playing now plays to its end first. " ..
+		en = "When the music would switch to a less urgent situation, such as from a fight back to exploring, the song playing now plays to its end first. " ..
 			"A looping song plays to the end of its loop.\n\n" ..
-			"A switch to a more intense situation, to the game's music, or to silence still happens at once. Next Song moves on right away.",
+			"A switch to a more urgent situation, to the game's music, or to silence still happens at once. Next Song moves on right away.",
 	},
 	resume_songs = {
 		en = "Resume Songs",
@@ -506,14 +506,14 @@ local strings = {
 	},
 	source_event_tooltip = {
 		en = source_tooltip("while a mission event plays its music, and through a whole Operation", nil,
-			"whatever ranks below it, such as combat or explore, plays through events"),
+			"whatever is less urgent, such as combat or explore, plays through events"),
 	},
 	source_last_stand = {
 		en = "Last Stand",
 	},
 	source_last_stand_tooltip = {
 		en = source_tooltip("while only one player of the team is left alive", nil,
-			"whatever ranks below it, such as a boss fight or combat, plays through a last stand"),
+			"whatever is less urgent, such as a boss fight or combat, plays through a last stand"),
 	},
 	source_victory = {
 		en = "Victory",
@@ -556,7 +556,7 @@ local strings = {
 	},
 	source_expedition_extraction_tooltip = {
 		en = source_tooltip("while an Expedition's extraction runs", nil,
-			"whatever ranks below it, such as Expedition Combat or explore, plays through the extraction"),
+			"whatever is less urgent, such as Expedition Combat or explore, plays through the extraction"),
 	},
 
 	meat_grinder = {
@@ -649,7 +649,7 @@ local strings = {
 		en = "Counts captains as bosses: " .. highlight("Boss Approaching") .. " plays while one is near, " ..
 			"and " .. highlight("Boss") .. " from its HP bar until it is gone.\n\n" ..
 			highlight("Off") .. " leaves captains to the game's music.\n\n" ..
-			"A captain that comes as part of a mission event, such as the Karnak Twins, plays " .. highlight("Event") .. ", which outranks " ..
+			"A captain that comes as part of a mission event, such as the Karnak Twins, plays " .. highlight("Event") .. ", which is more urgent than " ..
 			highlight("Boss") .. ".",
 	},
 	daemonhost_boss_music = {
