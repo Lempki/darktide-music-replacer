@@ -161,31 +161,30 @@ local strings = {
 		en = "For Key Presses",
 	},
 	key_press_messages_tooltip = {
-		en = "Shows a short message in a corner of the screen when you press one of the Playback Controls keys, such as the song that plays next, or Restore Removed Songs. " ..
-			"It fades out after a few seconds, and shows on every screen, loading screens included.\n\n" ..
-			highlight("Off") .. " shows no message for them. The keys still work.",
+		en = "Shows a message in Message Color when you press a Playback Controls key or Restore Removed Songs, such as the song that plays next.\n\n" ..
+			highlight("Off") .. " shows none for them, and the keys still work.",
 	},
 	song_change_messages = {
 		en = "For Song Changes",
 	},
 	song_change_messages_tooltip = {
-		en = "Shows the song's name in a corner of the screen when one of your songs starts by itself: " ..
-			"when a situation starts its music, when a song ends and the next one plays, and when a song resumes where it stopped.\n\n" ..
-			"While For Key Presses is off, it also names the song a Playback Controls key starts.",
+		en = "Shows a message in Message Color when one of your songs starts by itself, such as when a situation starts its music. " ..
+			"With For Key Presses off, it also names the song a key starts.\n\n" ..
+			highlight("Off") .. " shows none for them, and the songs still play.",
 	},
 	notice_messages = {
 		en = "For Notices",
 	},
 	notice_messages_tooltip = {
-		en = "Shows notices, the messages about something you need to know, in Notice Color.\n\n" ..
-			highlight("Off") .. " shows no notice. Each one is still written to diagnostic.log.",
+		en = "Shows a message in Notice Color when there is something you need to know, such as how many songs the mod found.\n\n" ..
+			highlight("Off") .. " shows none for them, and each is still written to diagnostic.log.",
 	},
 	error_messages = {
 		en = "For Errors",
 	},
 	error_messages_tooltip = {
-		en = "Shows a message in Error Color when something goes wrong.\n\n" ..
-			highlight("Off") .. " shows no error message. Each error is still written to diagnostic.log.",
+		en = "Shows a message in Error Color when something goes wrong, such as Windows audio playback failing to start.\n\n" ..
+			highlight("Off") .. " shows none for them, and each is still written to diagnostic.log.",
 	},
 	message_seconds = {
 		en = "Message Duration",
@@ -284,19 +283,19 @@ local strings = {
 		en = "Message Color",
 	},
 	message_color_tooltip = {
-		en = "The color of the on-screen messages. Its opacity sets how see-through they are.",
+		en = "The color of the messages that For Key Presses and For Song Changes show. Its opacity sets how see-through they are.",
 	},
 	notice_color = {
 		en = "Notice Color",
 	},
 	notice_color_tooltip = {
-		en = "The color of notices, the on-screen messages about something you need to know.",
+		en = "The color of the messages that For Notices shows. Its opacity sets how see-through they are.",
 	},
 	error_color = {
 		en = "Error Color",
 	},
 	error_color_tooltip = {
-		en = "The color of the on-screen messages about something that went wrong.",
+		en = "The color of the messages that For Errors shows. Its opacity sets how see-through they are.",
 	},
 	pixels_unit = {
 		en = "px",
@@ -641,19 +640,18 @@ local strings = {
 		en = "Boss Music for Captains",
 	},
 	captain_boss_music_tooltip = {
-		en = "Counts captains as bosses: " .. highlight("Boss Approaching") .. " plays while one is near, " ..
-			"and " .. highlight("Boss") .. " from its HP bar until it is gone.\n\n" ..
-			highlight("Off") .. " leaves captains to the game's music.\n\n" ..
-			"A captain that comes as part of a mission event, such as the Karnak Twins, plays " .. highlight("Event") .. ", which is more urgent than " ..
-			highlight("Boss") .. ".",
+		en = "Counts captains as bosses, for " .. highlight("Boss Approaching") .. " while one is near " ..
+			"and " .. highlight("Boss") .. " from its HP bar until it is gone. " ..
+			"A captain that comes as part of a mission event, such as the Karnak Twins, plays " .. highlight("Event") .. " instead.\n\n" ..
+			highlight("Off") .. " follows the game, which plays no boss music for captains.",
 	},
 	daemonhost_boss_music = {
 		en = "Boss Music for Daemonhosts",
 	},
 	daemonhost_boss_music_tooltip = {
-		en = "Counts daemonhosts as bosses: " .. highlight("Boss Approaching") .. " plays while one is within " ..
-			highlight("Daemonhost Distance") .. ", and " .. highlight("Boss") .. " from its HP bar, which shows once it is angered, until it is gone.\n\n" ..
-			highlight("Off") .. " follows the game, which plays no music for daemonhosts.",
+		en = "Counts daemonhosts as bosses, for " .. highlight("Boss Approaching") .. " while one is within " ..
+			highlight("Daemonhost Distance") .. " and " .. highlight("Boss") .. " from its HP bar, which shows once it is angered, until it is gone.\n\n" ..
+			highlight("Off") .. " follows the game, which plays no boss music for daemonhosts.",
 	},
 	daemonhost_approach_meters = {
 		en = "Daemonhost Distance",
@@ -661,14 +659,16 @@ local strings = {
 	daemonhost_approach_meters_tooltip = {
 		en = "How close a daemonhost has to be for " .. highlight("Boss Approaching") .. " to play, " ..
 			"with " .. highlight("Boss Music for Daemonhosts") .. " on. It lets go once the daemonhost is 40 m farther away than that.\n\n" ..
-			"Some levels keep you near a sleeping daemonhost for a long time, so this is shorter than the 80 m other bosses use.",
+			"The default, " .. highlight("20 m") .. ", is shorter than " .. highlight("Boss Distance") ..
+			", since some levels keep you near a sleeping daemonhost for a long time.",
 	},
 	weakened_boss_music = {
 		en = "Boss Music for Weakened Monstrosities",
 	},
 	weakened_boss_music_tooltip = {
-		en = "Plays your boss music for a weakened monstrosity, one the game spawns with less than its full health.\n\n" ..
-			highlight("Off") .. " follows the game, which plays no boss music for them.",
+		en = "Counts weakened monstrosities as bosses, for " .. highlight("Boss Approaching") .. " and " .. highlight("Boss") .. ". " ..
+			"A weakened monstrosity is one the game spawns with less than its full health.\n\n" ..
+			highlight("Off") .. " follows the game, which plays no boss music for weakened monstrosities.",
 	},
 
 	music_holds = {
@@ -681,7 +681,8 @@ local strings = {
 		en = "Combat Music Hold",
 	},
 	combat_hold_seconds_tooltip = {
-		en = "How long Combat keeps playing after a fight quiets down, so a short lull does not switch to Explore.\n\n" ..
+		en = "How long Combat keeps playing after the game stops reporting a fight. " ..
+			"The game drops that signal every few seconds during a fight, so a short lull does not switch to Explore.\n\n" ..
 			"Set to " .. highlight("0") .. " to follow the game exactly.",
 	},
 	horde_hold_seconds = {
@@ -696,8 +697,8 @@ local strings = {
 		en = "Event Music Hold",
 	},
 	event_hold_seconds_tooltip = {
-		en = "How long Event keeps playing after the game ends an event's music. " ..
-			"Some events pause their music for a few seconds between stages.\n\n" ..
+		en = "How long Event keeps playing after the game stops reporting an event. " ..
+			"Some events drop that signal for a few seconds between their stages.\n\n" ..
 			"Set to " .. highlight("0") .. " to follow the game exactly.",
 	},
 

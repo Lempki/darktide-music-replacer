@@ -186,6 +186,12 @@ return {
 				type = "group",
 				sub_widgets = {
 					{
+						setting_id = "normalize_loudness",
+						type = "checkbox",
+						tooltip = "normalize_loudness_tooltip",
+						default_value = true,
+					},
+					{
 						setting_id = "custom_music_volume",
 						type = "numeric",
 						tooltip = "custom_music_volume_tooltip",
@@ -202,12 +208,6 @@ return {
 						range = { 0, 100 },
 						decimals_number = 0,
 						unit_text = "percent_unit",
-					},
-					{
-						setting_id = "normalize_loudness",
-						type = "checkbox",
-						tooltip = "normalize_loudness_tooltip",
-						default_value = true,
 					},
 				},
 			},
@@ -386,16 +386,6 @@ return {
 				type = "group",
 				sub_widgets = {
 					{
-						setting_id = "boss_approach_meters",
-						type = "numeric",
-						tooltip = "boss_approach_meters_tooltip",
-						-- The game's own boss music starts within 80 m.
-						default_value = 80,
-						range = { 20, 160 },
-						decimals_number = 0,
-						unit_text = "meters_unit",
-					},
-					{
 						setting_id = "captain_boss_music",
 						type = "checkbox",
 						tooltip = "captain_boss_music_tooltip",
@@ -412,6 +402,16 @@ return {
 						type = "checkbox",
 						tooltip = "daemonhost_boss_music_tooltip",
 						default_value = false,
+					},
+					{
+						setting_id = "boss_approach_meters",
+						type = "numeric",
+						tooltip = "boss_approach_meters_tooltip",
+						-- The game's own boss music starts within 80 m.
+						default_value = 80,
+						range = { 20, 160 },
+						decimals_number = 0,
+						unit_text = "meters_unit",
 					},
 					{
 						setting_id = "daemonhost_approach_meters",

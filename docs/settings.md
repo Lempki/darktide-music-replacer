@@ -42,9 +42,9 @@ Keys that control the song playing now, and the setting that goes with them. Eve
 
 | Setting | Default | What it does |
 |---|---|---|
+| Even Out Loudness | On | Plays every song at about the same loudness, without changing your files. Each song is measured once in the background and remembered, starting with the folder that plays. A song not measured yet plays at its own level, and a song measured while it plays changes level at its next start. Loud songs are turned down. A quiet song is only raised as far as it can go without distorting, and a very quiet one only partway, since raising it further mostly raises its hiss. |
 | Custom Music Volume | 100% | How loud your songs play, on top of the game's master and music volume sliders. At 100%, they play as loud as the files themselves. The game's music is not affected. |
 | Menu Volume | 50% | How loud your songs play while a menu is open, as a share of the Custom Music Volume. The menus are the ones the game reports to its audio: the Esc menu and its settings, the inventory, the mission board, vendors, crafting, penances, the Havoc menu, the store, character appearance, and the score screen after a mission. The music fades down over half a second. It fades back up once no menu has been open for half a second, so moving between menus does not raise it. 100% keeps the music at full volume in menus. |
-| Even Out Loudness | On | Plays every song at about the same loudness, without changing your files. Each song is measured once in the background and remembered, starting with the folder that plays. A song not measured yet plays at its own level, and a song measured while it plays changes level at its next start. Loud songs are turned down. A quiet song is only raised as far as it can go without distorting, and a very quiet one only partway, since raising it further mostly raises its hiss. |
 
 ## On-Screen Messages
 
@@ -52,17 +52,17 @@ A message is one line of text on a backdrop in the corner of the screen that Mes
 
 | Setting | Default | What it does |
 |---|---|---|
-| For Key Presses | On | Shows a message for each press of a Playback Controls key, such as `Next song: song.mp3`, and for each press of Restore Removed Songs. |
-| For Song Changes | On | Shows `Now playing:` and the song's name whenever one of your songs starts by itself: when a situation starts its music, when a song ends and the next one plays, and when a song resumes where it stopped. A folder's only song that keeps playing into the next situation shows nothing. While For Key Presses is off, it also names the song that Next Song, Previous Song, or Remove from Rotation starts, since no key message names it then. |
-| For Notices | On | Shows notices, the messages about something you need to know, in Notice Color. Once the mod has checked the audio folders, at launch, after Rescan Audio Folders, and after files change, a notice says how many songs it found and in how many folders, or where to put songs when there are none. A second notice follows when files were skipped, with how many and why. Once Even Out Loudness has measured every song that needed it, a notice says how many it measured. Off, a notice is still written to `diagnostic.log`. |
-| For Errors | On | Shows a message in Error Color when something goes wrong. Off, an error is still written to `diagnostic.log`. |
+| For Key Presses | On | Shows a message in Message Color for each press of a Playback Controls key, such as `Next song: song.mp3`, and for each press of Restore Removed Songs. Off shows none for them, and the keys still work. |
+| For Song Changes | On | Shows a message in Message Color, `Now playing:` and the song's name, whenever one of your songs starts by itself: when a situation starts its music, when a song ends and the next one plays, and when a song resumes where it stopped. A folder's only song that keeps playing into the next situation shows nothing. While For Key Presses is off, it also names the song that Next Song, Previous Song, or Remove from Rotation starts, since no key message names it then. |
+| For Notices | On | Shows a message in Notice Color when there is something you need to know. Once the mod has checked the audio folders, at launch, after Rescan Audio Folders, and after files change, a notice says how many songs it found and in how many folders, or where to put songs when there are none. A second notice follows when files were skipped, with how many and why. Once Even Out Loudness has measured every song that needed it, a notice says how many it measured. Off, a notice is still written to `diagnostic.log`. |
+| For Errors | On | Shows a message in Error Color when something goes wrong, such as Windows audio playback failing to start. Off shows none for them, and each is still written to `diagnostic.log`. |
 | Message Duration | 4 seconds | How long a message stays at full opacity before it fades out, from 1 to 10 seconds. With Message Fade Out, it also sets how long a second press of Remove from Rotation counts. |
 | Message Fade Out | 1 second | How long a message takes to fade out, from 0 to 3 seconds. Set it to 0 to hide a message at once. |
 | Look | Default | Default draws the messages in the default look below. Custom shows the settings below, from Message Size to Message Offset Y, and draws the messages as they set. Your changes stay saved while Default is chosen. |
 | Message Size | 100% | How big the messages are, from 50% to 200%, on top of the game's HUD Scale setting. At 100% and the game's default HUD Scale, both lines fit below the player portrait in the bottom left corner. |
-| Message Color | Grey, 85% opacity | The messages' color. Its opacity sets how see-through they are. |
-| Notice Color | Amber, 85% opacity | The color of notices, the messages about something you need to know. |
-| Error Color | Red, 85% opacity | The color of the messages about something that went wrong. |
+| Message Color | Grey, 85% opacity | The color of the messages that For Key Presses and For Song Changes show. Its opacity sets how see-through they are. |
+| Notice Color | Amber, 85% opacity | The color of the messages that For Notices shows. Its opacity sets how see-through they are. |
+| Error Color | Red, 85% opacity | The color of the messages that For Errors shows. Its opacity sets how see-through they are. |
 | Message Backdrop Opacity | 70% | How dark the backdrop behind the messages is, from 0% to 100%. The backdrop is the same as the debug overlay's: a dark box behind the text that fades out toward the middle of the screen. Each message has its own, which fits its text and fades and shrinks with it. 0% leaves out the backdrop. |
 | Message Corner | Bottom Left | The corner of the screen the messages show in: Bottom Left, Bottom Right, Top Left, or Top Right. They align to its side, so in a right corner they are right-aligned and grow to the left. |
 | Message Offset X | 0 px | Moves the messages sideways, away from their corner toward the middle of the screen, from 0 to 10000. Type the exact number into the field. |
@@ -83,11 +83,11 @@ One dropdown per situation except Meat Grinder, which has a group of its own bel
 
 | Setting | Default | What it does |
 |---|---|---|
+| Boss Music for Captains | Off | Counts captains as bosses, for Boss Approaching while one is near and Boss from its HP bar until the game reports it gone. A captain that comes as part of a mission event, such as the Karnak Twins, plays Event instead, which is more urgent than Boss. Off follows the game, which plays no boss music for captains. |
+| Boss Music for Weakened Monstrosities | Off | Counts weakened monstrosities as bosses, for Boss Approaching and Boss. A weakened monstrosity is one the game spawns with less than its full health. Off follows the game, which plays no boss music for weakened monstrosities. |
+| Boss Music for Daemonhosts | Off | Counts daemonhosts as bosses, for Boss Approaching while one is within Daemonhost Distance and Boss from its HP bar, which shows once it is angered, until the game reports it gone. Off follows the game, which plays no boss music for daemonhosts. |
 | Boss Distance | 80 m | How close a boss has to be for Boss Approaching to play, from 20 m to 160 m. It lets go once the boss is 40 m farther away than that, so moving back and forth at the edge keeps the music steady. The default is the distance the game's own boss music uses. Daemonhosts use Daemonhost Distance instead. |
-| Boss Music for Captains | Off | Counts captains as bosses: Boss Approaching while one is near, and Boss from its HP bar until the game reports it gone. Off leaves captains to the game's music. A captain that comes as part of a mission event, such as the Karnak Twins, plays Event, which is more urgent than Boss. |
-| Boss Music for Weakened Monstrosities | Off | Counts a weakened monstrosity, one the game spawns with less than its full health, as a boss for Boss Approaching and Boss. Off follows the game, which plays no boss music for them. |
-| Boss Music for Daemonhosts | Off | Counts daemonhosts as bosses: Boss Approaching while one is within Daemonhost Distance, and Boss from its HP bar, which shows once it is angered, until the game reports it gone. Off follows the game, which plays no music for daemonhosts. |
-| Daemonhost Distance | 20 m | How close a daemonhost has to be for Boss Approaching to play, from 5 m to 80 m, with Boss Music for Daemonhosts on. It lets go once the daemonhost is 40 m farther away than that. Some levels keep you near a sleeping daemonhost for a long time, so this is shorter than the 80 m other bosses use. |
+| Daemonhost Distance | 20 m | How close a daemonhost has to be for Boss Approaching to play, from 5 m to 80 m, with Boss Music for Daemonhosts on. It lets go once the daemonhost is 40 m farther away than that. The default is shorter than Boss Distance, since some levels keep you near a sleeping daemonhost for a long time. |
 
 ## Music Holds
 
@@ -97,9 +97,9 @@ A hold is there for a signal that the game turns off and on again within what is
 
 | Setting | Default | What it does |
 |---|---|---|
-| Combat Music Hold | 8 seconds | How long Combat keeps playing after a fight quiets down, so a short lull does not switch to Explore. It also covers Expedition Combat. |
+| Combat Music Hold | 8 seconds | How long Combat keeps playing after the game stops reporting a fight. The game drops that signal every few seconds during a fight, so a short lull does not switch to Explore. It also covers Expedition Combat. |
 | Horde Music Hold | 3 seconds | How long Horde keeps playing after the game stops reporting a horde. The game drops that signal for a moment whenever few enemies are on you, so a short hold keeps the song from switching away and back. |
-| Event Music Hold | 5 seconds | How long Event keeps playing after the game ends an event's music. Some events pause their music for a few seconds between stages, so a short hold keeps the event's song from starting over at every stage. |
+| Event Music Hold | 5 seconds | How long Event keeps playing after the game stops reporting an event. Some events drop that signal for a few seconds between their stages, so a short hold keeps the event's song from starting over at every stage. |
 
 ## Debug
 
