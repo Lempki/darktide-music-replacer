@@ -136,7 +136,8 @@ describe("on_screen_message.lua", function()
 		assert_equal(OnScreenMessage.line_count(), 0)
 	end)
 
-	it("pushes the message showing into the previous line's place over 0.3 s, as a different one fades in at the corner", function()
+	-- A line fading in where the old one leaves makes the old one seem to stay, so the new one waits for the push.
+	it("pushes the message showing into the previous line's place over 0.3 s, then fades a different one in at the corner over 0.3 s", function()
 		local OnScreenMessage = load_on_screen_message()
 
 		OnScreenMessage.show("Next")
@@ -145,7 +146,13 @@ describe("on_screen_message.lua", function()
 		assert_lines(OnScreenMessage, { { "Next", 1, 0 }, { "Previous", 0, 0 } })
 
 		OnScreenMessage.advance(0.15)
-		assert_lines(OnScreenMessage, { { "Next", 1, 0.5 }, { "Previous", 0.5, 0 } })
+		assert_lines(OnScreenMessage, { { "Next", 1, 0.5 }, { "Previous", 0, 0 } })
+
+		OnScreenMessage.advance(0.15)
+		assert_lines(OnScreenMessage, { { "Next", 1, 1 }, { "Previous", 0, 0 } })
+
+		OnScreenMessage.advance(0.15)
+		assert_lines(OnScreenMessage, { { "Next", 1, 1 }, { "Previous", 0.5, 0 } })
 
 		OnScreenMessage.advance(0.15)
 		assert_lines(OnScreenMessage, { { "Next", 1, 1 }, { "Previous", 1, 0 } })
@@ -170,7 +177,7 @@ describe("on_screen_message.lua", function()
 		OnScreenMessage.advance(1.3)
 		assert_lines(OnScreenMessage, { { "Previous", 1, 0 } })
 
-		OnScreenMessage.advance(1)
+		OnScreenMessage.advance(1.3)
 		assert_equal(OnScreenMessage.line_count(), 0)
 	end)
 
@@ -180,14 +187,17 @@ describe("on_screen_message.lua", function()
 		OnScreenMessage.show("A")
 		OnScreenMessage.advance(0.4)
 		OnScreenMessage.show("B")
-		OnScreenMessage.advance(0.4)
+		OnScreenMessage.advance(0.6)
 		OnScreenMessage.show("C")
 		assert_lines(OnScreenMessage, { { "A", 1, 1 }, { "B", 1, 0 }, { "C", 0, 0 } })
 
 		OnScreenMessage.advance(0.15)
-		assert_lines(OnScreenMessage, { { "A", 0.5, 1 }, { "B", 1, 0.5 }, { "C", 0.5, 0 } })
+		assert_lines(OnScreenMessage, { { "A", 0.5, 1 }, { "B", 1, 0.5 }, { "C", 0, 0 } })
 
 		OnScreenMessage.advance(0.15)
+		assert_lines(OnScreenMessage, { { "B", 1, 1 }, { "C", 0, 0 } })
+
+		OnScreenMessage.advance(0.3)
 		assert_lines(OnScreenMessage, { { "B", 1, 1 }, { "C", 1, 0 } })
 	end)
 
@@ -197,7 +207,7 @@ describe("on_screen_message.lua", function()
 		OnScreenMessage.show("A")
 		OnScreenMessage.advance(0.4)
 		OnScreenMessage.show("B")
-		OnScreenMessage.advance(0.4)
+		OnScreenMessage.advance(0.6)
 		OnScreenMessage.show("A")
 
 		assert_lines(OnScreenMessage, { { "A", 1, 1 }, { "B", 1, 0 }, { "A", 0, 0 } })
@@ -215,6 +225,19 @@ describe("on_screen_message.lua", function()
 
 		OnScreenMessage.advance(0.2)
 		assert_lines(OnScreenMessage, { { "Paused", 1 } })
+	end)
+
+	it("keeps a pushing message waiting for the push when its text shows again", function()
+		local OnScreenMessage = load_on_screen_message()
+
+		OnScreenMessage.show("Next")
+		OnScreenMessage.advance(0.4)
+		OnScreenMessage.show("Previous")
+		OnScreenMessage.advance(0.1)
+		OnScreenMessage.show("Previous")
+		OnScreenMessage.advance(0.1)
+
+		assert_lines(OnScreenMessage, { { "Next", 1 }, { "Previous", 0 } })
 	end)
 
 	it("starts the hold over when the same text shows again during it", function()
@@ -235,13 +258,13 @@ describe("on_screen_message.lua", function()
 		local OnScreenMessage = load_on_screen_message()
 
 		OnScreenMessage.show("A")
-		OnScreenMessage.advance(0.4)
+		OnScreenMessage.advance(0.6)
 		OnScreenMessage.show("B")
-		OnScreenMessage.advance(0.09)
+		OnScreenMessage.advance(0.39)
 		OnScreenMessage.show("C")
 		OnScreenMessage.advance(0.03)
 		OnScreenMessage.show("D")
-		assert_lines(OnScreenMessage, { { "A", 0.9, 1 }, { "B", 0.4, 1 }, { "C", 0.1, 0 }, { "D", 0, 0 } })
+		assert_lines(OnScreenMessage, { { "A", 0.9, 1 }, { "B", 0.4, 1 }, { "C", 0, 0 }, { "D", 0, 0 } })
 
 		OnScreenMessage.show("E")
 
@@ -263,14 +286,14 @@ describe("on_screen_message.lua", function()
 		OnScreenMessage.show("Next")
 		OnScreenMessage.advance(0.4)
 		OnScreenMessage.show("Previous")
-		OnScreenMessage.advance(0.5)
+		OnScreenMessage.advance(0.7)
 		assert_lines(OnScreenMessage, { { "Next", 1, 1 }, { "Previous", 1, 0 } })
 
-		OnScreenMessage.advance(3.8)
+		OnScreenMessage.advance(3.6)
 		assert_lines(OnScreenMessage, { { "Next", 0.7, 1 }, { "Previous", 1, 0 } })
 
 		OnScreenMessage.advance(0.5)
-		assert_lines(OnScreenMessage, { { "Next", 0.2, 1 }, { "Previous", 0.5, 0 } })
+		assert_lines(OnScreenMessage, { { "Next", 0.2, 1 }, { "Previous", 0.8, 0 } })
 	end)
 
 	it("holds and fades out for as long as its timing says", function()
@@ -302,12 +325,13 @@ describe("on_screen_message.lua", function()
 		assert_equal(OnScreenMessage.line_count(), 0)
 	end)
 
-	it("says how long a new message stays on screen: its 0.4 s fade in, then the hold and the fade out its timing sets", function()
+	-- A message that pushes another starts 0.6 s in, after the push and its own fade in, so that is what it counts.
+	it("says how long a new message stays on screen at most: 0.6 s to show, then the hold and the fade out its timing sets", function()
 		local OnScreenMessage = load_on_screen_message()
-		assert_equal(math.abs(OnScreenMessage.seconds_shown() - 5.4) < 1e-9, true)
+		assert_equal(math.abs(OnScreenMessage.seconds_shown() - 5.6) < 1e-9, true)
 
 		OnScreenMessage.set_timing(1, 2)
-		assert_equal(math.abs(OnScreenMessage.seconds_shown() - 3.4) < 1e-9, true)
+		assert_equal(math.abs(OnScreenMessage.seconds_shown() - 3.6) < 1e-9, true)
 
 		OnScreenMessage.show("Press again")
 		OnScreenMessage.advance(3.3)

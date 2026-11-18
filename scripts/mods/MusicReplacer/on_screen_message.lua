@@ -22,7 +22,8 @@ local FADE_IN_SECONDS = 0.4
 local hold_seconds = 4
 local fade_out_seconds = 1
 
--- How long a push takes: the line showing slides into the previous line's place, and the new one fades in where it was.
+-- How long a push takes: the line showing slides into the previous line's place, and then the new one fades in where it was.
+-- The new line waits for the slide, since a line fading in at the same spot the old one leaves makes the old one seem to stay.
 -- A line pushed out of the previous line's place fades out over the same time.
 local PUSH_SECONDS = 0.3
 
@@ -92,7 +93,7 @@ local look = {
 }
 
 -- A message: its text, its kind, its opacity as a share, its phase, and the seconds left of its hold.
--- Its phase is "in", "hold", or "out".
+-- Its phase is "wait" while the line it pushed slides away, then "in", "hold", and "out".
 
 -- The newest message, at the corner, or nil.
 local current = nil
@@ -127,12 +128,15 @@ function OnScreenMessage.show(text, kind)
 	end
 
 	if current and current.text == text and current.kind == kind then
-		current.phase = "in"
-		current.fade_in_seconds = FADE_IN_SECONDS
+		if current.phase ~= "wait" then
+			current.phase = "in"
+			current.fade_in_seconds = FADE_IN_SECONDS
+		end
 		return
 	end
 
 	local fade_in_seconds = FADE_IN_SECONDS
+	local wait_seconds = 0
 	if current then
 		if previous then
 			leaving[#leaving + 1] = { text = previous.text, kind = previous.kind, opacity = previous.opacity }
@@ -143,15 +147,24 @@ function OnScreenMessage.show(text, kind)
 		previous = current
 		previous.push = 0
 		fade_in_seconds = PUSH_SECONDS
+		wait_seconds = PUSH_SECONDS
 	end
 
-	current = { text = text, kind = kind, opacity = 0, phase = "in", fade_in_seconds = fade_in_seconds }
+	current = {
+		text = text,
+		kind = kind,
+		opacity = 0,
+		phase = wait_seconds > 0 and "wait" or "in",
+		wait_left = wait_seconds,
+		fade_in_seconds = fade_in_seconds,
+	}
 end
 
 -- How long a message shown now stays on screen: its fade in, the Message Duration, and the Message Fade Out.
+-- A message that pushes another first waits for the push, so the longer of the two starts counts.
 -- It holds while the messages are turned off too, for what a message would stand for.
 function OnScreenMessage.seconds_shown()
-	return FADE_IN_SECONDS + hold_seconds + fade_out_seconds
+	return math.max(FADE_IN_SECONDS, 2 * PUSH_SECONDS) + hold_seconds + fade_out_seconds
 end
 
 -- Moves `message` through its fade in, hold, and fade out by `dt` seconds.
@@ -160,7 +173,15 @@ end
 local function advance_message(message, dt)
 	local seconds = dt
 	while seconds > 0 do
-		if message.phase == "in" then
+		if message.phase == "wait" then
+			if seconds < message.wait_left then
+				message.wait_left = message.wait_left - seconds
+				seconds = 0
+			else
+				seconds = seconds - message.wait_left
+				message.phase = "in"
+			end
+		elseif message.phase == "in" then
 			local needed = (1 - message.opacity) * message.fade_in_seconds
 			if seconds < needed then
 				message.opacity = message.opacity + seconds / message.fade_in_seconds
