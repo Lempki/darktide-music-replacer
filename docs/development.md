@@ -145,6 +145,7 @@ darktide-music-replacer/
 │   ├── constant_element_slot.lua        # Adds one of the mod's elements to the game's always-visible UI, and removes it.
 │   ├── on_screen_message.lua            # Times the on-screen message, such as a playback key's, and keeps its element on screen.
 │   ├── on_screen_message_element.lua    # The on-screen message's element.
+│   ├── fonts.lua                        # Gives the mod's texts fonts for every alphabet, loading the game's own as names need them.
 │   ├── debug_overlay.lua                # Builds the debug overlay's text and keeps its element on screen.
 │   ├── debug_overlay_element.lua        # The debug overlay's on-screen element.
 │   ├── event_probe.lua                  # Logs the game's Wwise event names, and changes nothing.

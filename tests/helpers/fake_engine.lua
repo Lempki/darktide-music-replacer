@@ -259,6 +259,24 @@ function FakeEngine.new(options)
 		end,
 	}
 
+	-- The game's font definitions, with the parts fonts.lua reads, as ui_fonts_definitions.lua has them.
+	package.loaded["scripts/managers/ui/ui_fonts_definitions"] = {
+		base_path = "content/ui/fonts/",
+		custom_font = "darktide_custom_regular",
+		FontTypes = { serif = "serif", sans_serif = "sans_serif" },
+		locale_specific_fonts = {
+			ja = { package = "packages/ui/fonts/slug_ja", sans_serif = "noto_sans_jp_bold", serif = "noto_sans_jp_black" },
+			ko = { package = "packages/ui/fonts/slug_ko", sans_serif = "noto_sans_kr_bold", serif = "noto_sans_kr_black" },
+			ru = { serif = "friz_quadrata", sans_serif = "proxima_nova_bold" },
+			["zh-cn"] = { package = "packages/ui/fonts/slug_zh_cn", sans_serif = "noto_sans_sc_bold", serif = "noto_sans_sc_black" },
+			["zh-tw"] = {
+				package = "packages/ui/fonts/slug_zh_tw",
+				sans_serif = { "noto_sans_tc_bold", "noto_sans_sc_bold" },
+				serif = { "noto_sans_tc_black", "noto_sans_sc_black" },
+			},
+		},
+	}
+
 	-- The game's mission templates by mission name, filled by set_mechanism_mission().
 	package.loaded[MISSION_TEMPLATES] = engine.mission_templates
 

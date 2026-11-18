@@ -97,8 +97,8 @@ local function line_passes(index)
 	}
 end
 
--- `OnScreenMessage` is the loaded on_screen_message.lua. Returns the element class.
-return function(OnScreenMessage)
+-- `OnScreenMessage` is the loaded on_screen_message.lua, and `Fonts` the loaded fonts.lua. Returns the element class.
+return function(OnScreenMessage, Fonts)
 	local passes = {}
 	for index = 1, OnScreenMessage.MAX_LINES do
 		for _, pass in ipairs(line_passes(index)) do
@@ -122,6 +122,12 @@ return function(OnScreenMessage)
 
 	function Element:init(parent, draw_layer, start_scale)
 		Element.super.init(self, parent, draw_layer, start_scale, definitions)
+		-- The game's font manager exists once an element is created, so the mod's font type is registered here.
+		self._font_type = Fonts.type(FONT_TYPE)
+		self._fonts_version = Fonts.version()
+		for index = 1, OnScreenMessage.MAX_LINES do
+			self._widgets_by_name.message.style[line_id(index)].font_type = self._font_type
+		end
 		-- A new scenegraph keeps the screen node at 1920 by 1080 until it is updated at the scale the element draws at.
 		-- That scale is the HUD Scale, so the first update sizes the node to the whole screen at it.
 		self._update_scenegraph = true
@@ -185,7 +191,7 @@ return function(OnScreenMessage)
 	function Element:_width(ui_renderer, text)
 		local width = self._widths[text]
 		if not width then
-			width = UIRenderer.text_size(ui_renderer, text, FONT_TYPE, FONT_SIZE * self._scale) + MEASURE_SLACK * self._scale
+			width = UIRenderer.text_size(ui_renderer, text, self._font_type, FONT_SIZE * self._scale) + MEASURE_SLACK * self._scale
 			self._widths[text] = width
 		end
 		return width
@@ -242,12 +248,21 @@ return function(OnScreenMessage)
 	function Element:_draw_lines(dt, ui_renderer)
 		OnScreenMessage.advance(dt)
 
+		-- A font added for a song name draws its characters at their real width, so the widths measured before it are out of date.
+		if Fonts.version() ~= self._fonts_version then
+			self._fonts_version = Fonts.version()
+			self._widths = {}
+			self._fitted = {}
+		end
+
 		local widget = self._widgets_by_name.message
 		local line_count = OnScreenMessage.line_count()
 		local max_width = self:_max_text_width()
 		for index = 1, OnScreenMessage.MAX_LINES do
 			if index <= line_count then
 				local full_text, opacity, place, kind = OnScreenMessage.line(index)
+				-- The player's own names can be in any alphabet.
+				Fonts.prepare(full_text)
 				local text = self:_fit(ui_renderer, full_text, max_width)
 				widget.content[line_id(index)] = text
 				self:_place_line(ui_renderer, index, text, math.max(0, math.min(1, opacity)), place, kind)

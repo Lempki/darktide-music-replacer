@@ -27,6 +27,10 @@ What changes for players in each release of Music Replacer. The format follows [
 * A new on-screen message pushes the one showing away from the corner, where it shrinks to three quarters of its size and stays for the rest of its own Message Duration, instead of crossfading it away. Two messages close together are now both readable.
 * The on-screen messages are 15% smaller at the same Message Size, so at 100% both lines fit below the player portrait in the bottom left corner.
 
+### Fixes
+
+* Song and folder names in Japanese, Chinese, Korean, or Cyrillic letters draw in full in the on-screen messages and the debug overlay, whatever language the game runs in, instead of as empty boxes. The game's own fonts for those languages load the first time a name needs them.
+
 ## [1.2.0] - 2026-11-12
 
 ### Features

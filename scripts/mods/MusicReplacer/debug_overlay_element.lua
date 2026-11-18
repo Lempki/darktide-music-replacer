@@ -170,11 +170,13 @@ for index = 1, METER_SEGMENTS do
 end
 
 local FONT_SIZES = {}
+local FONT_NAMES = {} -- Style id -> the game's font it draws in, which init swaps for the mod's own font type.
 local PASS_IDS = {}
 for _, pass in ipairs(passes) do
 	PASS_IDS[#PASS_IDS + 1] = pass.style_id
 	if pass.pass_type == "text" then
 		FONT_SIZES[pass.style_id] = pass.style.font_size
+		FONT_NAMES[pass.style_id] = pass.style.font_type
 	end
 end
 
@@ -195,13 +197,18 @@ local definitions = {
 	},
 }
 
--- `DebugOverlay` is the loaded debug_overlay.lua. Returns the element class.
-return function(DebugOverlay)
+-- `DebugOverlay` is the loaded debug_overlay.lua, and `Fonts` the loaded fonts.lua. Returns the element class.
+return function(DebugOverlay, Fonts)
 	-- After a mod reload, class() hands back the class from the first load, and the methods below replace its old ones.
 	local Element = class("ConstantElementMusicReplacerOverlay", "ConstantElementBase")
 
 	function Element:init(parent, draw_layer, start_scale)
 		Element.super.init(self, parent, draw_layer, start_scale, definitions)
+		-- The game's font manager exists once an element is created, so the mod's font types are registered here.
+		local style = self._widgets_by_name.overlay.style
+		for id, font_name in pairs(FONT_NAMES) do
+			style[id].font_type = Fonts.type(font_name)
+		end
 		self._refresh_in = 0
 		self._meter_fill = 0
 		self:set_layout(DebugOverlay.scale(), DebugOverlay.opacity())
@@ -280,6 +287,10 @@ return function(DebugOverlay)
 		content.fade_out_level = view.fade_out_level or ""
 		content.fade_out_seconds = view.fade_out_seconds or ""
 		content.fade_out_song = view.fade_out_song or ""
+		-- The player's own names can be in any alphabet.
+		Fonts.prepare(content.folder)
+		Fonts.prepare(content.song)
+		Fonts.prepare(content.fade_out_song)
 
 		local tag_colors = TAG_COLORS[view.kind] or TAG_COLORS.game
 		style.tag_background.color = tag_colors.background

@@ -11,6 +11,7 @@ local ResumePoints = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/res
 local EventProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/event_probe")
 local MissionProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/mission_probe")
 local Bosses = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/bosses")
+local Fonts = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/fonts")
 local BossProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/boss_probe")
 local NativeFfi = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/native_ffi")
 local MediaDecoder = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/media_decoder")
@@ -1067,7 +1068,7 @@ end
 local OverlayElement = nil
 
 local function create_overlay_element(constant_elements, draw_layer)
-	OverlayElement = OverlayElement or mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/debug_overlay_element")(DebugOverlay)
+	OverlayElement = OverlayElement or mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/debug_overlay_element")(DebugOverlay, Fonts)
 	return OverlayElement:new(constant_elements, draw_layer)
 end
 
@@ -1079,7 +1080,7 @@ end
 local OnScreenMessageElement = nil
 
 local function create_on_screen_message_element(constant_elements, draw_layer)
-	OnScreenMessageElement = OnScreenMessageElement or mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/on_screen_message_element")(OnScreenMessage)
+	OnScreenMessageElement = OnScreenMessageElement or mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/on_screen_message_element")(OnScreenMessage, Fonts)
 	return OnScreenMessageElement:new(constant_elements, draw_layer)
 end
 
@@ -1135,6 +1136,7 @@ Suppression.init(log_detail)
 EventProbe.init(log_detail)
 MissionProbe.init(log)
 Bosses.init(log)
+Fonts.init(log)
 BossProbe.init(log_detail)
 Context.on_mission_change(MissionProbe.on_mission_change)
 ResumePoints.init(mod)
@@ -1442,6 +1444,7 @@ mod.on_unload = function(exit_game)
 	shut_down("the loudness measuring", Loudness.shutdown)
 	shut_down("the overlay", DebugOverlay.shutdown)
 	shut_down("the on-screen message", OnScreenMessage.shutdown)
+	shut_down("the fonts", Fonts.shutdown)
 	shut_down("the audio", AudioClient.shutdown)
 	shut_down("the decoder", MediaDecoder.shutdown)
 
