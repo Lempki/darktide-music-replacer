@@ -23,13 +23,13 @@
 --	* `music_combat` flips on and off every few seconds in real combat.
 --	  So `combat` holds for `combat_hold_seconds` after combat quiets, and a lull does not drop to `explore`.
 --	  Entering combat is never delayed.
---	* A boss within the Boss Distance of the player resolves "boss_approaching", between horde and boss.
+--	* A boss within the Boss Distance of the player resolves "boss_near", between horde and boss.
 --	  It outranks a horde, as the game's own boss music does.
---	  It stays approaching until it is LET_GO_MARGIN_METERS farther away than that.
+--	  It stays near until it is LET_GO_MARGIN_METERS farther away than that.
 --	  So moving back and forth at the edge keeps the music steady.
 --	  A daemonhost sleeps where it is put, and some levels keep the player near one for long, so it has a distance of its own.
---	  A weakened monstrosity gets none of the game's boss music, so it neither approaches nor fights without its setting.
---	* An Expedition keeps to its own situations, so no boss approaches or fights there.
+--	  A weakened monstrosity gets none of the game's boss music, so it neither comes near nor fights without its setting.
+--	* An Expedition keeps to its own situations, so no boss comes near or fights there.
 --	* The game reports "boss" in place of every other combat state once a boss has come near, for as long as any monstrosity lives.
 --	  So the mod asks the game's own combat check again with the boss check left out, and combat and hordes follow that answer.
 --	  A boss left far behind then still lets fights and hordes play their music.
@@ -114,11 +114,11 @@ local state_moment_grace = 0 -- Seconds left of state_moment once the game state
 local mission_outcome = nil -- "victory" or "defeat" from that game state until the next level starts, else nil.
 local open_bosses = {} -- Boss unit -> { breed = name, order = n } for every open encounter window.
 local boss_open_order = 0 -- Counts up with every newly opened window, so the earliest one can be found.
-local approaching_bosses = {} -- Boss unit -> { breed = name, order = n } for every boss near enough, until it is far enough away again.
+local near_bosses = {} -- Boss unit -> { breed = name, order = n } for every boss near enough, until it is far enough away again.
 -- Boss unit -> true once its encounter window has closed.
--- The game sends the end event as the boss dies, a moment before the boss leaves the list of the living, so it must not approach again.
+-- The game sends the end event as the boss dies, a moment before the boss leaves the list of the living, so it must not come near again.
 local finished_bosses = {}
-local boss_approach_order = 0 -- Counts up with every boss that comes near, so the first one can be found.
+local boss_near_order = 0 -- Counts up with every boss that comes near, so the first one can be found.
 
 local resolved_context = nil -- Last computed context string, for example "hub".
 
@@ -174,8 +174,8 @@ local OPT_IN_BOSS_SETTINGS = {
 	cultist_captain = "captain_boss_music",
 }
 
--- How much farther away than its approach distance a boss has to get before it lets go.
--- The approach distances are settings, so a fixed margin keeps the let-go distance beyond them whatever they are set to.
+-- How much farther away than its distance setting a boss has to get before it lets go.
+-- Those distances are settings, so a fixed margin keeps the let-go distance beyond them whatever they are set to.
 local LET_GO_MARGIN_METERS = 40
 
 -- The music_objective value the game sets while one player of the team is alive.
@@ -332,10 +332,10 @@ end
 
 -- The first boss to come near that counts as a boss, or nil while none does.
 -- It keeps the music until it is gone or far enough away, instead of the music changing with each boss.
-local function first_approaching_boss(mod)
+local function first_near_boss(mod)
 	local first = nil
 
-	for _, boss in pairs(approaching_bosses) do
+	for _, boss in pairs(near_bosses) do
 		if counts_as_boss(mod, boss) and (not first or boss.order < first.order) then
 			first = boss
 		end
@@ -344,8 +344,8 @@ local function first_approaching_boss(mod)
 	return first
 end
 
-local function is_boss_approaching(mod)
-	return mission_mode ~= "expeditions" and first_approaching_boss(mod) ~= nil
+local function is_boss_near(mod)
+	return mission_mode ~= "expeditions" and first_near_boss(mod) ~= nil
 end
 
 -- The combat state that decides combat and hordes: the game's own, or the one under its boss state.
@@ -637,8 +637,8 @@ local function resolve(mod)
 		return "boss"
 	end
 
-	if takes_over(mod, "boss_approaching", is_boss_approaching(mod)) then
-		return "boss_approaching"
+	if takes_over(mod, "boss_near", is_boss_near(mod)) then
+		return "boss_near"
 	end
 
 	if has_no_zone() and resolved_context == nil then
@@ -781,8 +781,8 @@ local function moment_kind(mod, context_name)
 		return event_kind
 	elseif context_name == "boss" then
 		return current_boss_breed(mod)
-	elseif context_name == "boss_approaching" then
-		local boss = first_approaching_boss(mod)
+	elseif context_name == "boss_near" then
+		local boss = first_near_boss(mod)
 		return boss and boss.breed
 	elseif context_name == "mortis_trials_wave" then
 		-- Meat Grinder's One Situation plays a wave while none runs, when the group is "None".
@@ -888,7 +888,7 @@ local function track_transition(mod, group_name, current, new_state)
 			music_combat = nil
 			combat_under_boss = nil
 			open_bosses = {}
-			approaching_bosses = {}
+			near_bosses = {}
 			finished_bosses = {}
 			-- A new zone starts fresh, not partway through the last hold.
 			for _, hold in ipairs(HOLDS) do
@@ -938,7 +938,7 @@ local function track_transition(mod, group_name, current, new_state)
 		-- A zoneless mission can follow another level with no zone change, which would otherwise keep a stale window open.
 		if new_state == "loading" then
 			open_bosses = {}
-			approaching_bosses = {}
+			near_bosses = {}
 			finished_bosses = {}
 		end
 	elseif group_name == "music_objective" then
@@ -1097,7 +1097,7 @@ function Context.init(mod, detail_logger, logger)
 
 		if unit then
 			open_bosses[unit] = nil
-			approaching_bosses[unit] = nil
+			near_bosses[unit] = nil
 			finished_bosses[unit] = true
 		end
 
@@ -1188,7 +1188,7 @@ function Context.update(mod, dt)
 end
 
 -- Call with each read from Bosses.update, which lists every boss alive and its distance from the player.
--- A boss comes near within its approach distance, and stays near until it is farther than its let-go distance or gone.
+-- A boss comes near within its distance setting, and stays near until it is farther than its let-go distance or gone.
 -- A boss whose fight has ended stays gone, and a distance the engine refused to measure leaves the boss as it was.
 function Context.on_bosses(mod, bosses)
 	local alive = {}
@@ -1196,30 +1196,30 @@ function Context.on_bosses(mod, bosses)
 
 	for _, boss in ipairs(bosses) do
 		alive[boss.unit] = true
-		local approaching = approaching_bosses[boss.unit]
-		local approach_meters = mod:get(is_daemonhost(boss.breed) and "daemonhost_approach_meters" or "boss_approach_meters")
-		local let_go_meters = approach_meters + LET_GO_MARGIN_METERS
+		local near_boss = near_bosses[boss.unit]
+		local near_meters = mod:get(is_daemonhost(boss.breed) and "daemonhost_near_meters" or "boss_near_meters")
+		local let_go_meters = near_meters + LET_GO_MARGIN_METERS
 
 		if boss.distance and not finished_bosses[boss.unit] then
-			if not approaching and boss.distance <= approach_meters then
-				boss_approach_order = boss_approach_order + 1
-				approaching_bosses[boss.unit] = { breed = boss.breed, order = boss_approach_order, weakened = boss.weakened }
+			if not near_boss and boss.distance <= near_meters then
+				boss_near_order = boss_near_order + 1
+				near_bosses[boss.unit] = { breed = boss.breed, order = boss_near_order, weakened = boss.weakened }
 				changed = true
 				-- A boss whose setting is off is still followed, so turning the setting on mid-fight takes effect at once.
-				local plays_no_music = not counts_as_boss(mod, approaching_bosses[boss.unit])
-				log_detail(string.format("[boss] %s approaching, %.0f m away%s",
+				local plays_no_music = not counts_as_boss(mod, near_bosses[boss.unit])
+				log_detail(string.format("[boss] %s near, %.0f m away%s",
 					boss.breed, boss.distance, plays_no_music and ", which plays no boss music by its setting" or ""))
-			elseif approaching and boss.distance > let_go_meters then
-				approaching_bosses[boss.unit] = nil
+			elseif near_boss and boss.distance > let_go_meters then
+				near_bosses[boss.unit] = nil
 				changed = true
 				log_detail(string.format("[boss] %s let go, %.0f m away", boss.breed, boss.distance))
 			end
 		end
 	end
 
-	for unit in pairs(approaching_bosses) do
+	for unit in pairs(near_bosses) do
 		if not alive[unit] then
-			approaching_bosses[unit] = nil
+			near_bosses[unit] = nil
 			changed = true
 		end
 	end

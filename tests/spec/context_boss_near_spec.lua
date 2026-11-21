@@ -1,4 +1,4 @@
--- Pins how context.lua resolves boss_approaching from each boss's distance, as bosses.lua reads it.
+-- Pins how context.lua resolves boss_near from each boss's distance, as bosses.lua reads it.
 
 local Harness = require("tests.helpers.context_harness")
 
@@ -21,27 +21,27 @@ local function spawn_at(distance)
 	return { unit = SPAWN, breed = "chaos_spawn", distance = distance }
 end
 
-describe("context.lua boss_approaching", function()
-	it("resolves boss_approaching once a boss is within 80 m, and not before", function()
+describe("context.lua boss_near", function()
+	it("resolves boss_near once a boss is within 80 m, and not before", function()
 		local harness = in_mission()
 
 		harness:bosses({ spawn_at(81) })
 		assert_equal(harness:current(), "explore")
 
 		harness:bosses({ spawn_at(80) })
-		assert_equal(harness:current(), "boss_approaching")
+		assert_equal(harness:current(), "boss_near")
 	end)
 
-	it("keeps a boss approaching until it is farther than 120 m", function()
+	it("keeps a boss near until it is farther than 120 m", function()
 		local harness = in_mission()
 
 		harness:bosses({ spawn_at(60) })
 		harness:bosses({ spawn_at(100) })
 		harness:bosses({ spawn_at(120) })
-		assert_equal(harness:current(), "boss_approaching")
+		assert_equal(harness:current(), "boss_near")
 
 		harness:bosses({ spawn_at(121) })
-		assert_deep_equal(harness.changes, { "boss_approaching", "explore" })
+		assert_deep_equal(harness.changes, { "boss_near", "explore" })
 
 		-- Once let go, the boss has to come within 80 m again.
 		harness:bosses({ spawn_at(100) })
@@ -54,7 +54,7 @@ describe("context.lua boss_approaching", function()
 		harness:bosses({ spawn_at(30) })
 		harness:bosses({})
 
-		assert_deep_equal(harness.changes, { "boss_approaching", "explore" })
+		assert_deep_equal(harness.changes, { "boss_near", "explore" })
 	end)
 
 	it("keeps a boss as it was while its distance is unknown", function()
@@ -63,7 +63,7 @@ describe("context.lua boss_approaching", function()
 		harness:bosses({ spawn_at(30) })
 		harness:bosses({ spawn_at(nil) })
 
-		assert_equal(harness:current(), "boss_approaching")
+		assert_equal(harness:current(), "boss_near")
 	end)
 
 	it("ranks above a horde, and below the boss's fight", function()
@@ -71,14 +71,14 @@ describe("context.lua boss_approaching", function()
 
 		harness:state("music_combat", "horde_high")
 		harness:bosses({ spawn_at(30) })
-		assert_equal(harness:current(), "boss_approaching")
+		assert_equal(harness:current(), "boss_near")
 
 		harness:boss_start(harness:new_boss("chaos_spawn"))
 		assert_equal(harness:current(), "boss")
 	end)
 
 	-- The game ends the window as the boss dies, a moment before the boss leaves the list of the living.
-	it("goes from boss to what is going on once the boss's window closes, with no approach in between", function()
+	it("goes from boss to what is going on once the boss's window closes, with no Boss Near in between", function()
 		local harness = in_mission()
 		local boss = harness:new_boss("chaos_spawn")
 		local function read_at(distance)
@@ -91,11 +91,11 @@ describe("context.lua boss_approaching", function()
 		read_at(30)
 		harness:bosses({})
 
-		assert_deep_equal(harness.changes, { "boss_approaching", "boss", "explore" })
+		assert_deep_equal(harness.changes, { "boss_near", "boss", "explore" })
 	end)
 
 	it("plays whatever ranks below while it is set to Skip", function()
-		local harness = in_mission({ source_boss_approaching = "skip" })
+		local harness = in_mission({ source_boss_near = "skip" })
 
 		harness:state("music_combat", "horde_high")
 		harness:bosses({ spawn_at(30) })
@@ -122,32 +122,32 @@ describe("context.lua boss_approaching", function()
 
 		harness:set_setting("daemonhost_boss_music", true)
 		harness:bosses({ daemonhost_at(10) })
-		assert_equal(harness:current(), "boss_approaching")
+		assert_equal(harness:current(), "boss_near")
 
 		harness:bosses({ daemonhost_at(60) })
-		assert_equal(harness:current(), "boss_approaching")
+		assert_equal(harness:current(), "boss_near")
 
 		harness:bosses({ daemonhost_at(61) })
 		harness:bosses({ daemonhost_at(21) })
 		assert_equal(harness:current(), "explore")
 	end)
 
-	it("approaches at the Boss Distance, and lets go 40 m beyond it", function()
-		local harness = in_mission({ boss_approach_meters = 30 })
+	it("comes near at the Boss Distance, and lets go 40 m beyond it", function()
+		local harness = in_mission({ boss_near_meters = 30 })
 
 		harness:bosses({ spawn_at(31) })
 		assert_equal(harness:current(), "explore")
 
 		harness:bosses({ spawn_at(30) })
 		harness:bosses({ spawn_at(70) })
-		assert_equal(harness:current(), "boss_approaching")
+		assert_equal(harness:current(), "boss_near")
 
 		harness:bosses({ spawn_at(71) })
 		assert_equal(harness:current(), "explore")
 	end)
 
-	it("lets a daemonhost approach at the Daemonhost Distance, and go 40 m beyond it", function()
-		local harness = in_mission({ daemonhost_boss_music = true, daemonhost_approach_meters = 50 })
+	it("lets a daemonhost come near at the Daemonhost Distance, and go 40 m beyond it", function()
+		local harness = in_mission({ daemonhost_boss_music = true, daemonhost_near_meters = 50 })
 		local function daemonhost_at(distance)
 			return { unit = DAEMONHOST, breed = "chaos_daemonhost", distance = distance }
 		end
@@ -157,7 +157,7 @@ describe("context.lua boss_approaching", function()
 
 		harness:bosses({ daemonhost_at(50) })
 		harness:bosses({ daemonhost_at(90) })
-		assert_equal(harness:current(), "boss_approaching")
+		assert_equal(harness:current(), "boss_near")
 
 		harness:bosses({ daemonhost_at(91) })
 		assert_equal(harness:current(), "explore")
@@ -170,7 +170,7 @@ describe("context.lua boss_approaching", function()
 		assert_equal(harness:current(), "explore")
 
 		harness:set_setting("weakened_boss_music", true)
-		assert_equal(harness:current(), "boss_approaching")
+		assert_equal(harness:current(), "boss_near")
 
 		harness:set_setting("weakened_boss_music", false)
 		assert_equal(harness:current(), "explore")
@@ -182,10 +182,10 @@ describe("context.lua boss_approaching", function()
 
 		harness:bosses({ spawn_at(50), ogryn })
 		harness:bosses({ spawn_at(40), ogryn })
-		local first = harness.Context.override_keys(harness.engine.mod, "boss_approaching")[1]
+		local first = harness.Context.override_keys(harness.engine.mod, "boss_near")[1]
 
 		harness:bosses({ ogryn })
-		local after = harness.Context.override_keys(harness.engine.mod, "boss_approaching")[1]
+		local after = harness.Context.override_keys(harness.engine.mod, "boss_near")[1]
 
 		assert_equal(first, "chaos_spawn")
 		assert_equal(after, "chaos_plague_ogryn")
@@ -201,7 +201,7 @@ describe("context.lua boss_approaching", function()
 		assert_equal(harness:current(), "explore")
 	end)
 
-	it("resolves no boss_approaching in an Expedition, which keeps to its own situations", function()
+	it("resolves no boss_near in an Expedition, which keeps to its own situations", function()
 		local harness = Harness.new()
 		harness:cold_start_to_hub()
 		harness:leave_hub()

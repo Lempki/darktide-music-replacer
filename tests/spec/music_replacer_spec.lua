@@ -1269,7 +1269,7 @@ describe("MusicReplacer.lua override folders", function()
 		assert_equal(harness:playing(), "explore/x.mp3")
 	end)
 
-	it("plays Boss's songs for Boss Approaching while its own folders have none", function()
+	it("plays Boss's songs for Boss Near while its own folders have none", function()
 		local harness = in_cooling({
 			boss = { { name = "b.mp3", duration = 300 } },
 			["boss/chaos_spawn"] = { { name = "spawn.mp3", duration = 300 } },
@@ -1281,19 +1281,19 @@ describe("MusicReplacer.lua override folders", function()
 		assert_equal(harness:playing(), "boss/chaos_spawn/spawn.mp3")
 	end)
 
-	it("plays Boss Approaching's own songs once its folder has some", function()
+	it("plays Boss Near's own songs once its folder has some", function()
 		local harness = in_cooling({
 			boss = { { name = "b.mp3", duration = 300 } },
-			boss_approaching = { { name = "near.mp3", duration = 300 } },
+			boss_near = { { name = "near.mp3", duration = 300 } },
 		})
 
 		harness:bosses({ { unit = "spawn", breed = "chaos_spawn", distance = 60 } })
 		harness:settle()
 
-		assert_equal(harness:playing(), "boss_approaching/near.mp3")
+		assert_equal(harness:playing(), "boss_near/near.mp3")
 	end)
 
-	it("keeps the song from Boss's folder playing when Boss takes over from Boss Approaching", function()
+	it("keeps the song from Boss's folder playing when Boss takes over from Boss Near", function()
 		local harness = in_cooling({
 			boss = { { name = "b.mp3", duration = 300 }, { name = "c.mp3", duration = 300 } },
 		})
@@ -1313,7 +1313,7 @@ describe("MusicReplacer.lua override folders", function()
 		assert_equal(harness:last_play().file_path, "boss/c.mp3")
 	end)
 
-	it("names Boss's folder in a key's message while Boss Approaching plays its songs", function()
+	it("names Boss's folder in a key's message while Boss Near plays its songs", function()
 		local harness = in_cooling({ boss = { { name = "b.mp3", duration = 300 } } })
 		harness:bosses({ { unit = "spawn", breed = "chaos_spawn", distance = 60 } })
 		harness:settle()
@@ -1323,20 +1323,20 @@ describe("MusicReplacer.lua override folders", function()
 		assert_equal(harness:last_on_screen_message(), "<control_only_song: <source_boss>, b.mp3>")
 	end)
 
-	it("follows Boss's Vanilla or Silence for Boss Approaching while its own folders have none", function()
+	it("follows Boss's Vanilla or Silence for Boss Near while its own folders have none", function()
 		for _, choice in ipairs({ "game", "silence" }) do
 			local harness = in_cooling({ boss = { { name = "b.mp3", duration = 300 } } }, { source_boss = choice })
 
 			harness:bosses({ { unit = "spawn", breed = "chaos_spawn", distance = 60 } })
 			harness:settle()
 
-			assert_equal(harness.overlay.options.snapshot().context, "boss_approaching", choice)
+			assert_equal(harness.overlay.options.snapshot().context, "boss_near", choice)
 			assert_equal(harness:playing(), nil, choice)
 			assert_equal(harness.overlay.options.snapshot().status, choice == "game" and "Vanilla" or "Silence", choice)
 		end
 	end)
 
-	it("passes over Boss Approaching while Boss is skipped and its own folders have none", function()
+	it("passes over Boss Near while Boss is skipped and its own folders have none", function()
 		local harness = in_cooling({
 			explore = { { name = "x.mp3", duration = 300 } },
 			boss = { { name = "b.mp3", duration = 300 } },
@@ -1349,18 +1349,18 @@ describe("MusicReplacer.lua override folders", function()
 		assert_equal(harness:playing(), "explore/x.mp3")
 	end)
 
-	it("plays Boss Approaching's own songs whatever Boss is set to", function()
+	it("plays Boss Near's own songs whatever Boss is set to", function()
 		local harness = in_cooling({
-			boss_approaching = { { name = "near.mp3", duration = 300 } },
+			boss_near = { { name = "near.mp3", duration = 300 } },
 		}, { source_boss = "skip" })
 
 		harness:bosses({ { unit = "spawn", breed = "chaos_spawn", distance = 60 } })
 		harness:settle()
 
-		assert_equal(harness:playing(), "boss_approaching/near.mp3")
+		assert_equal(harness:playing(), "boss_near/near.mp3")
 	end)
 
-	it("follows a change of Boss's choice at once while Boss Approaching borrows its folders", function()
+	it("follows a change of Boss's choice at once while Boss Near borrows its folders", function()
 		local harness = in_cooling({
 			explore = { { name = "x.mp3", duration = 300 } },
 			boss = { { name = "b.mp3", duration = 300 } },
@@ -1377,19 +1377,19 @@ describe("MusicReplacer.lua override folders", function()
 		assert_equal(harness:playing(), "explore/x.mp3")
 	end)
 
-	it("stops following Boss's Skip once Boss Approaching's folder gets songs", function()
+	it("stops following Boss's Skip once Boss Near's folder gets songs", function()
 		local harness = in_cooling({ explore = { { name = "x.mp3", duration = 300 } } }, { source_boss = "skip" })
 		harness:bosses({ { unit = "spawn", breed = "chaos_spawn", distance = 60 } })
 		harness:settle()
 		assert_equal(harness.overlay.options.snapshot().context, "explore")
 
-		harness.library.files.boss_approaching = { { name = "near.mp3", duration = 300 } }
+		harness.library.files.boss_near = { { name = "near.mp3", duration = 300 } }
 		for _, listener in ipairs(harness.library.listed_listeners) do
 			listener({})
 		end
 		harness:settle()
 
-		assert_equal(harness:playing(), "boss_approaching/near.mp3")
+		assert_equal(harness:playing(), "boss_near/near.mp3")
 	end)
 
 	it("logs a daemonhost that comes near with its setting off as one that plays no boss music", function()
@@ -1398,14 +1398,14 @@ describe("MusicReplacer.lua override folders", function()
 		harness:bosses({ { unit = "daemonhost", breed = "chaos_daemonhost", distance = 10 } })
 		harness:settle()
 
-		assert_equal(harness:logged("[boss] chaos_daemonhost approaching, 10 m away, which plays no boss music by its setting"), true)
+		assert_equal(harness:logged("[boss] chaos_daemonhost near, 10 m away, which plays no boss music by its setting"), true)
 		assert_equal(harness:playing(), "explore/x.mp3")
 	end)
 
-	it("starts a new song when Boss takes over from Boss Approaching's own songs", function()
+	it("starts a new song when Boss takes over from Boss Near's own songs", function()
 		local harness = in_cooling({
 			boss = { { name = "b.mp3", duration = 300 } },
-			boss_approaching = { { name = "near.mp3", duration = 300 } },
+			boss_near = { { name = "near.mp3", duration = 300 } },
 		})
 		harness:bosses({ { unit = "spawn", breed = "chaos_spawn", distance = 60 } })
 		harness:settle()
@@ -2470,8 +2470,8 @@ describe("MusicReplacer.lua the Pause / Resume key", function()
 	-- The first boss to come near names the folder, so the folder changes once it is gone while another stays near.
 	it("switches to another override folder only once the paused song resumes", function()
 		local harness = MainHarness.new({ files = {
-			boss_approaching = { { name = "a.mp3", duration = 300 } },
-			["boss_approaching/chaos_spawn"] = { { name = "spawn.mp3", duration = 300 } },
+			boss_near = { { name = "a.mp3", duration = 300 } },
+			["boss_near/chaos_spawn"] = { { name = "spawn.mp3", duration = 300 } },
 		} })
 		harness:cold_start_to_hub()
 		harness:leave_hub()
@@ -2480,7 +2480,7 @@ describe("MusicReplacer.lua the Pause / Resume key", function()
 		harness:bosses({ ogryn })
 		harness:bosses({ ogryn, { unit = "spawn", breed = "chaos_spawn", distance = 50 } })
 		harness:settle()
-		assert_equal(harness:playing(), "boss_approaching/a.mp3")
+		assert_equal(harness:playing(), "boss_near/a.mp3")
 		press(harness, "pause_song")
 
 		harness:bosses({ { unit = "spawn", breed = "chaos_spawn", distance = 50 } })
@@ -2488,9 +2488,9 @@ describe("MusicReplacer.lua the Pause / Resume key", function()
 		assert_equal(harness:playing(), nil)
 
 		press(harness, "pause_song")
-		assert_equal(harness:playing(), "boss_approaching/a.mp3")
+		assert_equal(harness:playing(), "boss_near/a.mp3")
 		harness:wait(0.6)
-		assert_equal(harness:playing(), "boss_approaching/chaos_spawn/spawn.mp3")
+		assert_equal(harness:playing(), "boss_near/chaos_spawn/spawn.mp3")
 	end)
 
 	it("ends the pause when Next Song plays another song", function()
@@ -2848,7 +2848,7 @@ describe("MusicReplacer.lua a situation's Restore Removed Songs button", functio
 	it("has a button for every situation but Meat Grinder", function()
 		local harness = in_hub()
 
-		assert_equal(type(harness.mod.restore_removed_boss_approaching), "function")
+		assert_equal(type(harness.mod.restore_removed_boss_near), "function")
 		assert_equal(harness.mod.restore_removed_meat_grinder, nil)
 	end)
 end)

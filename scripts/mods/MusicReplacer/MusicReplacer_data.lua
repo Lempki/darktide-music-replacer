@@ -488,9 +488,9 @@ return {
 						default_value = false,
 					},
 					{
-						setting_id = "boss_approach_meters",
+						setting_id = "boss_near_meters",
 						type = "numeric",
-						tooltip = "boss_approach_meters_tooltip",
+						tooltip = "boss_near_meters_tooltip",
 						-- The game's own boss music starts within 80 m.
 						default_value = 80,
 						range = { 20, 160 },
@@ -498,9 +498,9 @@ return {
 						unit_text = "meters_unit",
 					},
 					{
-						setting_id = "daemonhost_approach_meters",
+						setting_id = "daemonhost_near_meters",
 						type = "numeric",
-						tooltip = "daemonhost_approach_meters_tooltip",
+						tooltip = "daemonhost_near_meters_tooltip",
 						default_value = 20,
 						range = { 5, 80 },
 						decimals_number = 0,

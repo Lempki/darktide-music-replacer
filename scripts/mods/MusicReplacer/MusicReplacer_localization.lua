@@ -79,7 +79,7 @@ local strings = {
 	resume_songs_tooltip = {
 		en = "Continues a song where it stopped when its situation comes back, such as Explore after a fight.\n\n" ..
 			"Explore, Combat, Mortis Trials Wave and Break, Expedition Combat, and Expedition Safe Room songs always do. " ..
-			"Horde, Boss Approaching, Boss, and Event songs do as long as that horde, boss fight, or event lasts. " ..
+			"Horde, Boss Near, Boss, and Event songs do as long as that horde, boss fight, or event lasts. " ..
 			"Every mission and hub visit starts with fresh songs.",
 	},
 
@@ -570,10 +570,10 @@ local strings = {
 	source_horde_tooltip = {
 		en = source_tooltip("during a horde", nil, "Combat plays through hordes"),
 	},
-	source_boss_approaching = {
-		en = "Boss Approaching",
+	source_boss_near = {
+		en = "Boss Near",
 	},
-	source_boss_approaching_tooltip = {
+	source_boss_near_tooltip = {
 		en = source_tooltip("while a boss is near you, before its fight starts", nil,
 			"Horde, Combat, or Explore plays until the fight starts",
 			"whatever " .. highlight("Boss") .. " is set to, " .. highlight("Skip") .. " included, " ..
@@ -725,11 +725,11 @@ local strings = {
 	boss_music = {
 		en = "Boss Music",
 	},
-	boss_approach_meters = {
+	boss_near_meters = {
 		en = "Boss Distance",
 	},
-	boss_approach_meters_tooltip = {
-		en = "How close a boss has to be for " .. highlight("Boss Approaching") .. " to play. " ..
+	boss_near_meters_tooltip = {
+		en = "How close a boss has to be for " .. highlight("Boss Near") .. " to play. " ..
 			"It lets go once the boss is 40 m farther away than that, so moving back and forth at the edge keeps the music steady.\n\n" ..
 			"The default, " .. highlight("80 m") .. ", is the distance the game's own boss music uses. " ..
 			"Daemonhosts use " .. highlight("Daemonhost Distance") .. " instead.",
@@ -738,7 +738,7 @@ local strings = {
 		en = "Boss Music for Captains",
 	},
 	captain_boss_music_tooltip = {
-		en = "Counts captains as bosses, for " .. highlight("Boss Approaching") .. " while one is near " ..
+		en = "Counts captains as bosses, for " .. highlight("Boss Near") .. " while one is near " ..
 			"and " .. highlight("Boss") .. " from its HP bar until it is gone. " ..
 			"A captain that comes as part of a mission event, such as the Karnak Twins, plays " .. highlight("Event") .. " instead.\n\n" ..
 			highlight("Off") .. " follows the game, which plays no boss music for captains.",
@@ -747,15 +747,15 @@ local strings = {
 		en = "Boss Music for Daemonhosts",
 	},
 	daemonhost_boss_music_tooltip = {
-		en = "Counts daemonhosts as bosses, for " .. highlight("Boss Approaching") .. " while one is within " ..
+		en = "Counts daemonhosts as bosses, for " .. highlight("Boss Near") .. " while one is within " ..
 			highlight("Daemonhost Distance") .. " and " .. highlight("Boss") .. " from its HP bar, which shows once it is angered, until it is gone.\n\n" ..
 			highlight("Off") .. " follows the game, which plays no boss music for daemonhosts.",
 	},
-	daemonhost_approach_meters = {
+	daemonhost_near_meters = {
 		en = "Daemonhost Distance",
 	},
-	daemonhost_approach_meters_tooltip = {
-		en = "How close a daemonhost has to be for " .. highlight("Boss Approaching") .. " to play, " ..
+	daemonhost_near_meters_tooltip = {
+		en = "How close a daemonhost has to be for " .. highlight("Boss Near") .. " to play, " ..
 			"with " .. highlight("Boss Music for Daemonhosts") .. " on. It lets go once the daemonhost is 40 m farther away than that.\n\n" ..
 			"The default, " .. highlight("20 m") .. ", is shorter than " .. highlight("Boss Distance") ..
 			", since some levels keep you near a sleeping daemonhost for a long time.",
@@ -764,7 +764,7 @@ local strings = {
 		en = "Boss Music for Weakened Monstrosities",
 	},
 	weakened_boss_music_tooltip = {
-		en = "Counts weakened monstrosities as bosses, for " .. highlight("Boss Approaching") .. " and " .. highlight("Boss") .. ". " ..
+		en = "Counts weakened monstrosities as bosses, for " .. highlight("Boss Near") .. " and " .. highlight("Boss") .. ". " ..
 			"A weakened monstrosity is one the game spawns with less than its full health.\n\n" ..
 			highlight("Off") .. " follows the game, which plays no boss music for weakened monstrosities.",
 	},

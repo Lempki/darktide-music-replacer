@@ -513,7 +513,7 @@ play_context = function(context_name, is_new_context)
 
 	local candidates = folders_for(context_name)
 
-	-- A song from the folder the new situation plays too keeps playing, as when Boss takes over Boss Approaching that played Boss's songs.
+	-- A song from the folder the new situation plays too keeps playing, as when Boss takes over Boss Near that played Boss's songs.
 	-- The situations then sound like one piece of music, with only the new situation's ending.
 	if is_new_context and not was_paused and playing_track and candidates[1] == playing_folder and AudioClient.is_playing() then
 		local kept_path, kept_duration, kept_only = Library.find_file(playing_folder, playing_track.file_path)
@@ -749,7 +749,7 @@ end
 
 -- The folder playing now as the player knows it: its situation's name, and an override folder's name after it.
 -- An example is "Boss (chaos_spawn)".
--- The situation is the folder's own, which is Boss while Boss Approaching plays Boss's songs.
+-- The situation is the folder's own, which is Boss while Boss Near plays Boss's songs.
 -- A removal lasts beyond this situation, so its messages say where the song was taken out.
 -- The pattern that joins the two names is localized too, since languages set such a name apart in their own ways.
 local function folder_label()
