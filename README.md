@@ -44,7 +44,8 @@ Everything below is optional detail.
 
 ## What it does
 
-* Plays your songs by situation: the title screen, character select, the hub, loading screens, exploring, combat, hordes, bosses, events, last stands, victory, defeat, Mortis Trials, Expeditions, and Meat Grinder.
+* Plays your songs by situation: the title screen, character select, the hub, loading screens, the screens and intro before a mission, exploring, combat, hordes, bosses, events, last stands, victory, defeat, cutscenes, Mortis Trials, Expeditions, and Meat Grinder.
+* Starts your boss music as a boss comes near, as the game's own boss music does, and plays it on through the fight.
 * Plays a folder's songs in a random order, each once before any song repeats, or in name order with Shuffle off.
 * Loops a folder's only song seamlessly, with no gap added between its end and its start, and with Repeat Song on, any song.
 * Keeps a folder's only song playing when the next situation's folder also holds only that song, instead of starting it over.
@@ -53,6 +54,7 @@ Everything below is optional detail.
 * Can let a song play to its end before a less urgent situation takes over.
 * Follows the game's master and music volume sliders at once, without restarting the song.
 * Lets you choose Custom, Vanilla, or Silence for each situation, or Skip one, such as Boss, so the next less urgent situation plays on.
+* Lets you give each situation its own volume, shuffle, repeat, and fade length.
 * Lets you try out any situation's songs in Meat Grinder, or play a folder of its own there.
 * Has optional keys to skip to the next or previous song, restart or pause the song playing now, or remove it from rotation.
 * Names each new song and what each key did, and says when something went wrong, in short messages in a corner of the screen, on every screen, loading screens included.
