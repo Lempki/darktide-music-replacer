@@ -84,6 +84,14 @@ local function situation_settings(context)
 				},
 			},
 		},
+		{
+			setting_id = "restore_removed_" .. context.id,
+			title = "situation_restore_removed",
+			type = "button",
+			tooltip = "situation_restore_removed_tooltip",
+			button_text = "restore_removed_songs_button",
+			function_name = "restore_removed_" .. context.id,
+		},
 	}
 end
 

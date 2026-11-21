@@ -112,4 +112,21 @@ function RemovedSongs.clear()
 	return count
 end
 
+-- Puts back the songs removed from `context_name`'s folder and its override folders, and returns how many there were.
+function RemovedSongs.clear_situation(context_name)
+	local prefix = context_name:lower() .. "/"
+	local count = 0
+	for key in pairs(songs) do
+		if key:sub(1, #prefix) == prefix then
+			songs[key] = nil
+			count = count + 1
+		end
+	end
+
+	if count > 0 then
+		save()
+	end
+	return count
+end
+
 return RemovedSongs

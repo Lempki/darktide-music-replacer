@@ -123,10 +123,11 @@ local strings = {
 	remove_song_keybind_tooltip = {
 		en = "Press twice to stop the song playing now from ever being picked in its folder again, and move on to another song. " ..
 			"The file stays where it is.\n\n" ..
-			highlight("Restore Removed Songs") .. " puts every removed song back.",
+			highlight("Restore All Removed Songs") .. " puts every removed song back, " ..
+			"and a situation's own " .. highlight("Restore Removed Songs") .. " puts back the ones removed from it.",
 	},
 	restore_removed_songs = {
-		en = "Restore Removed Songs",
+		en = "Restore All Removed Songs",
 	},
 	restore_removed_songs_button = {
 		en = "Restore",
@@ -161,7 +162,7 @@ local strings = {
 		en = "For Key Presses",
 	},
 	key_press_messages_tooltip = {
-		en = "Shows a message in Message Color when you press a Playback Controls key or Restore Removed Songs, such as the song that plays next.\n\n" ..
+		en = "Shows a message in Message Color when you press a Playback Controls key or a Restore button, such as the song that plays next.\n\n" ..
 			highlight("Off") .. " shows none for them, and the keys still work.",
 	},
 	song_change_messages = {
@@ -392,6 +393,17 @@ local strings = {
 	control_nothing_removed = {
 		en = "No songs are removed",
 	},
+	-- The %s is the situation's name, such as "Boss", whose own Restore Removed Songs was pressed.
+	control_restored_song_in = {
+		en = "Restored 1 song in %s",
+	},
+	-- The first %s is how many songs, and the second the situation's name.
+	control_restored_songs_in = {
+		en = "Restored %s songs in %s",
+	},
+	control_nothing_removed_in = {
+		en = "No songs are removed in %s",
+	},
 	control_shuffle_on = {
 		en = "Shuffle on",
 	},
@@ -457,6 +469,13 @@ local strings = {
 	situation_fade_seconds_tooltip = {
 		en = "How long the music crossfades as this situation takes over, and how long its songs fade out at their end.\n\n" ..
 			"Set to " .. highlight("0") .. " to switch at once.",
+	},
+	situation_restore_removed = {
+		en = "Restore Removed Songs",
+	},
+	situation_restore_removed_tooltip = {
+		en = "Puts the songs that Remove from Rotation took out of this situation's folder and its override folders back into their rotation, " ..
+			"and a message says how many came back.",
 	},
 	situation_default = {
 		en = "Default",

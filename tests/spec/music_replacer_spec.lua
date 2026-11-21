@@ -2802,6 +2802,32 @@ describe("MusicReplacer.lua the Restore Removed Songs button", function()
 	end)
 end)
 
+describe("MusicReplacer.lua a situation's Restore Removed Songs button", function()
+	it("puts back the songs removed from its own situation only", function()
+		local harness = in_hub({ hub = { { name = "only.mp3", duration = 200 } } })
+		harness.mod.remove_song()
+		harness.mod.remove_song()
+		harness:tick(0.1)
+		assert_equal(harness:playing(), nil)
+
+		harness.mod.restore_removed_explore()
+		assert_equal(harness:last_on_screen_message(), "<control_nothing_removed_in: <source_explore>>")
+		assert_equal(harness.library.rescan_requested, false)
+
+		harness.mod.restore_removed_hub()
+		assert_equal(harness:last_on_screen_message(), "<control_restored_song_in: <source_hub>>")
+		harness:tick(0.1)
+		assert_equal(harness:playing(), "hub/only.mp3")
+	end)
+
+	it("has a button for every situation but Meat Grinder", function()
+		local harness = in_hub()
+
+		assert_equal(type(harness.mod.restore_removed_boss_approaching), "function")
+		assert_equal(harness.mod.restore_removed_meat_grinder, nil)
+	end)
+end)
+
 describe("MusicReplacer.lua turned off and on", function()
 	it("lets playback try again after giving up when turned back on or when Rescan is pressed", function()
 		local harness = in_hub()

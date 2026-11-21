@@ -1062,6 +1062,31 @@ mod.restore_removed_songs = function()
 	end
 end
 
+-- Each situation's Restore Removed Songs button, which puts back only the songs removed from that situation's folders.
+-- DMF calls a button's function by its name, so every situation gets a function of its own.
+for _, context in ipairs(Contexts.list) do
+	if not context.own_settings then
+		local context_name = context.id
+		mod["restore_removed_" .. context_name] = function()
+			local count = RemovedSongs.clear_situation(context_name)
+			local situation = mod:localize("source_" .. context_name)
+			log(string.format("[control] restored %d removed song(s) in %s", count, context_name))
+
+			if count == 0 then
+				notify_control("control_nothing_removed_in", situation)
+				return
+			end
+
+			Library.request_listing()
+			if count == 1 then
+				notify_control("control_restored_song_in", situation)
+			else
+				notify_control("control_restored_songs_in", count, situation)
+			end
+		end
+	end
+end
+
 -- ###########################################################################
 -- Wiring
 -- ###########################################################################
