@@ -70,10 +70,6 @@ Everything below is optional detail.
 * It keeps the game's music in cutscenes, unless you set Cutscene to Custom or Silence.
 * It does not download or stream anything. It plays only the files in its own audio folders.
 
-## How it plays your music
-
-Music Replacer needs no FFmpeg, no extra program, and no other mod beyond the mod loader and DMF. It plays your songs inside the game itself, through two parts of Windows: Media Foundation, Windows' own media framework, decodes the files, and XAudio2, the audio engine Windows provides for games, plays them. That is what lets it crossfade, follow the volume sliders, and lower the music in menus without ever restarting a song. The [development notes](docs/development.md#why-the-mod-uses-windows-own-audio) explain why.
-
 ## Requirements
 
 * [Darktide Mod Loader](https://www.nexusmods.com/warhammer40kdarktide/mods/19).
@@ -164,6 +160,10 @@ Override folders are optional and for advanced use. A folder can hold folders of
 All your songs live in your `audio` folder, override folders included. To share your setup, zip that folder and send it. A player who puts it in place of their own `audio` folder hears the same songs in the same situations.
 
 The folder also holds `removed.txt`, so songs you took out with Remove from Rotation stay out in the copy, and `loudness.txt`, so Even Out Loudness needs no measuring on the other player's PC. The mod options do not travel, so each player keeps their own choices, such as Skip or Silence for a situation.
+
+## How it plays your music
+
+Music Replacer needs no FFmpeg, no extra program, and no other mod beyond the mod loader and DMF. It plays your songs inside the game itself, through two parts of Windows: Media Foundation, Windows' own media framework, decodes the files, and XAudio2, the audio engine Windows provides for games, plays them. That is what lets it crossfade, follow the volume sliders, and lower the music in menus without ever restarting a song. The [development notes](docs/development.md#why-the-mod-uses-windows-own-audio) explain why.
 
 ## Safe by design
 
