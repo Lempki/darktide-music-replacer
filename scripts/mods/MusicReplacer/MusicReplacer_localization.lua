@@ -34,7 +34,7 @@ local strings = {
 	},
 	rescan_audio_tooltip = {
 		en = "Lists the audio folders again at once, and checks again whether every song plays.\n\n" ..
-			"The mod notices added, removed, and replaced files by itself a few seconds after they change. " ..
+			"The mod notices added, removed, and replaced files by itself, 3 seconds after files stop changing. " ..
 			"This button is for drives where Windows cannot report changes, such as some network drives, " ..
 			"for retrying a song that would not play, and for bringing back a situation's folder that went missing.",
 	},
