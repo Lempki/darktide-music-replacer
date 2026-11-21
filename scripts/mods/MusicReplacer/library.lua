@@ -57,6 +57,8 @@ local checking = false -- True from a listing until every file it listed has bee
 -- Every folder key, file path, and stamp of the last listing as one text, to tell whether a listing changed anything.
 local listed_songs = nil
 local changed_on_disk = false -- True when the listing about to run was started by a change Windows reported.
+local restore_requested = false -- True when the listing about to run was asked for because removed songs came back.
+local is_restore_listing = false -- True while the last listing came only from removed songs coming back.
 local is_removed = function() return false end -- file_path -> true for a song removed from rotation.
 
 -- file_path -> seconds, or false when the file could not be measured.
@@ -200,7 +202,7 @@ end
 
 -- Tells the Library.on_checked listeners how many listed songs Windows can play, the folders that hold them, and the files skipped.
 local function report_checked()
-	local counts = { songs = 0, folders = 0, other_formats = #other_formats, unopenable = 0 }
+	local counts = { songs = 0, folders = 0, other_formats = #other_formats, unopenable = 0, after_restore = is_restore_listing or nil }
 	for _, key in ipairs(each_folder_key()) do
 		local playable = 0
 		for _, file_path in ipairs(lists[key]) do
@@ -314,9 +316,10 @@ function Library.on_listed(listener)
 end
 
 -- Registers a function to call once every file of a listing has been measured, when it is known which ones Windows can play.
--- It is called with { songs, folders, other_formats, unopenable }.
+-- It is called with { songs, folders, other_formats, unopenable, after_restore }.
 -- `songs` counts the listed songs Windows can play, and `folders` the folders, overrides included, that hold any.
 -- `other_formats` counts the audio files in a format the mod does not play, and `unopenable` the listed files Windows could not open.
+-- `after_restore` is true when Library.request_listing alone asked for the listing, so only removed songs came back.
 -- A listing that comes before the measuring finishes replaces it, so only the newer one is reported.
 function Library.on_checked(listener)
 	checked_listeners[#checked_listeners + 1] = listener
@@ -333,10 +336,11 @@ function Library.request_rescan()
 	end
 end
 
--- Asks for every folder to be listed again on the next update, keeping what was measured, as after the removed songs changed.
+-- Asks for every folder to be listed again on the next update, keeping what was measured, after removed songs came back.
 function Library.request_listing()
 	if AudioFolders then
 		rescan_requested = true
+		restore_requested = true
 	end
 end
 
@@ -349,6 +353,11 @@ function Library.remove_file(file_path)
 		if file_paths[index] == file_path then
 			table.remove(file_paths, index)
 		end
+	end
+
+	-- The listing that removed.txt's change starts then finds no song changed, and stays quiet.
+	if listed_songs then
+		listed_songs = describe_songs()
 	end
 end
 
@@ -376,6 +385,7 @@ function Library.update(dt)
 	if waiting_to_scan then
 		waiting_to_scan = false
 		rescan_requested = false
+		restore_requested = false
 		scan_folders("listed the audio folders")
 		return true
 	end
@@ -389,7 +399,9 @@ function Library.update(dt)
 	-- A rescan the watcher started only measures the new and changed files, which their stamps show.
 	-- Only a listing the watcher started can stay quiet, since every other one was asked for.
 	local from_watcher = changed_on_disk and not full_rescan_requested
+	is_restore_listing = restore_requested and not changed_on_disk and not full_rescan_requested
 	changed_on_disk = false
+	restore_requested = false
 	if full_rescan_requested then
 		full_rescan_requested = false
 		durations = {}

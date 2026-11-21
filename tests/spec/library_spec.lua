@@ -361,7 +361,7 @@ describe("library.lua checking a listing", function()
 		assert_deep_equal(checks, { { songs = 0, folders = 0, other_formats = 0, unopenable = 0 } })
 	end)
 
-	it("reports a listing with nothing new to measure on the update after it", function()
+	it("reports a listing with nothing new to measure on the update after it, marked as one after a restore", function()
 		local Library, folders, checks = checked_library({ hub = { "a.mp3" } })
 		Library.update(0.016)
 		folders.measured = {}
@@ -371,7 +371,10 @@ describe("library.lua checking a listing", function()
 		Library.update(0.016)
 
 		assert_deep_equal(folders.measured, {})
-		assert_deep_equal(checks, { { songs = 1, folders = 1, other_formats = 0, unopenable = 0 }, { songs = 1, folders = 1, other_formats = 0, unopenable = 0 } })
+		assert_deep_equal(checks, {
+			{ songs = 1, folders = 1, other_formats = 0, unopenable = 0 },
+			{ songs = 1, folders = 1, other_formats = 0, unopenable = 0, after_restore = true },
+		})
 	end)
 
 	it("reports only the newer listing when one comes before the measuring finishes", function()
@@ -567,6 +570,22 @@ describe("library.lua songs removed from rotation", function()
 		Library.update(0.016)
 		Library.update(0.016)
 		assert_deep_equal(folders.measured, { "hub/b.mp3" })
+	end)
+
+	-- Removing a song writes removed.txt in the audio folder, which the watcher reports as a change.
+	it("stays quiet when the watcher lists the folders again after a song was removed", function()
+		local disk = { hub = { "a.mp3", "b.mp3" } }
+		local removed = {}
+		local Library, folders, listings = library_with_removed(disk, removed)
+		local listed = #listings
+
+		removed["hub/a.mp3"] = true
+		Library.remove_file("hub/a.mp3")
+		folders.changes = true
+		Library.update(0.016)
+
+		assert_equal(Library.update(3.1), false)
+		assert_equal(#listings, listed)
 	end)
 
 	it("leaves a folder whose every song is removed with no files", function()

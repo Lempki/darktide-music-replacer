@@ -974,6 +974,15 @@ describe("MusicReplacer.lua on-screen messages", function()
 		assert_equal(harness.on_screen_message.kinds[#harness.on_screen_message.kinds], "notice")
 	end)
 
+	it("show nothing for a listing after a restore, whose own message says how many songs came back", function()
+		local harness = in_hub()
+		local shown = #harness.on_screen_message.shown
+
+		harness.library.checked_listener({ songs = 4, folders = 2, other_formats = 1, unopenable = 0, after_restore = true })
+
+		assert_equal(#harness.on_screen_message.shown, shown)
+	end)
+
 	it("show no skipped-files notice when nothing was skipped", function()
 		local harness = in_hub()
 

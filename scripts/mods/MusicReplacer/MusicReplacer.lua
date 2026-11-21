@@ -335,7 +335,11 @@ local function show_files_skipped(counts)
 	end
 end
 
+-- A listing after a restore shows nothing, since the restore's own message already says how many songs came back.
 local function show_listing_checked(counts)
+	if counts.after_restore then
+		return
+	end
 	show_songs_found(counts)
 	show_files_skipped(counts)
 end
