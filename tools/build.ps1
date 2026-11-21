@@ -237,9 +237,12 @@ foreach ($context in $AudioContexts) {
 
 Write-Host ""
 Write-Host "audio\ (files never touched by this script):"
-foreach ($context in Get-ChildItem -LiteralPath (Join-Path $target 'audio') -Directory) {
+$audioFolders = @(Get-ChildItem -LiteralPath (Join-Path $target 'audio') -Directory)
+# The name column fits the longest folder name, so the counts line up whatever folders exist.
+$nameWidth = ($audioFolders | ForEach-Object { $_.Name.Length } | Measure-Object -Maximum).Maximum
+foreach ($context in $audioFolders) {
     $count = @(Get-ChildItem -LiteralPath $context.FullName -File).Count # @() so that a single file still counts as an array.
-    Write-Host ("  {0,-20} {1} file(s)" -f $context.Name, $count)
+    Write-Host ("  {0} {1} file(s)" -f $context.Name.PadRight($nameWidth), $count)
 }
 
 exit 0
