@@ -48,7 +48,7 @@ Keys that control the song playing now, and the setting that goes with them. Eve
 
 ## On-Screen Messages
 
-A message is one line of text on a backdrop in the corner of the screen that Message Corner sets. At offsets of 0 the backdrop touches the corner's two edges, and the text sits a few pixels inside it. It fades in over 0.4 seconds, stays for the Message Duration, and fades out over the Message Fade Out. A new message first pushes the one showing away from the corner over 0.3 seconds, upward in a bottom corner and downward in a top corner, where it shrinks to three quarters of its size. Then the new message fades in at the corner over 0.3 seconds, so the eye follows the pushed message away before the new one appears where it was. The pushed message keeps its own Message Duration, so it fades out when it would have, and the two lines show together only while messages come close together. A message pushed out of that second place fades out there over 0.3 seconds, so pressing keys quickly never makes the text flicker. A message wider than a third of the screen, such as one with a long song name, is cut there and ends with `…`. The same message again, such as a second Restart Song press's, keeps its line and stays another Message Duration. The messages are drawn in the game's always-visible layer, so they also show on loading screens and the mission briefing. With For Key Presses, For Song Changes, For Notices, and For Errors all off, no message shows. Every message shown is also written to `diagnostic.log`, and so is every notice and error while For Notices or For Errors is off.
+A message is one line of text on a backdrop in the corner of the screen that Message Corner sets. The messages are drawn in the game's always-visible layer, so they also show on loading screens and the mission briefing. Every message shown is also written to `diagnostic.log`, and so is every notice and error while For Notices or For Errors is off. [How a message shows](#how-a-message-shows), below the table, describes how messages fade, move, and make room for each other.
 
 | Setting | Default | What it does |
 |---|---|---|
@@ -67,6 +67,12 @@ A message is one line of text on a backdrop in the corner of the screen that Mes
 | Message Corner | Bottom Left | The corner of the screen the messages show in: Bottom Left, Bottom Right, Top Left, or Top Right. They align to its side, so in a right corner they are right-aligned and grow to the left. |
 | Message Offset X | 0 px | Moves the messages sideways, away from their corner toward the middle of the screen, from 0 to 10000. Type the exact number into the field. |
 | Message Offset Y | 0 px | Moves the messages up or down, away from their corner toward the middle of the screen, from 0 to 10000. |
+
+### How a message shows
+
+At offsets of 0 the backdrop touches the corner's two edges, and the text sits a few pixels inside it. A message fades in over 0.4 seconds, stays for the Message Duration, and fades out over the Message Fade Out. A new message first pushes the one showing away from the corner over 0.3 seconds, upward in a bottom corner and downward in a top corner, where it shrinks to three quarters of its size. Then the new message fades in at the corner over 0.3 seconds, so the eye follows the pushed message away before the new one appears where it was. The pushed message keeps its own Message Duration, so it fades out when it would have, and the two lines show together only while messages come close together. A message pushed out of that second place fades out there over 0.3 seconds, so pressing keys quickly never makes the text flicker.
+
+A message wider than a third of the screen, such as one with a long song name, is cut there and ends with `…`. The same message again, such as a second Restart Song press's, keeps its line and stays another Message Duration. With For Key Presses, For Song Changes, For Notices, and For Errors all off, no message shows.
 
 ## Music per Situation
 
