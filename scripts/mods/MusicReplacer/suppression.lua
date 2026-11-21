@@ -12,8 +12,9 @@ local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/
 local SUPPRESSED_MUSIC_EVENT_PATTERNS = { "events/music/play_exploration" }
 
 -- A cutscene starts its own music through an event whose name has both of these, such as play_cs03_music_116bpm.
+-- Its stop events, such as stop_cs07_music, have "music" in their name too, but only play_ events start any.
 -- That music can run on after the cutscene ends, under the custom song that takes over then.
-local CUTSCENE_EVENT_PREFIX = "events/cinematics/"
+local CUTSCENE_EVENT_PREFIX = "events/cinematics/play_"
 local CUTSCENE_MUSIC_WORD = "music"
 
 -- The mission's intro starts this stinger alongside its music state, a moment before the mod can take over.
@@ -29,6 +30,7 @@ local real_states = {} -- State group name -> the last value the game set, fed b
 local forced_groups = {} -- State group name -> true while that group is forced to "None" and not yet restored.
 
 local events_suppressed = false
+local engaged_context = nil -- The context whose custom song or silence the levers serve now, else nil.
 
 -- Cutscene music events that started in this level, each { world, playing_id, name }, to stop once a custom song plays.
 local cutscene_events = {}
@@ -137,10 +139,21 @@ function Suppression.init(detail_logger)
 end
 
 -- The single trigger_resource_event hook in MusicReplacer.lua calls this for every Wwise event.
+local function is_cutscene_music(event_name)
+	return event_name:find(CUTSCENE_EVENT_PREFIX, 1, true) and event_name:find(CUTSCENE_MUSIC_WORD, 1, true) and true or false
+end
+
 -- Returns true if the caller should stop the event it just started.
+-- A cutscene's music is stopped as it starts only while Cutscene itself plays a song or silence.
+-- Under any other context, the cutscene may still be set to the game's music, so its music waits for Suppression.engage.
 function Suppression.should_stop_event(event_name)
 	if not events_suppressed or type(event_name) ~= "string" then
 		return false
+	end
+
+	if engaged_context == "cutscene" and is_cutscene_music(event_name) then
+		log_detail(string.format("[suppress] stopped the cutscene's music event: %s", event_name))
+		return true
 	end
 
 	for _, pattern in ipairs(SUPPRESSED_MUSIC_EVENT_PATTERNS) do
@@ -160,8 +173,7 @@ function Suppression.watch_event(wwise_world, event_name, playing_id)
 		return
 	end
 
-	local is_cutscene_music = event_name:find(CUTSCENE_EVENT_PREFIX, 1, true) and event_name:find(CUTSCENE_MUSIC_WORD, 1, true)
-	if not is_cutscene_music and not event_name:find(INTRO_STINGER_EVENT, 1, true) then
+	if not is_cutscene_music(event_name) and not event_name:find(INTRO_STINGER_EVENT, 1, true) then
 		return
 	end
 
@@ -215,6 +227,7 @@ end
 function Suppression.engage(context_name)
 	local context = Contexts.get(context_name)
 	local silences = context and context.silences
+	engaged_context = context_name
 
 	set_combat(true)
 	set_events(true)
@@ -228,6 +241,7 @@ end
 
 -- Turns every lever off, for no context or a context with no custom track.
 function Suppression.release()
+	engaged_context = nil
 	set_combat(false)
 	set_zone(false)
 	set_game_state(false)

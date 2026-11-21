@@ -75,28 +75,26 @@ describe("context.lua mission endings", function()
 	end)
 
 	-- Some missions play a debrief cutscene after the loading screen, with the hub zone arriving partway through.
-	it("resolves no context during a debrief cutscene, and hub once it ends", function()
+	it("resolves cutscene during a debrief cutscene, and hub once it ends", function()
 		local harness = in_mission()
 
 		harness:end_with_victory("zone_3")
 		harness:debrief_cutscene_to_hub()
 
-		assert_deep_equal(harness.changes, { "victory", "loading", "nil", "hub" })
+		assert_deep_equal(harness.changes, { "victory", "loading", "cutscene", "hub" })
 	end)
 
 	-- The hub's own cutscenes, such as Path of Trust and the hub location intros, set a game state of their own.
-	it("resolves no context during a hub cutscene and names it a cutscene, then hub once it ends", function()
+	it("resolves cutscene during a hub cutscene, then hub once it ends", function()
 		local harness = Harness.new()
 		harness:cold_start_to_hub()
 		harness:clear_changes()
 
 		harness:state("music_game_state", "cinematic_pot")
-		assert_equal(harness.Context.idle_reason(), "cutscene")
-
 		harness:wait(43)
 		harness:state("music_game_state", "mission")
 
-		assert_deep_equal(harness.changes, { "nil", "hub" })
+		assert_deep_equal(harness.changes, { "cutscene", "hub" })
 	end)
 
 	-- A story mission's score screen goes straight into the cutscene, with no loading screen to clear the outcome.
@@ -111,7 +109,7 @@ describe("context.lua mission endings", function()
 		harness:wait(56)
 		harness:state("music_game_state", "cinematic")
 
-		assert_equal(harness:current(), nil)
+		assert_equal(harness:current(), "cutscene")
 
 		harness:wait(11)
 		harness:state("music_zone", "hub")
@@ -119,7 +117,7 @@ describe("context.lua mission endings", function()
 		harness:wait(41)
 		harness:state("music_game_state", "mission")
 
-		assert_deep_equal(harness.changes, { "victory", "nil", "hub" })
+		assert_deep_equal(harness.changes, { "victory", "cutscene", "hub" })
 	end)
 
 	it("clears the outcome when the next mission's intro starts", function()

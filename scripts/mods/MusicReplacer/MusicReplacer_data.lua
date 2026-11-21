@@ -7,7 +7,8 @@ local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/
 
 -- What a context plays. Custom keeps the mod's plain behavior: custom songs where there are files, the game's music elsewhere.
 -- A ranked situation with one below it also offers Skip, which lets that one play instead.
-local function source_widget(context_name)
+local function source_widget(context)
+	local context_name = context.id
 	local options = {
 		{ text = "source_custom", value = "custom" },
 		{ text = "source_game", value = "game" },
@@ -21,7 +22,7 @@ local function source_widget(context_name)
 		setting_id = "source_" .. context_name,
 		type = "dropdown",
 		tooltip = "source_" .. context_name .. "_tooltip",
-		default_value = "custom",
+		default_value = context.default_source or "custom",
 		options = options,
 	}
 end
@@ -31,7 +32,7 @@ local source_widgets = {}
 local meat_grinder_situations = {}
 for _, context in ipairs(Contexts.list) do
 	if not context.own_settings then
-		source_widgets[#source_widgets + 1] = source_widget(context.id)
+		source_widgets[#source_widgets + 1] = source_widget(context)
 		meat_grinder_situations[#meat_grinder_situations + 1] = { text = "source_" .. context.id, value = context.id }
 	end
 end

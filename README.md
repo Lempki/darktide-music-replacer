@@ -60,7 +60,7 @@ Everything below is optional detail.
 
 * It does not change sound effects or voice lines, only the music.
 * It does not affect your squadmates. They hear their own game's music.
-* It does not play your music during cutscenes. The game's music plays there.
+* It keeps the game's music in cutscenes, unless you set Cutscene to Custom or Silence.
 * It does not download or stream anything. It plays only the files in its own audio folders.
 
 ## How it plays your music
@@ -108,6 +108,7 @@ Victory and Defeat take over from all of them.
 | `event` | While a mission event plays its music, such as a holdout, a hacking event, an escape, or a scripted boss fight like those in Spillway. It is more urgent than Boss, Horde, Combat, and Explore, as the game's own event music is. In Operations, such as Rolling Steel and No Man's Land, it plays for the whole mission, since the game scripts their music from start to end. The prologue, Tancred Bastion, scripts its music the same way, so it mostly plays this folder too. |
 | `last_stand` | While only one player of the team is left alive. It is more urgent than every other mission situation. Victory and Defeat still take over. |
 | `victory`, `defeat` | From the moment a mission is won (`victory`) or lost (`defeat`) until the loading screen or a cutscene. It covers the closing shot of the mission and the score screen after it. |
+| `cutscene` | In a cutscene, such as a story mission's cutscene or a scene in the Mourningstar, like those on the Path of Trust. Cutscene is set to Vanilla by default, so cutscenes keep the game's music until you choose Custom or Silence. Either one stops only the cutscene's music, and its voices and sounds stay. The mission's intro, victory, and defeat have situations of their own. |
 | `mortis_trials_wave` | In Mortis Trials, during a wave or an objective round, through to the final win. Bosses, hordes, and fights do not interrupt it, since nearly every wave brings bosses. A last stand still takes over. |
 | `mortis_trials_break` | In Mortis Trials, between waves. |
 | `expedition_combat` | During a fight in an Expedition. Expeditions play this folder in place of `combat` and `horde`. |

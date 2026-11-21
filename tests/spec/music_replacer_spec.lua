@@ -366,6 +366,39 @@ describe("MusicReplacer.lua menus", function()
 	end)
 end)
 
+describe("MusicReplacer.lua cutscenes", function()
+	it("keeps the game's music in a cutscene by default, even with songs in its folder", function()
+		local harness = MainHarness.new({ files = {
+			hub = { { name = "h.mp3", duration = 300 } },
+			cutscene = { { name = "c.mp3", duration = 300 } },
+		} })
+		harness:cold_start_to_hub()
+		harness:settle()
+
+		harness:state("music_game_state", "cinematic_pot")
+		harness:settle()
+
+		assert_equal(harness.mod:get("source_cutscene"), "game")
+		assert_equal(harness:playing(), nil)
+		assert_equal(harness.engine:wwise_state("music_game_state"), "cinematic_pot")
+	end)
+
+	it("plays the cutscene folder and silences the game's cutscene music with Custom", function()
+		local harness = MainHarness.new({
+			files = { cutscene = { { name = "c.mp3", duration = 300 } } },
+			settings = { source_cutscene = "custom" },
+		})
+		harness:cold_start_to_hub()
+		harness:settle()
+
+		harness:state("music_game_state", "cinematic_pot")
+		harness:settle()
+
+		assert_equal(harness:playing(), "cutscene/c.mp3")
+		assert_equal(harness.engine:wwise_state("music_game_state"), "None")
+	end)
+end)
+
 describe("MusicReplacer.lua the same lone song in two folders", function()
 	-- Returns a harness that plays the title screen's song, with `character_select` as character select's files.
 	local function on_title_screen(character_select)

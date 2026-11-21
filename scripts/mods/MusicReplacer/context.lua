@@ -530,9 +530,9 @@ local function resolve(mod)
 	active_hold = nil
 	skipped_now = {}
 
-	-- Cutscenes get no custom music, whatever zone or outcome is still set.
+	-- A cutscene is its own situation, whatever zone or outcome is still set.
 	if CUTSCENE_GAME_STATES[music_game_state] then
-		return nil
+		return "cutscene"
 	end
 
 	-- The menus come before the outcome, since a mission's end always passes a loading screen before them.
@@ -736,12 +736,10 @@ function Context.current()
 	return resolved_context
 end
 
--- Why no context resolves now, for the debug overlay: "cutscene" or "unknown_state", else nil.
+-- Why no context resolves now, for the debug overlay: "unknown_state", else nil.
 function Context.idle_reason()
 	if resolved_context then
 		return nil
-	elseif CUTSCENE_GAME_STATES[music_game_state] then
-		return "cutscene"
 	elseif music_combat ~= nil and not KNOWN_COMBAT_STATES[music_combat] then
 		return "unknown_state"
 	end
@@ -764,8 +762,22 @@ end
 
 -- The game's own name for the moment `context_name` plays in now, or nil where the game names none.
 -- Hordes get none, since every horde starts at "horde_high" and drops to "horde_low" as it thins out.
+-- The name of the cutscene playing now, such as "path_of_trust_03", from the game's cutscene system, or nil.
+local function cutscene_name()
+	local extension_manager = Managers and Managers.state and Managers.state.extension
+	if not extension_manager or not extension_manager:has_system("cinematic_scene_system") then
+		return nil
+	end
+	local ok, name = pcall(function()
+		return extension_manager:system("cinematic_scene_system"):current_cinematic_name()
+	end)
+	return ok and name ~= "none" and name or nil
+end
+
 local function moment_kind(mod, context_name)
-	if context_name == "event" then
+	if context_name == "cutscene" then
+		return cutscene_name()
+	elseif context_name == "event" then
 		return event_kind
 	elseif context_name == "boss" then
 		return current_boss_breed(mod)

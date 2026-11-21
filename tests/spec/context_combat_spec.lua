@@ -168,10 +168,6 @@ describe("context.lua unknown combat states", function()
 
 		harness:state("music_combat", "new_state")
 		assert_equal(harness.Context.idle_reason(), "unknown_state")
-
-		harness:state("music_combat", "None")
-		harness:state("music_game_state", "cinematic")
-		assert_equal(harness.Context.idle_reason(), "cutscene")
 	end)
 
 	it("knows every value the game sends today, the Expedition ones included", function()

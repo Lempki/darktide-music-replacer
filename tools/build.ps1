@@ -24,7 +24,7 @@ $SourceItems = @("$ModName.mod", 'info.json', 'scripts')
 # One folder per context in contexts.lua, in its order, which tests/spec/contexts_spec.lua checks.
 $AudioContexts = @(
     'title_screen', 'character_select', 'hub', 'loading', 'mission_preparation', 'mission_briefing', 'mission_intro',
-    'explore', 'combat', 'horde', 'boss_approaching', 'boss', 'event', 'last_stand', 'victory', 'defeat',
+    'explore', 'combat', 'horde', 'boss_approaching', 'boss', 'event', 'last_stand', 'victory', 'defeat', 'cutscene',
     'mortis_trials_wave', 'mortis_trials_break', 'expedition_combat', 'expedition_safe_room', 'expedition_extraction', 'meat_grinder'
 )
 

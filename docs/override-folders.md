@@ -35,6 +35,7 @@ These folders can also hold the game's name for a moment inside them:
 | `hub` | `mission_ready` | While your party is matchmaking, from choosing a mission until it starts. |
 | `character_select` | `character_creation` | While you create a character. |
 | `victory`, `defeat` | `game_score_win`, `game_score_lose` | Once the score screen opens. The parent folder then plays only the closing shot of the mission. |
+| `cutscene` | The cutscene's name: `cutscene_2` to `cutscene_10` and `cutscene_5_hub` for the story cutscenes, `traitor_captain_intro`, `path_of_trust_01` to `_09`, and `hub_location_intro_barber`, `_contracts`, `_crafting`, `_gun_shop`, `_mission_board`, and `_training_grounds` for the Mourningstar's first visits. | During that cutscene. Cutscenes belong to no one mission, so the mod looks for no mission's code or game mode in this folder. |
 | `mortis_trials_wave` | `horde_mode_wave`, `horde_mode_objective`, `horde_mode_wave_last`, `horde_mode_win` | During a wave, an objective round, the last wave, or the final win. |
 | `expedition_combat` | `low_combat`, `med_combat`, `high_combat` | At that fight level, which follows how alert the enemy is. The level can change during a fight, which switches the song, and a level that comes back continues its song. |
 

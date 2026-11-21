@@ -522,6 +522,14 @@ local strings = {
 	source_defeat_tooltip = {
 		en = source_tooltip("after a mission is lost, until the loading screen or a cutscene"),
 	},
+	source_cutscene = {
+		en = "Cutscene",
+	},
+	source_cutscene_tooltip = {
+		en = source_tooltip("in a cutscene, such as a story mission's cutscene or a scene in the Mourningstar", "With " ..
+			highlight("Custom") .. " or " .. highlight("Silence") .. ", only the cutscene's music stops, and its voices and sounds stay. " ..
+			highlight("Vanilla") .. " is the default, so cutscenes keep the game's music."),
+	},
 	source_mortis_trials_wave = {
 		en = "Mortis Trials Wave",
 	},

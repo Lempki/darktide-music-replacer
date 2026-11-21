@@ -46,12 +46,27 @@ describe("context.lua override names", function()
 		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "event"), { "fm_cargo" })
 	end)
 
+	it("offers the cutscene playing as Cutscene's override folder, and no mission or game mode", function()
+		local harness = in_mission()
+		local cutscene = "none"
+		rawset(Managers.state, "extension", {
+			has_system = function(_, name) return name == "cinematic_scene_system" end,
+			system = function() return { current_cinematic_name = function() return cutscene end } end,
+		})
+
+		harness:state("music_game_state", "cinematic")
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "cutscene"), {})
+
+		cutscene = "traitor_captain_intro"
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "cutscene"), { "traitor_captain_intro" })
+	end)
+
 	it("keeps the event's kind through a cutscene in the middle of the event", function()
 		local harness = in_mission()
 		harness:state("music_objective", "fortification_event")
 
 		harness:state("music_game_state", "cinematic")
-		assert_equal(harness:current(), nil)
+		assert_equal(harness:current(), "cutscene")
 		harness:state("music_game_state", "mission")
 
 		assert_equal(harness:current(), "event")

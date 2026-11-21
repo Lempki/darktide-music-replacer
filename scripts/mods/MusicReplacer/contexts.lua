@@ -14,6 +14,7 @@
 --	* fallback: the context whose choice and folders it follows while its own choice is Custom and its own folders have no songs.
 --	  Boss Approaching is the start of a boss fight, so a player who fills only Boss's folders hears them from the moment a boss comes near.
 --	  It then also does what Boss is set to, so skipping or silencing boss music covers the approach too.
+--	* default_source: its choice before the player sets one, "custom" when not given, as the source_ settings name it.
 --	* mission_overrides: false for a context that belongs to no one mission, so no mission code or game mode names its override folders.
 --	  Without it, such a folder would apply only when the game happens to name a mission early or late, which no player could rely on.
 
@@ -36,6 +37,9 @@ Contexts.list = {
 	{ id = "last_stand", silences = "music_objective", priority = 7 },
 	{ id = "victory", silences = "music_game_state" },
 	{ id = "defeat", silences = "music_game_state" },
+	-- Cutscenes keep the game's music unless the player chooses otherwise, since their music is scored to the scene.
+	-- Each is named by its scene, so the scene's name finds it, not the mission it plays in.
+	{ id = "cutscene", silences = "music_game_state", default_source = "game", mission_overrides = false },
 	-- Mortis Trials' wave and break rank like event and explore, which they replace there.
 	{ id = "mortis_trials_wave", silences = "music_objective", priority = 6, resume = "always" },
 	{ id = "mortis_trials_break", priority = 1, resume = "always" },

@@ -337,6 +337,24 @@ describe("suppression.lua events", function()
 		assert_equal(Suppression.should_stop_event(EXPLORATION_EVENT), false)
 	end)
 
+	-- A cutscene set to the game's music must keep its music, so the music waits for Cutscene itself to take over.
+	it("stops a cutscene's music events as they start only while Cutscene plays a song or silence", function()
+		local _, Suppression = load_suppression()
+		local music = "wwise/events/cinematics/play_cs03_music_116bpm"
+
+		Suppression.engage("explore")
+		assert_equal(Suppression.should_stop_event(music), false)
+
+		Suppression.engage("cutscene")
+		assert_equal(Suppression.should_stop_event(music), true)
+		assert_equal(Suppression.should_stop_event("wwise/events/cinematics/play_cs03_footsteps"), false)
+		assert_equal(Suppression.should_stop_event("wwise/events/vo/play_cs03_zola_line_01"), false)
+		assert_equal(Suppression.should_stop_event("wwise/events/cinematics/stop_cs07_music"), false)
+
+		Suppression.release()
+		assert_equal(Suppression.should_stop_event(music), false)
+	end)
+
 	it("lets every other event through while engaged", function()
 		local _, Suppression = load_suppression()
 		Suppression.engage("explore")
