@@ -850,6 +850,29 @@ describe("audio_client.lua volume", function()
 		assert_deep_equal(streams[2].gains, { 1, 0.25 })
 	end)
 
+	it("plays each song at its situation's share, which a song fading out keeps", function()
+		local AudioClient, _, streams = load_full_client()
+		AudioClient.play("hub/a.mp3", { fade_in = true, share = 0.5 })
+		AudioClient.play("boss/b.mp3", { fade_in = true, share = 0.8 })
+
+		AudioClient.set_volume(0.5)
+
+		assert_equal(streams[1].opts.gain, 0.5)
+		assert_equal(streams[2].opts.gain, 0.8)
+		assert_deep_equal(streams[1].gains, { 0.5, 0.25 })
+		assert_deep_equal(streams[2].gains, { 0.8, 0.4 })
+	end)
+
+	it("follows a changed share on the song playing now, and on a song kept for another situation", function()
+		local AudioClient, _, streams = load_full_client()
+		AudioClient.play("boss/b.mp3", { fade_in = true, share = 1 })
+
+		AudioClient.set_share(0.5)
+		AudioClient.retarget("boss/b.mp3", { share = 0.75 })
+
+		assert_deep_equal(streams[1].gains, { 1, 0.5, 0.75 })
+	end)
+
 	it("fades down to the menu volume over half a second while a menu is open, and back up once it closes", function()
 		local AudioClient, _, streams = load_full_client()
 		AudioClient.play("hub/a.mp3", { fade_in = true })

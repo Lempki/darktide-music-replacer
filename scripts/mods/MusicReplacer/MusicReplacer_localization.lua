@@ -408,6 +408,22 @@ local strings = {
 	music_per_situation = {
 		en = "Music per Situation",
 	},
+	situation_title = {
+		en = "Situation",
+	},
+	shown_situation_tooltip = {
+		en = "The situation whose settings show below. Each situation keeps its own settings, whichever one is shown.",
+	},
+	situation_music = {
+		en = "Music",
+	},
+	situation_volume = {
+		en = "Volume",
+	},
+	situation_volume_tooltip = {
+		en = "How loud this situation's songs play, as a share of " .. highlight("Custom Music Volume") .. ".\n\n" ..
+			highlight("100%%") .. " plays them at the full Custom Music Volume.",
+	},
 	source_custom = {
 		en = "Custom",
 	},

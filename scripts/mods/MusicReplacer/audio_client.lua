@@ -209,10 +209,10 @@ local function apply_gain()
 	gain = current_gain()
 
 	if current and current.stream then
-		current.stream:set_gain(gain * current.level)
+		current.stream:set_gain(gain * current.level * current.share)
 	end
 	for _, entry in ipairs(outgoing) do
-		entry.stream:set_gain(gain * entry.level)
+		entry.stream:set_gain(gain * entry.level * entry.share)
 	end
 end
 
@@ -246,6 +246,15 @@ function AudioClient.set_volume(scale)
 	end
 end
 
+-- Sets the share of the volume that the song playing now gets from its situation's Volume, as a linear scale, at once.
+-- A song fading out keeps the share of the situation it played for.
+function AudioClient.set_share(share)
+	if current and current.share ~= share then
+		current.share = share
+		apply_gain()
+	end
+end
+
 -- Asks every song for its own level again, as when evening out is turned on or off, and applies it at once.
 function AudioClient.refresh_levels()
 	if current then
@@ -268,7 +277,9 @@ end
 
 local function fade_out(entry, seconds)
 	entry.stream:fade_to(0, seconds)
-	outgoing[#outgoing + 1] = { stream = entry.stream, file_path = entry.file_path, loop = entry.loop, level = entry.level, parked_elapsed = nil }
+	outgoing[#outgoing + 1] = {
+		stream = entry.stream, file_path = entry.file_path, loop = entry.loop, level = entry.level, share = entry.share, parked_elapsed = nil,
+	}
 end
 
 -- Frees the oldest parked songs beyond MAX_PARKED. The list is in the order the songs faded out.
@@ -361,7 +372,8 @@ local function song_fade_seconds(duration, seconds)
 end
 
 -- Plays file_path, crossfading with whatever was playing.
--- opts: fade_in, fade_seconds, loop, start_position, duration_seconds, and on_finished(failed).
+-- opts: fade_in, fade_seconds, loop, start_position, duration_seconds, share, and on_finished(failed).
+-- share is the situation's Volume, as a linear scale, 1 when not given.
 -- fade_seconds sets this switch's crossfade instead of the Fade Length, as for the playback keys.
 -- The song's own fade at its end still takes the Fade Length.
 -- Returns false when playback is unavailable.
@@ -399,6 +411,7 @@ function AudioClient.play(file_path, opts)
 	current_master_slider, current_music_slider = read_sliders()
 	gain = current_gain()
 	local level = level_of(file_path)
+	local share = opts.share or 1
 	local measured = is_measured(file_path)
 
 	local loop = opts.loop == true
@@ -407,14 +420,14 @@ function AudioClient.play(file_path, opts)
 	if revived then
 		stream = revived
 		stream:resume()
-		stream:set_gain(gain * level)
+		stream:set_gain(gain * level * share)
 		stream:fade_to(1, opts.fade_in and song_fade_seconds(song_duration(stream, loop, opts.duration_seconds), switch_seconds) or 0)
 		log(string.format("[player] continuing %s from %.1fs, where it faded out", file_path, stream:position()))
 	else
 		local open_opts = {
 			start_position = opts.start_position,
 			loop = loop,
-			gain = gain * level,
+			gain = gain * level * share,
 			fade = opts.fade_in and 0 or 1,
 		}
 		local refused_voice
@@ -450,6 +463,7 @@ function AudioClient.play(file_path, opts)
 		file_path = file_path,
 		loop = loop,
 		level = level,
+		share = share,
 		measured = measured,
 		duration = opts.duration_seconds,
 		on_finished = opts.on_finished,
@@ -470,6 +484,7 @@ function AudioClient.retarget(file_path, opts)
 	current.file_path = file_path
 	current.on_finished = opts.on_finished
 	current.duration = opts.duration_seconds
+	AudioClient.set_share(opts.share or 1)
 	return true
 end
 

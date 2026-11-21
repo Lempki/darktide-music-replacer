@@ -40,7 +40,7 @@ describe("contexts.lua", function()
 		assert_equal(Contexts.get(nil), nil)
 	end)
 
-	it("gives Meat Grinder's choice a group of its own, and offers every other situation to its One Situation", function()
+	it("shows every situation but Meat Grinder under one Situation dropdown, and offers each to Meat Grinder's One Situation", function()
 		local engine = FakeEngine.new()
 		local Contexts = engine:load("contexts")
 		local data = engine:load("MusicReplacer_data")
@@ -49,26 +49,35 @@ describe("contexts.lua", function()
 			groups[group.setting_id] = group
 		end
 
-		local dropdowns = {}
-		for _, widget in ipairs(groups.music_per_situation.sub_widgets) do
-			dropdowns[#dropdowns + 1] = widget.setting_id
+		-- Each choice of the Situation dropdown shows that situation's own settings, and only those.
+		local situation_dropdown = groups.music_per_situation.sub_widgets[1]
+		local shown = {}
+		for _, option in ipairs(situation_dropdown.options) do
+			local ids = {}
+			for _, index in ipairs(option.show_widgets) do
+				ids[#ids + 1] = situation_dropdown.sub_widgets[index].setting_id
+			end
+			shown[option.value] = ids
 		end
 		local situations = {}
 		for _, option in ipairs(groups.meat_grinder.sub_widgets[1].sub_widgets[1].options) do
 			situations[#situations + 1] = option.value
 		end
 
-		local expected_dropdowns = {}
+		local expected_shown = {}
 		local expected_situations = {}
 		for _, context in ipairs(Contexts.list) do
 			if context.id ~= "meat_grinder" then
-				expected_dropdowns[#expected_dropdowns + 1] = "source_" .. context.id
+				expected_shown[context.id] = { "source_" .. context.id, "volume_" .. context.id }
 				expected_situations[#expected_situations + 1] = context.id
 			end
 		end
 
 		assert_equal(groups.meat_grinder.sub_widgets[1].setting_id, "source_meat_grinder")
-		assert_deep_equal(dropdowns, expected_dropdowns)
+		assert_equal(#groups.music_per_situation.sub_widgets, 1)
+		assert_equal(situation_dropdown.setting_id, "shown_situation")
+		assert_deep_equal(shown, expected_shown)
+		assert_equal(#situation_dropdown.sub_widgets, 2 * #expected_situations)
 		assert_deep_equal(situations, expected_situations)
 	end)
 

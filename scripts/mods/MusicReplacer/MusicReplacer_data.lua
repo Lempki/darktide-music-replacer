@@ -20,6 +20,8 @@ local function source_widget(context)
 
 	return {
 		setting_id = "source_" .. context_name,
+		-- The Situation dropdown above it names the situation, so its own title only says what it sets.
+		title = "situation_music",
 		type = "dropdown",
 		tooltip = "source_" .. context_name .. "_tooltip",
 		default_value = context.default_source or "custom",
@@ -27,12 +29,37 @@ local function source_widget(context)
 	}
 end
 
--- One dropdown per context, in the catalog's order, and Meat Grinder's situations to choose from.
-local source_widgets = {}
+-- One Situation dropdown, whose choice shows only that situation's settings, so the menu does not grow by a row per situation.
+-- Every situation's settings exist all along, hidden while another is chosen, so their saved values stay as they are.
+-- Meat Grinder's situations to choose from come from the same list.
+-- A situation's own settings, which show below its Music choice.
+local function situation_settings(context)
+	return {
+		source_widget(context),
+		{
+			setting_id = "volume_" .. context.id,
+			title = "situation_volume",
+			type = "numeric",
+			tooltip = "situation_volume_tooltip",
+			default_value = 100,
+			range = { 0, 100 },
+			decimals_number = 0,
+			unit_text = "percent_unit",
+		},
+	}
+end
+
+local situation_widgets = {}
+local situation_options = {}
 local meat_grinder_situations = {}
 for _, context in ipairs(Contexts.list) do
 	if not context.own_settings then
-		source_widgets[#source_widgets + 1] = source_widget(context)
+		local shown = {}
+		for _, widget in ipairs(situation_settings(context)) do
+			situation_widgets[#situation_widgets + 1] = widget
+			shown[#shown + 1] = #situation_widgets
+		end
+		situation_options[#situation_options + 1] = { text = "source_" .. context.id, value = context.id, show_widgets = shown }
 		meat_grinder_situations[#meat_grinder_situations + 1] = { text = "source_" .. context.id, value = context.id }
 	end
 end
@@ -350,7 +377,17 @@ return {
 			{
 				setting_id = "music_per_situation",
 				type = "group",
-				sub_widgets = source_widgets,
+				sub_widgets = {
+					{
+						setting_id = "shown_situation",
+						title = "situation_title",
+						type = "dropdown",
+						tooltip = "shown_situation_tooltip",
+						default_value = "explore",
+						options = situation_options,
+						sub_widgets = situation_widgets,
+					},
+				},
 			},
 			{
 				setting_id = "meat_grinder",

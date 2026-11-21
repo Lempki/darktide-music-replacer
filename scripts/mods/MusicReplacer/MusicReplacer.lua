@@ -117,6 +117,12 @@ local function custom_volume()
 	return mod:get("custom_music_volume") / 100
 end
 
+-- A situation's own Volume, as a share of the Custom Music Volume. Meat Grinder has none, so it plays at the full share.
+local function situation_share(context_name)
+	local percent = context_name and mod:get("volume_" .. context_name)
+	return type(percent) == "number" and percent / 100 or 1
+end
+
 -- Moving from one menu to another, such as from a vendor back to the Esc menu, reports no menu for a moment.
 -- So the music stays lowered until no menu has been open for this long.
 local MENU_CLOSED_SECONDS = 0.5
@@ -318,6 +324,7 @@ local function track_opts(context_name, folder, track)
 	-- A looping song loops from its first play, with no seam, so it needs no end fade.
 	return {
 		duration_seconds = not is_looping and duration or nil,
+		share = situation_share(context_name),
 		fade_in = track.fade_in,
 		fade_seconds = track.fade_seconds,
 		loop = is_looping,
@@ -1316,6 +1323,8 @@ mod.on_setting_changed = function(setting_id)
 		log(string.format("[playback] %s: let songs finish turned off, so %s takes over now", current_context, next_context))
 		current_context = next_context
 		play_context(next_context, true)
+	elseif enabled and current_context and setting_id == "volume_" .. current_context then
+		AudioClient.set_share(situation_share(current_context))
 	elseif setting_id == "resume_songs" and not mod:get("resume_songs") then
 		ResumePoints.forget_all()
 	elseif enabled and current_context and (setting_id == "source_" .. current_context

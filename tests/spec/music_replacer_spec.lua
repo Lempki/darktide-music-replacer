@@ -366,6 +366,25 @@ describe("MusicReplacer.lua menus", function()
 	end)
 end)
 
+describe("MusicReplacer.lua situation volume", function()
+	it("plays a situation's songs at its own Volume, and follows a change of it at once", function()
+		local harness = MainHarness.new({
+			files = { hub = { { name = "h.mp3", duration = 300 } } },
+			settings = { volume_hub = 40 },
+		})
+		harness:cold_start_to_hub()
+		harness:settle()
+
+		assert_equal(harness:last_play().opts.share, 0.4)
+
+		harness:set_setting("volume_hub", 70)
+		assert_equal(harness.client.share, 0.7)
+
+		harness:set_setting("volume_explore", 10)
+		assert_equal(harness.client.share, 0.7)
+	end)
+end)
+
 describe("MusicReplacer.lua cutscenes", function()
 	it("keeps the game's music in a cutscene by default, even with songs in its folder", function()
 		local harness = MainHarness.new({ files = {
