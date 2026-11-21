@@ -77,8 +77,9 @@ local strings = {
 		en = "Resume Songs",
 	},
 	resume_songs_tooltip = {
-		en = "Explore, Combat, Mortis Trials Wave and Break, Expedition Combat, and Expedition Safe Room songs continue where they stopped when their music comes back.\n\n" ..
-			"Horde, Boss Approaching, Boss, and Event songs also continue after an interruption, as long as that horde, boss fight, or event lasts. " ..
+		en = "Continues a song where it stopped when its situation comes back, such as Explore after a fight.\n\n" ..
+			"Explore, Combat, Mortis Trials Wave and Break, Expedition Combat, and Expedition Safe Room songs always do. " ..
+			"Horde, Boss Approaching, Boss, and Event songs do as long as that horde, boss fight, or event lasts. " ..
 			"Every mission and hub visit starts with fresh songs.",
 	},
 
@@ -139,13 +140,17 @@ local strings = {
 		en = "Toggle Shuffle",
 	},
 	shuffle_keybind_tooltip = {
-		en = "Turns Shuffle on or off, and the message says which.",
+		en = "Turns Shuffle on or off, and the message says which.\n\n" ..
+			"While the situation playing now has its own " .. highlight("Shuffle") .. " set to On or Off, " ..
+			"it changes that one instead, and the message names the situation.",
 	},
 	repeat_song_keybind = {
 		en = "Toggle Repeat Song",
 	},
 	repeat_song_keybind_tooltip = {
-		en = "Turns Repeat Song on or off, and the message says which.",
+		en = "Turns Repeat Song on or off, and the message says which.\n\n" ..
+			"While the situation playing now has its own " .. highlight("Repeat Song") .. " set to On or Off, " ..
+			"it changes that one instead, and the message names the situation.",
 	},
 	key_fade_seconds = {
 		en = "Key Fade Length",
