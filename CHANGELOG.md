@@ -4,6 +4,8 @@ What changes for players in each release of Music Replacer. The format follows [
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-21
+
 ### Features
 
 * Notice Color and Error Color settings in the On-Screen Messages group color the messages about something you need to know and about something that went wrong, amber and red by default.
@@ -104,7 +106,8 @@ What changes for players in each release of Music Replacer. The format follows [
 
 First public release.
 
-[Unreleased]: https://github.com/Lempki/darktide-music-replacer/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/Lempki/darktide-music-replacer/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/Lempki/darktide-music-replacer/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/Lempki/darktide-music-replacer/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/Lempki/darktide-music-replacer/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Lempki/darktide-music-replacer/releases/tag/v1.0.0
