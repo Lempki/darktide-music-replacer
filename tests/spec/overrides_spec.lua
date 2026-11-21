@@ -41,7 +41,7 @@ describe("context.lua override names", function()
 		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "event"), { "escape_event", "fm_cargo" })
 
 		harness:state("music_objective", "None")
-		harness:wait(5.2)
+		harness:wait(8.2)
 		assert_equal(harness:current(), "explore")
 		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "event"), { "fm_cargo" })
 	end)

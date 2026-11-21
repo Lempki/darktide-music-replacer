@@ -99,7 +99,7 @@ A hold is there for a signal that the game turns off and on again within what is
 |---|---|---|
 | Combat Music Hold | 8 seconds | How long Combat keeps playing after the game stops reporting a fight. The game drops that signal every few seconds during a fight, so a short lull does not switch to Explore. It also covers Expedition Combat. |
 | Horde Music Hold | 3 seconds | How long Horde keeps playing after the game stops reporting a horde. The game drops that signal for a moment whenever few enemies are on you, so a short hold keeps the song from switching away and back. |
-| Event Music Hold | 5 seconds | How long Event keeps playing after the game stops reporting an event. Some events drop that signal for a few seconds between their stages, so a short hold keeps the event's song from starting over at every stage. |
+| Event Music Hold | 8 seconds | How long Event keeps playing after the game stops reporting an event. Some events drop that signal for a few seconds between their stages, so a short hold keeps the event's song from starting over at every stage. |
 
 ## Debug
 

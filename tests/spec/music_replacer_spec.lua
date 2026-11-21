@@ -1495,7 +1495,7 @@ describe("MusicReplacer.lua switching back and forth between override folders", 
 		switch_to(harness, "escape_event")
 
 		harness:state("music_objective", "None")
-		harness:wait(6)
+		harness:wait(9)
 		harness:settle()
 		assert_equal(harness:playing(), nil)
 

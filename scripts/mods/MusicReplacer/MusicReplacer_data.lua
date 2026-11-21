@@ -451,7 +451,7 @@ return {
 						setting_id = "event_hold_seconds",
 						type = "numeric",
 						tooltip = "event_hold_seconds_tooltip",
-						default_value = 5,
+						default_value = 8,
 						range = { 0, 30 },
 						decimals_number = 0,
 						unit_text = "seconds_unit",

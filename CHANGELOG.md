@@ -24,6 +24,7 @@ What changes for players in each release of Music Replacer. The format follows [
 * Every on-screen message is also written to `diagnostic.log`, since a message shows for only a few seconds.
 * A new on-screen message waits for the message it pushes to slide away before it fades in, so the pushed message no longer seems to stay where it was.
 * Even Out Loudness is on by default, so songs from different sources play at about the same loudness from the start. If you already have the mod, your setting stays as it is.
+* Event Music Hold is 8 seconds by default, up from 5, so an event's song plays on through the longer pauses between its stages, such as the prologue's. If you already have the mod, your setting stays as it is.
 * Boss plays from the moment a boss's HP bar shows until the game reports the boss gone, which never drops while the boss lives, so the Boss Music Hold setting is gone. A weakened monstrosity plays no boss music, as in the game, and Expeditions keep to their own situations, with no boss music for captains or daemonhosts there either.
 * With Boss set to Skip, Horde and Combat play through a boss fight for as long as a horde or fight goes on. Before, the game's boss state hid them, so they played only for as long as Combat Music Hold or Horde Music Hold kept them, and Explore after that.
 * A new on-screen message pushes the one showing away from the corner, where it shrinks to three quarters of its size and stays for the rest of its own Message Duration, instead of crossfading it away. Two messages close together are now both readable.
