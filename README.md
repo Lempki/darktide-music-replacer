@@ -84,7 +84,7 @@ Windows "N" editions leave out Media Foundation, so on one, install Microsoft's 
 
 ## Where your music plays
 
-The folders most people fill first are in bold. Each folder plays in one situation. The music switches about half a second after the situation changes, so a moment that flickers does not restart the song. Into a loading screen, other than the briefing after the preparation screen, it waits 3 seconds, and so does the first situation after a loading screen, other than the hub, the preparation screen, and the mission's intro. The Music Holds settings also keep combat, horde, and event music going for a few seconds, so a short lull does not switch the music at once.
+The folders most people fill first are in bold. Each folder plays in one situation.
 
 In a mission, the most urgent situation going on plays. From the most urgent down:
 
@@ -124,6 +124,8 @@ Victory and Defeat take over from all of them.
 | `meat_grinder` | In the Meat Grinder training area, with Meat Grinder Folder chosen, as [Meat Grinder](#meat-grinder) explains. |
 
 In Mortis Trials, the two Mortis Trials folders replace the mission folders from `explore` to `event`. In an Expedition, quiet moments play `explore`.
+
+The music switches about half a second after the situation changes, so a moment that flickers does not restart the song. Into a loading screen, other than the briefing after the preparation screen, it waits 3 seconds, and so does the first situation after a loading screen, other than the hub, the preparation screen, and the mission's intro. The Music Holds settings also keep combat, horde, and event music going for a few seconds, so a short lull does not switch the music at once.
 
 ## Choosing what plays
 
