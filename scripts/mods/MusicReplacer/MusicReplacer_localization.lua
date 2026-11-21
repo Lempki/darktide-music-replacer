@@ -404,6 +404,19 @@ local strings = {
 	control_repeat_song_off = {
 		en = "Repeat song off",
 	},
+	-- The %s is the situation's name, such as "Boss", whose own choice the key changed.
+	control_shuffle_on_for = {
+		en = "Shuffle on for %s",
+	},
+	control_shuffle_off_for = {
+		en = "Shuffle off for %s",
+	},
+	control_repeat_song_on_for = {
+		en = "Repeat song on for %s",
+	},
+	control_repeat_song_off_for = {
+		en = "Repeat song off for %s",
+	},
 
 	music_per_situation = {
 		en = "Music per Situation",
@@ -416,6 +429,29 @@ local strings = {
 	},
 	situation_music = {
 		en = "Music",
+	},
+	situation_shuffle = {
+		en = "Shuffle",
+	},
+	situation_shuffle_tooltip = {
+		en = "Whether this situation's songs play in a random order, as " .. highlight("Shuffle") .. " in the Playback group does for all of them.\n\n" ..
+			highlight("Default") .. " follows that setting. " .. highlight("On") .. " and " .. highlight("Off") .. " decide for this situation alone.",
+	},
+	situation_repeat = {
+		en = "Repeat Song",
+	},
+	situation_repeat_tooltip = {
+		en = "Whether this situation's song loops, as " .. highlight("Repeat Song") .. " in the Playback group does for all of them.\n\n" ..
+			highlight("Default") .. " follows that setting. " .. highlight("On") .. " and " .. highlight("Off") .. " decide for this situation alone.",
+	},
+	situation_default = {
+		en = "Default",
+	},
+	situation_on = {
+		en = "On",
+	},
+	situation_off = {
+		en = "Off",
 	},
 	situation_volume = {
 		en = "Volume",

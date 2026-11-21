@@ -32,6 +32,22 @@ end
 -- One Situation dropdown, whose choice shows only that situation's settings, so the menu does not grow by a row per situation.
 -- Every situation's settings exist all along, hidden while another is chosen, so their saved values stay as they are.
 -- Meat Grinder's situations to choose from come from the same list.
+-- A situation's own choice of a Playback setting: Default follows the Playback group, and On and Off decide for it alone.
+local function own_choice_widget(setting_id, title)
+	return {
+		setting_id = setting_id,
+		title = title,
+		type = "dropdown",
+		tooltip = title .. "_tooltip",
+		default_value = "default",
+		options = {
+			{ text = "situation_default", value = "default" },
+			{ text = "situation_on", value = "on" },
+			{ text = "situation_off", value = "off" },
+		},
+	}
+end
+
 -- A situation's own settings, which show below its Music choice.
 local function situation_settings(context)
 	return {
@@ -46,6 +62,8 @@ local function situation_settings(context)
 			decimals_number = 0,
 			unit_text = "percent_unit",
 		},
+		own_choice_widget("shuffle_" .. context.id, "situation_shuffle"),
+		own_choice_widget("repeat_" .. context.id, "situation_repeat"),
 	}
 end
 

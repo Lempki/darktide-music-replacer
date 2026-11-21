@@ -139,15 +139,43 @@ local function menu_volume(dt)
 	return menu_closed_elapsed < MENU_CLOSED_SECONDS and mod:get("menu_volume") / 100 or 1
 end
 
--- True when a song loops: a folder's only song always does, and with Repeat Song on, every song does.
-local function loops(is_only_file)
-	return is_only_file == true or mod:get("repeat_song") == true
+-- The situation's own choice for `kind`, "shuffle" or "repeat", as its setting says: "on", "off", or nil to follow Playback's.
+local function own_choice(kind, context_name)
+	local choice = context_name and mod:get(kind .. "_" .. context_name)
+	return (choice == "on" or choice == "off") and choice or nil
+end
+
+-- The setting that decides `kind` for `context_name`: the situation's own while it has one, else Playback's.
+local function deciding_setting(kind, context_name)
+	if own_choice(kind, context_name) then
+		return kind .. "_" .. context_name
+	end
+	return kind == "repeat" and "repeat_song" or "shuffle"
+end
+
+-- True when `kind`, "shuffle" or "repeat", is on for the situation, by its own choice or else Playback's.
+local function is_on_for(kind, context_name)
+	local choice = own_choice(kind, context_name)
+	if choice then
+		return choice == "on"
+	end
+	return mod:get(kind == "repeat" and "repeat_song" or "shuffle") == true
+end
+
+-- True when a song loops: a folder's only song always does, and with Repeat Song on for its situation, every song does.
+local function loops(is_only_file, context_name)
+	return is_only_file == true or is_on_for("repeat", context_name)
 end
 
 -- True when a song that starts or changes now loops.
 -- A song that Let Songs Finish waits for has to end, so the waiting situation can take over, and so does a key's song in its place.
-local function plays_looping(is_only_file)
-	return loops(is_only_file) and not context_after_song
+local function plays_looping(is_only_file, context_name)
+	return loops(is_only_file, context_name) and not context_after_song
+end
+
+-- Sets the playlist's order by the situation playing now, since Shuffle can differ per situation.
+local function follow_shuffle(context_name)
+	Playlist.set_shuffle(is_on_for("shuffle", context_name))
 end
 
 local function remember_playing_track(next_context_name)
@@ -166,7 +194,7 @@ local function remember_playing_track(next_context_name)
 	end
 
 	local position = ResumePoints.remember(playing_track.context_name, playing_track.file_path,
-		stopped_at, playing_track.duration, loops(playing_track.is_only_file), next_context_name)
+		stopped_at, playing_track.duration, loops(playing_track.is_only_file, playing_track.context_name), next_context_name)
 
 	if position then
 		log(string.format("[resume] %s: remembering %s at %.1fs", playing_track.context_name, playing_track.file_path, position))
@@ -181,7 +209,7 @@ local function remember_folder_song()
 	end
 
 	local position = ResumePoints.remember_folder(current_folder, playing_track.file_path,
-		AudioClient.position(), playing_track.duration, loops(playing_track.is_only_file))
+		AudioClient.position(), playing_track.duration, loops(playing_track.is_only_file, playing_track.context_name))
 
 	if position then
 		log(string.format("[resume] %s: remembering %s at %.1fs for the %s folder", current_context, playing_track.file_path, position, current_folder))
@@ -319,7 +347,7 @@ local play_track
 -- `track` holds file_path, duration, is_only_file, start_position, fade_in, and fade_seconds, which only the keys set.
 local function track_opts(context_name, folder, track)
 	local duration = track.duration
-	local is_looping = plays_looping(track.is_only_file)
+	local is_looping = plays_looping(track.is_only_file, context_name)
 
 	-- A looping song loops from its first play, with no seam, so it needs no end fade.
 	return {
@@ -375,7 +403,7 @@ local function track_opts(context_name, folder, track)
 
 			-- Repeat Song turned on too late for the stream to loop still repeats this song, from a new start.
 			-- A song that ended at once is left to the checks above, so a broken file cannot repeat forever.
-			if not quick and mod:get("repeat_song") then
+			if not quick and is_on_for("repeat", context_name) then
 				local file_path, file_duration, is_only_file = Library.find_file(folder, track.file_path)
 				if file_path then
 					log(string.format("[playback] %s: repeating %s", context_name, file_path))
@@ -402,7 +430,7 @@ play_track = function(context_name, folder, track)
 	log(string.format("[playback] %s: %s %s%s (duration=%s%s%s)",
 		context_name, start_position and "resuming" or "playing", file_path,
 		start_position and string.format(" at %.1fs", start_position) or "",
-		tostring(track.duration), plays_looping(track.is_only_file) and ", looping" or "", loudness and (", " .. loudness) or ""))
+		tostring(track.duration), plays_looping(track.is_only_file, context_name) and ", looping" or "", loudness and (", " .. loudness) or ""))
 
 	playing_track = { context_name = context_name, file_path = file_path, duration = track.duration, is_only_file = track.is_only_file }
 
@@ -420,6 +448,7 @@ play_context = function(context_name, is_new_context)
 		ResumePoints.enter(context_name)
 		-- Previous Song stays within one situation, and a switch to an override folder or a replay starts the situation afresh too.
 		Playlist.forget_history()
+		follow_shuffle(context_name)
 	end
 
 	-- Whatever the context plays now replaces a paused song.
@@ -618,7 +647,7 @@ local function commit_pending_context()
 		if context_after_song then
 			log(string.format("[playback] %s: back before the song ended, so %s no longer waits", current_context, tostring(context_after_song)))
 			context_after_song = nil
-			local is_looping = loops(playing_track.is_only_file)
+			local is_looping = loops(playing_track.is_only_file, playing_track.context_name)
 			AudioClient.set_loop(is_looping, not is_looping and playing_track.duration or nil)
 		end
 		return
@@ -942,21 +971,12 @@ mod.remove_song = function()
 	end
 end
 
--- The Toggle Shuffle key. It changes the setting itself, so the mod options show the new choice and it lasts.
--- It works whatever plays, since it only decides what the next pick does.
 -- Turns the Debug Overlay setting itself on or off, so the checkbox follows and the choice stays after a restart.
 -- The overlay showing or hiding is the only feedback, so no message shows.
 mod.toggle_debug_overlay = function()
 	local is_on = not mod:get("debug_overlay")
 	mod:set("debug_overlay", is_on, true)
 	log(string.format("[control] debug overlay %s", is_on and "on" or "off"))
-end
-
-mod.toggle_shuffle = function()
-	local is_on = not mod:get("shuffle")
-	mod:set("shuffle", is_on, true)
-	log(string.format("[control] shuffle %s", is_on and "on" or "off"))
-	notify_control(is_on and "control_shuffle_on" or "control_shuffle_off")
 end
 
 -- Makes the song playing now follow Repeat Song, so the setting takes effect without waiting for the next song.
@@ -966,7 +986,7 @@ local function apply_repeat_song()
 		return
 	end
 
-	local is_looping = plays_looping(playing_track.is_only_file)
+	local is_looping = plays_looping(playing_track.is_only_file, playing_track.context_name)
 	if AudioClient.set_loop(is_looping, not is_looping and playing_track.duration or nil) then
 		log(string.format("[playback] %s: %s %s", current_context, playing_track.file_path, is_looping and "loops now" or "plays to its end now"))
 	else
@@ -974,13 +994,43 @@ local function apply_repeat_song()
 	end
 end
 
--- The Toggle Repeat Song key. Like Toggle Shuffle, it changes the setting itself, and works whatever plays.
-mod.toggle_repeat_song = function()
-	local is_on = not mod:get("repeat_song")
+-- Turns `kind`, "shuffle" or "repeat", on or off where it is decided for the situation playing now, and says so.
+-- A situation with its own choice gets the other one, and otherwise Playback's setting flips, so the key always changes what you hear.
+-- `messages` names the message for each outcome: on, off, and on_for and off_for, which name the situation.
+local function toggle_deciding(kind, messages)
+	local setting_id = deciding_setting(kind, current_context)
+	local is_on = not is_on_for(kind, current_context)
+	local own = setting_id ~= "shuffle" and setting_id ~= "repeat_song"
 	-- Logged first, since the setting change logs what it does to the song playing now.
-	log(string.format("[control] repeat song %s", is_on and "on" or "off"))
-	mod:set("repeat_song", is_on, true)
-	notify_control(is_on and "control_repeat_song_on" or "control_repeat_song_off")
+	log(string.format("[control] %s %s%s", kind, is_on and "on" or "off", own and (" for " .. current_context) or ""))
+	if own then
+		mod:set(setting_id, is_on and "on" or "off", true)
+		notify_control(is_on and messages.on_for or messages.off_for, mod:localize("source_" .. current_context))
+	else
+		mod:set(setting_id, is_on, true)
+		notify_control(is_on and messages.on or messages.off)
+	end
+end
+
+-- The Toggle Shuffle key. It changes a setting itself, so the mod options show the new choice and it lasts.
+-- It works whatever plays, since it only decides what the next pick does.
+mod.toggle_shuffle = function()
+	toggle_deciding("shuffle", {
+		on = "control_shuffle_on",
+		off = "control_shuffle_off",
+		on_for = "control_shuffle_on_for",
+		off_for = "control_shuffle_off_for",
+	})
+end
+
+-- The Toggle Repeat Song key. Like Toggle Shuffle, it changes a setting itself, and works whatever plays.
+mod.toggle_repeat_song = function()
+	toggle_deciding("repeat", {
+		on = "control_repeat_song_on",
+		off = "control_repeat_song_off",
+		on_for = "control_repeat_song_on_for",
+		off_for = "control_repeat_song_off_for",
+	})
 end
 
 -- The Restore Removed Songs button. Listing the folders again brings the songs back into every rotation.
@@ -1149,7 +1199,7 @@ BossProbe.init(log_detail)
 Context.on_mission_change(MissionProbe.on_mission_change)
 ResumePoints.init(mod)
 Playlist.init({ usable_entries = Library.usable_entries, find_file = Library.find_file })
-Playlist.set_shuffle(mod:get("shuffle"))
+follow_shuffle(nil)
 Context.on_state_change(Suppression.on_state_change)
 Context.on_state_change(ResumePoints.on_state_change)
 Context.on_failure(function() show_error("error_game_change") end)
@@ -1313,9 +1363,9 @@ mod.on_setting_changed = function(setting_id)
 		Loudness.set_enabled(mod:get("normalize_loudness"))
 		AudioClient.refresh_levels()
 		log(string.format("[loudness] evening out turned %s", mod:get("normalize_loudness") and "on" or "off"))
-	elseif setting_id == "shuffle" then
-		Playlist.set_shuffle(mod:get("shuffle"))
-	elseif setting_id == "repeat_song" then
+	elseif setting_id == "shuffle" or setting_id == "shuffle_" .. tostring(current_context) then
+		follow_shuffle(current_context)
+	elseif setting_id == "repeat_song" or setting_id == "repeat_" .. tostring(current_context) then
 		apply_repeat_song()
 	elseif setting_id == "let_songs_finish" and not mod:get("let_songs_finish") and context_after_song then
 		-- Nothing waits for a song with the setting off, so the situation that waited takes over at once.

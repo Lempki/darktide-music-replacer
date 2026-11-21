@@ -1799,6 +1799,25 @@ describe("MusicReplacer.lua Shuffle", function()
 		assert_equal(harness:last_on_screen_message(), "<control_shuffle_on>")
 	end)
 
+	it("follows the situation's own Shuffle over Playback's", function()
+		local harness = in_hub(THREE_HUB_SONGS, { settings = { shuffle = true, shuffle_hub = "off" } })
+
+		harness.mod.previous_song()
+
+		assert_equal(harness:playing(), "hub/c.mp3")
+	end)
+
+	it("turns the situation's own Shuffle off and on with its key while it has one, and names the situation", function()
+		local harness = in_hub(THREE_HUB_SONGS, { settings = { shuffle_hub = "on" } })
+
+		harness.mod.toggle_shuffle()
+		assert_equal(harness.settings.shuffle_hub, "off")
+		assert_equal(harness.mod:get("shuffle"), true)
+		assert_equal(harness:last_on_screen_message(), "<control_shuffle_off_for: <source_hub>>")
+		harness.mod.previous_song()
+		assert_equal(harness:playing(), "hub/c.mp3")
+	end)
+
 	it("shows and hides the debug overlay with its key, saves the choice, and shows no message", function()
 		local harness = in_hub()
 		local shown = #harness.on_screen_message.shown
@@ -2036,6 +2055,25 @@ describe("MusicReplacer.lua Repeat Song", function()
 		harness.mod.toggle_repeat_song()
 		assert_equal(harness.settings.repeat_song, false)
 		assert_equal(harness:last_on_screen_message(), "<control_repeat_song_off>")
+	end)
+
+	it("follows the situation's own Repeat Song over Playback's", function()
+		local looping = in_hub(nil, { settings = { repeat_song = false, repeat_hub = "on" } })
+		local not_looping = in_hub(nil, { settings = { repeat_song = true, repeat_hub = "off" } })
+
+		assert_equal(looping:last_play().opts.loop, true)
+		assert_equal(not_looping:last_play().opts.loop, false)
+	end)
+
+	it("turns the situation's own Repeat Song on and off with its key while it has one, and names the situation", function()
+		local harness = in_hub(nil, { settings = { repeat_hub = "off" } })
+
+		harness.mod.toggle_repeat_song()
+
+		assert_equal(harness.settings.repeat_hub, "on")
+		assert_equal(harness.mod:get("repeat_song"), false)
+		assert_equal(harness:last_play().opts.loop, true)
+		assert_equal(harness:last_on_screen_message(), "<control_repeat_song_on_for: <source_hub>>")
 	end)
 
 	it("toggles while no song of yours plays", function()
