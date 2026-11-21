@@ -25,17 +25,22 @@ Everything below is optional detail.
 
 | I want to… | Do this |
 |---|---|
+| …see which song is playing. | It shows by default: each new song's name appears for a few seconds in the bottom left corner. The On-Screen Messages group in the mod options turns it off, and its Look setting, set to Custom, changes its size, colors, and position. |
+| …skip a song, or never hear it again. | Bind Next Song or Remove from Rotation under Playback Controls in the mod options. |
+| …make my songs louder or quieter. | Change Custom Music Volume in the Volume group. For one situation alone, pick it under Music per Situation and change its Volume. |
 | …keep the game's music in one situation. | Leave its folder empty, or set it to Vanilla under Music per Situation in the mod options. |
 | …have no music at all in one situation. | Set it to Silence under Music per Situation. |
+| …hear boss music only once the fight starts. | Set Boss Approaching to Skip under Music per Situation. Your `boss` songs then start with the boss's HP bar. |
+| …hear boss music sooner or later as a boss comes near. | Change Boss Distance in the Boss Music group, 80 m by default. |
 | …hear no boss music, only what plays around it. | Set Boss to Skip under Music per Situation. Skip works for the other mission situations too, as [Choosing what plays](#choosing-what-plays) lists. |
-| …hear one song through a whole mission without it starting over. | Put a copy of that one file, and nothing else, into each folder you want it in, such as `explore`, `combat`, `horde`, and `boss`. |
-| …give one kind of boss its own music. | Make a folder named after the boss inside `boss`, such as `boss\chaos_spawn\`. [Override folders](docs/override-folders.md#folder-names) lists every name. |
-| …give one mission its own music. | Make a folder named after the mission's code inside the folders you want, such as `explore\spillway\` and `combat\spillway\`. [Override folders](docs/override-folders.md#missions) lists every mission's folder name. |
-| …give an Operation its own music. | Make `event\op_train\` for Rolling Steel or `event\op_no_mans_land\` for No Man's Land, since Operations play `event` all the way through. |
+| …hear my own music in cutscenes. | Put songs into `cutscene` and set Cutscene to Custom under Music per Situation, since cutscenes keep the game's music by default. |
 | …find out which folder plays right now. | Turn on Debug Overlay in the mod options, or bind Toggle Debug Overlay to show it with a key. It shows the folder that plays and the override names the moment looks for. |
 | …try out my songs without starting a mission. | In Meat Grinder, set its Music to One Situation and pick the situation. |
-| …skip a song, or never hear it again. | Bind Next Song or Remove from Rotation under Playback Controls in the mod options. |
-| …see which song is playing. | It shows by default: each new song's name appears for a few seconds in the bottom left corner. The On-Screen Messages group in the mod options turns it off, and its Look setting, set to Custom, changes its size, colors, and position. |
+| …share my songs with a friend. | Zip your `audio` folder, as [Share your setup](#share-your-setup) explains. |
+| …hear one song through a whole mission without it starting over. | Put a copy of that one file, and nothing else, into each folder you want it in, such as `explore`, `combat`, `horde`, and `boss`. |
+| …give one kind of boss its own music. | Make a folder named after the boss inside `boss`, such as `boss\chaos_spawn\`. [Override folders](docs/override-folders.md#folder-names) lists every name. |
+| …give one mission or Operation its own music. | Make a folder named after the mission's code inside the folders you want, such as `explore\spillway\` and `combat\spillway\`. Operations play `event` all the way through, so use `event\op_train\` for Rolling Steel and `event\op_no_mans_land\` for No Man's Land. [Override folders](docs/override-folders.md#missions) lists every mission's folder name. |
+| …find out why my songs do not play. | [Troubleshooting](docs/troubleshooting.md) lists the common causes and their fixes. |
 
 ## What it does
 
