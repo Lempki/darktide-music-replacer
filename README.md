@@ -30,7 +30,7 @@ Everything below is optional detail.
 | …make my songs louder or quieter. | Change Custom Music Volume in the Volume group. For one situation alone, pick it under Music per Situation and change its Volume. |
 | …keep the game's music in one situation. | Leave its folder empty, or set it to Vanilla under Music per Situation in the mod options. |
 | …have no music at all in one situation. | Set it to Silence under Music per Situation. |
-| …hear boss music only once the fight starts. | Set Boss Approaching to Skip under Music per Situation. Your `boss` songs then start with the boss's HP bar. |
+| …hear boss music only once the fight starts. | Set Boss Near to Skip under Music per Situation. Your `boss` songs then start with the boss's HP bar. |
 | …hear boss music sooner or later as a boss comes near. | Change Boss Distance in the Boss Music group, 80 m by default. |
 | …hear no boss music, only what plays around it. | Set Boss to Skip under Music per Situation. Skip works for the other mission situations too, as [Choosing what plays](#choosing-what-plays) lists. |
 | …hear my own music in cutscenes. | Put songs into `cutscene` and set Cutscene to Custom under Music per Situation, since cutscenes keep the game's music by default. |
@@ -87,7 +87,7 @@ In a mission, the most urgent situation going on plays. From the most urgent dow
 1. Last Stand.
 2. Event, Mortis Trials Wave, and Expedition Extraction.
 3. Boss.
-4. Boss Approaching.
+4. Boss Near.
 5. Horde.
 6. Combat and Expedition Combat.
 7. Explore, Mortis Trials Break, and Expedition Safe Room.
@@ -106,7 +106,7 @@ Victory and Defeat take over from all of them.
 | **`explore`** | In a mission while nothing threatens you. |
 | **`combat`** | In a mission while enemies attack you, outside a horde or a boss fight. |
 | **`horde`** | During a horde. |
-| `boss_approaching` | While a boss is near you, before its fight starts. A boss comes near within Boss Distance, 80 m by default, the distance the game's own boss music uses, and stays near until it is 40 m farther away than that, or gone. It is more urgent than a horde, as the game's own boss music is. With its folder empty, it does what Boss is set to, so your `boss` songs start as the boss comes near and go on playing into the fight. |
+| `boss_near` | While a boss is near you, before its fight starts. A boss comes near within Boss Distance, 80 m by default, the distance the game's own boss music uses, and stays near until it is 40 m farther away than that, or gone. It is more urgent than a horde, as the game's own boss music is. With its folder empty, it does what Boss is set to, so your `boss` songs start as the boss comes near and go on playing into the fight. |
 | **`boss`** | In a boss fight, from the moment the boss's HP bar shows until the game reports the boss gone. A Chaos Spawn, a Beast of Nurgle, or a Plague Ogryn shows it once it is first hurt, and an Ogryn Houndmaster once it notices you. Captains and daemonhosts count only with their settings on, and so do weakened monstrosities, which the game's own boss music leaves out. A boss that shows no HP bar, such as Rodin Karnak in Spillway, has no Boss, and his fight plays `event`. Neither boss folder plays in an Expedition, which keeps to its own situations. |
 | `event` | While a mission event plays its music, such as a holdout, a hacking event, an escape, or a scripted boss fight like those in Spillway. It is more urgent than Boss, Horde, Combat, and Explore, as the game's own event music is. In Operations, such as Rolling Steel and No Man's Land, it plays for the whole mission, since the game scripts their music from start to end. The prologue, Tancred Bastion, scripts its music the same way, so it mostly plays this folder too. |
 | `last_stand` | While only one player of the team is left alive. It is more urgent than every other mission situation. Victory and Defeat still take over. |
@@ -132,7 +132,7 @@ The Music per Situation group has a Situation dropdown that lists every folder a
 | Custom | Your songs from the situation's folder. With an empty folder, the game's music plays. This is the default for every situation but Cutscene. |
 | Vanilla | Always the game's music, even with songs in the folder, so you can turn one situation off without moving files. |
 | Silence | Nothing. The game's music is silenced too. |
-| Skip | The next less urgent situation, as if this one were not going on, such as Explore through fights with Combat skipped. While your songs or silence play instead, the skipped situation's own game music stays silenced. With that situation set to Vanilla, the game's music plays as the game picks it. Skip is offered for Combat, Horde, Boss Approaching, Boss, Event, Last Stand, Mortis Trials Wave, Expedition Combat, and Expedition Extraction. |
+| Skip | The next less urgent situation, as if this one were not going on, such as Explore through fights with Combat skipped. While your songs or silence play instead, the skipped situation's own game music stays silenced. With that situation set to Vanilla, the game's music plays as the game picks it. Skip is offered for Combat, Horde, Boss Near, Boss, Event, Last Stand, Mortis Trials Wave, Expedition Combat, and Expedition Extraction. |
 
 A changed choice applies at once, even to the situation that is playing.
 
