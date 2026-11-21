@@ -7,7 +7,7 @@ Every setting of Music Replacer, with its default. The settings are in the in-ga
 | Setting | Default | What it does |
 |---|---|---|
 | Rescan Audio Folders | (button) | Lists the audio folders again at once, and checks again whether every song plays. The mod notices added, removed, and replaced files by itself, and lists the folders again 3 seconds after files stop changing. Use this button on drives where Windows cannot report changes, such as some network drives, and to retry a song that would not play. It also lets the mod try playback again after it has given up, and creates any situation's folder that went missing. It does not measure songs again that were measured before, only those that could not be measured. |
-| Restore Removed Songs | (button) | Puts every song that Remove from Rotation took out back into its folder's rotation, and a message says how many came back. A situation left with no songs plays them again at once. |
+| Restore All Removed Songs | (button) | Puts every song that Remove from Rotation took out back into its folder's rotation, and a message says how many came back. Each situation's own [Restore Removed Songs](#music-per-situation) puts back only that situation's songs. A situation left with no songs plays them again at once. |
 
 ## Playback
 
@@ -34,8 +34,8 @@ Keys that control the song playing now, and the setting that goes with them. Eve
 | Restart Song | Unbound | Jumps back to the start of the song playing now. A song whose file you deleted or moved while it played keeps playing instead, and the message says so, such as `No longer in Hub: a.mp3`. Previous Song does the same when it would start such a song over. |
 | Pause / Resume | Unbound | Pauses the song playing now, and the next press resumes it where it stopped. The game's music stays silent while it is paused, and the debug overlay's status reads `Custom, paused`. Next Song, Previous Song, Restart Song, and removing the song with Remove from Rotation also end the pause. A new situation ends it too, and the paused song continues later like any song that was playing. |
 | Remove from Rotation | Unbound | Press it twice to stop the song playing now from ever being picked in its folder again, and move on to another song. The first press asks, and a second press removes the song while the question shows, through its fade in, the Message Duration, and the Message Fade Out. The same time counts with For Key Presses off, when no question shows. Both messages name the song and where it plays, such as `Hub`, or `Boss (chaos_spawn)` for an override folder. The file stays where it is, and a copy of the song in another folder still plays there. After a folder's last song, the situation plays as if the folder were empty. The removed songs are listed in `removed.txt`, see [Files the mod writes](troubleshooting.md#files-the-mod-writes). |
-| Toggle Shuffle | Unbound | Turns [Shuffle](#playback) on or off, and the message says which. It works whatever plays, and the mod options keep the new choice. |
-| Toggle Repeat Song | Unbound | Turns [Repeat Song](#playback) on or off, and the message says which. It works whatever plays, and the mod options keep the new choice. |
+| Toggle Shuffle | Unbound | Turns Shuffle on or off where it is decided for the situation playing now: the situation's own [Shuffle](#music-per-situation) while it is On or Off, and otherwise [Shuffle](#playback) in the Playback group. The message says which, and names the situation when it changed the situation's own, such as `Shuffle off for Boss`. It works whatever plays, and the mod options keep the new choice. |
+| Toggle Repeat Song | Unbound | Turns Repeat Song on or off where it is decided for the situation playing now: the situation's own [Repeat Song](#music-per-situation) while it is On or Off, and otherwise [Repeat Song](#playback) in the Playback group. The message says which, and names the situation when it changed the situation's own, such as `Repeat song on for Boss`. It works whatever plays, and the mod options keep the new choice. |
 | Key Fade Length | 0.5 seconds | How long the music crossfades when one of these keys changes the song, pauses it, or resumes it, from 0 to 10 seconds. Fade Length still sets the fades when the situation changes and when a song ends by itself. A key that starts the song playing now over, as Restart Song does, jumps to its start in a tenth of a second, so two copies of the song never play over each other. While the song is paused, it fades in from its start over the Key Fade Length instead. Set it to 0 to switch at once. |
 
 ## Volume
@@ -52,7 +52,7 @@ A message is one line of text on a backdrop in the corner of the screen that Mes
 
 | Setting | Default | What it does |
 |---|---|---|
-| For Key Presses | On | Shows a message in Message Color for each press of a Playback Controls key, such as `Next song: song.mp3`, and for each press of Restore Removed Songs. Off shows none for them, and the keys still work. |
+| For Key Presses | On | Shows a message in Message Color for each press of a Playback Controls key, such as `Next song: song.mp3`, and for each press of a Restore button. Off shows none for them, and the keys still work. |
 | For Song Changes | On | Shows a message in Message Color, `Now playing:` and the song's name, whenever one of your songs starts by itself: when a situation starts its music, when a song ends and the next one plays, and when a song resumes where it stopped. A folder's only song that keeps playing into the next situation shows nothing. While For Key Presses is off, it also names the song that Next Song, Previous Song, or Remove from Rotation starts, since no key message names it then. |
 | For Notices | On | Shows a message in Notice Color when there is something you need to know. Once the mod has checked the audio folders, at launch, after Rescan Audio Folders, and after files change, a notice says how many songs it found and in how many folders, or where to put songs when there are none. A second notice follows when files were skipped, with how many and why. Once Even Out Loudness has measured every song that needed it, a notice says how many it measured. Off, a notice is still written to `diagnostic.log`. |
 | For Errors | On | Shows a message in Error Color when something goes wrong, such as Windows audio playback failing to start. Off shows none for them, and each is still written to `diagnostic.log`. |
@@ -70,7 +70,17 @@ A message is one line of text on a backdrop in the corner of the screen that Mes
 
 ## Music per Situation
 
-One dropdown per situation except Meat Grinder, which has a group of its own below, with the choices Custom, Vanilla, and Silence, and Skip for the mission situations that are more urgent than another. Changing a choice to or from Skip applies at once, without the short wait a situation change takes. See [Choosing what plays](../README.md#choosing-what-plays) in the README for what each choice does. [Where your music plays](../README.md#where-your-music-plays) lists the situations from the most urgent down.
+The group shows one Situation dropdown, Explore by default, which lists every situation but Meat Grinder, which has a group of its own below. Below it show only the chosen situation's settings. Every situation keeps its own settings, whichever one is shown. [Where your music plays](../README.md#where-your-music-plays) lists the situations from the most urgent down.
+
+| Setting | Default | What it does |
+|---|---|---|
+| Music | Custom, Vanilla for Cutscene | What the situation plays: Custom, Vanilla, or Silence, and Skip for the mission situations that are more urgent than another. Changing a choice to or from Skip applies at once, without the short wait a situation change takes. See [Choosing what plays](../README.md#choosing-what-plays) in the README for what each choice does. |
+| Volume | 100% | How loud the situation's songs play, from 0% to 100% of the Custom Music Volume. A song fading out keeps the volume of the situation it played for. A change applies at once to the song playing now. |
+| Shuffle | Default | Default follows [Shuffle](#playback) in the Playback group. On and Off decide for this situation alone. |
+| Repeat Song | Default | Default follows [Repeat Song](#playback) in the Playback group. On and Off decide for this situation alone. A song keeps looping or stops looping by the setting of the situation it plays for. |
+| Own Fade Length | Off | On shows a Fade Length below it for this situation alone, in place of [Fade Length](#playback) in the Playback group. |
+| Fade Length | 2 seconds | Shown while Own Fade Length is on. How long the music crossfades as the situation takes over, and how long its songs fade out at their end, from 0 to 10 seconds. The playback keys keep their Key Fade Length, and a switch to the game's music or to silence still takes half a second. |
+| Restore Removed Songs | (button) | Puts the songs that Remove from Rotation took out of this situation's folder and its override folders back into their rotation, and a message says how many came back, such as `Restored 3 songs in Boss`. |
 
 ## Meat Grinder
 

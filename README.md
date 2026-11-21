@@ -120,11 +120,11 @@ In Mortis Trials, the two Mortis Trials folders replace the mission folders from
 
 ## Choosing what plays
 
-The Music per Situation group has one dropdown per folder above, named after it, except `meat_grinder`. Each offers the first three choices below, and the mission situations that are more urgent than another also offer Skip:
+The Music per Situation group has a Situation dropdown that lists every folder above except `meat_grinder`. Below it, the chosen situation's Music offers the first three choices below, and the mission situations that are more urgent than another also offer Skip. Each situation also has a Volume, its own Shuffle, Repeat Song, and Fade Length, and a Restore Removed Songs button, which [docs/settings.md](docs/settings.md#music-per-situation) explains:
 
 | Choice | What plays |
 |---|---|
-| Custom | Your songs from the situation's folder. With an empty folder, the game's music plays. This is the default. |
+| Custom | Your songs from the situation's folder. With an empty folder, the game's music plays. This is the default for every situation but Cutscene. |
 | Vanilla | Always the game's music, even with songs in the folder, so you can turn one situation off without moving files. |
 | Silence | Nothing. The game's music is silenced too. |
 | Skip | The next less urgent situation, as if this one were not going on, such as Explore through fights with Combat skipped. While your songs or silence play instead, the skipped situation's own game music stays silenced. With that situation set to Vanilla, the game's music plays as the game picks it. Skip is offered for Combat, Horde, Boss Approaching, Boss, Event, Last Stand, Mortis Trials Wave, Expedition Combat, and Expedition Extraction. |
