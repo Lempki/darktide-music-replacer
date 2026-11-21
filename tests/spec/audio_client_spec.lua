@@ -749,6 +749,21 @@ describe("audio_client.lua fade length", function()
 		assert_equal(streams[1].fades[2][1], 0)
 	end)
 
+	it("fades a song's end over an end fade set while it plays", function()
+		local AudioClient, _, streams = load_client()
+		AudioClient.set_fade_seconds(5)
+		AudioClient.play("hub/a.mp3", { fade_in = true, duration_seconds = 199 })
+
+		AudioClient.set_end_fade_seconds(1)
+		streams[1].current_position = 198.5
+		AudioClient.update(0.1)
+		assert_deep_equal(streams[1].fades, { { 1, 5 } })
+
+		streams[1].current_position = 199.5
+		AudioClient.update(0.1)
+		assert_equal(streams[1].fades[2][1], 0)
+	end)
+
 	-- Fades longer than half a song would overlap, and the song would never reach full level.
 	it("fades a song shorter than two fades in over its first half and out over its second", function()
 		local AudioClient, player, streams = load_client()

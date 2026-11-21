@@ -399,6 +399,22 @@ describe("MusicReplacer.lua situation fade length", function()
 		assert_equal(harness:last_play().opts.fade_seconds, nil)
 		assert_equal(harness:last_play().opts.end_fade_seconds, nil)
 	end)
+
+	it("fades the end of the song playing now by a Fade Length changed while it plays", function()
+		local harness = in_hub(nil, { settings = { own_fade_hub = false, fade_seconds_hub = 6 } })
+
+		harness:set_setting("own_fade_hub", true)
+		assert_equal(harness.client.current.opts.end_fade_seconds, 6)
+
+		harness:set_setting("fade_seconds_hub", 9)
+		assert_equal(harness.client.current.opts.end_fade_seconds, 9)
+
+		harness:set_setting("fade_seconds_explore", 3)
+		assert_equal(harness.client.current.opts.end_fade_seconds, 9)
+
+		harness:set_setting("own_fade_hub", false)
+		assert_equal(harness.client.current.opts.end_fade_seconds, nil)
+	end)
 end)
 
 describe("MusicReplacer.lua cutscenes", function()

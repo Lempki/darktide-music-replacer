@@ -255,6 +255,14 @@ function AudioClient.set_share(share)
 	end
 end
 
+-- Sets how long the song playing now fades out at its end, or the Fade Length when nil, as when its situation's Fade Length changes.
+-- An end fade that has begun keeps its length.
+function AudioClient.set_end_fade_seconds(seconds)
+	if current then
+		current.end_fade_seconds = seconds
+	end
+end
+
 -- Asks every song for its own level again, as when evening out is turned on or off, and applies it at once.
 function AudioClient.refresh_levels()
 	if current then

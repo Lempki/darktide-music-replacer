@@ -154,6 +154,12 @@ local function new_audio_client()
 	-- `refuse_loop` stands for a song too close to its end to loop.
 	function module.set_share(share) client.share = share end
 
+	function module.set_end_fade_seconds(seconds)
+		if client.current then
+			client.current.opts.end_fade_seconds = seconds
+		end
+	end
+
 	function module.set_loop(on, duration_seconds)
 		if not client.current or (on and client.refuse_loop) then
 			return false

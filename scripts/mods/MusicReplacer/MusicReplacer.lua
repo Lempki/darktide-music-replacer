@@ -1411,6 +1411,8 @@ mod.on_setting_changed = function(setting_id)
 		play_context(next_context, true)
 	elseif enabled and current_context and setting_id == "volume_" .. current_context then
 		AudioClient.set_share(situation_share(current_context))
+	elseif enabled and current_context and (setting_id == "own_fade_" .. current_context or setting_id == "fade_seconds_" .. current_context) then
+		AudioClient.set_end_fade_seconds(situation_fade_seconds(current_context))
 	elseif setting_id == "resume_songs" and not mod:get("resume_songs") then
 		ResumePoints.forget_all()
 	elseif enabled and current_context and (setting_id == "source_" .. current_context
