@@ -12,6 +12,8 @@
 -- Where Windows cannot watch the folders, as on some network drives, only the Rescan Audio Folders button lists them again.
 -- A missing or empty folder resolves to nil here, which is the caller's signal to fall back to the game's music.
 -- Every listing is passed on to the Library.on_listed listeners, which is how the loudness measurements learn of changed files.
+-- A listing that a change on disk started, and that finds the same songs as before, is passed on to no one.
+-- The mod's own files, loudness.txt and removed.txt, are in the audio folder, so writing them is such a change.
 -- Once its files are measured, the Library.on_checked listeners learn how many songs Windows can play, and in how many folders.
 -- A song the player removed from rotation stays on disk, but no listing holds it, so nothing picks, finds, or measures it.
 
@@ -52,6 +54,9 @@ local previous_stamps = {} -- The stamps of the listing before, so an unchanged 
 local listed_listeners = {}
 local checked_listeners = {}
 local checking = false -- True from a listing until every file it listed has been measured.
+-- Every folder key, file path, and stamp of the last listing as one text, to tell whether a listing changed anything.
+local listed_songs = nil
+local changed_on_disk = false -- True when the listing about to run was started by a change Windows reported.
 local is_removed = function() return false end -- file_path -> true for a song removed from rotation.
 
 -- file_path -> seconds, or false when the file could not be measured.
@@ -116,7 +121,24 @@ local function describe_counts()
 	return table.concat(parts, " ")
 end
 
-local function scan_folders(what)
+-- The listing as one text: every folder key with its file paths and stamps, and the files in other formats.
+local function describe_songs()
+	local parts = {}
+	for _, key in ipairs(each_folder_key()) do
+		parts[#parts + 1] = key
+		for _, file_path in ipairs(lists[key]) do
+			parts[#parts + 1] = file_path .. "|" .. stamps[file_path]
+		end
+	end
+	for _, file_path in ipairs(other_formats) do
+		parts[#parts + 1] = file_path
+	end
+	return table.concat(parts, "\n")
+end
+
+-- Lists every folder again. With `quiet_if_unchanged`, a listing that finds the same songs as the last one is reported to no one.
+-- Returns true when the listing was reported.
+local function scan_folders(what, quiet_if_unchanged)
 	previous_stamps = stamps
 	stamps = {}
 	lists = {}
@@ -146,8 +168,17 @@ local function scan_folders(what)
 	end
 
 	reported_missing = {}
-	log(string.format("[library] %s: %s", what, describe_counts()))
 	table.sort(other_formats)
+
+	local songs = describe_songs()
+	local unchanged = songs == listed_songs
+	listed_songs = songs
+	if quiet_if_unchanged and unchanged then
+		log("[library] a file changed in the audio folder, but no song did")
+		return false
+	end
+
+	log(string.format("[library] %s: %s", what, describe_counts()))
 	for _, file_path in ipairs(other_formats) do
 		log(string.format("[library] %s is in a format the mod does not play, skipping it", file_path))
 	end
@@ -164,6 +195,7 @@ local function scan_folders(what)
 	end
 
 	checking = true
+	return true
 end
 
 -- Tells the Library.on_checked listeners how many listed songs Windows can play, the folders that hold them, and the files skipped.
@@ -270,6 +302,7 @@ local function follow_changes(dt)
 		if quiet_seconds >= QUIET_SECONDS then
 			quiet_seconds = nil
 			rescan_requested = true
+			changed_on_disk = true
 		end
 	end
 end
@@ -354,6 +387,9 @@ function Library.update(dt)
 	rescan_requested = false
 
 	-- A rescan the watcher started only measures the new and changed files, which their stamps show.
+	-- Only a listing the watcher started can stay quiet, since every other one was asked for.
+	local from_watcher = changed_on_disk and not full_rescan_requested
+	changed_on_disk = false
 	if full_rescan_requested then
 		full_rescan_requested = false
 		durations = {}
@@ -363,8 +399,7 @@ function Library.update(dt)
 	measure_index = 1
 	measure_seconds = 0
 
-	scan_folders("listed the audio folders again")
-	return true
+	return scan_folders("listed the audio folders again", from_watcher)
 end
 
 -- True when the folder of `folder_key`, a context or "context/override", has a listed file that Windows can play.
@@ -409,6 +444,11 @@ function Library.usable_entries(context_name)
 end
 
 -- The path of a picked file on disk, relative to the game's working directory.
+-- The audio folder itself, where the mod also keeps loudness.txt and removed.txt, since they belong to the songs.
+function Library.folder()
+	return AUDIO_ROOT
+end
+
 function Library.disk_path(file_path)
 	return AUDIO_ROOT .. "/" .. file_path
 end

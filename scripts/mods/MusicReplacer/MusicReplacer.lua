@@ -12,6 +12,7 @@ local EventProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/event
 local MissionProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/mission_probe")
 local Bosses = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/bosses")
 local Fonts = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/fonts")
+local OldFiles = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/old_files")
 local BossProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/boss_probe")
 local NativeFfi = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/native_ffi")
 local MediaDecoder = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/media_decoder")
@@ -1171,7 +1172,9 @@ end
 mod.on_all_mods_loaded = function()
 	MediaDecoder.init(NativeFfi)
 	AudioFolders.init(NativeFfi, MediaDecoder)
-	RemovedSongs.init(log, DiagnosticLog.folder())
+	-- loudness.txt and removed.txt belong to the songs, so they live in the audio folder, and older ones move there first.
+	OldFiles.move({ "loudness.txt", "removed.txt" }, DiagnosticLog.folder(), Library.folder(), log)
+	RemovedSongs.init(log, Library.folder())
 	Library.init(log, AudioFolders, { is_removed = RemovedSongs.contains })
 	XAudio.init(NativeFfi)
 	Player.init(NativeFfi, MediaDecoder, XAudio)
@@ -1182,7 +1185,7 @@ mod.on_all_mods_loaded = function()
 		native_ffi = NativeFfi,
 		loudness_meter = LoudnessMeter,
 		disk_path = Library.disk_path,
-		folder = DiagnosticLog.folder(),
+		folder = Library.folder(),
 		is_removed = RemovedSongs.contains,
 	})
 	Loudness.set_enabled(mod:get("normalize_loudness"))

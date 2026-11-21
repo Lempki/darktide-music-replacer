@@ -84,7 +84,7 @@ function RemovedSongs.load()
 	end
 end
 
--- `folder` is where the file lives, the same folder as loudness.txt and the log.
+-- `folder` is where the file lives, the audio folder, beside loudness.txt.
 function RemovedSongs.init(logger, folder)
 	log = logger or log
 	file_path_on_disk = folder and (folder .. "/" .. FILE_NAME)

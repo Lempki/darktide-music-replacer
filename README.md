@@ -154,11 +154,11 @@ Override folders are optional and for advanced use. A folder can hold folders of
 
 All your songs live in your `audio` folder, override folders included. To share your setup, zip that folder and send it. A player who puts it in place of their own `audio` folder hears the same songs in the same situations.
 
-Only the songs travel. Each player keeps their own mod options, such as Skip or Silence for a situation. Songs you took out with Remove from Rotation come back in the copy, and Even Out Loudness measures the songs again on the other player's PC.
+The folder also holds `removed.txt`, so songs you took out with Remove from Rotation stay out in the copy, and `loudness.txt`, so Even Out Loudness needs no measuring on the other player's PC. The mod options do not travel, so each player keeps their own choices, such as Skip or Silence for a situation.
 
 ## Safe by design
 
-* **No game files are changed.** The mod creates its own audio folders and writes files only to its own folder in `%APPDATA%`.
+* **No game files are changed.** The mod creates its own audio folders, writes `loudness.txt` and `removed.txt` into its `audio` folder, and writes its log only to its own folder in `%APPDATA%`.
 * **No extra programs or DLLs.** The mod uses the audio decoder and audio engine that come with Windows.
 * **The game's music is the fallback.** The game's music plays wherever the mod has no songs, cannot play them, or cannot start Windows audio at all. It also plays when a game update reports a music state the mod does not know yet, instead of your songs silencing something new. The game's music is only silenced once one of your songs is ready to play, or where you chose Silence.
 * **Broken files are skipped.** A file Windows cannot decode is skipped once the mod has checked it, shortly after launch, and `diagnostic.log` names it. If three songs in a row from one folder fail to play, that folder gives way to the game's music until the game restarts or the folders are listed again. An override folder gives way to its parent folder instead.
@@ -172,13 +172,13 @@ What the mod writes where, and how it handles a lost audio device, are covered i
 
 Your songs survive updates, even through Vortex, since the mod archive holds only the empty audio folders, never songs, and Vortex only removes files it deployed itself. To update by hand, extract the new version over the old mod folder instead of deleting it first. Renaming the mod folder leaves your songs behind, so move `audio\` across by hand if that ever happens.
 
-Uninstalling the mod leaves its own files in `%APPDATA%\Fatshark\Darktide\MusicReplacer\` behind. Delete that folder by hand if you want them gone. Check `mods\MusicReplacer\audio\` in the game folder too, since your songs were never part of the mod archive.
+Uninstalling the mod leaves its logs in `%APPDATA%\Fatshark\Darktide\MusicReplacer\` behind. Delete that folder by hand if you want them gone. Check `mods\MusicReplacer\audio\` in the game folder too, since your songs were never part of the mod archive.
 
 ## Compatibility
 
 * Running Music Replacer alongside other music mods has not been tested.
 * The mod has not been tested on Steam Deck or Linux. There the game runs through Proton, which brings its own stand-ins for the Windows audio decoder and audio engine the mod uses. If the mod cannot start them, the game's music plays as usual.
-* The mod writes `diagnostic.log`, `loudness.txt`, and `removed.txt` to your `%APPDATA%` folder, and finds it through Windows' "Language for non-Unicode programs" setting. If your Windows username has letters outside that language, such as Japanese letters on an English Windows, those files cannot be written. Your music still plays, Even Out Loudness measures your songs again at every launch, and songs removed from rotation come back at the next launch.
+* The mod writes `diagnostic.log` to your `%APPDATA%` folder, and finds it through Windows' "Language for non-Unicode programs" setting. If your Windows username has letters outside that language, such as Japanese letters on an English Windows, the log cannot be written. Your music still plays, and `loudness.txt` and `removed.txt` still work, since they live in the `audio` folder.
 
 ## Troubleshooting
 

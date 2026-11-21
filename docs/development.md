@@ -99,7 +99,7 @@ Music Replacer decodes the files with Media Foundation, Windows' own media frame
 * A song copied into several folders keeps its file name, size, and write time, so it is measured once and every copy takes over the result.
 * The log says how long measuring took once every song is measured.
 * The debug overlay shows how many songs of the current batch are measured while songs are left to measure.
-* The results go to `loudness.txt` beside `diagnostic.log`, keyed by each file's size and write time, so a song is measured once and again only after its file changes. It is written every 10 songs, once measuring is done, and on unload.
+* The results go to `loudness.txt` in the `audio` folder, keyed by each file's size and write time, so a song is measured once and again only after its file changes. It is written every 10 songs, once measuring is done, and on unload.
 * A song keeps the level it started with, so one measured while it plays changes level at its next start.
 
 ### File checks
@@ -134,6 +134,7 @@ darktide-music-replacer/
 │   ├── audio_folders.lua                # Lists, checks, and creates the audio folders through Windows, and measures durations.
 │   ├── resume_points.lua                # Remembers where interrupted songs stopped, until the next loading screen.
 │   ├── removed_songs.lua                # Keeps the songs removed from rotation in removed.txt, which the library leaves out.
+│   ├── old_files.lua                    # Moves loudness.txt and removed.txt from %APPDATA% into the audio folder once.
 │   ├── audio_client.lua                 # Plays the music: crossfades, end fades, volumes, parked songs, and recovery.
 │   ├── loudness.lua                     # Measures every song's loudness in the background and keeps the results in loudness.txt.
 │   ├── loudness_meter.lua               # Measures loudness in LUFS following ITU-R BS.1770.

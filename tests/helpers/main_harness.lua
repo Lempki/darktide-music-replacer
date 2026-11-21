@@ -43,6 +43,7 @@ local function new_library(files)
 	function library.request_rescan() library.rescan_requested = true end
 	function library.has_files(folder_key) return #listed(folder_key) > 0 end
 	function library.disk_path(file_path) return file_path end
+	function library.folder() return "./../mods/MusicReplacer/audio" end
 
 	function library.update()
 		local rescanned = library.rescan_requested

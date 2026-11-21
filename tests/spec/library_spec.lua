@@ -413,6 +413,35 @@ describe("library.lua watching the folders", function()
 		assert_equal(lines[#lines]:find("[library] listed the audio folders again", 1, true) ~= nil, true, lines[#lines])
 	end)
 
+	-- loudness.txt and removed.txt are in the audio folder, so the mod's own writes make the watcher report a change.
+	it("reports nothing when the watcher lists the folders again and no song changed", function()
+		local Library, folders, lines = listed_library({ hub = { "a.mp3" } }, { ["hub/a.mp3"] = 100 })
+		local list = folders.list
+		function folders.list(folder)
+			local names, stamps, others = list(folder)
+			for name in pairs(stamps or {}) do
+				stamps[name] = "same"
+			end
+			return names, stamps, others
+		end
+		local listed = 0
+		Library.on_listed(function() listed = listed + 1 end)
+		Library.request_rescan()
+		Library.update(0.016)
+		listed = 0
+
+		folders.changes = true
+		Library.update(0.016)
+
+		assert_equal(Library.update(3.1), false)
+		assert_equal(listed, 0)
+		assert_equal(lines[#lines], "[library] a file changed in the audio folder, but no song did")
+
+		Library.request_rescan()
+		assert_equal(Library.update(0.016), true)
+		assert_equal(listed, 1)
+	end)
+
 	it("measures only the new and changed files when the watcher lists the folders again", function()
 		local disk = { hub = { "a.mp3", "b.mp3" } }
 		local Library, folders = listed_library(disk, { ["hub/a.mp3"] = 100, ["hub/b.mp3"] = 200, ["hub/c.mp3"] = 300 })

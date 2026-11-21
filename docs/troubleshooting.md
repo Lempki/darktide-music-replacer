@@ -24,12 +24,17 @@ The mod always logs the important events, such as which music plays and why, any
 
 ## Files the mod writes
 
-The mod writes these files to `%APPDATA%\Fatshark\Darktide\MusicReplacer\`:
+The mod writes its logs to `%APPDATA%\Fatshark\Darktide\MusicReplacer\`:
 
 * `diagnostic.log`, the log of the current or last game session. Every launch starts a fresh one. A runaway log stops growing at 10 MB.
 * `diagnostic-prev.log`, the log of the session before that.
+
+It writes the files that belong to your songs into the `audio` folder itself, so a copy of the folder brings them along:
+
 * `loudness.txt`, the remembered results of Even Out Loudness, so each song is measured only once, and again after its file changes. Deleting it measures every song again.
 * `removed.txt`, the songs Remove from Rotation took out of their folder's rotation, one per line, such as `hub/Song.mp3`. The song files themselves stay where they are. Deleting a line, or the whole file, and then pressing Rescan Audio Folders puts those songs back.
+
+Versions before this one kept `loudness.txt` and `removed.txt` in `%APPDATA%`. The first launch after updating moves them into the `audio` folder, unless the `audio` folder already has one.
 
 ## A lost audio device
 
