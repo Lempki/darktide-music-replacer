@@ -34,7 +34,7 @@ It writes the files that belong to your songs into the `audio` folder itself, so
 * `loudness.txt`, the remembered results of Even Out Loudness, so each song is measured only once, and again after its file changes. Deleting it measures every song again.
 * `removed.txt`, the songs Remove from Rotation took out of their folder's rotation, one per line, such as `hub/Song.mp3`. The song files themselves stay where they are. Deleting a line, or the whole file, and then pressing Rescan Audio Folders puts those songs back.
 
-Versions before this one kept `loudness.txt` and `removed.txt` in `%APPDATA%`. The first launch after updating moves them into the `audio` folder, unless the `audio` folder already has one.
+Versions before 1.3.0 kept `loudness.txt` and `removed.txt` in `%APPDATA%`. The first launch after updating moves them into the `audio` folder, unless the `audio` folder already has one.
 
 ## A lost audio device
 
