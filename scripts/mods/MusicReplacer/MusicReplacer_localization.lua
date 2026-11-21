@@ -444,6 +444,20 @@ local strings = {
 		en = "Whether this situation's song loops, as " .. highlight("Repeat Song") .. " in the Playback group does for all of them.\n\n" ..
 			highlight("Default") .. " follows that setting. " .. highlight("On") .. " and " .. highlight("Off") .. " decide for this situation alone.",
 	},
+	situation_own_fade = {
+		en = "Own Fade Length",
+	},
+	situation_own_fade_tooltip = {
+		en = "Gives this situation a Fade Length of its own, set below, in place of " .. highlight("Fade Length") .. " in the Playback group.\n\n" ..
+			highlight("Off") .. " follows that setting.",
+	},
+	situation_fade_seconds = {
+		en = "Fade Length",
+	},
+	situation_fade_seconds_tooltip = {
+		en = "How long the music crossfades as this situation takes over, and how long its songs fade out at their end.\n\n" ..
+			"Set to " .. highlight("0") .. " to switch at once.",
+	},
 	situation_default = {
 		en = "Default",
 	},

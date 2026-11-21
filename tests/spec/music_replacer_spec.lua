@@ -385,6 +385,22 @@ describe("MusicReplacer.lua situation volume", function()
 	end)
 end)
 
+describe("MusicReplacer.lua situation fade length", function()
+	it("crossfades into a situation and fades its songs' ends by its own Fade Length while Own Fade Length is on", function()
+		local harness = in_hub(nil, { settings = { own_fade_hub = true, fade_seconds_hub = 6 } })
+
+		assert_equal(harness:last_play().opts.fade_seconds, 6)
+		assert_equal(harness:last_play().opts.end_fade_seconds, 6)
+	end)
+
+	it("leaves the fades to the Playback setting while Own Fade Length is off", function()
+		local harness = in_hub(nil, { settings = { own_fade_hub = false, fade_seconds_hub = 6 } })
+
+		assert_equal(harness:last_play().opts.fade_seconds, nil)
+		assert_equal(harness:last_play().opts.end_fade_seconds, nil)
+	end)
+end)
+
 describe("MusicReplacer.lua cutscenes", function()
 	it("keeps the game's music in a cutscene by default, even with songs in its folder", function()
 		local harness = MainHarness.new({ files = {

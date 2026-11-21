@@ -372,8 +372,9 @@ local function song_fade_seconds(duration, seconds)
 end
 
 -- Plays file_path, crossfading with whatever was playing.
--- opts: fade_in, fade_seconds, loop, start_position, duration_seconds, share, and on_finished(failed).
+-- opts: fade_in, fade_seconds, end_fade_seconds, loop, start_position, duration_seconds, share, and on_finished(failed).
 -- share is the situation's Volume, as a linear scale, 1 when not given.
+-- end_fade_seconds is how long the song fades out at its end, the Fade Length when not given.
 -- fade_seconds sets this switch's crossfade instead of the Fade Length, as for the playback keys.
 -- The song's own fade at its end still takes the Fade Length.
 -- Returns false when playback is unavailable.
@@ -464,6 +465,7 @@ function AudioClient.play(file_path, opts)
 		loop = loop,
 		level = level,
 		share = share,
+		end_fade_seconds = opts.end_fade_seconds,
 		measured = measured,
 		duration = opts.duration_seconds,
 		on_finished = opts.on_finished,
@@ -484,6 +486,7 @@ function AudioClient.retarget(file_path, opts)
 	current.file_path = file_path
 	current.on_finished = opts.on_finished
 	current.duration = opts.duration_seconds
+	current.end_fade_seconds = opts.end_fade_seconds
 	AudioClient.set_share(opts.share or 1)
 	return true
 end
@@ -588,7 +591,7 @@ local function update_current(dt)
 	end
 
 	local duration = song_duration(stream, current.loop, current.duration)
-	if duration and not current.end_fading and stream:position() >= duration - song_fade_seconds(duration) then
+	if duration and not current.end_fading and stream:position() >= duration - song_fade_seconds(duration, current.end_fade_seconds) then
 		current.end_fading = true
 		stream:fade_to(0, math.max(0.1, duration - stream:position()))
 	end

@@ -64,6 +64,26 @@ local function situation_settings(context)
 		},
 		own_choice_widget("shuffle_" .. context.id, "situation_shuffle"),
 		own_choice_widget("repeat_" .. context.id, "situation_repeat"),
+		{
+			setting_id = "own_fade_" .. context.id,
+			title = "situation_own_fade",
+			type = "checkbox",
+			tooltip = "situation_own_fade_tooltip",
+			default_value = false,
+			-- A checkbox shows its sub-settings only while it is on, so the slider shows only for a situation with its own fade.
+			sub_widgets = {
+				{
+					setting_id = "fade_seconds_" .. context.id,
+					title = "situation_fade_seconds",
+					type = "numeric",
+					tooltip = "situation_fade_seconds_tooltip",
+					default_value = 2,
+					range = { 0, 10 },
+					decimals_number = 1,
+					unit_text = "seconds_unit",
+				},
+			},
+		},
 	}
 end
 

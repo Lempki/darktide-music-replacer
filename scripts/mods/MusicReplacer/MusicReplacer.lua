@@ -123,6 +123,15 @@ local function situation_share(context_name)
 	return type(percent) == "number" and percent / 100 or 1
 end
 
+-- A situation's own Fade Length in seconds while its Own Fade Length is on, else nil, so the Playback setting decides.
+local function situation_fade_seconds(context_name)
+	if not (context_name and mod:get("own_fade_" .. context_name)) then
+		return nil
+	end
+	local seconds = mod:get("fade_seconds_" .. context_name)
+	return type(seconds) == "number" and seconds or nil
+end
+
 -- Moving from one menu to another, such as from a vendor back to the Esc menu, reports no menu for a moment.
 -- So the music stays lowered until no menu has been open for this long.
 local MENU_CLOSED_SECONDS = 0.5
@@ -354,7 +363,9 @@ local function track_opts(context_name, folder, track)
 		duration_seconds = not is_looping and duration or nil,
 		share = situation_share(context_name),
 		fade_in = track.fade_in,
-		fade_seconds = track.fade_seconds,
+		-- A key's own fade wins, and otherwise the situation's own Fade Length, if it has one, sets the crossfade into it.
+		fade_seconds = track.fade_seconds or situation_fade_seconds(context_name),
+		end_fade_seconds = situation_fade_seconds(context_name),
 		loop = is_looping,
 		start_position = track.start_position,
 		on_finished = function(failed)
