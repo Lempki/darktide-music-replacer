@@ -176,8 +176,8 @@ Uninstalling the mod leaves its logs in `%APPDATA%\Fatshark\Darktide\MusicReplac
 
 ## Compatibility
 
-* Running Music Replacer alongside other music mods has not been tested.
-* The mod has not been tested on Steam Deck or Linux. There the game runs through Proton, which brings its own stand-ins for the Windows audio decoder and audio engine the mod uses. If the mod cannot start them, the game's music plays as usual.
+* One player reports [Audio Replacer](https://www.nexusmods.com/warhammer40kdarktide/mods/499), which replaces sound effects, working alongside Music Replacer. Running Music Replacer alongside other music mods has not been tested.
+* One player reports the mod working on Linux, on EndeavourOS with Steam and Proton Hotfix. There, MP3 and WAV files play, FLAC files do not, and symbolic links in the audio folders work like the files they point to. On Linux, the game runs through Proton, which brings its own stand-ins for the Windows audio decoder and audio engine the mod uses. If the mod cannot start them, the game's music plays as usual. The mod has not been tested on Steam Deck.
 * The mod writes `diagnostic.log` to your `%APPDATA%` folder, and finds it through Windows' "Language for non-Unicode programs" setting. If your Windows username has letters outside that language, such as Japanese letters on an English Windows, the log cannot be written. Your music still plays, and `loudness.txt` and `removed.txt` still work, since they live in the `audio` folder.
 
 ## Troubleshooting
