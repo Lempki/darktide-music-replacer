@@ -447,9 +447,10 @@ function AudioClient.play(file_path, opts)
 		end
 
 		-- A dead engine refuses every voice, and so can one file's format.
-		-- With no song fading out to show the engine still plays, it is rebuilt and the file gets one more try.
+		-- The engine is rebuilt and the file gets one more try when the refusal was an engine failure.
+		-- It also is with no song fading out, since a fading song that plays on shows the engine works.
 		-- That is not counted as a recovery, since a file the engine refuses again was the cause.
-		if not stream and refused_voice and not has_live_stream() then
+		if not stream and refused_voice and (Player.engine_failure() or not has_live_stream()) then
 			log(string.format("[player] %s was refused a voice (%s), rebuilding the engine and trying once more", file_path, tostring(err)))
 			destroy_all()
 			Player.reset()

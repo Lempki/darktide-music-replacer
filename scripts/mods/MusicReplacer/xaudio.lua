@@ -184,7 +184,7 @@ Voice.__index = Voice
 
 -- Creates a stopped voice for PCM in `format`, a MusicReplacer_WAVEFORMATEX.
 -- Returns the voice, or nil, why, and true when XAudio2 itself refused the voice, which a failed engine also does.
--- A refused voice is not recorded as an engine failure, since one file's format can cause it.
+-- A refusal counts as an engine failure only for an error in XAudio2's own facility or the audio client's, which no file's format causes.
 function XAudio.create_voice(format)
 	if not XAudio.available() then
 		return nil, init_error, false
@@ -193,7 +193,11 @@ function XAudio.create_voice(format)
 	local out = ffi.new("void *[1]")
 	local hresult = call(engine, CREATE_SOURCE_VOICE, out, format, 0, XAUDIO2_DEFAULT_FREQ_RATIO, nil, nil, nil)
 	if not NativeFfi.succeeded(hresult) then
-		return nil, "creating a voice failed with " .. NativeFfi.hex(hresult), true
+		local reason = "creating a voice failed with " .. NativeFfi.hex(hresult)
+		if is_engine_error(hresult) then
+			failure = failure or reason
+		end
+		return nil, reason, true
 	end
 
 	local pointer = out[0]

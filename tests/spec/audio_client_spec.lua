@@ -67,6 +67,7 @@ local function load_client(levels)
 	-- `output` is false while Windows has no audio output. Like XAudio2, a failed start stays failed until reset.
 	-- `engine_failure_reason` is a failure left behind by a stream.
 	-- `refuse` maps a path to why it cannot be opened, and `refuse_voice` maps a path to how many voices XAudio2 refuses it.
+	-- `refusal_failure`, when set, is the engine failure a refused voice records, as a dead engine's error code does.
 	-- `durations` maps a path on disk to the length its decoder finds, which is 200 seconds for any other.
 	local player = { resets = 0, refuse = {}, refuse_voice = {}, durations = {}, output = true, start_failed = false, engine_failure_reason = nil }
 
@@ -85,6 +86,7 @@ local function load_client(levels)
 		end
 		if (player.refuse_voice[path] or 0) > 0 then
 			player.refuse_voice[path] = player.refuse_voice[path] - 1
+			player.engine_failure_reason = player.engine_failure_reason or player.refusal_failure
 			return nil, "creating a voice failed", true
 		end
 		local stream = new_stream(path, opts)
@@ -627,6 +629,23 @@ describe("audio_client.lua", function()
 		assert_equal(player.resets, 0)
 		assert_equal(streams[1].destroyed, false)
 		assert_equal(failed_open, true)
+	end)
+
+	it("rebuilds the engine and tries once more when a dead engine refuses a voice while another song fades out", function()
+		local AudioClient, player, streams = load_client()
+		AudioClient.play("hub/a.mp3", { fade_in = true })
+		player.refuse_voice["audio/hub/b.mp3"] = 1
+		player.refusal_failure = "creating a voice failed with 0x88960004"
+		local failed_open = nil
+
+		AudioClient.play("hub/b.mp3", { fade_in = true, on_finished = function(failed) failed_open = failed end })
+		AudioClient.update(0.1)
+
+		assert_equal(player.resets, 1)
+		assert_equal(streams[1].destroyed, true)
+		assert_equal(streams[2].path, "audio/hub/b.mp3")
+		assert_equal(AudioClient.is_playing(), true)
+		assert_equal(failed_open, nil)
 	end)
 
 	it("starts counting recoveries afresh after 30 seconds of healthy playing", function()

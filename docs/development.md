@@ -87,6 +87,7 @@ Music Replacer decodes the files with Media Foundation, Windows' own media frame
 * The mastering voice is created with no device ID, so XAudio2 uses Windows' virtual audio client and follows a change of the default audio device by itself.
 * A voice that has audio queued but plays nothing for 2 seconds counts as a lost device, since XAudio2 does not report that stall itself.
 * When the device is lost in a way XAudio2 cannot follow, the mod rebuilds the engine and resumes the song where it was.
+* A voice refused with an error from XAudio2 itself or from the Windows audio client also counts as a failed engine, so the engine is rebuilt and the song tried once more, even during a crossfade. A song refused again after that counts as a file that cannot be played.
 * After 3 rebuilds in a row without 30 seconds of good playback in between, the next failure gives up, and the game's music plays. Rescan Audio Folders, or turning the mod off and on, lets it try again.
 * While Windows has no audio output at all, creating the engine fails. The game's music plays, and the mod tries again every 5 seconds without counting it as a failure, so a headset that stays unplugged never makes it give up.
 

@@ -12,6 +12,7 @@ What changes for players in each release of Music Replacer. The format follows [
 
 * A song that continues after the mod restarts its audio, such as after a headset drops out, keeps its situation's Volume and Fade Length, instead of playing at the full Custom Music Volume and fading out over the Playback group's Fade Length.
 * A song that plays on into another situation, such as from Boss Near into Boss, follows the new situation's Repeat Song. Before, it kept looping or kept moving on as the situation before had it.
+* Losing the audio device while one song fades into another restarts the mod's audio and plays the new song. Before, the new song and the next ones counted as files that would not play, so the situation played the game's music until Rescan Audio Folders.
 
 ## [1.3.0] - 2026-11-21
 
