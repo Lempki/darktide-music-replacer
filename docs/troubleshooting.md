@@ -13,7 +13,7 @@ Fixes for common problems, how to report one, and what the mod writes where.
 * **The same song plays every time.** A folder with only one song loops that song. Add more songs to the folder that plays, which the debug overlay's Folder line names.
 * **Boss music starts before the boss shows up.** Boss Near plays once a boss is within Boss Distance, 80 m by default, and with its folder empty it plays your `boss` songs. Set Boss Near to Skip under Music per Situation to start boss music with the boss's HP bar, or lower Boss Distance in the Boss Music group.
 * **A red message says "diagnostic.log could not be opened".** The mod could not write `diagnostic.log` in `%APPDATA%\Fatshark\Darktide\MusicReplacer\`, so this launch is not logged, and the reason is in the game's console log. Your music still plays.
-* **Changed files are not picked up.** The mod lists the folders again 3 seconds after files stop changing. On a drive where Windows cannot report changes, such as some network drives, press Rescan Audio Folders.
+* **Changed files are not picked up.** The mod lists the folders again 3 seconds after files stop changing. On a drive where Windows cannot report changes, such as some network drives, press Rescan Audio Folders. Press it too after deleting the whole `audio` folder and making it again while the game runs, since the mod notices no changes in the new folder until then.
 
 ## Reporting a problem
 

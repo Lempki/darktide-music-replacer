@@ -6,7 +6,7 @@ Every setting of Music Replacer, with its default. The settings are in the in-ga
 
 | Setting | Default | What it does |
 |---|---|---|
-| Rescan Audio Folders | (button) | Lists the audio folders again at once, and checks again whether every song plays. The mod notices added, removed, and replaced files by itself, and lists the folders again 3 seconds after files stop changing. Use this button on drives where Windows cannot report changes, such as some network drives, and to retry a song that would not play. It also lets the mod try playback again after it has given up, and creates any situation's folder that went missing. It does not measure songs again that were measured before, only those that could not be measured. |
+| Rescan Audio Folders | (button) | Lists the audio folders again at once, and checks again whether every song plays. The mod notices added, removed, and replaced files by itself, and lists the folders again 3 seconds after files stop changing. Use this button on drives where Windows cannot report changes, such as some network drives, and to retry a song that would not play. It also lets the mod try playback again after it has given up, and creates any situation's folder that went missing. After the whole `audio` folder was deleted and made again, it makes the mod notice changed files again. It does not measure songs again that were measured before, only those that could not be measured. |
 | Restore All Removed Songs | (button) | Puts every song that Remove from Rotation took out back into its folder's rotation, and a message says how many came back. Each situation's own [Restore Removed Songs](#music-per-situation) puts back only that situation's songs. A situation left with no songs plays them again at once. |
 
 ## Playback

@@ -34,6 +34,7 @@ local AUDIO_ROOT = "./../mods/MusicReplacer/audio"
 local _os = Mods and Mods.lua and Mods.lua.os -- It only times the duration measurements.
 
 local log = function() end -- It does nothing unless Library.init is given a real logger.
+local log_detail = function() end -- Lines only Detailed Logging writes, given as options.detail.
 local AudioFolders = nil
 local waiting_to_scan = false
 local rescan_requested = false
@@ -175,8 +176,9 @@ local function scan_folders(what, quiet_if_unchanged)
 	local songs = describe_songs()
 	local unchanged = songs == listed_songs
 	listed_songs = songs
+	-- The mod's own writes to loudness.txt and removed.txt end here, so the line is only for Detailed Logging.
 	if quiet_if_unchanged and unchanged then
-		log("[library] a file changed in the audio folder, but no song did")
+		log_detail("[library] a file changed in the audio folder, but no song did")
 		return false
 	end
 
@@ -261,11 +263,31 @@ local function create_folders()
 	end
 end
 
+-- Watches the audio folder anew, replacing any watcher before.
+-- A watcher keeps following the folder it was made for, so an audio folder deleted and made again needs a new one.
+-- Watching starts after the folders exist, so creating them is not reported as a change.
+local function start_watching()
+	if watcher then
+		watcher:close()
+	end
+	quiet_seconds = nil
+
+	local err
+	watcher, err = AudioFolders.watch(AUDIO_ROOT)
+	if not watcher then
+		log(string.format("[library] %s, so changed files need Rescan Audio Folders", tostring(err)))
+	end
+end
+
 -- Creates any missing folder at once, and lists them on the first update.
 -- `logger`, if given, receives the library's log lines.
+-- `options.detail`, if given, receives the lines only Detailed Logging writes.
 -- `options.is_removed(file_path)`, if given, is true for a song removed from rotation, which the listings leave out.
 function Library.init(logger, audio_folders, options)
 	log = logger or log
+	if options and options.detail then
+		log_detail = options.detail
+	end
 	if options and options.is_removed then
 		is_removed = options.is_removed
 	end
@@ -276,13 +298,7 @@ function Library.init(logger, audio_folders, options)
 	AudioFolders = audio_folders
 
 	create_folders()
-
-	-- Watching starts after the folders exist, so creating them is not reported as a change.
-	local err
-	watcher, err = AudioFolders.watch(AUDIO_ROOT)
-	if not watcher then
-		log(string.format("[library] %s, so changed files need Rescan Audio Folders", tostring(err)))
-	end
+	start_watching()
 
 	waiting_to_scan = true
 end
@@ -328,9 +344,11 @@ end
 -- Asks for every folder to be listed again on the next update, and every file to be measured again.
 -- The button is how a player asks to retry a file that would not play, so it does not keep what was measured before.
 -- It also creates a context's folder again that was deleted while the game runs, so the player needs no restart for it.
+-- Watching starts over too, since the audio folder itself can have been deleted and made again.
 function Library.request_rescan()
 	if AudioFolders then
 		create_folders()
+		start_watching()
 		rescan_requested = true
 		full_rescan_requested = true
 	end

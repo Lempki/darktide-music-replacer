@@ -7,9 +7,10 @@ local ROOT = "./../mods/MusicReplacer/audio"
 -- A fake audio_folders.lua over `disk`, which maps a context to its file names, and `lengths`, which maps a file path to seconds.
 -- `missing` lists file paths that are listed but gone from disk, and `broken` maps a file path Windows cannot open to why.
 -- Setting `changes` to true makes the watcher report a change on its next check, and `watch_error` makes watching fail.
+-- `watches` counts the watchers made, and `closed` is true once any was closed.
 -- `other_formats` maps a folder key to the names of its audio files in a format the mod does not play.
 local function new_audio_folders(disk, lengths, missing, broken)
-	local folders = { created = {}, measured = {}, missing = missing or {}, broken = broken or {}, changes = false, closed = false, other_formats = {} }
+	local folders = { created = {}, measured = {}, missing = missing or {}, broken = broken or {}, changes = false, closed = false, watches = 0, other_formats = {} }
 
 	function folders.available() return true end
 	-- Each file's stamp is its name and how many times the folder was listed, as if every file changed between listings.
@@ -47,6 +48,7 @@ local function new_audio_folders(disk, lengths, missing, broken)
 			return nil, folders.watch_error
 		end
 		folders.watched = folder
+		folders.watches = folders.watches + 1
 		return {
 			changed = function()
 				local changed = folders.changes
@@ -77,16 +79,16 @@ local function first_file(Library, folder_key)
 	return entries[1].file_path, entries[1].duration, #entries == 1
 end
 
--- Returns a library.lua that has listed `disk`, the fake folders, and the logged lines.
+-- Returns a library.lua that has listed `disk`, the fake folders, the logged lines, and the lines only Detailed Logging writes.
 local function listed_library(disk, lengths, missing, broken)
 	local engine = FakeEngine.new()
 	local Library = engine:load("library")
 	local folders = new_audio_folders(disk, lengths or {}, missing, broken)
-	local lines = {}
-	Library.init(function(line) lines[#lines + 1] = line end, folders)
+	local lines, details = {}, {}
+	Library.init(function(line) lines[#lines + 1] = line end, folders, { detail = function(line) details[#details + 1] = line end })
 	Library.update(0.016)
 
-	return Library, folders, lines
+	return Library, folders, lines, details
 end
 
 describe("library.lua listing", function()
@@ -417,8 +419,8 @@ describe("library.lua watching the folders", function()
 	end)
 
 	-- loudness.txt and removed.txt are in the audio folder, so the mod's own writes make the watcher report a change.
-	it("reports nothing when the watcher lists the folders again and no song changed", function()
-		local Library, folders, lines = listed_library({ hub = { "a.mp3" } }, { ["hub/a.mp3"] = 100 })
+	it("reports nothing, and logs only with Detailed Logging, when the watcher lists the folders again and no song changed", function()
+		local Library, folders, lines, details = listed_library({ hub = { "a.mp3" } }, { ["hub/a.mp3"] = 100 })
 		local list = folders.list
 		function folders.list(folder)
 			local names, stamps, others = list(folder)
@@ -438,7 +440,8 @@ describe("library.lua watching the folders", function()
 
 		assert_equal(Library.update(3.1), false)
 		assert_equal(listed, 0)
-		assert_equal(lines[#lines], "[library] a file changed in the audio folder, but no song did")
+		assert_equal(details[#details], "[library] a file changed in the audio folder, but no song did")
+		assert_equal(lines[#lines]:find("no song did", 1, true), nil)
 
 		Library.request_rescan()
 		assert_equal(Library.update(0.016), true)
@@ -492,6 +495,23 @@ describe("library.lua watching the folders", function()
 		assert_equal(lines[1], "[library] Windows cannot report changes in the audio folders, so changed files need Rescan Audio Folders")
 		assert_equal(first_file(Library, "hub"), "hub/a.mp3")
 		assert_equal(Library.update(5), false)
+	end)
+
+	it("watches the audio folder anew on a rescan, in case it was deleted and made again", function()
+		local disk = { hub = { "a.mp3" } }
+		local Library, folders = listed_library(disk)
+		assert_equal(folders.watches, 1)
+
+		Library.request_rescan()
+		Library.update(0.016)
+		assert_equal(folders.closed, true)
+		assert_equal(folders.watches, 2)
+
+		disk.hub = { "a.mp3", "b.mp3" }
+		folders.changes = true
+		Library.update(0.016)
+		assert_equal(Library.update(3.1), true)
+		assert_equal(Library.find_file("hub", "hub/b.mp3"), "hub/b.mp3")
 	end)
 
 	it("stops watching on shutdown", function()

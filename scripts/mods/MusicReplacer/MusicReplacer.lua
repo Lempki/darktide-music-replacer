@@ -1272,7 +1272,7 @@ mod.on_all_mods_loaded = function()
 	-- loudness.txt and removed.txt belong to the songs, so they live in the audio folder, and older ones move there first.
 	OldFiles.move({ "loudness.txt", "removed.txt" }, DiagnosticLog.folder(), Library.folder(), log)
 	RemovedSongs.init(log, Library.folder())
-	Library.init(log, AudioFolders, { is_removed = RemovedSongs.contains })
+	Library.init(log, AudioFolders, { detail = log_detail, is_removed = RemovedSongs.contains })
 	XAudio.init(NativeFfi)
 	Player.init(NativeFfi, MediaDecoder, XAudio)
 	Loudness.init({
