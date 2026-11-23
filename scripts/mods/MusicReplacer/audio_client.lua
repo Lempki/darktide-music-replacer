@@ -486,6 +486,7 @@ end
 
 -- Lets the current song play on as `file_path` for a new context, with that context's own ending in `opts.on_finished`.
 -- For a copy of the song that is playing, so it continues instead of starting over. Returns false when nothing plays.
+-- The song loops on or stops looping as `opts.loop` says, since the new context's own Repeat Song decides that.
 function AudioClient.retarget(file_path, opts)
 	if not current then
 		return false
@@ -496,6 +497,11 @@ function AudioClient.retarget(file_path, opts)
 	current.duration = opts.duration_seconds
 	current.end_fade_seconds = opts.end_fade_seconds
 	AudioClient.set_share(opts.share or 1)
+
+	local loop = opts.loop == true
+	if loop ~= current.loop then
+		AudioClient.set_loop(loop, opts.duration_seconds)
+	end
 	return true
 end
 

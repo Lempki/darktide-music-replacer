@@ -382,6 +382,21 @@ describe("audio_client.lua", function()
 		assert_equal(streams[1].fades[1][1], 0)
 	end)
 
+	it("loops a song kept for another context, or plays it to its end, as that context's Repeat Song says", function()
+		local AudioClient, _, streams = load_client()
+		AudioClient.play("boss/b.mp3", { fade_in = false, loop = true })
+
+		AudioClient.retarget("boss/b.mp3", { duration_seconds = 199 })
+		assert_equal(streams[1].loop, false)
+		streams[1].current_position = 198.2
+		AudioClient.update(0.1)
+		assert_equal(streams[1].fades[1][1], 0)
+
+		AudioClient.play("boss/c.mp3", { fade_in = false, duration_seconds = 199 })
+		AudioClient.retarget("boss/c.mp3", { loop = true })
+		assert_equal(streams[2].loop, true)
+	end)
+
 	it("cannot make a song loop once its last buffer is queued, or while nothing plays", function()
 		local AudioClient, _, streams = load_client()
 		assert_equal(AudioClient.set_loop(true, nil), false)
