@@ -96,6 +96,7 @@ local override_check_elapsed = 0
 local context_status = "Vanilla"
 
 local SOURCE_NAMES = { custom = "Custom", game = "Vanilla", silence = "Silence" }
+local NO_OUTPUT_STATUS = "Vanilla, no audio output"
 
 local borrows_folders -- Set below, once the folder lookup it needs exists.
 
@@ -495,7 +496,7 @@ play_context = function(context_name, is_new_context)
 
 	-- Playback that could not start, or gave up after repeated audio device failures, leaves the game's music alone.
 	if not AudioClient.available() then
-		hand_back("Vanilla, no audio output")
+		hand_back(NO_OUTPUT_STATUS)
 		return
 	end
 
@@ -1495,11 +1496,13 @@ mod.update = function(dt)
 			lost_track = { context_name = playing_track.context_name, file_path = playing_track.file_path, position = playing_track.position }
 		end
 		Suppression.release()
+		context_status = NO_OUTPUT_STATUS
 	elseif playback_lost and available then
 		playback_lost = false
 		if paused then
 			-- A paused situation stays quiet until the song resumes, so the game's music is silenced again.
 			Suppression.engage(current_context)
+			context_status = PAUSED_STATUS
 		elseif enabled then
 			replay_current_context()
 		end

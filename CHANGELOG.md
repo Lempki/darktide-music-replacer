@@ -14,6 +14,7 @@ What changes for players in each release of Music Replacer. The format follows [
 * A song that plays on into another situation, such as from Boss Near into Boss, follows the new situation's Repeat Song. Before, it kept looping or kept moving on as the situation before had it.
 * Losing the audio device while one song fades into another restarts the mod's audio and plays the new song. Before, the new song and the next ones counted as files that would not play, so the situation played the game's music until Rescan Audio Folders.
 * Rescan Audio Folders makes the mod notice changed files again after the whole `audio` folder was deleted and made again while the game runs. Before, files added after that went unnoticed until the game restarted.
+* The debug overlay's tag says `Vanilla, no audio output` as soon as the audio output is lost, such as when you unplug your only headset. Before, it went on saying `Custom` until the situation changed.
 
 ## [1.3.0] - 2026-11-21
 

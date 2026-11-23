@@ -1580,6 +1580,18 @@ describe("MusicReplacer.lua when playback stops working", function()
 		assert_equal(harness.engine:wwise_state("music_zone"), "None")
 	end)
 
+	it("shows that there is no audio output in the debug overlay until playback works again", function()
+		local harness = in_hub()
+
+		harness.client.available = false
+		harness:tick(0.1)
+		assert_equal(harness.overlay.options.snapshot().status, "Vanilla, no audio output")
+
+		harness.client.available = true
+		harness:tick(0.1)
+		assert_equal(harness.overlay.options.snapshot().status, "Custom")
+	end)
+
 	it("continues the song where it was once playback works again", function()
 		local harness = in_hub()
 		local song = harness:playing()
@@ -2460,11 +2472,13 @@ describe("MusicReplacer.lua the Pause / Resume key", function()
 		harness.client.available = false
 		harness:tick(0.1)
 		assert_equal(harness.engine:wwise_state("music_zone"), "hub")
+		assert_equal(harness.overlay.options.snapshot().status, "Vanilla, no audio output")
 		harness.client.available = true
 		harness:tick(0.1)
 
 		assert_equal(#harness.client.plays, plays)
 		assert_equal(harness.engine:wwise_state("music_zone"), "None")
+		assert_equal(harness.overlay.options.snapshot().status, "Custom, paused")
 	end)
 
 	-- The first boss to come near names the folder, so the folder changes once it is gone while another stays near.
