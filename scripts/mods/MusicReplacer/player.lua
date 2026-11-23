@@ -138,12 +138,22 @@ local function measure(self, memory, bytes)
 	end
 end
 
+-- The frame at which the pass playing now ends, if that end is queued already, else nil.
+-- Frames count from the stream's start, as the voice's samples played do.
+local function queued_pass_end(self)
+	local played = self.voice:samples_played()
+	while self.pass_ends[1] and self.pass_ends[1] <= played do
+		table.remove(self.pass_ends, 1)
+	end
+	return self.pass_ends[1]
+end
+
 -- Decodes up to `max_fills` buffers into free pool slots and queues them.
 local function fill(self, max_fills)
 	local started = clock()
 	local fills = 0
 
-	while fills < max_fills and not self.finishing and not self.failed and not self.file_failed do
+	while fills < max_fills and not self.finishing and not self.end_frame and not self.failed and not self.file_failed do
 		-- A slot is free once the buffer last written to it has played, which holds while the queue is not full.
 		if self.voice:queued() >= SLOT_COUNT then
 			break
@@ -151,8 +161,10 @@ local function fill(self, max_fills)
 
 		local slot = self.pool + (self.submitted % SLOT_COUNT) * self.slot_bytes
 		local bytes = self.decoder:read_into(slot, self.slot_bytes)
+		local pass_end = nil
 
 		if self.loop and self.decoder:at_end() then
+			pass_end = self.queued_frames + bytes / self.block_align
 			-- The rest of this buffer continues from the file's start, so looping adds no gap between the file's end and its start.
 			-- Silence the file carries itself, such as an MP3's encoder padding, still plays.
 			if not self.decoder:seek(0) then
@@ -178,6 +190,12 @@ local function fill(self, max_fills)
 				break
 			end
 			self.submitted = self.submitted + 1
+			self.queued_frames = self.queued_frames + bytes / self.block_align
+			if pass_end then
+				-- Dropping the ends already played keeps the list short however long a song loops.
+				queued_pass_end(self)
+				self.pass_ends[#self.pass_ends + 1] = pass_end
+			end
 		end
 
 		if last then
@@ -253,6 +271,9 @@ local function open_stream(path, opts)
 		loop = opts.loop == true,
 		wraps_position = opts.loop == true,
 		submitted = 0,
+		queued_frames = 0,
+		pass_ends = {},
+		end_frame = nil,
 		finishing = false,
 		failed = nil,
 		paused = false,
@@ -333,7 +354,7 @@ end
 
 -- Makes the stream loop or play to its end from the buffer it queues next.
 -- Returns false once the file's last buffer is queued, up to 4 seconds before its end, since that pass can no longer loop.
--- Turned off, a stream that already queued its next pass from the file's start plays that pass to its end.
+-- Turned off, a stream that already queued its next pass from the file's start still ends where the pass playing now ends.
 function Stream:set_loop(on)
 	if on and self.finishing then
 		return false
@@ -342,6 +363,12 @@ function Stream:set_loop(on)
 	self.loop = on
 	-- The samples played still count every earlier pass, so positions keep wrapping once a stream has looped.
 	self.wraps_position = self.wraps_position or on
+
+	if on then
+		self.end_frame = nil
+	else
+		self.end_frame = queued_pass_end(self)
+	end
 	return true
 end
 
@@ -373,7 +400,11 @@ function Stream:audible_level()
 end
 
 -- True once a stream that does not loop has played its last sample.
+-- A stream whose looping was turned off after its next pass was queued ends with the pass it was in, and the queued rest does not play.
 function Stream:ended()
+	if self.end_frame then
+		return self.voice:samples_played() >= self.end_frame
+	end
 	return self.finishing and self.voice:queued() == 0
 end
 

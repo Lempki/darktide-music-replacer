@@ -452,6 +452,42 @@ describe("player.lua", function()
 		assert_equal(stream:position() < 1, true, tostring(stream:position()))
 	end)
 
+	it("ends at the end of the pass it is in once looping is turned off after its next pass was queued", function()
+		local Player, _, voice = load_player(1)
+		local stream = Player.open("a.mp3", { loop = true })
+		voice:play(2)
+		stream:update(0.016)
+		stream:update(0.016)
+		local submitted = #voice.submitted
+
+		assert_equal(stream:set_loop(false), true)
+		voice:play(1)
+		stream:update(0.016)
+		assert_equal(stream:ended(), false)
+
+		voice:play(1)
+		stream:update(0.016)
+		assert_equal(stream:ended(), true)
+		assert_equal(#voice.submitted, submitted)
+	end)
+
+	it("loops on when looping is turned back on before the pass it is in ends", function()
+		local Player, _, voice = load_player(1)
+		local stream = Player.open("a.mp3", { loop = true })
+		voice:play(2)
+		stream:update(0.016)
+		stream:update(0.016)
+		local submitted = #voice.submitted
+
+		stream:set_loop(false)
+		assert_equal(stream:set_loop(true), true)
+		voice:play(2)
+		stream:update(0.016)
+
+		assert_equal(stream:ended(), false)
+		assert_equal(#voice.submitted > submitted, true)
+	end)
+
 	it("reports a fade's level, the level it moves to, and its seconds left, and no target once it is still", function()
 		local Player = load_player(60)
 		local stream = Player.open("a.mp3", { fade = 0 })
