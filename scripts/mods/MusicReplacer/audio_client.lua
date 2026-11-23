@@ -562,6 +562,8 @@ local function recover(reason)
 			loop = resume.loop,
 			duration_seconds = resume.duration,
 			on_finished = resume.on_finished,
+			share = resume.share,
+			end_fade_seconds = resume.end_fade_seconds,
 			fade_in = true,
 		})
 

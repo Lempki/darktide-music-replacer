@@ -466,6 +466,24 @@ describe("audio_client.lua", function()
 		assert_equal(streams[2].opts.start_position, 42)
 	end)
 
+	it("resumes the song at its situation's share and with its own end fade", function()
+		local AudioClient, _, streams = load_client()
+		AudioClient.set_fade_seconds(5)
+		AudioClient.play("hub/a.mp3", { fade_in = true, duration_seconds = 199, share = 0.5, end_fade_seconds = 1 })
+		streams[1].current_position = 42
+		streams[1].failed = "the voice stopped playing with audio queued"
+
+		AudioClient.update(0.1)
+
+		assert_equal(streams[2].opts.gain, streams[1].opts.gain)
+		streams[2].current_position = 198.5
+		AudioClient.update(0.1)
+		assert_equal(#streams[2].fades, 1)
+		streams[2].current_position = 199.5
+		AudioClient.update(0.1)
+		assert_equal(streams[2].fades[#streams[2].fades][1], 0)
+	end)
+
 	it("gives up for the session after 3 recoveries in a row", function()
 		local AudioClient, _, streams, _, lines = load_client()
 		AudioClient.play("hub/a.mp3", { fade_in = true })

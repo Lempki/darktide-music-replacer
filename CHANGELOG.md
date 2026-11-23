@@ -8,6 +8,10 @@ What changes for players in each release of Music Replacer. The format follows [
 
 * Even Out Loudness measures no copy of a measured song again, even one with another file name or a new write time, such as a song copied in with a new name. A file that has no measurement yet is first compared with the measured songs of exactly its size, and an identical file takes over that song's measurement.
 
+### Fixes
+
+* A song that continues after the mod restarts its audio, such as after a headset drops out, keeps its situation's Volume and Fade Length, instead of playing at the full Custom Music Volume and fading out over the Playback group's Fade Length.
+
 ## [1.3.0] - 2026-11-21
 
 ### Features
