@@ -15,3 +15,15 @@ jobs:
     uses: Lempki/dev-standards/.github/workflows/lua-ci.yml@v0.8.1
     with:
       test-command: luajit tests/run.lua
+
+  # The shared CI runs on Linux, so the package that players install is built here, on Windows PowerShell as for a release.
+  # The build reads its archive back and fails on a layout that would install wrongly.
+  build:
+    runs-on: windows-2025
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - shell: powershell
+        run: ./tools/build.ps1
