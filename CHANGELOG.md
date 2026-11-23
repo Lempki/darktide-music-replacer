@@ -16,6 +16,7 @@ What changes for players in each release of Music Replacer. The format follows [
 * Rescan Audio Folders makes the mod notice changed files again after the whole `audio` folder was deleted and made again while the game runs. Before, files added after that went unnoticed until the game restarted.
 * The debug overlay's tag says `Vanilla, no audio output` as soon as the audio output is lost, such as when you unplug your only headset. Before, it went on saying `Custom` until the situation changed.
 * With Let Songs Finish on, a looping song ends with the pass it is in when the situation changes in its last 4 seconds, and the waiting situation takes over. Before, the song faded out and the music stayed silent for one more length of the song.
+* A song that continues where it stopped, such as when its situation comes back or after the mod restarts its audio, starts exactly there. Before, it started where Windows' decoder landed, which for some files is earlier, so a bit of it played twice and its end fade ended before the song did.
 
 ## [1.3.0] - 2026-11-21
 

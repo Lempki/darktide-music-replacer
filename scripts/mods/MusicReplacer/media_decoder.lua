@@ -226,6 +226,8 @@ function MediaDecoder.open(path)
 		carry_capacity = 0,
 		carry_offset = 0,
 		carry_bytes = 0,
+		-- The position the last seek asked for, in 100-nanosecond units, until decoding reaches it.
+		seek_target = nil,
 		-- Out parameters, made once so reading allocates nothing on the Lua heap.
 		stream_index = ffi.new("uint32_t[1]"),
 		flags = ffi.new("uint32_t[1]"),
@@ -319,6 +321,24 @@ local function next_sample(self)
 	return sample
 end
 
+-- How many of a decoded chunk's `length` bytes play before the position the last seek asked for, in whole frames.
+-- Once a chunk reaches that position, later chunks are kept whole.
+local function bytes_before_seek_target(self, length)
+	local early = self.seek_target - tonumber(self.timestamp[0])
+	if early <= 0 then
+		self.seek_target = nil
+		return 0
+	end
+
+	local frames = math.floor(early * self.format.nSamplesPerSec / HUNDRED_NANOSECONDS + 0.5)
+	local bytes = frames * self.format.nBlockAlign
+	if bytes < length then
+		self.seek_target = nil
+		return bytes
+	end
+	return length
+end
+
 -- Copies up to `room` bytes of `sample` to `target`, keeps the rest for the next read, and releases the sample.
 -- Returns how many bytes it copied.
 local function take_sample(self, sample, target, room)
@@ -328,13 +348,20 @@ local function take_sample(self, sample, target, room)
 		local buffer = self.out[0]
 		if NativeFfi.succeeded(call(buffer, LOCK, self.data, nil, self.length)) then
 			local length = self.length[0]
-			count = math.min(length, room)
+			local skipped = 0
+			if self.seek_target then
+				skipped = bytes_before_seek_target(self, length)
+			end
+			local source = self.data[0] + skipped
+			local available = length - skipped
+
+			count = math.min(available, room)
 			if count > 0 then
-				ffi.copy(target, self.data[0], count)
+				ffi.copy(target, source, count)
 			end
 
-			if length > count then
-				keep_rest(self, self.data[0] + count, length - count)
+			if available > count then
+				keep_rest(self, source + count, available - count)
 			end
 
 			call(buffer, UNLOCK)
@@ -394,6 +421,7 @@ function Decoder:read_failure()
 end
 
 -- Moves to `seconds` into the file. Returns true on success.
+-- Media Foundation lands at or before the asked position, so the audio decoded before it is dropped, and reading starts there exactly.
 function Decoder:seek(seconds)
 	local position = ffi.new("MusicReplacer_PROPVARIANT")
 	position.vt = VT_I8
@@ -412,6 +440,7 @@ function Decoder:seek(seconds)
 		self.read_error = nil
 		self.carry_bytes = 0
 		self.empty_reads = 0
+		self.seek_target = tonumber(position.value)
 	end
 	return ok
 end
