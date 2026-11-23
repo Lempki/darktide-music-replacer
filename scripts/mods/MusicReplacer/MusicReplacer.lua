@@ -1282,6 +1282,7 @@ mod.on_all_mods_loaded = function()
 		native_ffi = NativeFfi,
 		loudness_meter = LoudnessMeter,
 		disk_path = Library.disk_path,
+		compare_files = AudioFolders.compare,
 		folder = Library.folder(),
 		is_removed = RemovedSongs.contains,
 	})

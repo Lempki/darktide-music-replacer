@@ -1,4 +1,5 @@
 -- Lists, checks, creates, and watches the audio folders through Windows' own file functions, and measures durations with Media Foundation.
+-- It also compares two files byte for byte.
 -- Names go through the wide-character functions, so files named in any script work.
 -- Media Foundation's durations match the decoded audio to within milliseconds.
 
@@ -22,6 +23,15 @@ local WAIT_OBJECT_0 = 0
 
 -- It watches file names, folder names, sizes, and write times, which covers files being added, removed, renamed, copied, or replaced.
 local CHANGE_FILTER = 0x01 + 0x02 + 0x08 + 0x10
+
+local GENERIC_READ = 0x80000000
+-- Other programs can still read, write, rename, and delete a file while it is compared, so a comparison never locks a song.
+local FILE_SHARE_READ_WRITE_DELETE = 0x01 + 0x02 + 0x04
+local OPEN_EXISTING = 3
+local FILE_FLAG_SEQUENTIAL_SCAN = 0x08000000
+
+-- Read from each file per step. Reading a chunk from disk takes far less than a millisecond, so a step fits the loudness budget.
+local COMPARE_CHUNK_BYTES = 65536
 
 local NativeFfi = nil
 local MediaDecoder = nil
@@ -170,6 +180,96 @@ function Watcher:close()
 	if self.handle ~= nil then
 		NativeFfi.kernel32().MusicReplacer_FindCloseChangeNotification(self.handle)
 		self.handle = nil
+	end
+end
+
+local Comparison = {}
+Comparison.__index = Comparison
+
+local function open_for_reading(path)
+	local ffi = NativeFfi.ffi
+	local handle = NativeFfi.kernel32().MusicReplacer_CreateFileW(
+		NativeFfi.wide(path), GENERIC_READ, FILE_SHARE_READ_WRITE_DELETE, nil, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, nil)
+	if tonumber(ffi.cast("intptr_t", handle)) == INVALID_HANDLE then
+		return nil
+	end
+	return handle
+end
+
+-- Starts comparing the files at `path` and `other_path` byte for byte, a chunk per Comparison:step().
+-- Returns a comparison, or nil when either file cannot be opened or there is no memory to read them into.
+function AudioFolders.compare(path, other_path)
+	local first = open_for_reading(path)
+	if not first then
+		return nil
+	end
+
+	local second = open_for_reading(other_path)
+	local buffer = second and NativeFfi.alloc(2 * COMPARE_CHUNK_BYTES)
+	if not buffer then
+		local kernel32 = NativeFfi.kernel32()
+		kernel32.MusicReplacer_CloseHandle(first)
+		if second then
+			kernel32.MusicReplacer_CloseHandle(second)
+		end
+		return nil
+	end
+
+	return setmetatable({
+		first = first,
+		second = second,
+		buffer = buffer,
+		bytes_read = NativeFfi.ffi.new("uint32_t[2]"),
+	}, Comparison)
+end
+
+-- Compares the next chunk of both files.
+-- Returns true once both ended with every byte the same, false once a byte, the length, or a read differs, and nil while more is left.
+function Comparison:step()
+	if self.first == nil then
+		return false
+	end
+
+	local kernel32 = NativeFfi.kernel32()
+	local first_bytes, second_bytes = self.buffer, self.buffer + COMPARE_CHUNK_BYTES
+	local first_ok = kernel32.MusicReplacer_ReadFile(self.first, first_bytes, COMPARE_CHUNK_BYTES, self.bytes_read, nil)
+	local second_ok = kernel32.MusicReplacer_ReadFile(self.second, second_bytes, COMPARE_CHUNK_BYTES, self.bytes_read + 1, nil)
+	local count = self.bytes_read[0]
+	if first_ok == 0 or second_ok == 0 or count ~= self.bytes_read[1] then
+		return false
+	end
+
+	-- Comparing four bytes at a time keeps the loop short, and the bytes past the last whole word are compared one by one.
+	local words = math.floor(count / 4)
+	local first_words = NativeFfi.ffi.cast("const uint32_t *", first_bytes)
+	local second_words = NativeFfi.ffi.cast("const uint32_t *", second_bytes)
+	for index = 0, words - 1 do
+		if first_words[index] ~= second_words[index] then
+			return false
+		end
+	end
+	for index = words * 4, count - 1 do
+		if first_bytes[index] ~= second_bytes[index] then
+			return false
+		end
+	end
+
+	-- A read of a file comes back short only at its end, and both came back equally short.
+	if count < COMPARE_CHUNK_BYTES then
+		return true
+	end
+	return nil
+end
+
+function Comparison:close()
+	if self.first ~= nil then
+		local kernel32 = NativeFfi.kernel32()
+		kernel32.MusicReplacer_CloseHandle(self.first)
+		kernel32.MusicReplacer_CloseHandle(self.second)
+		NativeFfi.free(self.buffer)
+		self.first = nil
+		self.second = nil
+		self.buffer = nil
 	end
 end
 

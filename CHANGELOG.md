@@ -4,6 +4,10 @@ What changes for players in each release of Music Replacer. The format follows [
 
 ## [Unreleased]
 
+### Changes
+
+* Even Out Loudness measures no copy of a measured song again, even one with another file name or a new write time, such as a song copied in with a new name. A file that has no measurement yet is first compared with the measured songs of exactly its size, and an identical file takes over that song's measurement.
+
 ## [1.3.0] - 2026-11-21
 
 ### Features

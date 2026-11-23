@@ -97,6 +97,7 @@ Music Replacer decodes the files with Media Foundation, Windows' own media frame
 * A quiet song is only raised until its loudest sample reaches full scale, so it never clips, and by at most 12 dB, since raising a very quiet recording further mostly raises its hiss.
 * `loudness.lua` decodes each whole song for this, in 50 ms chunks, for at most about a millisecond per update. It measures the song playing now first, then the rest of the folder it plays from, then the rest of the situation's songs, then everything else. It only measures while Even Out Loudness is on.
 * A song copied into several folders keeps its file name, size, and write time, so it is measured once and every copy takes over the result.
+* A copy under another name, or with a new write time, has no result of its own yet. So before decoding a song, `loudness.lua` compares it byte for byte with every measured song of exactly its size, in 64 KB chunks within the same time limit. An identical file takes over that song's result. Reading two files costs far less than decoding one, and only identical files share a result.
 * The log says how long measuring took once every song is measured.
 * The debug overlay shows how many songs of the current batch are measured while songs are left to measure.
 * The results go to `loudness.txt` in the `audio` folder, keyed by each file's size and write time, so a song is measured once and again only after its file changes. It is written every 10 songs, once measuring is done, and on unload.

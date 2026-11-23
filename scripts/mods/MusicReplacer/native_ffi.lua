@@ -63,6 +63,9 @@ void *MusicReplacer_FindFirstChangeNotificationW(const uint16_t *path, int32_t w
 int32_t MusicReplacer_FindNextChangeNotification(void *handle) __asm__("FindNextChangeNotification");
 int32_t MusicReplacer_FindCloseChangeNotification(void *handle) __asm__("FindCloseChangeNotification");
 uint32_t MusicReplacer_WaitForSingleObject(void *handle, uint32_t milliseconds) __asm__("WaitForSingleObject");
+void *MusicReplacer_CreateFileW(const uint16_t *path, uint32_t access, uint32_t share, void *security, uint32_t disposition, uint32_t flags, void *template_file) __asm__("CreateFileW");
+int32_t MusicReplacer_ReadFile(void *file, void *buffer, uint32_t bytes, uint32_t *bytes_read, void *overlapped) __asm__("ReadFile");
+int32_t MusicReplacer_CloseHandle(void *handle) __asm__("CloseHandle");
 ]]
 
 local CO_E_NOTINITIALIZED = -2147221008 -- 0x800401F0

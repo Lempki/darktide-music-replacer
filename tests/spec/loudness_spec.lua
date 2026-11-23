@@ -83,6 +83,34 @@ local function load_loudness(songs, cache_text)
 		}
 	end
 
+	-- `test.contents` maps a disk path to its bytes, for comparing copies, and a path missing from it cannot be opened.
+	-- A comparison of identical files takes `test.compare_steps` steps, 1 unless set, and each step costs READ_SECONDS.
+	test.compared = {}
+	test.comparisons_closed = 0
+	local function compare_files(path, other_path)
+		test.compared[#test.compared + 1] = path .. " = " .. other_path
+		local contents = test.contents or {}
+		if contents[path] == nil or contents[other_path] == nil then
+			return nil
+		end
+
+		local steps = 0
+		return {
+			step = function()
+				fs.now = fs.now + READ_SECONDS
+				steps = steps + 1
+				if contents[path] ~= contents[other_path] then
+					return false
+				end
+				if steps < (test.compare_steps or 1) then
+					return nil
+				end
+				return true
+			end,
+			close = function() test.comparisons_closed = test.comparisons_closed + 1 end,
+		}
+	end
+
 	local meter = { level = RealMeter.level }
 	function meter.new()
 		local frames = 0
@@ -100,6 +128,7 @@ local function load_loudness(songs, cache_text)
 		native_ffi = { alloc = function() if not test.alloc_fails then return {} end end, free = function() end, ffi = { cast = function(_, buffer) return buffer end } },
 		loudness_meter = meter,
 		disk_path = function(file_path) return "audio/" .. file_path end,
+		compare_files = compare_files,
 		folder = FOLDER,
 		-- `test.removed` holds the songs removed from rotation, by path.
 		is_removed = function(file_path) return test.removed ~= nil and test.removed[file_path] == true end,
@@ -291,6 +320,125 @@ describe("loudness.lua same songs", function()
 
 		assert_equal(test.fs.files[CACHE]:find("hub/a.mp3", 1, true) ~= nil, true)
 		assert_equal(test.lines[1]:match("^%[loudness%] measured 1 song%(s%)") ~= nil, true)
+	end)
+end)
+
+describe("loudness.lua copies under another name", function()
+	-- hub/a.mp3 is measured at -12 LUFS, with a size of 10 bytes.
+	local MEASURED = "10:1:2\t-12.00\t0.50000\thub/a.mp3\n"
+
+	it("gives an identical file of the same size the measured song's result, without measuring it", function()
+		local Loudness, test = load_loudness({ ["audio/combat/b.mp3"] = 12 }, MEASURED)
+		test.contents = { ["audio/hub/a.mp3"] = "song", ["audio/combat/b.mp3"] = "song" }
+		local counts = {}
+		Loudness.on_measured(function(count) counts[#counts + 1] = count end)
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3", "10:1:2" }, { "combat/b.mp3", "10:5:6" } }))
+		assert_deep_equal({ Loudness.progress() }, { 0, 1 })
+
+		measure_all(Loudness, "combat")
+
+		assert_deep_equal(test.compared, { "audio/combat/b.mp3 = audio/hub/a.mp3" })
+		assert_deep_equal(test.opened, {})
+		assert_equal(test.comparisons_closed, 1)
+		assert_equal(Loudness.describe("combat/b.mp3"), "-12.0 LUFS, -2.0 dB")
+		assert_equal(test.details[1], "[loudness] combat/b.mp3: the same file as hub/a.mp3")
+		assert_equal(Loudness.progress(), nil)
+		assert_deep_equal(counts, {})
+		assert_equal(test.fs.files[CACHE]:find("10:5:6  -12.00  0.50000  combat/b.mp3\n", 1, true) ~= nil, true)
+	end)
+
+	it("measures a file of the same size whose bytes differ, or that cannot be opened for comparing", function()
+		local Loudness, test = load_loudness({ ["audio/combat/b.mp3"] = 12, ["audio/combat/c.mp3"] = 16 }, MEASURED)
+		test.contents = { ["audio/hub/a.mp3"] = "song", ["audio/combat/b.mp3"] = "other song" }
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3", "10:1:2" }, { "combat/b.mp3", "10:5:6" }, { "combat/c.mp3", "10:7:8" } }))
+
+		measure_all(Loudness, "combat")
+
+		assert_deep_equal(test.opened, { "audio/combat/b.mp3", "audio/combat/c.mp3" })
+		assert_equal(Loudness.describe("combat/b.mp3"):match("^%-12.0 LUFS") ~= nil, true)
+		assert_equal(Loudness.describe("combat/c.mp3"):match("^%-16.0 LUFS") ~= nil, true)
+	end)
+
+	it("compares only with measured songs of exactly its size, in path order, until one is identical", function()
+		local Loudness, test = load_loudness({ ["audio/hub/c.mp3"] = 20, ["audio/hub/d.mp3"] = 30 },
+			MEASURED .. "10:3:4\t-20.00\t0.50000\thub/b.mp3\n" .. "11:1:2\t-30.00\t0.50000\thub/e.mp3\n")
+		test.contents = {
+			["audio/hub/a.mp3"] = "first", ["audio/hub/b.mp3"] = "second", ["audio/hub/e.mp3"] = "second", ["audio/hub/d.mp3"] = "second",
+		}
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({
+			{ "hub/a.mp3", "10:1:2" }, { "hub/b.mp3", "10:3:4" }, { "hub/e.mp3", "11:1:2" }, { "hub/c.mp3", "12:1:2" }, { "hub/d.mp3", "10:9:9" },
+		}))
+
+		measure_all(Loudness, "hub")
+
+		-- hub/c.mp3 has no song of its size, and hub/e.mp3 is larger than hub/d.mp3.
+		assert_deep_equal(test.compared, { "audio/hub/d.mp3 = audio/hub/a.mp3", "audio/hub/d.mp3 = audio/hub/b.mp3" })
+		assert_deep_equal(test.opened, { "audio/hub/c.mp3" })
+		assert_equal(Loudness.describe("hub/d.mp3"), "-20.0 LUFS, +6.0 dB")
+	end)
+
+	it("compares for about a millisecond per update, and opens a song for measuring in an update of its own", function()
+		local Loudness, test = load_loudness({ ["audio/combat/b.mp3"] = 12 }, MEASURED)
+		test.contents = { ["audio/hub/a.mp3"] = "song", ["audio/combat/b.mp3"] = "song" }
+		test.compare_steps = 7
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3", "10:1:2" }, { "combat/b.mp3", "10:5:6" } }))
+
+		Loudness.update(nil, nil, "combat")
+		assert_equal(#test.compared, 0)
+		Loudness.update(nil, nil, "combat")
+		Loudness.update(nil, nil, "combat")
+		assert_equal(Loudness.is_measured("combat/b.mp3"), false)
+		Loudness.update(nil, nil, "combat")
+		assert_equal(Loudness.is_measured("combat/b.mp3"), true)
+
+		test.contents["audio/combat/b.mp3"] = "other song"
+		Loudness.set_files(entries({ { "hub/a.mp3", "10:1:2" }, { "combat/b.mp3", "10:6:7" } }))
+		Loudness.update(nil, nil, "combat")
+		Loudness.update(nil, nil, "combat")
+		assert_equal(#test.compared, 2)
+		assert_deep_equal(test.opened, {})
+		Loudness.update(nil, nil, "combat")
+		assert_deep_equal(test.opened, { "audio/combat/b.mp3" })
+	end)
+
+	it("measures a song when the measured song's file changes while they are compared", function()
+		local Loudness, test = load_loudness({ ["audio/combat/b.mp3"] = 12 }, MEASURED)
+		test.contents = { ["audio/hub/a.mp3"] = "song", ["audio/combat/b.mp3"] = "song" }
+		test.compare_steps = 7
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3", "10:1:2" }, { "combat/b.mp3", "10:5:6" } }))
+		Loudness.update(nil, nil, "combat")
+		Loudness.update(nil, nil, "combat")
+
+		Loudness.set_files(entries({ { "hub/a.mp3", "10:2:3" }, { "combat/b.mp3", "10:5:6" } }))
+		measure_all(Loudness, "combat")
+
+		assert_deep_equal(test.opened, { "audio/combat/b.mp3" })
+		assert_equal(Loudness.describe("combat/b.mp3"):match("^%-12.0 LUFS") ~= nil, true)
+	end)
+
+	it("closes the comparison when the song is forgotten or evening out is turned off", function()
+		local Loudness, test = load_loudness({ ["audio/combat/b.mp3"] = 12 }, MEASURED)
+		test.contents = { ["audio/hub/a.mp3"] = "song", ["audio/combat/b.mp3"] = "song" }
+		test.compare_steps = 100
+		Loudness.set_enabled(true)
+		Loudness.set_files(entries({ { "hub/a.mp3", "10:1:2" }, { "combat/b.mp3", "10:5:6" } }))
+		Loudness.update(nil, nil, "combat")
+		Loudness.update(nil, nil, "combat")
+
+		Loudness.set_enabled(false)
+		assert_equal(test.comparisons_closed, 1)
+
+		Loudness.set_enabled(true)
+		Loudness.update(nil, nil, "combat")
+		Loudness.update(nil, nil, "combat")
+		Loudness.forget("combat/b.mp3")
+		assert_equal(test.comparisons_closed, 2)
+		assert_equal(Loudness.progress(), nil)
 	end)
 end)
 

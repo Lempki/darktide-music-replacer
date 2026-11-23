@@ -3,6 +3,8 @@
 -- The results are kept in loudness.txt in the audio folder, so a song is measured once and the music files are never changed.
 -- A copy of the audio folder brings its measurements along.
 -- A song is measured again once its file changes, which its size and write time show.
+-- A song with no result is first compared byte for byte with the measured songs of its exact size, and a copy takes the original's result.
+-- Reading two files costs far less than decoding one, and only identical files ever share a result.
 -- A song keeps the level it started with, so one measured while it plays changes level only at its next start.
 
 local Loudness = {}
@@ -39,6 +41,7 @@ local MediaDecoder = nil
 local NativeFfi = nil
 local LoudnessMeter = nil
 local disk_path = function(file_path) return file_path end
+local compare_files = function() return nil end -- path, other_path -> a comparison from AudioFolders.compare, or nil.
 local is_removed = function() return false end -- file_path -> true for a song removed from rotation.
 local cache_path = nil
 
@@ -50,8 +53,11 @@ local failed = {} -- file_path -> the stamp it could not be measured at, so it i
 -- A song copied into several folders keeps its name, size, and write time, so it is measured once.
 local same_songs = {}
 local pending = {} -- Files still to measure, in listing order.
-local active = nil -- The song being measured: file_path, stamp, decoder, meter, buffer, samples, capacity, block_align.
--- Songs of this batch that left the queue for good: measured, or taken over from the same file in another folder.
+-- The song being compared or measured: file_path, stamp, and ms.
+-- While it is compared: candidates, the songs left to compare it with, and comparison, source, and source_stamp for the one compared now.
+-- While it is measured: decoder, meter, buffer, samples, capacity, and block_align.
+local active = nil
+-- Songs of this batch that left the queue for good: measured, or taken over from a copy of a measured song.
 -- A song also leaves for good when opening it, allocating its buffer, or reading it to its end fails.
 local batch_done = 0
 local measured_count = 0 -- Songs measured since the last summary line.
@@ -171,6 +177,14 @@ local function current_result(file_path)
 	return result
 end
 
+-- Gives `file_path`, at its current stamp, the result of `source`, a song with the same audio.
+local function take_result(file_path, source)
+	local result = results[source]
+	results[file_path] = { stamp = stamps[file_path], loudness = result.loudness, peak = result.peak }
+	unsaved_count = unsaved_count + 1
+	log_detail(string.format("[loudness] %s: the same file as %s", file_path, source))
+end
+
 -- Takes over the result of the same file in another folder, and tells whether there was one.
 local function reuse_same_song(file_path)
 	local stamp = stamps[file_path]
@@ -181,10 +195,30 @@ local function reuse_same_song(file_path)
 		return false
 	end
 
-	results[file_path] = { stamp = stamp, loudness = result.loudness, peak = result.peak }
-	unsaved_count = unsaved_count + 1
-	log_detail(string.format("[loudness] %s: the same file as %s", file_path, source))
+	take_result(file_path, source)
 	return true
+end
+
+local function file_size(stamp)
+	return stamp and stamp:match("^(%d+):")
+end
+
+-- The listed songs with a result for their current file and exactly the size of `file_path`, in path order.
+-- Only these can be byte-for-byte copies of it.
+local function same_size_songs(file_path)
+	local candidates = {}
+	local size = file_size(stamps[file_path])
+	if not size then
+		return candidates
+	end
+
+	for other_path, stamp in pairs(stamps) do
+		if other_path ~= file_path and file_size(stamp) == size and current_result(other_path) then
+			candidates[#candidates + 1] = other_path
+		end
+	end
+	table.sort(candidates)
+	return candidates
 end
 
 local function decibels(scale)
@@ -193,8 +227,13 @@ end
 
 local function stop_active()
 	if active then
-		active.decoder:close()
-		NativeFfi.free(active.buffer)
+		if active.comparison then
+			active.comparison:close()
+		end
+		if active.decoder then
+			active.decoder:close()
+			NativeFfi.free(active.buffer)
+		end
 		active = nil
 	end
 end
@@ -272,18 +311,11 @@ local function take_next(playing_file_path, playing_folder, playing_context)
 	return take_from_folder(playing_folder) or take_from_folder(playing_context) or table.remove(pending, 1)
 end
 
-local function start(file_path)
-	-- The same file in another folder can have been measured since this one was queued.
-	if reuse_same_song(file_path) then
-		song_done()
-		return
-	end
-
-	local decoder, err = MediaDecoder.open(disk_path(file_path))
+-- Opens the active song's decoder and read buffer, so measuring can start.
+local function open_active()
+	local decoder, err = MediaDecoder.open(disk_path(active.file_path))
 	if not decoder then
-		log_detail(string.format("[loudness] %s could not be measured: %s", file_path, tostring(err)))
-		failed[file_path] = stamps[file_path]
-		song_done()
+		give_up_active(tostring(err))
 		return
 	end
 
@@ -292,27 +324,78 @@ local function start(file_path)
 	local buffer = NativeFfi.alloc(capacity)
 	if not buffer then
 		decoder:close()
-		log_detail(string.format("[loudness] %s could not be measured: no memory for its read buffer", file_path))
-		failed[file_path] = stamps[file_path]
+		give_up_active("no memory for its read buffer")
+		return
+	end
+
+	active.decoder = decoder
+	active.meter = LoudnessMeter.new(format.nSamplesPerSec, format.nChannels)
+	active.buffer = buffer
+	active.samples = NativeFfi.ffi.cast("int16_t *", buffer)
+	active.capacity = capacity
+	active.block_align = format.nBlockAlign
+end
+
+-- A song with measured songs of its exact size is compared with them first, from the next update on.
+-- Any other song is opened for measuring at once.
+local function start(file_path)
+	-- The same file in another folder can have been measured since this one was queued.
+	if reuse_same_song(file_path) then
 		song_done()
 		return
 	end
 
-	active = {
-		file_path = file_path,
-		stamp = stamps[file_path],
-		decoder = decoder,
-		meter = LoudnessMeter.new(format.nSamplesPerSec, format.nChannels),
-		buffer = buffer,
-		samples = NativeFfi.ffi.cast("int16_t *", buffer),
-		capacity = capacity,
-		block_align = format.nBlockAlign,
-		ms = 0,
-	}
+	active = { file_path = file_path, stamp = stamps[file_path], ms = 0 }
+	local candidates = same_size_songs(file_path)
+	if #candidates > 0 then
+		active.candidates = candidates
+	else
+		open_active()
+	end
+end
+
+-- Compares the active song with the songs of its size, for at most MEASURE_MS, and returns once the time is up.
+-- An identical one gives it its result. A song that cannot be opened, or that changed since it was picked, counts as different.
+-- Once none is left, the active song is opened for measuring in an update of its own, since opening alone can take a few milliseconds.
+local function compare_active(started)
+	repeat
+		if not active.comparison then
+			local source = table.remove(active.candidates, 1)
+			if not source then
+				active.candidates = nil
+				return
+			end
+
+			active.comparison = compare_files(disk_path(active.file_path), disk_path(source))
+			active.source = source
+			active.source_stamp = stamps[source]
+		end
+
+		local same = false
+		if active.comparison then
+			same = active.comparison:step()
+		end
+
+		if same ~= nil then
+			if active.comparison then
+				active.comparison:close()
+				active.comparison = nil
+			end
+
+			local source = active.source
+			if same and stamps[source] == active.source_stamp and current_result(source) then
+				take_result(active.file_path, source)
+				stop_active()
+				song_done()
+				return
+			end
+		end
+	until not started or (clock() - started) * 1000 >= MEASURE_MS
 end
 
 -- options: log, detail, media_decoder, native_ffi, and loudness_meter, which are loaded and initialized modules.
 -- options.disk_path(file_path) turns a library path into a path on disk, and options.folder is where loudness.txt goes.
+-- options.compare_files(path, other_path), if given, is AudioFolders.compare, which finds copies of measured songs.
 -- options.is_removed(file_path), if given, is true for a song removed from rotation, whose result loudness.txt keeps.
 function Loudness.init(options)
 	log = options.log or log
@@ -321,13 +404,14 @@ function Loudness.init(options)
 	NativeFfi = options.native_ffi
 	LoudnessMeter = options.loudness_meter
 	disk_path = options.disk_path or disk_path
+	compare_files = options.compare_files or compare_files
 	is_removed = options.is_removed or is_removed
 	cache_path = options.folder and (options.folder .. "/" .. CACHE_FILE_NAME)
 	load_cache()
 end
 
 -- Registers a function to call with how many songs were measured, once measuring has nothing left to do.
--- Songs taken over from the same file in another folder, and songs that could not be measured, are not counted.
+-- Songs taken over from a copy of a measured song, and songs that could not be measured, are not counted.
 -- Nothing calls it when no song needed measuring.
 function Loudness.on_measured(listener)
 	measured_listeners[#measured_listeners + 1] = listener
@@ -404,6 +488,18 @@ function Loudness.update(playing_file_path, playing_folder, playing_context)
 			if active and started then
 				active.ms = (clock() - started) * 1000
 			end
+		end
+		return
+	end
+
+	if active.candidates or not active.decoder then
+		if active.candidates then
+			compare_active(started)
+		else
+			open_active()
+		end
+		if active and started then
+			active.ms = active.ms + (clock() - started) * 1000
 		end
 		return
 	end
