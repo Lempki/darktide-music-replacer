@@ -53,8 +53,8 @@ local function load_loudness(songs, cache_text)
 	end
 	local fs = new_file_system({ [CACHE] = cache_text })
 	local engine = FakeEngine.new({ lua = { io = fs.io, os = fs.os } })
-	local Loudness = engine:load("loudness")
-	local RealMeter = engine:load("loudness_meter")
+	local Loudness = engine:load("modules/songs/loudness")
+	local RealMeter = engine:load("modules/songs/loudness_meter")
 	local test = { fs = fs, lines = {}, details = {}, opened = {}, reads = 0 }
 
 	local media_decoder = { available = function() return not test.decoder_unavailable end }

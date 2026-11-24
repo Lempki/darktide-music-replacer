@@ -36,7 +36,7 @@ end
 -- Returns a loaded on_screen_message.lua, turned on, with no constant UI to add its element to.
 local function load_on_screen_message()
 	local engine = FakeEngine.new()
-	local OnScreenMessage = engine:load("on_screen_message")
+	local OnScreenMessage = engine:load("modules/interface/on_screen_message")
 	OnScreenMessage.set_enabled(true)
 	return OnScreenMessage
 end
@@ -44,7 +44,7 @@ end
 -- Returns a loaded on_screen_message.lua over `constant_elements`, still turned off, the elements it made, and the logged lines.
 local function load_with_element(constant_elements, failing)
 	local engine = FakeEngine.new()
-	local OnScreenMessage = engine:load("on_screen_message")
+	local OnScreenMessage = engine:load("modules/interface/on_screen_message")
 	local made = {}
 	local lines = {}
 	rawset(Managers, "ui", { ui_constant_elements = function() return constant_elements end })

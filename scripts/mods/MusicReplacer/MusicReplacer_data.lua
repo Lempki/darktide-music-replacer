@@ -3,7 +3,7 @@
 -- What plays where follows, then fine timing, and troubleshooting last.
 -- Every setting names its tooltip: DMF formats named strings, turning "%%" into "%", but shows an implicit description's "%%" as it is.
 
-local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/contexts")
+local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/situations/contexts")
 
 -- What a context plays. Custom keeps the mod's plain behavior: custom songs where there are files, the game's music elsewhere.
 -- A ranked situation with one below it also offers Skip, which lets that one play instead.

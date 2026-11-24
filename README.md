@@ -191,7 +191,7 @@ What the mod writes where, and how it handles a lost audio device, are covered i
 
 ## Updating and uninstalling
 
-Your songs survive updates, even through Vortex, since the mod archive holds only the empty audio folders, never songs, and Vortex only removes files it deployed itself. To update by hand, extract the new version over the old mod folder instead of deleting it first. Renaming the mod folder leaves your songs behind, so move `audio\` across by hand if that ever happens.
+Your songs survive updates, even through Vortex, since the mod archive holds only the empty audio folders, never songs, and Vortex only removes files it deployed itself. To update by hand, extract the new version over the old mod folder instead of deleting it first. Deleting only its `scripts` folder first is fine, and removes any script an older version left behind, such as the scripts of 1.3.0 and earlier, which sat in one folder before 1.4.0 moved them into folders by area. A script left behind is never loaded and does no harm. Renaming the mod folder leaves your songs behind, so move `audio\` across by hand if that ever happens.
 
 Uninstalling the mod leaves its logs in `%APPDATA%\Fatshark\Darktide\MusicReplacer\` behind. Delete that folder by hand if you want them gone. Check `mods\MusicReplacer\audio\` in the game folder too, since your songs were never part of the mod archive.
 

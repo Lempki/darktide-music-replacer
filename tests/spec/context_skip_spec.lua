@@ -146,7 +146,7 @@ end)
 
 describe("contexts.lua Skip", function()
 	it("offers Skip for every ranked situation above the lowest rank", function()
-		local Contexts = FakeEngine.new():load("contexts")
+		local Contexts = FakeEngine.new():load("modules/situations/contexts")
 		local offered = {}
 		for _, context in ipairs(Contexts.list) do
 			if Contexts.can_skip(context.id) then

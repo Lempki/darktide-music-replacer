@@ -5,7 +5,7 @@ local FakeEngine = require("tests.helpers.fake_engine")
 
 -- Returns the module, its log lines, and a table whose `bosses` the reader returns.
 local function new_bosses()
-	local Bosses = FakeEngine.new():load("bosses")
+	local Bosses = FakeEngine.new():load("modules/situations/bosses")
 	local lines = {}
 	local world = { bosses = {} }
 	Bosses.init(function(line) lines[#lines + 1] = line end, {
@@ -28,7 +28,7 @@ describe("bosses.lua", function()
 				asked_for_player = true
 			end,
 		})
-		local Bosses = engine:load("bosses")
+		local Bosses = engine:load("modules/situations/bosses")
 		Bosses.init(function() end)
 
 		assert_equal(Bosses.update(0.25), nil)

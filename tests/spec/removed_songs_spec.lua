@@ -41,7 +41,7 @@ end
 local function load_removed_songs(text)
 	local fs = new_file_system({ [FILE] = text })
 	local engine = FakeEngine.new({ lua = { io = fs.io } })
-	local RemovedSongs = engine:load("removed_songs")
+	local RemovedSongs = engine:load("modules/songs/removed_songs")
 	local lines = {}
 	RemovedSongs.init(function(line) lines[#lines + 1] = line end, FOLDER)
 	return RemovedSongs, fs, lines
@@ -106,7 +106,7 @@ describe("removed_songs.lua", function()
 	it("keeps a removed song for the session when the file cannot be written", function()
 		local fs = new_file_system()
 		local engine = FakeEngine.new({ lua = { io = { open = function(path, mode) return mode == "r" and fs.io.open(path, mode) or nil end } } })
-		local RemovedSongs = engine:load("removed_songs")
+		local RemovedSongs = engine:load("modules/songs/removed_songs")
 		local lines = {}
 		RemovedSongs.init(function(line) lines[#lines + 1] = line end, FOLDER)
 

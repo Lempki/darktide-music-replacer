@@ -5,7 +5,7 @@ local FakeEngine = require("tests.helpers.fake_engine")
 -- Returns a fake engine and a freshly loaded and initialized context.lua.
 local function load_context(settings)
 	local engine = FakeEngine.new({ settings = settings })
-	local Context = engine:load("context")
+	local Context = engine:load("modules/situations/context")
 	Context.init(engine.mod)
 
 	return engine, Context
@@ -20,7 +20,7 @@ describe("context.lua", function()
 			original(...)
 			return "first", nil, "third"
 		end
-		local Context = engine:load("context")
+		local Context = engine:load("modules/situations/context")
 		Context.init(engine.mod)
 
 		local results = { n = 0 }
@@ -35,7 +35,7 @@ describe("context.lua", function()
 
 	it("logs a failing listener with its error text intact, even with a percent sign in it, and tells its failure listeners", function()
 		local engine = FakeEngine.new()
-		local Context = engine:load("context")
+		local Context = engine:load("modules/situations/context")
 		local lines = {}
 		local failures = 0
 		Context.on_change(function() error("disk at 100% full", 0) end)
@@ -124,7 +124,7 @@ end)
 describe("context.lua state logging", function()
 	it("logs transitions of the music state groups it does not act on, and changes no context", function()
 		local engine = FakeEngine.new()
-		local Context = engine:load("context")
+		local Context = engine:load("modules/situations/context")
 		local lines = {}
 		Context.init(engine.mod, function(line) lines[#lines + 1] = line end)
 
@@ -143,7 +143,7 @@ describe("context.lua state logging", function()
 
 	it("logs expeditions_intensity only on the Expedition values it does not share with music_combat", function()
 		local engine = FakeEngine.new()
-		local Context = engine:load("context")
+		local Context = engine:load("modules/situations/context")
 		local lines = {}
 		Context.init(engine.mod, function(line) lines[#lines + 1] = line end)
 
@@ -164,7 +164,7 @@ describe("context.lua state logging", function()
 
 	it("logs a boss encounter's start once, however often the game repeats it, and its end with the breed", function()
 		local engine = FakeEngine.new()
-		local Context = engine:load("context")
+		local Context = engine:load("modules/situations/context")
 		local lines = {}
 		Context.init(engine.mod, function(line) lines[#lines + 1] = line end)
 		Context.update(engine.mod, 0)
@@ -187,7 +187,7 @@ end)
 describe("context.lua menus", function()
 	it("reports a menu as open while the game sets the options group, and logs it without changing the context", function()
 		local engine = FakeEngine.new()
-		local Context = engine:load("context")
+		local Context = engine:load("modules/situations/context")
 		local lines = {}
 		local changes = 0
 		Context.on_change(function() changes = changes + 1 end)

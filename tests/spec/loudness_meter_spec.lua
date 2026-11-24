@@ -4,7 +4,7 @@ local ffi = require("ffi")
 local FakeEngine = require("tests.helpers.fake_engine")
 
 local function load_meter()
-	return FakeEngine.new():load("loudness_meter")
+	return FakeEngine.new():load("modules/songs/loudness_meter")
 end
 
 -- Feeds a 1 kHz sine to `meter`, at `dbfs` peak level in every channel, for `seconds`, a second at a time as 16-bit samples.

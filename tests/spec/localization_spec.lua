@@ -143,7 +143,7 @@ describe("MusicReplacer_localization.lua", function()
 
 	it("names every situation, as the messages and the debug overlay do", function()
 		local strings = load_strings()
-		local Contexts = FakeEngine.new():load("contexts")
+		local Contexts = FakeEngine.new():load("modules/situations/contexts")
 		local missing = {}
 
 		for _, context in ipairs(Contexts.list) do
@@ -157,7 +157,7 @@ describe("MusicReplacer_localization.lua", function()
 
 	it("has no string that neither the options nor the code use", function()
 		local strings, data = load_strings()
-		local Contexts = FakeEngine.new():load("contexts")
+		local Contexts = FakeEngine.new():load("modules/situations/contexts")
 		local used = {}
 		for _, name in ipairs(collect_names(data.options.widgets, {})) do
 			used[name] = true

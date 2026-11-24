@@ -10,6 +10,7 @@ What changes for players in each release of Music Replacer. The format follows [
 
 ### Changes
 
+* The mod's scripts sit in folders by area, under `scripts\mods\MusicReplacer\modules\`. If you update by hand, extracting over 1.3.0 leaves its scripts in `scripts\mods\MusicReplacer\` beside the new folders. Nothing loads them, so they do no harm, and deleting the `scripts` folder before you extract the new version removes them while your songs in `audio` stay.
 * Even Out Loudness measures no copy of a measured song again, even one with another file name or a new write time, such as a song copied in with a new name. A file that has no measurement yet is first compared with the measured songs of exactly its size, and an identical file takes over that song's measurement.
 
 ### Fixes

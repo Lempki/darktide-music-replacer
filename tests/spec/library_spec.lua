@@ -84,7 +84,7 @@ end
 -- Returns a library.lua that has listed `disk`, the fake folders, the logged lines, and the lines only Detailed Logging writes.
 local function listed_library(disk, lengths, missing, broken)
 	local engine = FakeEngine.new()
-	local Library = engine:load("library")
+	local Library = engine:load("modules/songs/library")
 	local folders = new_audio_folders(disk, lengths or {}, missing, broken)
 	local lines, details = {}, {}
 	Library.init(function(line) lines[#lines + 1] = line end, folders, { detail = function(line) details[#details + 1] = line end })
@@ -135,7 +135,7 @@ describe("library.lua listing", function()
 
 	it("passes every listing on, with each file's stamp, in context order", function()
 		local engine = FakeEngine.new()
-		local Library = engine:load("library")
+		local Library = engine:load("modules/songs/library")
 		local folders = new_audio_folders({ hub = { "a.mp3" }, boss = { "b.mp3" } }, {})
 		local listings = {}
 		Library.on_listed(function(entries) listings[#listings + 1] = entries end)
@@ -154,7 +154,7 @@ describe("library.lua listing", function()
 
 	it("reports its first listing as finished, so a context that resolved before it can start its song", function()
 		local engine = FakeEngine.new()
-		local Library = engine:load("library")
+		local Library = engine:load("modules/songs/library")
 		Library.init(nil, new_audio_folders({ title_screen = { "t.mp3" } }, {}))
 
 		assert_equal(Library.update(0.016), true)
@@ -166,7 +166,7 @@ describe("library.lua listing", function()
 		local disk = { title_screen = { "a.mp3" }, character_select = { "a.mp3", "b.mp3" }, hub = { "a.mp3" } }
 		local sizes = { ["title_screen/a.mp3"] = "100:1:2", ["character_select/a.mp3"] = "100:3:4", ["character_select/b.mp3"] = "100:1:2", ["hub/a.mp3"] = "200:1:2" }
 		local engine = FakeEngine.new()
-		local Library = engine:load("library")
+		local Library = engine:load("modules/songs/library")
 		local folders = new_audio_folders(disk, {})
 		local list = folders.list
 		function folders.list(folder)
@@ -189,7 +189,7 @@ describe("library.lua listing", function()
 
 	it("lists nothing before the first update", function()
 		local engine = FakeEngine.new()
-		local Library = engine:load("library")
+		local Library = engine:load("modules/songs/library")
 		Library.init(nil, new_audio_folders({ hub = { "a.mp3" } }, {}))
 
 		assert_equal(first_file(Library, "hub"), nil)
@@ -197,7 +197,7 @@ describe("library.lua listing", function()
 
 	it("lists nothing without a working audio_folders.lua", function()
 		local engine = FakeEngine.new()
-		local Library = engine:load("library")
+		local Library = engine:load("modules/songs/library")
 		Library.init(nil, { available = function() return false end })
 		Library.update(0.016)
 
@@ -326,7 +326,7 @@ describe("library.lua Vanilla markers", function()
 
 	it("never measures a marker, and leaves it out of what the listeners are told was listed", function()
 		local engine = FakeEngine.new()
-		local Library = engine:load("library")
+		local Library = engine:load("modules/songs/library")
 		local folders = new_audio_folders({ hub = { "a.mp3", "vanilla" } }, { ["hub/a.mp3"] = 200 })
 		local listings = {}
 		Library.on_listed(function(entries) listings[#listings + 1] = entries end)
@@ -345,7 +345,7 @@ describe("library.lua checking a listing", function()
 	-- Returns a library.lua that has listed `disk`, the fake folders, and every count its on_checked listener was called with.
 	local function checked_library(disk, lengths, broken)
 		local engine = FakeEngine.new()
-		local Library = engine:load("library")
+		local Library = engine:load("modules/songs/library")
 		local folders = new_audio_folders(disk, lengths or {}, {}, broken)
 		local checks = {}
 		Library.on_checked(function(counts) checks[#checks + 1] = counts end)
@@ -386,7 +386,7 @@ describe("library.lua checking a listing", function()
 
 	it("counts and logs each audio file in a format the mod does not play, apart from the files Windows cannot open", function()
 		local engine = FakeEngine.new()
-		local Library = engine:load("library")
+		local Library = engine:load("modules/songs/library")
 		local folders = new_audio_folders({ hub = { "a.mp3" }, combat = {} }, {}, {}, {})
 		folders.other_formats = { hub = { "b.ogg" }, combat = { "c.opus" } }
 		local checks, lines = {}, {}
@@ -539,7 +539,7 @@ describe("library.lua watching the folders", function()
 
 	it("says so in the log when Windows cannot watch the folders, and still lists them", function()
 		local engine = FakeEngine.new()
-		local Library = engine:load("library")
+		local Library = engine:load("modules/songs/library")
 		local folders = new_audio_folders({ hub = { "a.mp3" } }, {})
 		folders.watch_error = "Windows cannot report changes in the audio folders"
 		local lines = {}
@@ -622,7 +622,7 @@ describe("library.lua songs removed from rotation", function()
 	-- Returns a library that has listed `disk` with `removed` as its removed songs, the fake folders, and every listing it passed on.
 	local function library_with_removed(disk, removed)
 		local engine = FakeEngine.new()
-		local Library = engine:load("library")
+		local Library = engine:load("modules/songs/library")
 		local folders = new_audio_folders(disk, { ["hub/a.mp3"] = 100, ["hub/b.mp3"] = 100 })
 		local listings = {}
 		Library.on_listed(function(entries) listings[#listings + 1] = entries end)

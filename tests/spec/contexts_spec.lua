@@ -3,7 +3,7 @@
 local FakeEngine = require("tests.helpers.fake_engine")
 
 local function load_contexts()
-	return FakeEngine.new():load("contexts")
+	return FakeEngine.new():load("modules/situations/contexts")
 end
 
 describe("contexts.lua", function()
@@ -42,7 +42,7 @@ describe("contexts.lua", function()
 
 	it("shows every situation but Meat Grinder under one Situation dropdown, and offers each to Meat Grinder's One Situation", function()
 		local engine = FakeEngine.new()
-		local Contexts = engine:load("contexts")
+		local Contexts = engine:load("modules/situations/contexts")
 		local data = engine:load("MusicReplacer_data")
 		local groups = {}
 		for _, group in ipairs(data.options.widgets) do

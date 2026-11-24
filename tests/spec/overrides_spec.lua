@@ -327,7 +327,7 @@ end
 
 local function listed_library(disk)
 	local engine = FakeEngine.new()
-	local Library = engine:load("library")
+	local Library = engine:load("modules/songs/library")
 	local lines = {}
 	local listings = {}
 	Library.on_listed(function(entries) listings[#listings + 1] = entries end)

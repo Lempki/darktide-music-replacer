@@ -9,8 +9,8 @@ local EXPLORATION_EVENT = "wwise/events/music/play_exploration_music"
 -- Returns a fake engine and a freshly loaded suppression.lua that sees every real state transition.
 local function load_suppression()
 	local engine = FakeEngine.new()
-	local Context = engine:load("context")
-	local Suppression = engine:load("suppression")
+	local Context = engine:load("modules/situations/context")
+	local Suppression = engine:load("modules/situations/suppression")
 
 	Suppression.init()
 	Context.on_state_change(Suppression.on_state_change)

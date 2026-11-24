@@ -40,7 +40,7 @@ end
 
 local function load_old_files(fs)
 	local engine = FakeEngine.new({ lua = { io = fs.io, os = fs.os } })
-	local OldFiles = engine:load("old_files")
+	local OldFiles = engine:load("modules/songs/old_files")
 	local lines = {}
 	return OldFiles, lines, function(line) lines[#lines + 1] = line end
 end

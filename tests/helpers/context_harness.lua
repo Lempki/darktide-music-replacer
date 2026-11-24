@@ -15,7 +15,7 @@ local FRAME_SECONDS = 0.1
 function Harness.new(settings, logger)
 	local merged = settings or {}
 	local engine = FakeEngine.new({ settings = merged })
-	local Context = engine:load("context")
+	local Context = engine:load("modules/situations/context")
 	Context.init(engine.mod, nil, logger)
 
 	local harness = setmetatable({ engine = engine, Context = Context, changes = {}, settings = merged }, Harness)

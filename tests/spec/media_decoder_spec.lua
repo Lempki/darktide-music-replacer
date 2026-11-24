@@ -154,7 +154,7 @@ local function load_decoder(seconds)
 	}
 	native_ffi.release = function(object) native_ffi.call(object, 2) end
 
-	local MediaDecoder = FakeEngine.new():load("media_decoder")
+	local MediaDecoder = FakeEngine.new():load("modules/windows/media_decoder")
 	MediaDecoder.init(native_ffi)
 	return MediaDecoder
 end

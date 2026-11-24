@@ -79,7 +79,7 @@ end
 -- `peak`, if given, stands in for NativeFfi.peak_int16(memory, count), so the level meter measures.
 local function load_player(seconds, voice_error, peak)
 	local engine = FakeEngine.new()
-	local Player = engine:load("player")
+	local Player = engine:load("modules/playback/player")
 	local decoder = new_decoder(seconds)
 	local voice = new_voice()
 	local freed = {}

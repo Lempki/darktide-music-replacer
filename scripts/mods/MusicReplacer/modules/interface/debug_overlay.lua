@@ -3,7 +3,7 @@
 --
 -- The text is drawn by an element in the game's constant UI, which constant_element_slot.lua keeps there.
 
-local ConstantElementSlot = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/constant_element_slot")
+local ConstantElementSlot = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/interface/constant_element_slot")
 
 local DebugOverlay = {}
 

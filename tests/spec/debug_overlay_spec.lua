@@ -35,7 +35,7 @@ end
 -- Returns a loaded debug_overlay.lua over `constant_elements`, the elements it made, and the logged lines.
 local function load_overlay(constant_elements, failing)
 	local engine = FakeEngine.new()
-	local DebugOverlay = engine:load("debug_overlay")
+	local DebugOverlay = engine:load("modules/interface/debug_overlay")
 	local made = {}
 	local lines = {}
 	local ui = { current = constant_elements }

@@ -50,7 +50,7 @@ end
 local function load_log(fs, detailed, engine)
 	engine = engine or FakeEngine.new({ lua = { io = fs.io, os = fs.os } })
 	engine.settings.diagnostic_mode = detailed
-	local DiagnosticLog = engine:load("diagnostic_log")
+	local DiagnosticLog = engine:load("modules/diagnostics/diagnostic_log")
 	fs.created = {}
 	local native_ffi = {
 		load = function() return true end,

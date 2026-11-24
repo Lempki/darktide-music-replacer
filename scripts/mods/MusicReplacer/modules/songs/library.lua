@@ -21,7 +21,7 @@
 
 local Library = {}
 
-local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/contexts")
+local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/situations/contexts")
 
 -- Every context's audio folder, named after the context, in the catalog's order.
 local CONTEXTS = {}

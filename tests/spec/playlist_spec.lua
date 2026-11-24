@@ -1,6 +1,6 @@
 -- Pins the order songs play in: a folder's rounds, and the songs Previous Song and Next Song move between.
 
-local PLAYLIST_FILE = package.searchpath("scripts/mods/MusicReplacer/playlist", package.path)
+local PLAYLIST_FILE = package.searchpath("scripts/mods/MusicReplacer/modules/songs/playlist", package.path)
 
 -- A playlist.lua over `folders`, which maps a folder to its file paths, a table a spec can change as a rescan would.
 -- Its module state lives in the file, so each spec loads a fresh copy.

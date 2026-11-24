@@ -4,7 +4,7 @@ local FakeEngine = require("tests.helpers.fake_engine")
 
 -- Returns the probe and its log lines.
 local function new_probe()
-	local BossProbe = FakeEngine.new():load("boss_probe")
+	local BossProbe = FakeEngine.new():load("modules/diagnostics/boss_probe")
 	local lines = {}
 	BossProbe.init(function(line) lines[#lines + 1] = line end)
 	return BossProbe, lines

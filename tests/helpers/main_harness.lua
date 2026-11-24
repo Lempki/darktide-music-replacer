@@ -95,7 +95,7 @@ end
 
 -- The real playlist.lua, in a fresh copy for each harness, which always draws the first song left.
 local function new_playlist()
-	local playlist = dofile(package.searchpath("scripts/mods/MusicReplacer/playlist", package.path))
+	local playlist = dofile(package.searchpath("scripts/mods/MusicReplacer/modules/songs/playlist", package.path))
 	local init = playlist.init
 
 	function playlist.init(options)

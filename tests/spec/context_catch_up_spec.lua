@@ -18,7 +18,7 @@ local function load_partway(states, mission_name, settings)
 	end
 	engine:set_mission(mission_name, mission_name == "hub_ship" and { is_hub = true } or nil)
 
-	local Context = engine:load("context")
+	local Context = engine:load("modules/situations/context")
 	local changes = {}
 	local lines = {}
 	Context.on_change(function(new_context) changes[#changes + 1] = tostring(new_context) end)

@@ -5,7 +5,7 @@ local FakeEngine = require("tests.helpers.fake_engine")
 -- Returns a freshly loaded resume_points.lua, with the setting on unless `settings` says otherwise.
 local function load_resume_points(settings)
 	local engine = FakeEngine.new({ settings = settings or { resume_songs = true } })
-	local ResumePoints = engine:load("resume_points")
+	local ResumePoints = engine:load("modules/situations/resume_points")
 	ResumePoints.init(engine.mod)
 
 	return ResumePoints

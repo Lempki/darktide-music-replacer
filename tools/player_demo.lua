@@ -8,10 +8,10 @@ local ffi = require("ffi")
 
 local here = arg[0]:gsub("[^/\\]+$", "")
 local modules = here .. "../scripts/mods/MusicReplacer/"
-local NativeFfi = dofile(modules .. "native_ffi.lua")
-local MediaDecoder = dofile(modules .. "media_decoder.lua")
-local XAudio = dofile(modules .. "xaudio.lua")
-local Player = dofile(modules .. "player.lua")
+local NativeFfi = dofile(modules .. "modules/windows/native_ffi.lua")
+local MediaDecoder = dofile(modules .. "modules/windows/media_decoder.lua")
+local XAudio = dofile(modules .. "modules/windows/xaudio.lua")
+local Player = dofile(modules .. "modules/playback/player.lua")
 
 io.stdout:setvbuf("no")
 assert(NativeFfi.load(), NativeFfi.error())

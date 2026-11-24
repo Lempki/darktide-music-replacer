@@ -61,7 +61,7 @@ end
 local function load_client(levels)
 	local sliders = { option_master_slider = 80, options_music_slider = 50 }
 	local engine = FakeEngine.new({ user_settings = sliders })
-	local AudioClient = engine:load("audio_client")
+	local AudioClient = engine:load("modules/playback/audio_client")
 	local streams = {}
 	local lines = {}
 	-- `output` is false while Windows has no audio output. Like XAudio2, a failed start stays failed until reset.

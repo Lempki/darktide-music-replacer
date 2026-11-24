@@ -25,7 +25,7 @@ local function new_fonts()
 	rawset(Managers, "font", font_manager)
 	rawset(Managers, "package", packages)
 
-	local Fonts = engine:load("fonts")
+	local Fonts = engine:load("modules/interface/fonts")
 	local lines = {}
 	Fonts.init(function(line) lines[#lines + 1] = line end)
 	return Fonts, definitions, packages, lines

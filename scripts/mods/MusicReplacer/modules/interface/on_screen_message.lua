@@ -6,7 +6,7 @@
 -- The lines are drawn by an element in the game's constant UI, which constant_element_slot.lua keeps there.
 -- The constant UI is drawn on every screen, so the message also shows on loading screens and the mission briefing.
 
-local ConstantElementSlot = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/constant_element_slot")
+local ConstantElementSlot = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/interface/constant_element_slot")
 
 local OnScreenMessage = {}
 

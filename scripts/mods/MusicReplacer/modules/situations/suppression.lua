@@ -5,7 +5,7 @@
 
 local Suppression = {}
 
-local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/contexts")
+local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/situations/contexts")
 
 -- The game's music that starts from a Wwise event instead of a state.
 -- Each is a plain substring, matched against the full event name.

@@ -1,30 +1,30 @@
 local mod = get_mod("MusicReplacer")
 
 -- mod:io_dofile paths are relative to "mods/" and include this mod's own folder name.
-local Contexts = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/contexts")
-local Context = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/context")
-local Suppression = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/suppression")
-local Library = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/library")
-local Playlist = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/playlist")
-local RemovedSongs = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/removed_songs")
-local ResumePoints = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/resume_points")
-local EventProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/event_probe")
-local MissionProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/mission_probe")
-local Bosses = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/bosses")
-local Fonts = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/fonts")
-local OldFiles = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/old_files")
-local BossProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/boss_probe")
-local NativeFfi = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/native_ffi")
-local MediaDecoder = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/media_decoder")
-local AudioFolders = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/audio_folders")
-local XAudio = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/xaudio")
-local Player = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/player")
-local AudioClient = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/audio_client")
-local LoudnessMeter = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/loudness_meter")
-local Loudness = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/loudness")
-local DiagnosticLog = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/diagnostic_log")
-local DebugOverlay = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/debug_overlay")
-local OnScreenMessage = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/on_screen_message")
+local Contexts = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/situations/contexts")
+local Context = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/situations/context")
+local Suppression = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/situations/suppression")
+local Library = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/songs/library")
+local Playlist = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/songs/playlist")
+local RemovedSongs = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/songs/removed_songs")
+local ResumePoints = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/situations/resume_points")
+local EventProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/diagnostics/event_probe")
+local MissionProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/diagnostics/mission_probe")
+local Bosses = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/situations/bosses")
+local Fonts = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/interface/fonts")
+local OldFiles = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/songs/old_files")
+local BossProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/diagnostics/boss_probe")
+local NativeFfi = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/windows/native_ffi")
+local MediaDecoder = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/windows/media_decoder")
+local AudioFolders = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/windows/audio_folders")
+local XAudio = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/windows/xaudio")
+local Player = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/playback/player")
+local AudioClient = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/playback/audio_client")
+local LoudnessMeter = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/songs/loudness_meter")
+local Loudness = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/songs/loudness")
+local DiagnosticLog = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/diagnostics/diagnostic_log")
+local DebugOverlay = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/interface/debug_overlay")
+local OnScreenMessage = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/interface/on_screen_message")
 
 local WwiseGameSyncManager = require("scripts/managers/wwise_game_sync/wwise_game_sync_manager")
 
@@ -1231,7 +1231,7 @@ end
 local OverlayElement = nil
 
 local function create_overlay_element(constant_elements, draw_layer)
-	OverlayElement = OverlayElement or mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/debug_overlay_element")(DebugOverlay, Fonts)
+	OverlayElement = OverlayElement or mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/interface/debug_overlay_element")(DebugOverlay, Fonts)
 	return OverlayElement:new(constant_elements, draw_layer)
 end
 
@@ -1243,7 +1243,7 @@ end
 local OnScreenMessageElement = nil
 
 local function create_on_screen_message_element(constant_elements, draw_layer)
-	OnScreenMessageElement = OnScreenMessageElement or mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/on_screen_message_element")(OnScreenMessage, Fonts)
+	OnScreenMessageElement = OnScreenMessageElement or mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/interface/on_screen_message_element")(OnScreenMessage, Fonts)
 	return OnScreenMessageElement:new(constant_elements, draw_layer)
 end
 

@@ -128,35 +128,42 @@ darktide-music-replacer/
 ├── info.json                            # Version and author metadata, read by DMF at mod init.
 ├── scripts/mods/MusicReplacer/
 │   ├── MusicReplacer.lua                # Wires everything together and debounces context changes.
-│   ├── contexts.lua                     # The catalog of contexts: their settings group, silencing, priorities, resume rules, and loading screens.
-│   ├── context.lua                      # Tracks Wwise music state and boss encounters, resolves one context string.
-│   ├── suppression.lua                  # Silences the game's music while a custom track plays.
-│   ├── library.lua                      # Keeps each context's file list, and checks which files can play.
-│   ├── playlist.lua                     # Picks each folder's next song, and keeps the songs Previous Song and Next Song move between.
-│   ├── audio_folders.lua                # Lists, checks, and creates the audio folders through Windows, and measures durations.
-│   ├── resume_points.lua                # Remembers where interrupted songs stopped, until the next loading screen.
-│   ├── removed_songs.lua                # Keeps the songs removed from rotation in removed.txt, which the library leaves out.
-│   ├── old_files.lua                    # Moves loudness.txt and removed.txt from %APPDATA% into the audio folder once.
-│   ├── audio_client.lua                 # Plays the music: crossfades, end fades, volumes, parked songs, and recovery.
-│   ├── loudness.lua                     # Measures every song's loudness in the background and keeps the results in loudness.txt.
-│   ├── loudness_meter.lua               # Measures loudness in LUFS following ITU-R BS.1770.
-│   ├── player.lua                       # Streams one song through media_decoder.lua and xaudio.lua from a fixed buffer pool.
-│   ├── media_decoder.lua                # Decodes audio files to PCM with Windows Media Foundation.
-│   ├── xaudio.lua                       # Plays PCM through XAudio2 voices with live volume control.
-│   ├── native_ffi.lua                   # Shared ffi plumbing for Windows APIs: GUIDs, COM calls and setup, UTF-16 strings, heap memory, files.
-│   ├── diagnostic_log.lua               # Writes diagnostic.log, keeping the previous launch's, with detailed lines on request.
-│   ├── constant_element_slot.lua        # Adds one of the mod's elements to the game's always-visible UI, and removes it.
-│   ├── on_screen_message.lua            # Times the on-screen message, such as a playback key's, and keeps its element on screen.
-│   ├── on_screen_message_element.lua    # The on-screen message's element.
-│   ├── fonts.lua                        # Gives the mod's texts fonts for every alphabet, loading the game's own as names need them.
-│   ├── debug_overlay.lua                # Builds the debug overlay's text and keeps its element on screen.
-│   ├── debug_overlay_element.lua        # The debug overlay's on-screen element.
-│   ├── event_probe.lua                  # Logs the game's Wwise event names, and changes nothing.
-│   ├── mission_probe.lua                # Logs the current mission's name and type, and changes nothing.
-│   ├── bosses.lua                       # Reads the bosses alive in the level, with each one's distance and target.
-│   ├── boss_probe.lua                   # Logs each boss's arrival, targets, and departure, and changes nothing.
 │   ├── MusicReplacer_data.lua           # DMF mod-options widgets.
-│   └── MusicReplacer_localization.lua   # Mod options and on-screen message strings.
+│   ├── MusicReplacer_localization.lua   # Mod options and on-screen message strings.
+│   └── modules/                         # Everything else, by area. DMF loads only the three files above by name.
+│       ├── situations/
+│       │   ├── contexts.lua             # The catalog of contexts: their settings group, silencing, priorities, resume rules, and loading screens.
+│       │   ├── context.lua              # Tracks Wwise music state and boss encounters, resolves one context string.
+│       │   ├── bosses.lua               # Reads the bosses alive in the level, with each one's distance and target.
+│       │   ├── suppression.lua          # Silences the game's music while a custom track plays.
+│       │   └── resume_points.lua        # Remembers where interrupted songs stopped, until the next loading screen.
+│       ├── songs/
+│       │   ├── library.lua              # Keeps each context's file list, and checks which files can play.
+│       │   ├── playlist.lua             # Picks each folder's next song, and keeps the songs Previous Song and Next Song move between.
+│       │   ├── removed_songs.lua        # Keeps the songs removed from rotation in removed.txt, which the library leaves out.
+│       │   ├── loudness.lua             # Measures every song's loudness in the background and keeps the results in loudness.txt.
+│       │   ├── loudness_meter.lua       # Measures loudness in LUFS following ITU-R BS.1770.
+│       │   └── old_files.lua            # Moves loudness.txt and removed.txt from %APPDATA% into the audio folder once.
+│       ├── playback/
+│       │   ├── audio_client.lua         # Plays the music: crossfades, end fades, volumes, parked songs, and recovery.
+│       │   └── player.lua               # Streams one song through media_decoder.lua and xaudio.lua from a fixed buffer pool.
+│       ├── windows/
+│       │   ├── native_ffi.lua           # Shared ffi plumbing for Windows APIs: GUIDs, COM calls and setup, UTF-16 strings, heap memory, files.
+│       │   ├── audio_folders.lua        # Lists, checks, and creates the audio folders through Windows, and measures durations.
+│       │   ├── media_decoder.lua        # Decodes audio files to PCM with Windows Media Foundation.
+│       │   └── xaudio.lua               # Plays PCM through XAudio2 voices with live volume control.
+│       ├── interface/
+│       │   ├── constant_element_slot.lua # Adds one of the mod's elements to the game's always-visible UI, and removes it.
+│       │   ├── on_screen_message.lua    # Times the on-screen message, such as a playback key's, and keeps its element on screen.
+│       │   ├── on_screen_message_element.lua # The on-screen message's element.
+│       │   ├── fonts.lua                # Gives the mod's texts fonts for every alphabet, loading the game's own as names need them.
+│       │   ├── debug_overlay.lua        # Builds the debug overlay's text and keeps its element on screen.
+│       │   └── debug_overlay_element.lua # The debug overlay's on-screen element.
+│       └── diagnostics/
+│           ├── diagnostic_log.lua       # Writes diagnostic.log, keeping the previous launch's, with detailed lines on request.
+│           ├── event_probe.lua          # Logs the game's Wwise event names, and changes nothing.
+│           ├── mission_probe.lua        # Logs the current mission's name and type, and changes nothing.
+│           └── boss_probe.lua           # Logs each boss's arrival, targets, and departure, and changes nothing.
 ├── docs/
 │   ├── development.md                   # This file.
 │   ├── game-internals.md                # How the game reports its missions and modes, and the mission lines in the log.

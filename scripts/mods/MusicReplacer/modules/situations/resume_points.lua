@@ -4,7 +4,7 @@
 
 local ResumePoints = {}
 
-local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/contexts")
+local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/situations/contexts")
 
 -- Explore and combat take turns all through a mission, as do Mortis Trials' waves and breaks.
 -- So their songs continue whenever they come back, which the catalog marks as resuming "always".
