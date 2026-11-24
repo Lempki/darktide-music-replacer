@@ -15,7 +15,9 @@ local function new_audio_folders(disk, lengths, missing, broken)
 	function folders.available() return true end
 	-- Each file's stamp is its name and how many times the folder was listed, as if every file changed between listings.
 	folders.listings = 0
-	function folders.list(folder)
+	-- `extra_names` keeps the other file names the last listing asked for.
+	function folders.list(folder, extra_names)
+		folders.extra_names = extra_names
 		local names = disk[folder:sub(#ROOT + 2)]
 		if not names then
 			return nil
@@ -296,6 +298,49 @@ describe("library.lua listing", function()
 	end)
 end)
 
+describe("library.lua Vanilla markers", function()
+	it("asks the listing for both of the marker's names", function()
+		local _, folders = listed_library({ hub = {} })
+
+		assert_deep_equal(folders.extra_names, { vanilla = true, ["vanilla.txt"] = true })
+	end)
+
+	it("knows a marker by either name in any letter case, and nothing else", function()
+		local Library = listed_library({})
+
+		assert_equal(Library.is_vanilla_marker("hub/vanilla"), true)
+		assert_equal(Library.is_vanilla_marker("boss/chaos_spawn/Vanilla.TXT"), true)
+		assert_equal(Library.is_vanilla_marker("vanilla"), true)
+		assert_equal(Library.is_vanilla_marker("hub/vanilla.mp3"), false)
+		assert_equal(Library.is_vanilla_marker("hub/vanilla.txt.bak"), false)
+		assert_equal(Library.is_vanilla_marker("hub/my vanilla"), false)
+	end)
+
+	it("lists a marker as one more pick, so a folder holding only a marker has files", function()
+		local Library = listed_library({ hub = { "a.mp3", "vanilla" }, ["event/spillway"] = { "vanilla.txt" } }, { ["hub/a.mp3"] = 200 })
+
+		assert_deep_equal(Library.usable_entries("hub"), { { file_path = "hub/a.mp3", duration = nil }, { file_path = "hub/vanilla", duration = nil } })
+		assert_equal(Library.has_files("event/spillway"), true)
+		assert_deep_equal({ Library.find_file("event/spillway", "event/spillway/vanilla.txt") }, { "event/spillway/vanilla.txt", nil, true })
+	end)
+
+	it("never measures a marker, and leaves it out of what the listeners are told was listed", function()
+		local engine = FakeEngine.new()
+		local Library = engine:load("library")
+		local folders = new_audio_folders({ hub = { "a.mp3", "vanilla" } }, { ["hub/a.mp3"] = 200 })
+		local listings = {}
+		Library.on_listed(function(entries) listings[#listings + 1] = entries end)
+		Library.init(nil, folders)
+
+		for _ = 1, 3 do
+			Library.update(0.016)
+		end
+
+		assert_deep_equal(folders.measured, { "hub/a.mp3" })
+		assert_deep_equal(listings, { { { file_path = "hub/a.mp3", stamp = "a.mp3@0" } } })
+	end)
+end)
+
 describe("library.lua checking a listing", function()
 	-- Returns a library.lua that has listed `disk`, the fake folders, and every count its on_checked listener was called with.
 	local function checked_library(disk, lengths, broken)
@@ -328,6 +373,15 @@ describe("library.lua checking a listing", function()
 		Library.update(0.016)
 
 		assert_deep_equal(checks, { { songs = 1, folders = 1, other_formats = 0, unopenable = 1 } })
+	end)
+
+	it("counts no Vanilla marker as a song, and no folder that holds only one", function()
+		local Library, _, checks = checked_library({ hub = { "a.mp3", "vanilla" }, combat = { "vanilla.txt" } })
+
+		Library.update(0.016)
+		Library.update(0.016)
+
+		assert_deep_equal(checks, { { songs = 1, folders = 1, other_formats = 0, unopenable = 0 } })
 	end)
 
 	it("counts and logs each audio file in a format the mod does not play, apart from the files Windows cannot open", function()

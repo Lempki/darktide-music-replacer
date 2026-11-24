@@ -16,6 +16,8 @@
 -- The mod's own files, loudness.txt and removed.txt, are in the audio folder, so writing them is such a change.
 -- Once its files are measured, the Library.on_checked listeners learn how many songs Windows can play, and in how many folders.
 -- A song the player removed from rotation stays on disk, but no listing holds it, so nothing picks, finds, or measures it.
+-- A Vanilla marker, a file named vanilla, is listed among a folder's songs as one more pick, which plays the game's music.
+-- It is not audio, so it is never measured, never passed to the on_listed listeners, and never counted as a song.
 
 local Library = {}
 
@@ -42,6 +44,10 @@ local full_rescan_requested = false -- Set by the Rescan Audio Folders button, w
 
 -- A file still being copied would be measured half-written and skipped as unplayable, so a change waits for this much quiet.
 local QUIET_SECONDS = 3
+
+-- The Vanilla marker's file names, in lowercase.
+-- File Explorer hides extensions, so a new text document named vanilla is vanilla.txt, which counts too.
+local VANILLA_MARKERS = { vanilla = true, ["vanilla.txt"] = true }
 
 local watcher = nil
 local quiet_seconds = nil -- Seconds since the last change Windows reported, or nil while none waits for a listing.
@@ -72,10 +78,16 @@ local function clock()
 	return _os and _os.clock and _os.clock() or 0
 end
 
+-- True when `file_path`, or a bare file name, is a Vanilla marker.
+function Library.is_vanilla_marker(file_path)
+	local name = file_path:match("[^/]+$") or file_path
+	return VANILLA_MARKERS[name:lower()] == true
+end
+
 local function list_folder(folder_key)
 	local file_paths = {}
 
-	local names, name_stamps, other_names = AudioFolders.list(AUDIO_ROOT .. "/" .. folder_key)
+	local names, name_stamps, other_names = AudioFolders.list(AUDIO_ROOT .. "/" .. folder_key, VANILLA_MARKERS)
 
 	for _, name in ipairs(other_names or {}) do
 		other_formats[#other_formats + 1] = folder_key .. "/" .. name
@@ -93,7 +105,7 @@ local function list_folder(folder_key)
 				unplayable[file_path] = nil
 			end
 
-			if durations[file_path] == nil then
+			if durations[file_path] == nil and not Library.is_vanilla_marker(file_path) then
 				measure_queue[#measure_queue + 1] = file_path
 			end
 		end
@@ -190,7 +202,9 @@ local function scan_folders(what, quiet_if_unchanged)
 	local entries = {}
 	for _, key in ipairs(each_folder_key()) do
 		for _, file_path in ipairs(lists[key]) do
-			entries[#entries + 1] = { file_path = file_path, stamp = stamps[file_path] }
+			if not Library.is_vanilla_marker(file_path) then
+				entries[#entries + 1] = { file_path = file_path, stamp = stamps[file_path] }
+			end
 		end
 	end
 
@@ -203,6 +217,7 @@ local function scan_folders(what, quiet_if_unchanged)
 end
 
 -- Tells the Library.on_checked listeners how many listed songs Windows can play, the folders that hold them, and the files skipped.
+-- A Vanilla marker is no song, so a folder that holds only one is not counted either.
 local function report_checked()
 	local counts = { songs = 0, folders = 0, other_formats = #other_formats, unopenable = 0, after_restore = is_restore_listing or nil }
 	for _, key in ipairs(each_folder_key()) do
@@ -210,7 +225,7 @@ local function report_checked()
 		for _, file_path in ipairs(lists[key]) do
 			if unplayable[file_path] then
 				counts.unopenable = counts.unopenable + 1
-			else
+			elseif not Library.is_vanilla_marker(file_path) then
 				playable = playable + 1
 			end
 		end
@@ -432,7 +447,7 @@ function Library.update(dt)
 	return scan_folders("listed the audio folders again", from_watcher)
 end
 
--- True when the folder of `folder_key`, a context or "context/override", has a listed file that Windows can play.
+-- True when the folder of `folder_key`, a context or "context/override", has a listed file that Windows can play, or a Vanilla marker.
 -- It only reads the listing, so it is cheap enough to ask often.
 function Library.has_files(folder_key)
 	for _, file_path in ipairs(lists[folder_key] or {}) do
@@ -444,6 +459,7 @@ function Library.has_files(folder_key)
 end
 
 -- The folder's listed songs that Windows can play and that still exist on disk, as { file_path, duration } entries, in listing order.
+-- A Vanilla marker is one of them, with no duration.
 -- Nil means the folder is missing, empty or not yet listed, or no listed file exists any more.
 -- duration is nil until the file has been measured, or when it could not be.
 function Library.usable_entries(context_name)

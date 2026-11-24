@@ -29,6 +29,8 @@ Everything below is optional detail.
 | …skip a song, or never hear it again. | Bind Next Song or Remove from Rotation under Playback Controls in the mod options. |
 | …make my songs louder or quieter. | Change Custom Music Volume in the Volume group. For one situation alone, pick it under Music per Situation and change its Volume. |
 | …keep the game's music in one situation. | Leave its folder empty, or set it to Vanilla under Music per Situation in the mod options. |
+| …hear the game's music now and then among my songs. | Put an empty file named `vanilla` into the folder, a [Vanilla marker](#the-vanilla-marker). |
+| …keep the game's music for one mission or one boss, and my songs everywhere else. | Make the override folder for that mission or boss, such as `event\spillway\`, and put only an empty file named `vanilla` into it. |
 | …have no music at all in one situation. | Set it to Silence under Music per Situation. |
 | …hear boss music only once the fight starts. | Set Boss Near to Skip under Music per Situation. Your `boss` songs then start with the boss's HP bar. |
 | …hear boss music sooner or later as a boss comes near. | Change Boss Distance in the Boss Music group, 80 m by default. |
@@ -54,6 +56,7 @@ Everything below is optional detail.
 * Can let a song play to its end before a less urgent situation takes over.
 * Follows the game's master and music volume sliders at once, without restarting the song.
 * Lets you choose Custom, Vanilla, or Silence for each situation, or Skip one, such as Boss, so the next less urgent situation plays on.
+* Mixes the game's music into a folder's songs, or keeps it in one folder, with a Vanilla marker file.
 * Lets you give each situation its own volume, shuffle, repeat, and fade length.
 * Lets you try out any situation's songs in Meat Grinder, or play a folder of its own there.
 * Has optional keys to skip to the next or previous song, restart or pause the song playing now, or remove it from rotation.
@@ -135,6 +138,15 @@ The Music per Situation group has a Situation dropdown that lists every folder a
 | Skip | The next less urgent situation, as if this one were not going on, such as Explore through fights with Combat skipped. While your songs or silence play instead, the skipped situation's own game music stays silenced. With that situation set to Vanilla, the game's music plays as the game picks it. Skip is offered for Combat, Horde, Boss Near, Boss, Event, Last Stand, Mortis Trials Wave, Expedition Combat, and Expedition Extraction. |
 
 A changed choice applies at once, even to the situation that is playing.
+
+### The Vanilla marker
+
+A Vanilla marker is an empty file named `vanilla` in a folder. A new text document named `vanilla` works too, which Windows saves as `vanilla.txt`. It puts the game's music into that folder:
+
+* Among songs, the game's music is one more pick in the folder's rotation. Once it is picked, it plays until the situation changes, and the message says `Now playing: the game's music`.
+* Alone in a folder, it keeps the game's music there. In an override folder, that keeps the game's music for one moment while the rest of the situation plays your songs. For example, `event\spillway\vanilla` keeps Spillway's own event music while other missions' events play your `event` songs.
+
+While the game's music plays as the pick among songs, Next Song and Previous Song move on to a song, and Remove from Rotation takes the marker out of the folder's rotation. Restart Song and Pause / Resume say `The game's music is playing` and do nothing else, since the game's music is not the mod's to start over or pause. With Resume Songs on, a situation that comes back plays the game's music again if the marker was its pick, the way a song continues, such as Explore after a fight. The notice of how many songs the mod found does not count markers.
 
 ## Meat Grinder
 

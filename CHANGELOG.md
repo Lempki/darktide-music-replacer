@@ -4,6 +4,10 @@ What changes for players in each release of Music Replacer. The format follows [
 
 ## [Unreleased]
 
+### Features
+
+* A Vanilla marker, an empty file named `vanilla` or `vanilla.txt`, puts the game's music into any folder. Among songs, the game's music is one more pick in the rotation, and it plays until the situation changes. Alone in a folder, it keeps the game's music there, so `event\spillway\vanilla` keeps Spillway's own event music while other missions' events play your songs. Next Song, Previous Song, and Remove from Rotation work on it as on a song, and Restart Song and Pause / Resume say `The game's music is playing`. With Resume Songs on, a situation that comes back plays the game's music again if the marker was its pick. The debug overlay's tag says `Vanilla, marker`.
+
 ### Changes
 
 * Even Out Loudness measures no copy of a measured song again, even one with another file name or a new write time, such as a song copied in with a new name. A file that has no measurement yet is first compared with the measured songs of exactly its size, and an identical file takes over that song's measurement.

@@ -79,7 +79,7 @@ Havoc plays the ordinary missions, so their folders apply there too. For Havoc, 
 
 ## Which one plays
 
-When several apply, the first one that has songs wins: the moment's name, then the mission's code, then the game mode. An override folder with no songs is skipped, so its parent folder, or the game's music, plays as before.
+When several apply, the first one that has songs wins: the moment's name, then the mission's code, then the game mode. An override folder with no songs is skipped, so its parent folder, or the game's music, plays as before. A [Vanilla marker](../README.md#the-vanilla-marker) counts as a song here, so an override folder that holds only the marker keeps the game's music for its moment.
 
 Both Operations end with an `escape_event`, the same kind every mission's escape has. So `event\escape_event\` plays at the end of Rolling Steel and No Man's Land too, ahead of `event\op_train\` and `event\op_no_mans_land\`.
 

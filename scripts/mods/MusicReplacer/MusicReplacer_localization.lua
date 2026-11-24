@@ -206,9 +206,14 @@ local strings = {
 		en = "How long a message takes to fade out.\n\n" ..
 			"Set to " .. highlight("0") .. " to hide it at once.",
 	},
-	-- %s is the name of the song file.
+	-- %s is the name of the song file, or vanilla_pick_name below.
 	song_now_playing = {
 		en = "Now playing: %s",
+	},
+	-- Stands in for a song's name in the messages when a Vanilla marker, a file named vanilla in a folder, is the pick.
+	-- It fills the %s of messages such as "Now playing: %s" and "Next song: %s".
+	vanilla_pick_name = {
+		en = "the game's music",
 	},
 	-- The error messages stay short, since a message shows for a few seconds, and the details go to diagnostic.log.
 	error_audio_unavailable = {
@@ -369,6 +374,10 @@ local strings = {
 	},
 	control_no_song = {
 		en = "No song of yours is playing",
+	},
+	-- Shown for a key that cannot act while a Vanilla marker, a file named vanilla in a folder, plays the game's music.
+	control_game_music_playing = {
+		en = "The game's music is playing",
 	},
 	-- The first %s is where the song plays, such as "Hub" or "Boss (chaos_spawn)", and the second is the song.
 	control_only_song = {

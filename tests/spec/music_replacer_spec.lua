@@ -1484,6 +1484,175 @@ describe("MusicReplacer.lua override folders", function()
 	end)
 end)
 
+describe("MusicReplacer.lua the Vanilla marker", function()
+	-- The harness's playlist draws the first entry left, so the marker named first is the first pick.
+	local MARKER_FIRST = { hub = { { name = "vanilla" }, { name = "a.mp3", duration = 200 }, { name = "b.mp3", duration = 180 } } }
+
+	local function press(harness, control)
+		harness.mod[control]()
+		harness:tick(0.1)
+	end
+
+	it("plays the game's music when the marker is the pick, and says so", function()
+		local harness = in_hub(MARKER_FIRST)
+
+		assert_equal(harness:playing(), nil)
+		assert_equal(harness.overlay.options.snapshot().status, "Vanilla, marker")
+		assert_equal(harness:last_on_screen_message(), "<song_now_playing: <vanilla_pick_name>>")
+		assert_equal(harness:logged("[playback] hub: hub/vanilla is the pick, playing the game's music"), true)
+	end)
+
+	it("keeps the marker's pick through a rescan, since it lasts until the situation changes", function()
+		local harness = in_hub(MARKER_FIRST)
+
+		harness.library.rescan_requested = true
+		harness:tick(0.1)
+
+		assert_equal(harness:playing(), nil)
+		assert_equal(harness.overlay.options.snapshot().status, "Vanilla, marker")
+	end)
+
+	it("keeps the game's music in an override folder that holds only the marker, and names nothing", function()
+		local harness = MainHarness.new({ files = {
+			explore = { { name = "x.mp3", duration = 300 } },
+			["explore/lm_cooling"] = { { name = "vanilla" } },
+		} })
+		harness:cold_start_to_hub()
+		local shown = #harness.on_screen_message.shown
+		harness:leave_hub()
+		harness:enter_mission("lm_cooling", "zone_3")
+		harness:settle()
+
+		assert_equal(harness:playing(), nil)
+		assert_equal(harness.overlay.options.snapshot().status, "Vanilla, marker")
+		assert_equal(harness.overlay.options.snapshot().folder, "explore/lm_cooling")
+		for index = shown + 1, #harness.on_screen_message.shown do
+			assert_equal(harness.on_screen_message.shown[index]:find("vanilla_pick_name", 1, true), nil)
+		end
+	end)
+
+	it("moves on to a song with Next Song", function()
+		local harness = in_hub(MARKER_FIRST)
+
+		press(harness, "next_song")
+
+		assert_equal(harness:playing(), "hub/a.mp3")
+		assert_equal(harness.overlay.options.snapshot().status, "Custom")
+		assert_equal(harness:last_on_screen_message(), "<control_next_song: a.mp3>")
+	end)
+
+	it("goes back to the marker's pick with Previous Song, and from it to the song before", function()
+		local harness = in_hub({ hub = { { name = "a.mp3", duration = 200 }, { name = "vanilla" }, { name = "b.mp3", duration = 180 } } })
+
+		press(harness, "next_song")
+		assert_equal(harness:playing(), nil)
+		assert_equal(harness:last_on_screen_message(), "<control_next_song: <vanilla_pick_name>>")
+
+		press(harness, "previous_song")
+		assert_equal(harness:playing(), "hub/a.mp3")
+		assert_equal(harness:last_on_screen_message(), "<control_previous_song: a.mp3>")
+	end)
+
+	it("says the game's music plays for Restart Song and Pause / Resume while the marker's pick plays", function()
+		local harness = in_hub(MARKER_FIRST)
+
+		for _, control in ipairs({ "restart_song", "pause_song" }) do
+			press(harness, control)
+			assert_equal(harness:last_on_screen_message(), "<control_game_music_playing>")
+			assert_equal(harness:playing(), nil)
+		end
+	end)
+
+	it("says the game's music plays for Previous Song when nothing played before the marker's pick", function()
+		local harness = in_hub(MARKER_FIRST)
+
+		press(harness, "previous_song")
+
+		assert_equal(harness:last_on_screen_message(), "<control_game_music_playing>")
+		assert_equal(harness:playing(), nil)
+	end)
+
+	it("says the game's music plays for Next Song with a lone marker, which keeps it there", function()
+		local harness = in_hub({ hub = { { name = "vanilla" } } })
+
+		press(harness, "next_song")
+
+		assert_equal(harness:last_on_screen_message(), "<control_game_music_playing>")
+		assert_equal(harness:playing(), nil)
+	end)
+
+	it("plays the game's music again once Explore comes back after a fight, as a song would continue", function()
+		local harness = MainHarness.new({ files = {
+			explore = { { name = "vanilla" }, { name = "x.mp3", duration = 300 } },
+			combat = { { name = "c.mp3", duration = 200 } },
+		} })
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness:enter_mission("lm_cooling", "zone_3")
+		harness:settle()
+		assert_equal(harness:playing(), nil)
+
+		harness:state("music_combat", "normal")
+		harness:settle()
+		assert_equal(harness:playing(), "combat/c.mp3")
+
+		harness:state("music_combat", "None")
+		harness:wait(8)
+		harness:settle()
+
+		assert_equal(harness:playing(), nil)
+		assert_equal(harness.overlay.options.snapshot().status, "Vanilla, marker")
+		assert_equal(harness:logged("[resume] explore: remembering explore/vanilla at 0.0s"), true)
+	end)
+
+	it("plays the game's music again when the situation switches back to the marker's override folder", function()
+		local harness = MainHarness.new({ files = {
+			event = { { name = "e.mp3", duration = 300 } },
+			["event/fortification_event"] = { { name = "vanilla" }, { name = "f1.mp3", duration = 300 } },
+			["event/escape_event"] = { { name = "s1.mp3", duration = 300 } },
+		} })
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness:enter_mission("lm_cooling", "zone_3")
+		harness:settle()
+		harness:state("music_objective", "fortification_event")
+		harness:settle()
+		assert_equal(harness:playing(), nil)
+
+		harness:state("music_objective", "escape_event")
+		harness:wait(0.6)
+		assert_equal(harness:playing(), "event/escape_event/s1.mp3")
+
+		harness:state("music_objective", "fortification_event")
+		harness:wait(0.6)
+
+		assert_equal(harness:playing(), nil)
+		assert_equal(harness.overlay.options.snapshot().folder, "event/fortification_event")
+	end)
+
+	it("takes the marker out of rotation with Remove from Rotation, and plays a song", function()
+		local harness = in_hub(MARKER_FIRST)
+
+		press(harness, "remove_song")
+		press(harness, "remove_song")
+
+		assert_deep_equal(harness.library.removed_files, { "hub/vanilla" })
+		assert_equal(harness:playing(), "hub/a.mp3")
+	end)
+
+	it("keeps the marker's pick once the audio output comes back", function()
+		local harness = in_hub(MARKER_FIRST)
+
+		harness.client.available = false
+		harness:tick(0.1)
+		harness.client.available = true
+		harness:tick(0.1)
+
+		assert_equal(harness:playing(), nil)
+		assert_equal(harness.overlay.options.snapshot().status, "Vanilla, marker")
+	end)
+end)
+
 describe("MusicReplacer.lua switching back and forth between override folders", function()
 	local EVENT_FOLDERS = {
 		event = { { name = "e.mp3", duration = 300 } },

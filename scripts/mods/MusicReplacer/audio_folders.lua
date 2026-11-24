@@ -85,9 +85,10 @@ local function sort_like_explorer(names)
 end
 
 -- The audio files directly inside `folder`, a UTF-8 path, sorted by name as File Explorer does. Nil when the folder does not exist.
+-- `extra_names`, if given, maps lowercase names of other files to list along with the audio files, such as a marker file.
 -- The second value maps each name to a stamp of its size and write time, which changes whenever the file does.
 -- The third lists the names of audio files in a format the mod does not play, such as Ogg, unsorted.
-function AudioFolders.list(folder)
+function AudioFolders.list(folder, extra_names)
 	local names = {}
 	local stamps = {}
 	local other_formats = {}
@@ -96,7 +97,7 @@ function AudioFolders.list(folder)
 		if not is_directory(data.dwFileAttributes) then
 			local name = NativeFfi.utf8(data.cFileName)
 			local extension = name:match("%.([^.]+)$")
-			if extension and EXTENSIONS[extension:lower()] then
+			if (extension and EXTENSIONS[extension:lower()]) or (extra_names and extra_names[name:lower()]) then
 				names[#names + 1] = name
 				local write_time = data.ftLastWriteTime
 				stamps[name] = string.format("%.0f:%.0f:%.0f", data.nFileSizeHigh * 4294967296 + data.nFileSizeLow, write_time.high, write_time.low)
