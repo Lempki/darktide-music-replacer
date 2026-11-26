@@ -85,7 +85,7 @@ A message is one line of text on a backdrop in the corner of the screen that Mes
 
 At offsets of 0 the backdrop touches the corner's two edges, and the text sits a few pixels inside it. A message fades in over 0.4 seconds, stays for the Message Duration, and fades out over the Message Fade Out. A new message first pushes the one showing away from the corner over 0.3 seconds, upward in a bottom corner and downward in a top corner, where it shrinks to three quarters of its size. Then the new message fades in at the corner over 0.3 seconds, so the eye follows the pushed message away before the new one appears where it was. The pushed message keeps its own Message Duration, so it fades out when it would have, and the two lines show together only while messages come close together. A message pushed out of that second place fades out there over 0.3 seconds, so pressing keys quickly never makes the text flicker.
 
-A message wider than a third of the screen, such as one with a long song name, is cut there and ends with `…`. The same message again, such as a second Restart Song press's, keeps its line and stays another Message Duration. With For Key Presses, For Song Changes, For Notices, and For Errors all off, no message shows.
+A message that names a song, such as `Now playing: Song.mp3`, draws its own words in a darker shade of Message Color, so the song's name stands out. A message wider than a third of the screen, such as one with a long song name, is cut there and ends with `…`. The same message again, such as a second Restart Song press's, keeps its line and stays another Message Duration. With For Key Presses, For Song Changes, For Notices, and For Errors all off, no message shows.
 
 ## Music per Situation
 

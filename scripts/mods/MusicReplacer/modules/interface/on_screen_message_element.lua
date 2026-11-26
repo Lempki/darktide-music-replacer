@@ -156,9 +156,10 @@ return function(OnScreenMessage, Fonts)
 		self._backdrop_alpha = 255 * look.backdrop_opacity
 		self._scale = look.scale
 		self._placement = placement
-		-- Widths depend on the font size, so they are measured and fitted again.
+		-- Widths depend on the font size, so they are measured and fitted again, and the shade follows the color.
 		self._widths = {}
 		self._fitted = {}
+		self._toned_texts = {}
 	end
 
 	-- `text` as drawn: whole, or cut with an ellipsis where it would grow past `max_width`. Fitted once per text, size, and width.
@@ -169,6 +170,18 @@ return function(OnScreenMessage, Fonts)
 			self._fitted[text] = fitted
 		end
 		return fitted
+	end
+
+	-- `fitted`, the drawn part of `text`, with its words around the song name at `name` in a darker shade of its kind's color.
+	-- Made once per fitted text, since the markup only changes with it.
+	function Element:_toned(fitted, text, name, kind)
+		local toned = self._toned_texts[fitted]
+		if not toned then
+			local color = self._colors[kind] or self._colors.message
+			toned = OnScreenMessage.toned(fitted, text, name, { color[2], color[3], color[4] })
+			self._toned_texts[fitted] = toned
+		end
+		return toned
 	end
 
 	-- The widest a text is drawn, as OnScreenMessage.MAX_TEXT_SHARE of the screen's width in this element's units.
@@ -253,6 +266,7 @@ return function(OnScreenMessage, Fonts)
 			self._fonts_version = Fonts.version()
 			self._widths = {}
 			self._fitted = {}
+			self._toned_texts = {}
 		end
 
 		local widget = self._widgets_by_name.message
@@ -260,11 +274,12 @@ return function(OnScreenMessage, Fonts)
 		local max_width = self:_max_text_width()
 		for index = 1, OnScreenMessage.MAX_LINES do
 			if index <= line_count then
-				local full_text, opacity, place, kind = OnScreenMessage.line(index)
+				local full_text, opacity, place, kind, name = OnScreenMessage.line(index)
 				-- The player's own names can be in any alphabet.
 				Fonts.prepare(full_text)
 				local text = self:_fit(ui_renderer, full_text, max_width)
-				widget.content[line_id(index)] = text
+				-- The plain text is measured and cut, and only what is drawn carries the shade's markup.
+				widget.content[line_id(index)] = name and self:_toned(text, full_text, name, kind) or text
 				self:_place_line(ui_renderer, index, text, math.max(0, math.min(1, opacity)), place, kind)
 			else
 				widget.content[line_id(index)] = ""
@@ -277,6 +292,7 @@ return function(OnScreenMessage, Fonts)
 		if line_count == 0 and next(self._widths) then
 			self._widths = {}
 			self._fitted = {}
+			self._toned_texts = {}
 		end
 	end
 

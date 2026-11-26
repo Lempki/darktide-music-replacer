@@ -1013,6 +1013,33 @@ describe("MusicReplacer.lua on-screen messages", function()
 		assert_deep_equal(harness.on_screen_message.shown_kinds, { notice = false, error = false })
 	end)
 
+	it("marks where the song name sits in a message that names one, and nothing in one that names none", function()
+		local harness = in_hub()
+		local messages = harness.on_screen_message
+
+		harness.mod.next_song()
+		harness:tick(0.1)
+		local text, name = messages.shown[#messages.shown], messages.names[#messages.names]
+		assert_equal(text, "<control_next_song: b.mp3>")
+		assert_equal(text:sub(name[1], name[2]), "b.mp3")
+
+		harness.mod.toggle_shuffle()
+		harness:tick(0.1)
+		assert_equal(messages.names[#messages.names], false)
+	end)
+
+	it("marks the song name last among a message's values, after the folder it names", function()
+		local harness = in_hub({ hub = { { name = "a.mp3", duration = 200 }, { name = "b.mp3", duration = 180 }, { name = "c.mp3", duration = 160 } } })
+		local messages = harness.on_screen_message
+
+		harness.mod.remove_song()
+		harness:tick(0.1)
+
+		local text, name = messages.shown[#messages.shown], messages.names[#messages.names]
+		assert_equal(text, "<control_remove_confirm: <source_hub>, a.mp3>")
+		assert_equal(text:sub(name[1], name[2]), "a.mp3")
+	end)
+
 	it("show no message for a key press while key presses and song changes are off, and the key still works", function()
 		local harness = in_hub()
 		harness:set_setting("key_press_messages", false)

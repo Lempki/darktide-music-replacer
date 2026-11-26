@@ -56,6 +56,11 @@ local DEFAULT_ERROR_COLOR = { 217, 240, 100, 90 }
 -- A message is a song change or a key press, a notice is something the player needs to know, and an error is something that went wrong.
 local KINDS = { message = true, notice = true, error = true }
 
+-- How bright a message's own words are beside the song name it shows, as a share of the message's color.
+-- Over the dark backdrop, a darker shade reads like a more see-through one.
+-- It darkens the color instead of lowering its alpha, since the game's markup keeps the line's fading alpha only for a color without one.
+OnScreenMessage.WORDS_SHADE = 0.6
+
 -- The kinds that show, from For Notices and For Errors.
 -- The caller checks For Key Presses and For Song Changes itself, since both of them show the message kind.
 local shown_kinds = { message = true, notice = true, error = true }
@@ -118,9 +123,11 @@ end
 
 -- Shows `text` at the corner, pushing the message there into the previous line's place.
 -- `kind` sets the color it is drawn in, and is "message" unless told otherwise.
+-- `name`, if given, is where a song's name sits in a message's text, as { first, last } byte positions.
+-- The message's own words around it are drawn in a darker shade, so the name stands out.
 -- Every message is logged, even while its kind or all the messages are off, since a message is gone after a few seconds.
 -- The same text of the same kind again keeps its line and starts its hold over, since a copy of it beside it would only repeat it.
-function OnScreenMessage.show(text, kind)
+function OnScreenMessage.show(text, kind, name)
 	kind = KINDS[kind] and kind or "message"
 	log("[on-screen message] " .. kind .. ": " .. text)
 	if not enabled or not shown_kinds[kind] then
@@ -139,7 +146,7 @@ function OnScreenMessage.show(text, kind)
 	local wait_seconds = 0
 	if current then
 		if previous then
-			leaving[#leaving + 1] = { text = previous.text, kind = previous.kind, opacity = previous.opacity }
+			leaving[#leaving + 1] = { text = previous.text, kind = previous.kind, name = previous.name, opacity = previous.opacity }
 			if #leaving > MAX_LEAVING then
 				drop_faintest()
 			end
@@ -153,6 +160,7 @@ function OnScreenMessage.show(text, kind)
 	current = {
 		text = text,
 		kind = kind,
+		name = kind == "message" and name or nil,
 		opacity = 0,
 		phase = wait_seconds > 0 and "wait" or "in",
 		wait_left = wait_seconds,
@@ -238,17 +246,62 @@ function OnScreenMessage.line_count()
 end
 
 -- The line at `index`, oldest first, so the newest is drawn last, on top.
--- Returns its text, its opacity as a share, its place, and its kind.
+-- Returns its text, its opacity as a share, its place, its kind, and where a song's name sits in its text, or nil.
 -- Its place is 0 at the corner, 1 in the previous line's place, and the share of the way between while it slides.
 function OnScreenMessage.line(index)
 	if index <= #leaving then
 		local line = leaving[index]
-		return line.text, line.opacity, 1, line.kind
+		return line.text, line.opacity, 1, line.kind, line.name
 	end
 	if previous and index == #leaving + 1 then
-		return previous.text, previous.opacity, previous.push, previous.kind
+		return previous.text, previous.opacity, previous.push, previous.kind, previous.name
 	end
-	return current.text, current.opacity, 0, current.kind
+	return current.text, current.opacity, 0, current.kind, current.name
+end
+
+-- `fitted`, a line as OnScreenMessage.fit() gave it from `text`, with the words around the song name at `name` in a darker shade.
+-- `rgb` is the line's color, which the name keeps. The markup is the game's own, which the line's fading alpha still applies to.
+-- A cut line's ellipsis takes the shade of the part it cuts.
+function OnScreenMessage.toned(fitted, text, name, rgb)
+	local body = fitted
+	local is_cut = fitted ~= text
+	if is_cut then
+		body = fitted:sub(1, #fitted - #ELLIPSIS)
+	end
+
+	-- The parts that are left of the words before the name, the name, and the words after it, each with whether it is shaded.
+	local segments = {}
+	local function add(segment_text, is_shaded)
+		if segment_text ~= "" then
+			segments[#segments + 1] = { text = segment_text, is_shaded = is_shaded }
+		end
+	end
+	add(body:sub(1, name[1] - 1), true)
+	add(body:sub(name[1], name[2]), false)
+	add(body:sub(name[2] + 1), true)
+
+	if is_cut then
+		local last = segments[#segments]
+		if last then
+			last.text = last.text .. ELLIPSIS
+		else
+			add(ELLIPSIS, true)
+		end
+	end
+
+	local shade = string.format("{#color(%d,%d,%d)}",
+		math.floor(rgb[1] * OnScreenMessage.WORDS_SHADE + 0.5),
+		math.floor(rgb[2] * OnScreenMessage.WORDS_SHADE + 0.5),
+		math.floor(rgb[3] * OnScreenMessage.WORDS_SHADE + 0.5))
+	local parts = {}
+	for _, segment in ipairs(segments) do
+		if segment.is_shaded then
+			parts[#parts + 1] = shade .. segment.text .. "{#reset()}"
+		else
+			parts[#parts + 1] = segment.text
+		end
+	end
+	return table.concat(parts)
 end
 
 -- `text` as it fits in `max_width`, with `width_of(text)` its drawn width: whole when it fits, or cut with an ellipsis.

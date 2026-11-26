@@ -485,6 +485,49 @@ describe("on_screen_message.lua fit", function()
 	end)
 end)
 
+describe("on_screen_message.lua song names", function()
+	local TEXT = "Now playing: Song.mp3"
+	local NAME = { 14, 21 }
+	-- A message color of 200 grey shades its own words to 120.
+	local GREY = { 200, 200, 200 }
+	local SHADE = "{#color(120,120,120)}"
+
+	it("draws a message's own words in a darker shade, and the song name in the message's color", function()
+		local OnScreenMessage = load_on_screen_message()
+
+		assert_equal(OnScreenMessage.toned(TEXT, TEXT, NAME, GREY), SHADE .. "Now playing: {#reset()}Song.mp3")
+	end)
+
+	it("shades the words after a name too, as a translation that names the song first has them", function()
+		local OnScreenMessage = load_on_screen_message()
+		local text = "Song.mp3 wird gespielt"
+
+		assert_equal(OnScreenMessage.toned(text, text, { 1, 8 }, GREY), "Song.mp3" .. SHADE .. " wird gespielt{#reset()}")
+	end)
+
+	it("keeps a cut's ellipsis in the shade of what it cuts", function()
+		local OnScreenMessage = load_on_screen_message()
+
+		assert_equal(OnScreenMessage.toned("Now playing: Son…", TEXT, NAME, GREY), SHADE .. "Now playing: {#reset()}Son…")
+		assert_equal(OnScreenMessage.toned("Now play…", TEXT, NAME, GREY), SHADE .. "Now play…{#reset()}")
+		local text = "Song.mp3 wird gespielt"
+		assert_equal(OnScreenMessage.toned("Song.mp3 wird…", text, { 1, 8 }, GREY), "Song.mp3" .. SHADE .. " wird…{#reset()}")
+	end)
+
+	it("keeps where the song name sits with a message as it is pushed along, for messages of their own only", function()
+		local OnScreenMessage = load_on_screen_message()
+
+		OnScreenMessage.show(TEXT, "message", NAME)
+		OnScreenMessage.advance(0.4)
+		OnScreenMessage.show("Found 12 songs.", "notice", { 7, 8 })
+
+		local _, _, _, _, pushed_name = OnScreenMessage.line(1)
+		local _, _, _, _, notice_name = OnScreenMessage.line(2)
+		assert_deep_equal(pushed_name, NAME)
+		assert_equal(notice_name, nil)
+	end)
+end)
+
 describe("on_screen_message.lua look", function()
 	it("starts at 100% size, in muted grey at 85% opacity, in the bottom left corner, on a 70% backdrop", function()
 		local OnScreenMessage = load_on_screen_message()

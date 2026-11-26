@@ -273,9 +273,12 @@ local function new_on_screen_message()
 	local on_screen_message = { enabled = false, look = nil, timing = nil, shown = {}, kinds = {} }
 
 	function on_screen_message.init() end
-	function on_screen_message.show(text, kind)
+	-- `names` keeps where each shown message's song name sits, or false for a message with none.
+	on_screen_message.names = {}
+	function on_screen_message.show(text, kind, name)
 		on_screen_message.shown[#on_screen_message.shown + 1] = text
 		on_screen_message.kinds[#on_screen_message.kinds + 1] = kind or "message"
+		on_screen_message.names[#on_screen_message.names + 1] = name or false
 	end
 	-- The real module's 0.4 s fade in, then the hold and the fade out its timing sets.
 	function on_screen_message.seconds_shown() return 0.4 + on_screen_message.timing[1] + on_screen_message.timing[2] end

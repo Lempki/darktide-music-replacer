@@ -334,8 +334,46 @@ local function message_text(text_id, ...)
 	return (text:gsub("{#", "{ #"))
 end
 
+-- The messages whose last value is a song's name, which the message draws brighter than its own words.
+local NAMED_MESSAGES = {
+	song_now_playing = true,
+	control_next_song = true,
+	control_previous_song = true,
+	control_restart_song = true,
+	control_paused = true,
+	control_resumed = true,
+	control_removed_song = true,
+	control_remove_confirm = true,
+	control_only_song = true,
+	control_song_gone = true,
+}
+
+-- Stands in for the song's name while the message is localized once more, to find where the name lands.
+-- A translation can put the name anywhere, so its place comes from the localized text itself.
+local NAME_MARK = "\1"
+
+-- The message `text_id` formatted with `...`, as message_text() makes it.
+-- For a message that names a song, it also returns where the name sits in the text, as { first, last } byte positions.
+local function message_parts(text_id, ...)
+	local text = message_text(text_id, ...)
+	if not NAMED_MESSAGES[text_id] then
+		return text, nil
+	end
+
+	local count = select("#", ...)
+	local values = { ... }
+	local name = values[count]:gsub("{#", "{ #")
+	values[count] = NAME_MARK
+	local first = message_text(text_id, unpack(values, 1, count)):find(NAME_MARK, 1, true)
+	if not first or text:sub(first, first + #name - 1) ~= name then
+		return text, nil
+	end
+	return text, { first, first + #name - 1 }
+end
+
 local function show_message(text_id, ...)
-	OnScreenMessage.show(message_text(text_id, ...))
+	local text, name = message_parts(text_id, ...)
+	OnScreenMessage.show(text, "message", name)
 end
 
 -- Shows the error message `text_id` in Error Color.
@@ -1060,7 +1098,7 @@ mod.remove_song = function()
 	removal_asked = { file_path = playing_track.file_path, seconds_left = OnScreenMessage.seconds_shown() }
 
 	if mod:get("key_press_messages") then
-		OnScreenMessage.show(message_text("control_remove_confirm", folder_label(), pick_name(playing_track.file_path)))
+		show_message("control_remove_confirm", folder_label(), pick_name(playing_track.file_path))
 	end
 end
 
