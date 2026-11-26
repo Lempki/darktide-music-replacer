@@ -770,8 +770,6 @@ function Context.skipped()
 	return { unpack(skipped_now) }
 end
 
--- The game's own name for the moment `context_name` plays in now, or nil where the game names none.
--- Hordes get none, since every horde starts at "horde_high" and drops to "horde_low" as it thins out.
 -- The name of the cutscene playing now, such as "path_of_trust_03", from the game's cutscene system, or nil.
 local function cutscene_name()
 	local extension_manager = Managers and Managers.state and Managers.state.extension
@@ -784,6 +782,8 @@ local function cutscene_name()
 	return ok and name ~= "none" and name or nil
 end
 
+-- The game's own name for the moment `context_name` plays in now, or nil where the game names none.
+-- Hordes get none, since every horde starts at "horde_high" and drops to "horde_low" as it thins out.
 local function moment_kind(mod, context_name)
 	if context_name == "cutscene" then
 		return cutscene_name()

@@ -437,6 +437,13 @@ end
 local play_context
 local play_track
 
+-- Ends the wait that Let Songs Finish held a change back for, so the situation that waited takes over now.
+-- The caller logs why, since each reason reads differently in the log.
+local function hand_over_to_waiting_situation()
+	current_context = context_after_song
+	play_context(current_context, true)
+end
+
 -- The AudioClient.play options for `track` from `folder`, whose on_finished plays the context's next song.
 -- `track` holds file_path, duration, is_only_file, start_position, fade_in, and fade_seconds, which only the keys set.
 local function track_opts(context_name, folder, track)
@@ -463,10 +470,8 @@ local function track_opts(context_name, folder, track)
 
 			-- The song Let Songs Finish held the change back for has ended, so the situation that waited takes over.
 			if context_after_song then
-				local next_context = context_after_song
-				log(string.format("[playback] %s: the song finished, so %s takes over", context_name, tostring(next_context)))
-				current_context = next_context
-				play_context(next_context, true)
+				log(string.format("[playback] %s: the song finished, so %s takes over", context_name, tostring(context_after_song)))
+				hand_over_to_waiting_situation()
 				return
 			end
 
@@ -781,7 +786,8 @@ local function replay_current_context()
 	end
 
 	if context_after_song then
-		current_context = context_after_song
+		hand_over_to_waiting_situation()
+		return
 	end
 	play_context(current_context, true)
 end
@@ -939,10 +945,8 @@ mod.next_song = function()
 
 	-- While Let Songs Finish holds a change back, moving on means going to the situation that waits.
 	if context_after_song then
-		local next_context = context_after_song
-		log(string.format("[control] %s: next song, so %s takes over now", current_context, next_context))
-		current_context = next_context
-		play_context(next_context, true)
+		log(string.format("[control] %s: next song, so %s takes over now", current_context, context_after_song))
+		hand_over_to_waiting_situation()
 		if AudioClient.is_playing() and playing_track then
 			notify_control("control_next_song", song_name(playing_track.file_path))
 		end
@@ -1131,7 +1135,7 @@ end
 local function toggle_deciding(kind, messages)
 	local setting_id = deciding_setting(kind, current_context)
 	local is_on = not is_on_for(kind, current_context)
-	local own = setting_id ~= "shuffle" and setting_id ~= "repeat_song"
+	local own = setting_id ~= GROUP_SETTINGS[kind]
 	-- Logged first, since the setting change logs what it does to the song playing now.
 	log(string.format("[control] %s %s%s", kind, is_on and "on" or "off", own and (" for " .. current_context) or ""))
 	if own then
@@ -1256,7 +1260,7 @@ local function overlay_snapshot()
 		folder = current_folder,
 		overrides = overrides,
 		pending_seconds = pending_seconds,
-		song = song and song:match("[^/]+$"),
+		song = song and song_name(song),
 		position = song_position(),
 		duration = duration,
 		volume = volume,
@@ -1534,10 +1538,8 @@ mod.on_setting_changed = function(setting_id)
 		apply_reverb()
 	elseif setting_id == "let_songs_finish" and not mod:get("let_songs_finish") and context_after_song then
 		-- Nothing waits for a song with the setting off, so the situation that waited takes over at once.
-		local next_context = context_after_song
-		log(string.format("[playback] %s: let songs finish turned off, so %s takes over now", current_context, next_context))
-		current_context = next_context
-		play_context(next_context, true)
+		log(string.format("[playback] %s: let songs finish turned off, so %s takes over now", current_context, context_after_song))
+		hand_over_to_waiting_situation()
 	elseif enabled and current_context and setting_id == "volume_" .. current_context then
 		AudioClient.set_share(situation_share(current_context))
 	elseif enabled and current_context and (setting_id == "own_fade_" .. current_context or setting_id == "fade_seconds_" .. current_context) then
