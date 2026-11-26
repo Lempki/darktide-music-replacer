@@ -6,6 +6,7 @@ local Context = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/
 local Suppression = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/situations/suppression")
 local Library = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/songs/library")
 local Playlist = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/songs/playlist")
+local OverrideFolders = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/songs/override_folders")
 local RemovedSongs = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/songs/removed_songs")
 local ResumePoints = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/situations/resume_points")
 local EventProbe = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/diagnostics/event_probe")
@@ -240,11 +241,13 @@ local function remember_folder_song()
 	end
 end
 
--- The folders under `main_folder` that `context_name` can play from, in order: the override folders that have songs, then the main one.
+-- The folders under `main_folder` that `context_name` can play from, in order.
+-- They are the override folders that apply and have songs, best first, then the main one.
 local function folders_under(context_name, main_folder)
 	local folders = {}
-	for _, key in ipairs(Context.override_keys(mod, context_name)) do
-		local folder = main_folder .. "/" .. key:lower()
+	local names = OverrideFolders.matching(Library.override_folder_names(main_folder), Context.override_keys(mod, context_name))
+	for _, name in ipairs(names) do
+		local folder = main_folder .. "/" .. name
 		if not gave_up[folder] and not emptied[folder] and Library.has_files(folder) then
 			folders[#folders + 1] = folder
 		end

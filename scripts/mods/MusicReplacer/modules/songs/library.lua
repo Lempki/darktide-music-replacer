@@ -458,6 +458,15 @@ function Library.has_files(folder_key)
 	return false
 end
 
+-- The names of the override folders inside `context_name`'s folder, in lowercase, such as "chaos_spawn" or "chaos_spawn+havoc".
+function Library.override_folder_names(context_name)
+	local names = {}
+	for _, key in ipairs(override_folders[context_name] or {}) do
+		names[#names + 1] = key:sub(#context_name + 2)
+	end
+	return names
+end
+
 -- The folder's listed songs that Windows can play and that still exist on disk, as { file_path, duration } entries, in listing order.
 -- A Vanilla marker is one of them, with no duration.
 -- Nil means the folder is missing, empty or not yet listed, or no listed file exists any more.

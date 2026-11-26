@@ -140,6 +140,7 @@ darktide-music-replacer/
 │       ├── songs/
 │       │   ├── library.lua              # Keeps each context's file list, and checks which files can play.
 │       │   ├── playlist.lua             # Picks each folder's next song, and keeps the songs Previous Song and Next Song move between.
+│       │   ├── override_folders.lua     # Ranks a situation's override folders, combined ones included, by the conditions that hold now.
 │       │   ├── removed_songs.lua        # Keeps the songs removed from rotation in removed.txt, which the library leaves out.
 │       │   ├── loudness.lua             # Measures every song's loudness in the background and keeps the results in loudness.txt.
 │       │   ├── loudness_meter.lua       # Measures loudness in LUFS following ITU-R BS.1770.

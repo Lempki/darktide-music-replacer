@@ -42,6 +42,7 @@ Everything below is optional detail.
 | …hear one song through a whole mission without it starting over. | Put a copy of that one file, and nothing else, into each folder you want it in, such as `explore`, `combat`, `horde`, and `boss`. |
 | …give one kind of boss its own music. | Make a folder named after the boss inside `boss`, such as `boss\chaos_spawn\`. [Override folders](docs/override-folders.md#folder-names) lists every name. |
 | …give one mission or Operation its own music. | Make a folder named after the mission's code inside the folders you want, such as `explore\spillway\` and `combat\spillway\`. Operations play `event` all the way through, so use `event\op_train\` for Rolling Steel and `event\op_no_mans_land\` for No Man's Land. [Override folders](docs/override-folders.md#missions) lists every mission's folder name. |
+| …give one boss its own music in one mode, or one mission its own music under one circumstance. | Join the names with `+`, such as `boss\chaos_spawn+havoc\` or `explore\spillway+darkness_01\`. [Combining names](docs/override-folders.md#combining-names) explains how. |
 | …find out why my songs do not play. | [Troubleshooting](docs/troubleshooting.md) lists the common causes and their fixes. |
 
 ## What it does

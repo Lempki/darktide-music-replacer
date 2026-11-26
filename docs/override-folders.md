@@ -23,6 +23,8 @@ The mod does not create these folders, so make the ones you want. Their names ar
 Every folder except `title_screen`, `character_select`, `hub`, and `loading` can hold these. Those four belong to no one mission, so the mod never looks for a mission's code or a game mode in them, even while the game already or still names a mission:
 
 * The mission's code, such as `spillway` or `km_enforcer_twins`. [Missions](#missions) lists every mission with its in-game name and folder name.
+* The mission's circumstance, by the name the game's music uses for it, which [Circumstances](#circumstances) lists. A circumstance applies once the mission has loaded.
+* The event's intensity, `high_intensity` or `low_intensity`, in `event` and `mortis_trials_wave` only. The game turns it high as an event starts and while its progress moves on, and lets it fall back to low over about 80 seconds once nothing moves it, such as while a decoder is blocked.
 * The game mode: `havoc`, `expeditions`, or `mortis_trials`.
 
 These folders can also hold the game's name for a moment inside them:
@@ -38,6 +40,29 @@ These folders can also hold the game's name for a moment inside them:
 | `cutscene` | The cutscene's name: `cutscene_2` to `cutscene_10` and `cutscene_5_hub` for the story cutscenes, `traitor_captain_intro`, `path_of_trust_01` to `_09`, and `hub_location_intro_barber`, `_contracts`, `_crafting`, `_gun_shop`, `_mission_board`, and `_training_grounds` for the Mourningstar's first visits. | During that cutscene. Cutscenes belong to no one mission, so the mod looks for no mission's code or game mode in this folder. |
 | `mortis_trials_wave` | `horde_mode_wave`, `horde_mode_objective`, `horde_mode_wave_last`, `horde_mode_win` | During a wave, an objective round, the last wave, or the final win. |
 | `expedition_combat` | `low_combat`, `med_combat`, `high_combat` | At that fight level, which follows how alert the enemy is. The level can change during a fight, which switches the song, and a level that comes back continues its song. |
+
+## Circumstances
+
+A mission's circumstance gets the name the game's music uses for it. Several circumstances share one name, since the game's music tells them apart no further:
+
+| Folder name | Circumstances |
+|---|---|
+| `darkness_01` | Power Supply Interruption, alone or with another condition, such as Hunting Grounds (Power Supply Interruption) |
+| `hunting_grounds_01` | Hunting Grounds, alone or with another condition other than Power Supply Interruption |
+| `ventilation_purge_01` | Ventilation Purge, Pox Gas, and Cartel's Favours |
+| `ember_01` | Inferno |
+| `nurgle_manifestation_01` | Heretical Disruption |
+| `assault_01` | Assault |
+
+Every other circumstance, such as Shock Troop Gauntlet, Engagement Zone, or Stolen Rations, sets no name for the game's music, so no folder applies to it. With Debug Overlay on, the Folder line names the circumstance a mission has.
+
+## Combining names
+
+A folder's name can join several of the names above with `+`, such as `boss\chaos_spawn+havoc\`, which plays while a Chaos Spawn is the boss in a Havoc run. A combined folder plays only while every one of its names applies, and the order they are written in does not matter. Some more examples:
+
+* `explore\spillway+darkness_01\` plays while you explore Spillway with Power Supply Interruption.
+* `event\kill_event+high_intensity\` plays while a kill event runs at high intensity.
+* `horde\havoc+hunting_grounds_01\` plays during a horde in a Havoc run with Hunting Grounds.
 
 ## Missions
 
@@ -79,7 +104,13 @@ Havoc plays the ordinary missions, so their folders apply there too. For Havoc, 
 
 ## Which one plays
 
-When several apply, the first one that has songs wins: the moment's name, then the mission's code, then the game mode. An override folder with no songs is skipped, so its parent folder, or the game's music, plays as before. A [Vanilla marker](../README.md#the-vanilla-marker) counts as a song here, so an override folder that holds only the marker keeps the game's music for its moment.
+When several apply, the most specific one that has songs wins:
+
+1. A folder that combines more names wins over one with fewer, so `chaos_spawn+havoc` wins over both `chaos_spawn` and `havoc`.
+2. Between folders with as many names, the one with the more specific name wins. From the most specific, the names rank: the moment's name, the event's intensity, the mission's code, the circumstance, and the game mode. So `chaos_spawn` wins over `spillway`, and `spillway` wins over `havoc`.
+3. Between two combined folders with as many names, their most specific names are compared first, then the next ones. So `chaos_spawn+spillway` wins over `chaos_spawn+havoc`.
+
+An override folder with no songs is skipped, so its parent folder, or the game's music, plays as before. A [Vanilla marker](../README.md#the-vanilla-marker) counts as a song here, so an override folder that holds only the marker keeps the game's music for its moment.
 
 Both Operations end with an `escape_event`, the same kind every mission's escape has. So `event\escape_event\` plays at the end of Rolling Steel and No Man's Land too, ahead of `event\op_train\` and `event\op_no_mans_land\`.
 

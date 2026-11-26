@@ -77,7 +77,8 @@
 --	  The game state returns to "mission" in between, so the outcome is tracked in `mission_outcome`.
 --	  A loading screen or a real zone clears it, since a story mission's cutscene can skip the loading screen.
 --	  A menu before the hub, such as character select, clears it too.
---	* Context.override_keys() names the override folders a context can use: the moment, then the mission, then the game mode.
+--	* Context.override_keys() names the conditions a context's override folders can use.
+--	  They are the moment, the event's intensity, the mission, its circumstance, and the game mode.
 --	  A moment is the game's own name for what happens inside the context, such as an event's kind or a boss's breed.
 --	  On the way into a mission, the mission and its game mode come from the game's mechanism data, since the level names them late.
 
@@ -109,6 +110,14 @@ local heading_to_mission = false -- True from the mission board's "mission_ready
 local matchmaking_pass_seconds = 0 -- Seconds left for "mission" after matchmaking to give way to the trip's loading screen, else 0.
 local event_kind = nil -- The music_objective value of the event playing now, kept through its hold, or nil.
 local expedition_fight_level = nil -- The music_combat value of the Expedition fight playing now, kept through its hold, or nil.
+local circumstance = nil -- The mission's circumstance as the game's music hears it, such as "darkness_01", or nil for none.
+local event_intensity = nil -- The event_intensity group's "high" or "low", which the game sets all through a level, else nil.
+
+-- The contexts whose override folders can name the event's intensity.
+-- The game turns it high whenever an objective or a zone starts, and lets it fall to low over about 80 seconds.
+-- Only during an event does it say something about the music, as whether the event's progress moves on.
+-- Elsewhere it flips several times a mission, which would switch folders mid-song.
+local INTENSITY_CONTEXTS = { event = true, mortis_trials_wave = true }
 local state_moment = nil -- The moment music_game_state names now, or named less than MOMENT_GRACE_SECONDS ago, else nil.
 local state_moment_grace = 0 -- Seconds left of state_moment once the game state has moved on, else 0.
 local mission_outcome = nil -- "victory" or "defeat" from that game state until the next level starts, else nil.
@@ -181,7 +190,8 @@ local LET_GO_MARGIN_METERS = 40
 -- The music_objective value the game sets while one player of the team is alive.
 local LAST_MAN_STANDING = "last_man_standing"
 
--- Music-related state groups that decide no context, logged only so their transitions show up with Detailed Logging on.
+-- Music-related state groups that decide no context, logged so their transitions show up with Detailed Logging on.
+-- The circumstance and the event's intensity also name override folders, through Context.override_keys().
 local LOGGED_ONLY_STATE_GROUPS = {
 	music_objective_progression = true,
 	event_intensity = true,
@@ -798,10 +808,10 @@ local function moment_kind(mod, context_name)
 	return nil
 end
 
--- The override folder names `context_name` can use right now, most specific first.
--- They are the moment's kind, then the mission's code, then the game mode.
+-- The conditions that hold for `context_name`'s override folders right now, most specific first.
+-- They are the moment's kind, the event's intensity during an event, the mission's code, its circumstance, and the game mode.
 -- A context the catalog marks as belonging to no one mission gets only the moment's kind.
--- MusicReplacer.lua plays the first one that has songs.
+-- MusicReplacer.lua ranks the folders by them, through override_folders.lua.
 function Context.override_keys(mod, context_name)
 	local keys = {}
 
@@ -812,12 +822,17 @@ function Context.override_keys(mod, context_name)
 		return keys
 	end
 
+	if event_intensity and INTENSITY_CONTEXTS[context_name] then
+		keys[#keys + 1] = event_intensity .. "_intensity"
+	end
+
 	if mission_name and not mission_is_hub then
 		keys[#keys + 1] = mission_name
 	else
 		keys[#keys + 1] = upcoming_mission
 	end
 
+	keys[#keys + 1] = circumstance
 	keys[#keys + 1] = mission_mode or upcoming_mode
 
 	return keys
@@ -956,6 +971,13 @@ local function track_transition(mod, group_name, current, new_state)
 			and (EXPEDITION_ONLY_COMBAT_STATES[new_state] or EXPEDITION_ONLY_COMBAT_STATES[current])
 		if LOGGED_ONLY_STATE_GROUPS[group_name] or expedition_only then
 			log_detail(describe_transition(group_name, current, new_state))
+		end
+
+		-- Neither decides a context, but both name override folders.
+		if group_name == "circumstance" then
+			circumstance = new_state ~= "None" and new_state or nil
+		elseif group_name == "event_intensity" then
+			event_intensity = new_state ~= "None" and new_state or nil
 		end
 
 		-- expeditions_intensity decides no context, but its listeners still need it, since the silencing forces it with music_combat.

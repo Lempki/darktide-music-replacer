@@ -1260,6 +1260,21 @@ describe("MusicReplacer.lua override folders", function()
 			{ file_path = "explore/lm_cooling/cooling.mp3", folder = "explore/lm_cooling", context = "explore" })
 	end)
 
+	it("plays a combined override folder over each of its single conditions while all of them hold", function()
+		local harness = in_cooling({
+			explore = { { name = "x.mp3", duration = 300 } },
+			["explore/lm_cooling"] = { { name = "cooling.mp3", duration = 300 } },
+			["explore/darkness_01"] = { { name = "dark.mp3", duration = 300 } },
+			["explore/lm_cooling+darkness_01"] = { { name = "dark_cooling.mp3", duration = 300 } },
+		})
+		assert_equal(harness:playing(), "explore/lm_cooling/cooling.mp3")
+
+		harness:state("circumstance", "darkness_01")
+		harness:wait(0.6)
+
+		assert_equal(harness:playing(), "explore/lm_cooling+darkness_01/dark_cooling.mp3")
+	end)
+
 	it("plays the context's own folder while no override folder has songs", function()
 		local harness = in_cooling({
 			explore = { { name = "x.mp3", duration = 300 } },

@@ -288,6 +288,92 @@ describe("context.lua override names", function()
 
 		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "horde"), { "fm_cargo", "havoc" })
 	end)
+
+	it("offers the mission's circumstance after its code, and before the game mode", function()
+		local harness = Harness.new()
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		rawset(Managers.state, "difficulty", { get_parsed_havoc_data = function() return { rank = 20 } end })
+		harness:enter_mission("fm_cargo", "zone_3")
+
+		harness:state("circumstance", "darkness_01")
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "explore"), { "fm_cargo", "darkness_01", "havoc" })
+
+		harness:state("circumstance", "None")
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "explore"), { "fm_cargo", "havoc" })
+	end)
+
+	it("offers the event's intensity only to Event and Mortis Trials Wave, since the game sets it all through a mission", function()
+		local harness = in_mission()
+		harness:state("event_intensity", "high")
+
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "explore"), { "fm_cargo" })
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "combat"), { "fm_cargo" })
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "mortis_trials_wave"), { "high_intensity", "fm_cargo" })
+	end)
+
+	it("offers the event's intensity after the event's kind, for as long as the game sets it", function()
+		local harness = in_mission()
+
+		harness:state("music_objective", "fortification_event")
+		harness:state("event_intensity", "high")
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "event"), { "fortification_event", "high_intensity", "fm_cargo" })
+
+		harness:state("event_intensity", "low")
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "event"), { "fortification_event", "low_intensity", "fm_cargo" })
+
+		harness:state("event_intensity", "None")
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "event"), { "fortification_event", "fm_cargo" })
+	end)
+
+	it("offers no circumstance or intensity to a context that belongs to no one mission", function()
+		local harness = in_mission()
+		harness:state("circumstance", "darkness_01")
+		harness:state("event_intensity", "high")
+
+		assert_deep_equal(harness.Context.override_keys(harness.engine.mod, "loading"), {})
+	end)
+end)
+
+describe("override_folders.lua", function()
+	local OverrideFolders = FakeEngine.new():load("modules/songs/override_folders")
+
+	-- What a Chaos Spawn fight in a Havoc run of Spillway offers, most specific first.
+	local KEYS = { "chaos_spawn", "spillway", "havoc" }
+
+	it("applies a folder of one condition while that condition holds", function()
+		assert_deep_equal(OverrideFolders.matching({ "chaos_spawn", "fm_cargo", "expeditions" }, KEYS), { "chaos_spawn" })
+	end)
+
+	it("applies a combined folder only while every one of its conditions holds", function()
+		assert_deep_equal(OverrideFolders.matching({ "chaos_spawn+havoc", "chaos_spawn+expeditions", "beast+havoc" }, KEYS), { "chaos_spawn+havoc" })
+	end)
+
+	it("puts a folder with more conditions first, then compares conditions one by one from the most specific", function()
+		local names = { "havoc", "spillway", "chaos_spawn", "spillway+havoc", "chaos_spawn+havoc", "chaos_spawn+spillway", "chaos_spawn+spillway+havoc" }
+
+		assert_deep_equal(OverrideFolders.matching(names, KEYS), {
+			"chaos_spawn+spillway+havoc",
+			"chaos_spawn+spillway",
+			"chaos_spawn+havoc",
+			"spillway+havoc",
+			"chaos_spawn",
+			"spillway",
+			"havoc",
+		})
+	end)
+
+	it("applies a combined folder whatever order its conditions are written in", function()
+		assert_deep_equal(OverrideFolders.matching({ "havoc+chaos_spawn" }, KEYS), { "havoc+chaos_spawn" })
+	end)
+
+	it("matches the game's names in any letter case", function()
+		assert_deep_equal(OverrideFolders.matching({ "chaos_spawn" }, { "Chaos_Spawn" }), { "chaos_spawn" })
+	end)
+
+	it("never applies a name with an empty or repeated condition", function()
+		assert_deep_equal(OverrideFolders.matching({ "chaos_spawn+", "+havoc", "chaos_spawn++havoc", "havoc+havoc", "" }, KEYS), {})
+	end)
 end)
 
 -- A fake audio_folders.lua over `disk`, which maps a folder key to its file names, with subfolders found from the keys.
@@ -367,5 +453,16 @@ describe("library.lua override folders", function()
 			file_paths[#file_paths + 1] = entry.file_path
 		end
 		assert_deep_equal(file_paths, { "boss/b.mp3", "boss/chaos_spawn/spawn.mp3" })
+	end)
+
+	it("names a context's override folders in lowercase, combined ones included", function()
+		local Library = listed_library({
+			boss = { "b.mp3" },
+			["boss/Chaos_Spawn"] = { "spawn.mp3" },
+			["boss/chaos_spawn+Havoc"] = { "havoc.mp3" },
+		})
+
+		assert_deep_equal(Library.override_folder_names("boss"), { "chaos_spawn", "chaos_spawn+havoc" })
+		assert_deep_equal(Library.override_folder_names("hub"), {})
 	end)
 end)

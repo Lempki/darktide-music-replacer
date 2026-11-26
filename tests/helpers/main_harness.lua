@@ -42,6 +42,18 @@ local function new_library(files)
 	function library.on_checked(listener) library.checked_listener = listener end
 	function library.request_rescan() library.rescan_requested = true end
 	function library.has_files(folder_key) return #listed(folder_key) > 0 end
+	-- Every key with a slash under the folder is an override folder, as the real listing finds them.
+	function library.override_folder_names(context_name)
+		local names = {}
+		for key in pairs(library.files) do
+			local name = key:match("^" .. context_name .. "/(.+)$")
+			if name then
+				names[#names + 1] = name:lower()
+			end
+		end
+		table.sort(names)
+		return names
+	end
 	function library.disk_path(file_path) return file_path end
 	-- An entry named vanilla stands in for a Vanilla marker.
 	function library.is_vanilla_marker(file_path) return file_path:match("[^/]+$") == "vanilla" end
