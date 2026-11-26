@@ -27,6 +27,7 @@ local Loudness = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules
 local DiagnosticLog = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/diagnostics/diagnostic_log")
 local DebugOverlay = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/interface/debug_overlay")
 local OnScreenMessage = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/interface/on_screen_message")
+local Messages = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/interface/messages")
 
 local WwiseGameSyncManager = require("scripts/managers/wwise_game_sync/wwise_game_sync_manager")
 
@@ -327,113 +328,6 @@ local function pick_name(file_path)
 	return song_name(file_path)
 end
 
--- The localized `text_id`, formatted with `...`, for the on-screen message.
--- Song and folder names are the player's own text, and "{#" starts a tag in the game's markup, so it is broken up.
-local function message_text(text_id, ...)
-	local text = mod:localize(text_id, ...)
-	return (text:gsub("{#", "{ #"))
-end
-
--- The messages whose last value is a song's name, which the message draws brighter than its own words.
-local NAMED_MESSAGES = {
-	song_now_playing = true,
-	control_next_song = true,
-	control_previous_song = true,
-	control_restart_song = true,
-	control_paused = true,
-	control_resumed = true,
-	control_removed_song = true,
-	control_remove_confirm = true,
-	control_only_song = true,
-	control_song_gone = true,
-}
-
--- Stands in for the song's name while the message is localized once more, to find where the name lands.
--- A translation can put the name anywhere, so its place comes from the localized text itself.
-local NAME_MARK = "\1"
-
--- The message `text_id` formatted with `...`, as message_text() makes it.
--- For a message that names a song, it also returns where the name sits in the text, as { first, last } byte positions.
-local function message_parts(text_id, ...)
-	local text = message_text(text_id, ...)
-	if not NAMED_MESSAGES[text_id] then
-		return text, nil
-	end
-
-	local count = select("#", ...)
-	local values = { ... }
-	local name = values[count]:gsub("{#", "{ #")
-	values[count] = NAME_MARK
-	local first = message_text(text_id, unpack(values, 1, count)):find(NAME_MARK, 1, true)
-	if not first or text:sub(first, first + #name - 1) ~= name then
-		return text, nil
-	end
-	return text, { first, first + #name - 1 }
-end
-
-local function show_message(text_id, ...)
-	local text, name = message_parts(text_id, ...)
-	OnScreenMessage.show(text, "message", name)
-end
-
--- Shows the error message `text_id` in Error Color.
--- Its details are logged by the caller, so the message itself stays short and points to diagnostic.log.
-local function show_error(text_id)
-	OnScreenMessage.show(message_text(text_id), "error")
-end
-
--- Shows the notice `text_id`, formatted with `...`, in Notice Color.
-local function show_notice(text_id, ...)
-	OnScreenMessage.show(message_text(text_id, ...), "notice")
-end
-
--- Says how many songs the mod found once a listing has been checked, so a new player sees it works, or where songs go when there are none.
-local function show_songs_found(counts)
-	if counts.songs == 0 then
-		show_notice("notice_no_songs")
-	elseif counts.songs == 1 then
-		show_notice("notice_found_song")
-	elseif counts.folders == 1 then
-		show_notice("notice_found_songs_in_folder", counts.songs)
-	else
-		show_notice("notice_found_songs", counts.songs, counts.folders)
-	end
-end
-
--- Says how many files were skipped and why, after the count, so a player knows to convert a file or look at the log.
-local function show_files_skipped(counts)
-	local other_formats, unopenable = counts.other_formats, counts.unopenable
-	if other_formats > 0 and unopenable > 0 then
-		show_notice("notice_skipped_files", other_formats + unopenable, other_formats, unopenable)
-	elseif other_formats == 1 then
-		show_notice("notice_skipped_format_file")
-	elseif other_formats > 1 then
-		show_notice("notice_skipped_format_files", other_formats)
-	elseif unopenable == 1 then
-		show_notice("notice_skipped_unopenable_file")
-	elseif unopenable > 1 then
-		show_notice("notice_skipped_unopenable_files", unopenable)
-	end
-end
-
--- A listing after a restore shows nothing, since the restore's own message already says how many songs came back.
-local function show_listing_checked(counts)
-	if counts.after_restore then
-		return
-	end
-	show_songs_found(counts)
-	show_files_skipped(counts)
-end
-
--- Says how many songs Even Out Loudness measured, so a player knows it has finished and every song now plays evened out.
-local function show_songs_measured(count)
-	if count == 1 then
-		show_notice("notice_measured_song")
-	else
-		show_notice("notice_measured_songs", count)
-	end
-end
-
 local play_context
 local play_track
 
@@ -660,7 +554,7 @@ play_context = function(context_name, is_new_context)
 	-- A lone marker keeps the folder on the game's music, as a situation set to Vanilla does, so no message names it.
 	if Library.is_vanilla_marker(file_path) then
 		if mod:get("song_change_messages") and not is_only_file then
-			show_message("song_now_playing", pick_name(file_path))
+			Messages.show("song_now_playing", pick_name(file_path))
 		end
 		play_vanilla_pick(context_name, file_path, is_only_file)
 		return
@@ -682,7 +576,7 @@ play_context = function(context_name, is_new_context)
 
 	-- The keys start their songs through play_manual_pick, which names them itself.
 	if mod:get("song_change_messages") then
-		show_message("song_now_playing", song_name(file_path))
+		Messages.show("song_now_playing", song_name(file_path))
 	end
 
 	play_track(context_name, folder, track)
@@ -825,7 +719,7 @@ local function notify_control(text_id, ...)
 		return
 	end
 
-	show_message(text_id, ...)
+	Messages.show(text_id, ...)
 end
 
 -- True while one of the player's songs plays for the current situation, or is paused, the only music the keys act on.
@@ -904,7 +798,7 @@ local function play_manual_pick(file_path, duration, is_only_file, start_positio
 	-- A key's own message names the song it starts, so For Song Changes only names that song while For Key Presses is off.
 	-- A key that keeps the same song, as Restart Song and Resume do, changes no song.
 	if not is_same_song and mod:get("song_change_messages") and not mod:get("key_press_messages") then
-		show_message("song_now_playing", pick_name(file_path))
+		Messages.show("song_now_playing", pick_name(file_path))
 	end
 end
 
@@ -1102,7 +996,7 @@ mod.remove_song = function()
 	removal_asked = { file_path = playing_track.file_path, seconds_left = OnScreenMessage.seconds_shown() }
 
 	if mod:get("key_press_messages") then
-		show_message("control_remove_confirm", folder_label(), pick_name(playing_track.file_path))
+		Messages.show("control_remove_confirm", folder_label(), pick_name(playing_track.file_path))
 	end
 end
 
@@ -1349,6 +1243,11 @@ local function apply_on_screen_message_settings()
 	OnScreenMessage.set_timing(mod:get("message_seconds"), mod:get("message_fade_out_seconds"))
 end
 
+Messages.init({
+	localize = function(text_id, ...) return mod:localize(text_id, ...) end,
+	on_screen_message = OnScreenMessage,
+})
+
 -- Raw state transitions, the silencing, and sound events go to the detailed log.
 Suppression.init(log_detail)
 EventProbe.init(log_detail)
@@ -1362,7 +1261,7 @@ Playlist.init({ usable_entries = Library.usable_entries, find_file = Library.fin
 follow_shuffle(nil)
 Context.on_state_change(Suppression.on_state_change)
 Context.on_state_change(ResumePoints.on_state_change)
-Context.on_failure(function() show_error("error_game_change") end)
+Context.on_failure(function() Messages.show_error("error_game_change") end)
 Context.init(mod, log_detail, log)
 Context.set_borrowing(borrows_folders)
 
@@ -1412,8 +1311,8 @@ mod.on_all_mods_loaded = function()
 	Library.on_listed(function()
 		Context.refresh(mod)
 	end)
-	Library.on_checked(show_listing_checked)
-	Loudness.on_measured(show_songs_measured)
+	Library.on_checked(Messages.show_listing_checked)
+	Loudness.on_measured(Messages.show_songs_measured)
 	AudioClient.init(log, { player = Player, disk_path = Library.disk_path, level_of = Loudness.level, is_measured = Loudness.is_measured })
 	AudioClient.set_volume(custom_volume())
 	AudioClient.set_fade_seconds(mod:get("fade_seconds"))
@@ -1425,7 +1324,7 @@ mod.on_all_mods_loaded = function()
 
 	-- The log is first opened at the top of this file, before the messages can show, so a failure to open it shows here.
 	if DiagnosticLog.open_error() then
-		show_error("error_log_unavailable")
+		Messages.show_error("error_log_unavailable")
 	end
 
 	-- A mod can hook a method only once, so this one hook serves both Suppression and EventProbe.
@@ -1440,7 +1339,7 @@ mod.on_all_mods_loaded = function()
 	if playback_lost then
 		local reason = tostring(AudioClient.error())
 		log("[player] unavailable: " .. reason)
-		show_error("error_audio_unavailable")
+		Messages.show_error("error_audio_unavailable")
 	end
 
 	-- The context can resolve before Library and AudioClient are ready.
