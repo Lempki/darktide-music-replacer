@@ -470,6 +470,14 @@ local strings = {
 		en = "Whether this situation's song loops, as " .. highlight("Repeat Song") .. " in the Playback group does for all of them.\n\n" ..
 			highlight("Default") .. " follows that setting. " .. highlight("On") .. " and " .. highlight("Off") .. " decide for this situation alone.",
 	},
+	situation_effects = {
+		en = "Effects",
+	},
+	situation_effects_tooltip = {
+		en = "Whether this situation's songs play through the effects in the Effects group, as " .. highlight("Use Effects") ..
+			" there does for all of them.\n\n" ..
+			highlight("Default") .. " follows that setting. " .. highlight("On") .. " and " .. highlight("Off") .. " decide for this situation alone.",
+	},
 	situation_own_fade = {
 		en = "Own Fade Length",
 	},
@@ -730,6 +738,72 @@ local strings = {
 		en = "How loud your songs play while a menu is open, such as the Esc menu, the inventory, the mission board, or a vendor.\n\n" ..
 			"It is a share of the Custom Music Volume. " .. highlight("100%%") .. " keeps the music at full volume in menus.",
 	},
+
+	audio_effects = {
+		en = "Effects",
+	},
+	effects = {
+		en = "Use Effects",
+	},
+	effects_tooltip = {
+		en = "Plays your songs through the effects below, such as the reverb.\n\n" ..
+			"Each situation's own " .. highlight("Effects") .. " under Music per Situation turns them on or off for that situation alone. " ..
+			"The game's own music always plays without them.",
+	},
+	reverb_room = {
+		en = "Reverb Room",
+	},
+	reverb_room_tooltip = {
+		en = "The place the reverb makes your songs sound as if they played in, from a small room to a large hall or the open air.",
+	},
+	reverb_mix = {
+		en = "Reverb Mix",
+	},
+	reverb_mix_tooltip = {
+		en = "How much of the reverb you hear in place of the plain song.\n\n" ..
+			highlight("0%%") .. " plays your songs without reverb, and " .. highlight("100%%") .. " plays only the reverb.",
+	},
+	reverb_strength = {
+		en = "Reverb Strength",
+	},
+	reverb_strength_tooltip = {
+		en = "Makes the reverb louder or quieter than the room itself has it, in decibels, while the plain song stays as loud as Reverb Mix sets.\n\n" ..
+			highlight("0") .. " plays the room as it is. Large rooms, such as Large Hall, have a soft reverb of their own.",
+	},
+	-- The unit of Reverb Strength.
+	decibels_unit = {
+		en = "dB",
+	},
+	-- The rooms of Reverb Room, from small rooms to large halls and the open air.
+	reverb_room_padded_cell = { en = "Padded Cell" },
+	reverb_room_room = { en = "Room" },
+	reverb_room_bathroom = { en = "Bathroom" },
+	reverb_room_living_room = { en = "Living Room" },
+	reverb_room_small_room = { en = "Small Room" },
+	reverb_room_medium_room = { en = "Medium Room" },
+	reverb_room_large_room = { en = "Large Room" },
+	reverb_room_stone_room = { en = "Stone Room" },
+	reverb_room_carpeted_hallway = { en = "Carpeted Hallway" },
+	reverb_room_hallway = { en = "Hallway" },
+	reverb_room_stone_corridor = { en = "Stone Corridor" },
+	reverb_room_medium_hall = { en = "Medium Hall" },
+	reverb_room_large_hall = { en = "Large Hall" },
+	reverb_room_auditorium = { en = "Auditorium" },
+	reverb_room_concert_hall = { en = "Concert Hall" },
+	reverb_room_arena = { en = "Arena" },
+	reverb_room_hangar = { en = "Hangar" },
+	reverb_room_cave = { en = "Cave" },
+	reverb_room_sewer_pipe = { en = "Sewer Pipe" },
+	reverb_room_underwater = { en = "Underwater" },
+	reverb_room_alley = { en = "Alley" },
+	reverb_room_parking_lot = { en = "Parking Lot" },
+	reverb_room_city = { en = "City" },
+	reverb_room_forest = { en = "Forest" },
+	reverb_room_mountains = { en = "Mountains" },
+	reverb_room_quarry = { en = "Quarry" },
+	reverb_room_plain = { en = "Plain" },
+	reverb_room_plate = { en = "Plate Reverb" },
+	reverb_room_generic = { en = "Generic" },
 
 	boss_music = {
 		en = "Boss Music",

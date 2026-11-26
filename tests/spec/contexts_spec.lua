@@ -69,8 +69,8 @@ describe("contexts.lua", function()
 		for _, context in ipairs(Contexts.list) do
 			if context.id ~= "meat_grinder" then
 				expected_shown[context.id] = {
-					"source_" .. context.id, "volume_" .. context.id, "shuffle_" .. context.id, "repeat_" .. context.id, "own_fade_" .. context.id,
-					"restore_removed_" .. context.id,
+					"source_" .. context.id, "volume_" .. context.id, "shuffle_" .. context.id, "repeat_" .. context.id, "effects_" .. context.id,
+					"own_fade_" .. context.id, "restore_removed_" .. context.id,
 				}
 				expected_situations[#expected_situations + 1] = context.id
 			end
@@ -80,7 +80,7 @@ describe("contexts.lua", function()
 		assert_equal(#groups.music_per_situation.sub_widgets, 1)
 		assert_equal(situation_dropdown.setting_id, "shown_situation")
 		assert_deep_equal(shown, expected_shown)
-		assert_equal(#situation_dropdown.sub_widgets, 6 * #expected_situations)
+		assert_equal(#situation_dropdown.sub_widgets, 7 * #expected_situations)
 		assert_deep_equal(situations, expected_situations)
 	end)
 

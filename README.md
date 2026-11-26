@@ -31,6 +31,7 @@ Everything below is optional detail.
 | …keep the game's music in one situation. | Leave its folder empty, or set it to Vanilla under Music per Situation in the mod options. |
 | …hear the game's music now and then among my songs. | Put an empty file named `vanilla` into the folder, a [Vanilla marker](#the-vanilla-marker). |
 | …keep the game's music for one mission or one boss, and my songs everywhere else. | Make the override folder for that mission or boss, such as `event\spillway\`, and put only an empty file named `vanilla` into it. |
+| …hear my music with reverb, as if it played in a large hall. | Pick the situation under Music per Situation and set its Effects to On, or turn on Use Effects in the Effects group for every situation. Reverb Room, Reverb Mix, and Reverb Strength in the Effects group set how it sounds. |
 | …have no music at all in one situation. | Set it to Silence under Music per Situation. |
 | …hear boss music only once the fight starts. | Set Boss Near to Skip under Music per Situation. Your `boss` songs then start with the boss's HP bar. |
 | …hear boss music sooner or later as a boss comes near. | Change Boss Distance in the Boss Music group, 80 m by default. |
@@ -63,6 +64,7 @@ Everything below is optional detail.
 * Has optional keys to skip to the next or previous song, restart or pause the song playing now, or remove it from rotation.
 * Names each new song and what each key did, and says when something went wrong, in short messages in a corner of the screen, on every screen, loading screens included.
 * Evens out the loudness of your songs, without changing your files.
+* Can play your songs through a reverb, in all situations or only the ones you choose.
 * Lowers your music while a menu is open.
 * Has a debug overlay that shows which situation the mod sees and what it plays.
 * Picks up added, removed, and replaced files while the game runs.
@@ -162,7 +164,7 @@ Meat Grinder is a good place to try out your songs, so it has a settings group o
 
 ## Settings
 
-The settings are in the in-game mod options under Music Replacer, in ten groups: Your Songs, Playback, Playback Controls, Volume, On-Screen Messages, Music per Situation, Meat Grinder, Boss Music, Music Holds, and Debug. Every setting and its default is explained in [docs/settings.md](docs/settings.md).
+The settings are in the in-game mod options under Music Replacer, in eleven groups: Your Songs, Playback, Playback Controls, Volume, Effects, On-Screen Messages, Music per Situation, Meat Grinder, Boss Music, Music Holds, and Debug. Every setting and its default is explained in [docs/settings.md](docs/settings.md).
 
 ## Override folders
 

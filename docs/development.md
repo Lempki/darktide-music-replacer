@@ -147,12 +147,13 @@ darktide-music-replacer/
 │       │   └── old_files.lua            # Moves loudness.txt and removed.txt from %APPDATA% into the audio folder once.
 │       ├── playback/
 │       │   ├── audio_client.lua         # Plays the music: crossfades, end fades, volumes, parked songs, and recovery.
-│       │   └── player.lua               # Streams one song through media_decoder.lua and xaudio.lua from a fixed buffer pool.
+│       │   ├── player.lua               # Streams one song through media_decoder.lua and xaudio.lua from a fixed buffer pool.
+│       │   └── reverb.lua               # The Reverb Room presets, and their conversion to XAudio2's reverb parameters.
 │       ├── windows/
 │       │   ├── native_ffi.lua           # Shared ffi plumbing for Windows APIs: GUIDs, COM calls and setup, UTF-16 strings, heap memory, files.
 │       │   ├── audio_folders.lua        # Lists, checks, and creates the audio folders through Windows, and measures durations.
 │       │   ├── media_decoder.lua        # Decodes audio files to PCM with Windows Media Foundation.
-│       │   └── xaudio.lua               # Plays PCM through XAudio2 voices with live volume control.
+│       │   └── xaudio.lua               # Plays PCM through XAudio2 voices with live volume control, and through the effects voice.
 │       ├── interface/
 │       │   ├── constant_element_slot.lua # Adds one of the mod's elements to the game's always-visible UI, and removes it.
 │       │   ├── on_screen_message.lua    # Times the on-screen message, such as a playback key's, and keeps its element on screen.

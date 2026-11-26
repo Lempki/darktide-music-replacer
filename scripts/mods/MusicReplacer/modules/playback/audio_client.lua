@@ -379,8 +379,19 @@ local function song_fade_seconds(duration, seconds)
 	return seconds
 end
 
+-- Logs why songs play without effects, once for each reason.
+local logged_effects_error = nil
+local function log_effects_error()
+	local err = Player.effects_error()
+	if err and err ~= logged_effects_error then
+		logged_effects_error = err
+		log(string.format("[player] songs play without effects: %s", err))
+	end
+end
+
 -- Plays file_path, crossfading with whatever was playing.
--- opts: fade_in, fade_seconds, end_fade_seconds, loop, start_position, duration_seconds, share, and on_finished(failed).
+-- opts: fade_in, fade_seconds, end_fade_seconds, loop, start_position, duration_seconds, share, effects, and on_finished(failed).
+-- effects plays the song through the effects, such as the reverb.
 -- share is the situation's Volume, as a linear scale, 1 when not given.
 -- end_fade_seconds is how long the song fades out at its end, the Fade Length when not given.
 -- fade_seconds sets this switch's crossfade instead of the Fade Length, as for the playback keys.
@@ -424,11 +435,13 @@ function AudioClient.play(file_path, opts)
 	local measured = is_measured(file_path)
 
 	local loop = opts.loop == true
+	local effects = opts.effects == true
 	local stream, err
 
 	if revived then
 		stream = revived
 		stream:resume()
+		stream:set_effects(effects)
 		stream:set_gain(gain * level * share)
 		stream:fade_to(1, opts.fade_in and song_fade_seconds(song_duration(stream, loop, opts.duration_seconds), switch_seconds) or 0)
 		log(string.format("[player] continuing %s from %.1fs, where it faded out", file_path, stream:position()))
@@ -438,6 +451,7 @@ function AudioClient.play(file_path, opts)
 			loop = loop,
 			gain = gain * level * share,
 			fade = opts.fade_in and 0 or 1,
+			effects = effects,
 		}
 		local refused_voice
 		stream, err, refused_voice = Player.open(disk_path(file_path), open_opts)
@@ -468,10 +482,15 @@ function AudioClient.play(file_path, opts)
 		end
 	end
 
+	if effects then
+		log_effects_error()
+	end
+
 	current = {
 		stream = stream,
 		file_path = file_path,
 		loop = loop,
+		effects = effects,
 		level = level,
 		share = share,
 		end_fade_seconds = opts.end_fade_seconds,
@@ -503,7 +522,29 @@ function AudioClient.retarget(file_path, opts)
 	if loop ~= current.loop then
 		AudioClient.set_loop(loop, opts.duration_seconds)
 	end
+
+	-- The new context's own Effects choice decides too, so the song moves to or from the effects as it plays on.
+	AudioClient.set_effects(opts.effects == true)
 	return true
+end
+
+-- Plays the current song through the effects, or without them, from now on. A song fading out keeps what it had.
+function AudioClient.set_effects(on)
+	if not current then
+		return
+	end
+	current.effects = on
+	if current.stream then
+		current.stream:set_effects(on)
+	end
+	if on then
+		log_effects_error()
+	end
+end
+
+-- Sets the reverb that songs with effects play through, as Reverb.native() gives its parameters.
+function AudioClient.set_reverb(parameters)
+	Player.set_reverb(parameters)
 end
 
 -- Makes the current song loop, or play to its end and fade out over its last stretch, with `duration_seconds` as the library's length.
@@ -571,6 +612,7 @@ local function recover(reason)
 			on_finished = resume.on_finished,
 			share = resume.share,
 			end_fade_seconds = resume.end_fade_seconds,
+			effects = resume.effects,
 			fade_in = true,
 		})
 

@@ -4,6 +4,12 @@
 -- Every setting names its tooltip: DMF formats named strings, turning "%%" into "%", but shows an implicit description's "%%" as it is.
 
 local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/situations/contexts")
+local Reverb = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/playback/reverb")
+
+local reverb_room_options = {}
+for _, room in ipairs(Reverb.ROOMS) do
+	reverb_room_options[#reverb_room_options + 1] = { text = "reverb_room_" .. room.id, value = room.id }
+end
 
 -- What a context plays. Custom keeps the mod's plain behavior: custom songs where there are files, the game's music elsewhere.
 -- A ranked situation with one below it also offers Skip, which lets that one play instead.
@@ -64,6 +70,7 @@ local function situation_settings(context)
 		},
 		own_choice_widget("shuffle_" .. context.id, "situation_shuffle"),
 		own_choice_widget("repeat_" .. context.id, "situation_repeat"),
+		own_choice_widget("effects_" .. context.id, "situation_effects"),
 		{
 			setting_id = "own_fade_" .. context.id,
 			title = "situation_own_fade",
@@ -282,6 +289,44 @@ return {
 						range = { 0, 100 },
 						decimals_number = 0,
 						unit_text = "percent_unit",
+					},
+				},
+			},
+			{
+				-- How the effects sound is shared, while each situation's own Effects choice decides where they play.
+				setting_id = "audio_effects",
+				type = "group",
+				sub_widgets = {
+					{
+						setting_id = "effects",
+						type = "checkbox",
+						tooltip = "effects_tooltip",
+						default_value = false,
+					},
+					{
+						setting_id = "reverb_room",
+						type = "dropdown",
+						tooltip = "reverb_room_tooltip",
+						default_value = Reverb.DEFAULT_ROOM,
+						options = reverb_room_options,
+					},
+					{
+						setting_id = "reverb_mix",
+						type = "numeric",
+						tooltip = "reverb_mix_tooltip",
+						default_value = 30,
+						range = { 0, 100 },
+						decimals_number = 0,
+						unit_text = "percent_unit",
+					},
+					{
+						setting_id = "reverb_strength",
+						type = "numeric",
+						tooltip = "reverb_strength_tooltip",
+						default_value = 0,
+						range = { -20, 20 },
+						decimals_number = 0,
+						unit_text = "decibels_unit",
 					},
 				},
 			},

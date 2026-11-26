@@ -21,6 +21,7 @@ local AudioFolders = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/mod
 local XAudio = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/windows/xaudio")
 local Player = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/playback/player")
 local AudioClient = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/playback/audio_client")
+local Reverb = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/playback/reverb")
 local LoudnessMeter = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/songs/loudness_meter")
 local Loudness = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/songs/loudness")
 local DiagnosticLog = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/diagnostics/diagnostic_log")
@@ -114,6 +115,11 @@ local function source_of(context_name)
 	return source
 end
 
+-- Gives the effects the reverb that Reverb Room, Reverb Mix, and Reverb Strength describe.
+local function apply_reverb()
+	AudioClient.set_reverb(Reverb.native(mod:get("reverb_room"), mod:get("reverb_mix"), mod:get("reverb_strength")))
+end
+
 -- The volume settings are percentages of the music's normal level.
 -- DMF writes every setting's default from MusicReplacer_data.lua before this script runs, so a setting never reads as nil.
 local function custom_volume()
@@ -151,27 +157,30 @@ local function menu_volume(dt)
 	return menu_closed_elapsed < MENU_CLOSED_SECONDS and mod:get("menu_volume") / 100 or 1
 end
 
--- The situation's own choice for `kind`, "shuffle" or "repeat", as its setting says: "on", "off", or nil to follow Playback's.
+-- The setting each choice a situation can make for itself follows by default: Playback's Shuffle and Repeat Song, and Use Effects.
+local GROUP_SETTINGS = { shuffle = "shuffle", ["repeat"] = "repeat_song", effects = "effects" }
+
+-- The situation's own choice for `kind`, a key of GROUP_SETTINGS, as its setting says: "on", "off", or nil to follow the group's.
 local function own_choice(kind, context_name)
 	local choice = context_name and mod:get(kind .. "_" .. context_name)
 	return (choice == "on" or choice == "off") and choice or nil
 end
 
--- The setting that decides `kind` for `context_name`: the situation's own while it has one, else Playback's.
+-- The setting that decides `kind` for `context_name`: the situation's own while it has one, else the group's.
 local function deciding_setting(kind, context_name)
 	if own_choice(kind, context_name) then
 		return kind .. "_" .. context_name
 	end
-	return kind == "repeat" and "repeat_song" or "shuffle"
+	return GROUP_SETTINGS[kind]
 end
 
--- True when `kind`, "shuffle" or "repeat", is on for the situation, by its own choice or else Playback's.
+-- True when `kind`, a key of GROUP_SETTINGS, is on for the situation, by its own choice or else the group's.
 local function is_on_for(kind, context_name)
 	local choice = own_choice(kind, context_name)
 	if choice then
 		return choice == "on"
 	end
-	return mod:get(kind == "repeat" and "repeat_song" or "shuffle") == true
+	return mod:get(GROUP_SETTINGS[kind]) == true
 end
 
 -- True when a song loops: a folder's only song always does, and with Repeat Song on for its situation, every song does.
@@ -400,6 +409,7 @@ local function track_opts(context_name, folder, track)
 	return {
 		duration_seconds = not is_looping and duration or nil,
 		share = situation_share(context_name),
+		effects = is_on_for("effects", context_name),
 		fade_in = track.fade_in,
 		-- A key's own fade wins, and otherwise the situation's own Fade Length, if it has one, sets the crossfade into it.
 		fade_seconds = track.fade_seconds or situation_fade_seconds(context_name),
@@ -1365,6 +1375,7 @@ mod.on_all_mods_loaded = function()
 	AudioClient.init(log, { player = Player, disk_path = Library.disk_path, level_of = Loudness.level, is_measured = Loudness.is_measured })
 	AudioClient.set_volume(custom_volume())
 	AudioClient.set_fade_seconds(mod:get("fade_seconds"))
+	apply_reverb()
 	DebugOverlay.init(log, { snapshot = overlay_snapshot, meter = AudioClient.meter, create_element = create_overlay_element })
 	apply_overlay_settings()
 	OnScreenMessage.init(log, { create_element = create_on_screen_message_element })
@@ -1476,6 +1487,13 @@ mod.on_setting_changed = function(setting_id)
 		follow_shuffle(current_context)
 	elseif setting_id == "repeat_song" or setting_id == "repeat_" .. tostring(current_context) then
 		apply_repeat_song()
+	elseif setting_id == "effects" or setting_id == "effects_" .. tostring(current_context) then
+		-- The song playing now follows at once, so the player hears what the choice does.
+		if enabled and current_context then
+			AudioClient.set_effects(is_on_for("effects", current_context))
+		end
+	elseif setting_id == "reverb_room" or setting_id == "reverb_mix" or setting_id == "reverb_strength" then
+		apply_reverb()
 	elseif setting_id == "let_songs_finish" and not mod:get("let_songs_finish") and context_after_song then
 		-- Nothing waits for a song with the setting off, so the situation that waited takes over at once.
 		local next_context = context_after_song

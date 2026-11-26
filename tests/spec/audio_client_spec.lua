@@ -17,8 +17,10 @@ local function new_stream(path, opts)
 		destroyed = false,
 		paused = false,
 		duration = 200,
+		effects = opts.effects == true,
 	}
 
+	function stream.set_effects(self, on) self.effects = on end
 	function stream.pause(self) self.paused = true end
 	function stream.resume(self) self.paused = false end
 
@@ -100,6 +102,9 @@ local function load_client(levels)
 		player.engine_failure_reason = nil
 	end
 	function player.pool_bytes() return 0 end
+	-- `effects_unavailable` is why the effects could not be made, and `reverb` keeps the last reverb set.
+	function player.effects_error() return player.effects_unavailable end
+	function player.set_reverb(parameters) player.reverb = parameters end
 	function player.last_open_ms() return player.open_ms or 0 end
 	function player.slowest_fill_ms() return 0 end
 
@@ -399,6 +404,49 @@ describe("audio_client.lua", function()
 		assert_equal(streams[2].loop, true)
 	end)
 
+	it("opens a song through the effects when asked, and moves the song playing now to or from them", function()
+		local AudioClient, _, streams = load_client()
+
+		AudioClient.play("hub/a.mp3", { fade_in = false, effects = true })
+		assert_equal(streams[1].opts.effects, true)
+
+		AudioClient.set_effects(false)
+		assert_equal(streams[1].effects, false)
+
+		AudioClient.play("hub/b.mp3", { fade_in = true })
+		assert_equal(streams[2].opts.effects, false)
+		assert_equal(streams[1].effects, false)
+	end)
+
+	it("moves a song kept for another context to or from the effects, as that context's choice says", function()
+		local AudioClient, _, streams = load_client()
+		AudioClient.play("boss/b.mp3", { fade_in = false, effects = false })
+
+		AudioClient.retarget("boss/b.mp3", { effects = true })
+		assert_equal(streams[1].effects, true)
+
+		AudioClient.retarget("boss/b.mp3", {})
+		assert_equal(streams[1].effects, false)
+	end)
+
+	it("logs once why songs play without effects, and passes the reverb on", function()
+		local AudioClient, player, _, _, lines = load_client()
+		player.effects_unavailable = "creating the reverb failed with 0x80004005"
+
+		AudioClient.play("hub/a.mp3", { fade_in = false, effects = true })
+		AudioClient.play("hub/b.mp3", { fade_in = false, effects = true })
+		AudioClient.set_reverb({ WetDryMix = 30 })
+
+		local logged = 0
+		for _, line in ipairs(lines) do
+			if line == "[player] songs play without effects: creating the reverb failed with 0x80004005" then
+				logged = logged + 1
+			end
+		end
+		assert_equal(logged, 1)
+		assert_deep_equal(player.reverb, { WetDryMix = 30 })
+	end)
+
 	it("cannot make a song loop once its last buffer is queued, or while nothing plays", function()
 		local AudioClient, _, streams = load_client()
 		assert_equal(AudioClient.set_loop(true, nil), false)
@@ -481,6 +529,16 @@ describe("audio_client.lua", function()
 		assert_equal(streams[1].destroyed, true)
 		assert_equal(streams[2].path, "audio/hub/a.mp3")
 		assert_equal(streams[2].opts.start_position, 42)
+	end)
+
+	it("resumes a song through the effects after rebuilding the engine, if it played through them", function()
+		local AudioClient, _, streams = load_client()
+		AudioClient.play("hub/a.mp3", { fade_in = true, duration_seconds = 199, effects = true })
+		streams[1].failed = "the voice stopped playing with audio queued"
+
+		AudioClient.update(0.1)
+
+		assert_equal(streams[2].opts.effects, true)
 	end)
 
 	it("resumes the song at its situation's share and with its own end fade", function()

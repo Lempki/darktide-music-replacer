@@ -2197,6 +2197,63 @@ describe("MusicReplacer.lua Skip", function()
 	end)
 end)
 
+describe("MusicReplacer.lua effects", function()
+	it("plays songs without effects by default", function()
+		local harness = in_hub()
+
+		assert_equal(harness:last_play().opts.effects, false)
+	end)
+
+	it("plays every situation's songs through the effects with Use Effects on, but one whose own Effects is Off", function()
+		local harness = in_mission({ effects = true, effects_combat = "off" })
+		assert_equal(harness:playing(), "explore/x.mp3")
+		assert_equal(harness:last_play().opts.effects, true)
+
+		harness:state("music_combat", "normal")
+		harness:settle()
+
+		assert_equal(harness:playing(), "combat/c.mp3")
+		assert_equal(harness:last_play().opts.effects, false)
+	end)
+
+	it("plays one situation through the effects by its own choice while Use Effects is off", function()
+		local harness = in_hub(nil, { settings = { effects_hub = "on" } })
+
+		assert_equal(harness:last_play().opts.effects, true)
+	end)
+
+	it("moves the song playing now to or from the effects as soon as either choice changes", function()
+		local harness = in_hub()
+
+		harness:set_setting("effects", true)
+		assert_equal(harness:last_play().opts.effects, true)
+
+		harness:set_setting("effects_hub", "off")
+		assert_equal(harness:last_play().opts.effects, false)
+	end)
+
+	it("gives the effects the chosen reverb at startup and whenever Reverb Room or Reverb Mix changes", function()
+		local harness = in_hub()
+		assert_equal(harness.client.reverb.WetDryMix, 30)
+		assert_equal(harness.client.reverb.DecayTime, 1.8)
+
+		harness:set_setting("reverb_mix", 70)
+		assert_equal(harness.client.reverb.WetDryMix, 70)
+
+		harness:set_setting("reverb_room", "cave")
+		assert_equal(math.abs(harness.client.reverb.DecayTime - 2.91 * 1.3) < 1e-9, true)
+	end)
+
+	it("makes the reverb louder or quieter as soon as Reverb Strength changes", function()
+		local harness = in_hub()
+		assert_equal(harness.client.reverb.ReverbGain, -14)
+
+		harness:set_setting("reverb_strength", 10)
+
+		assert_equal(harness.client.reverb.ReverbGain, -4)
+	end)
+end)
+
 describe("MusicReplacer.lua Repeat Song", function()
 	it("loops every song that starts while it is on, and gives none an end fade", function()
 		local harness = in_hub(nil, { settings = { repeat_song = true } })

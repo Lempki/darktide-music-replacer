@@ -64,6 +64,12 @@ local function new_voice()
 		return true
 	end
 	function voice.failure(self) return self.error end
+	-- `outputs` keeps every Effects choice the voice was switched to.
+	voice.outputs = {}
+	function voice.set_effects(self, on)
+		self.outputs[#self.outputs + 1] = on
+		return true
+	end
 	function voice.destroy(self) self.destroyed = true end
 	function voice.play(self, buffers)
 		self.queue = math.max(0, self.queue - buffers)
@@ -84,10 +90,11 @@ local function load_player(seconds, voice_error, peak)
 	local voice = new_voice()
 	local freed = {}
 	local xaudio = {
-		create_voice = function()
+		create_voice = function(_, opts)
 			if voice_error then
 				return nil, voice_error, true
 			end
+			voice.created_with = opts
 			return voice
 		end,
 		available = function() return true end,
@@ -486,6 +493,29 @@ describe("player.lua", function()
 
 		assert_equal(stream:ended(), false)
 		assert_equal(#voice.submitted > submitted, true)
+	end)
+
+	it("asks for a voice that plays through the effects only when the song should", function()
+		local Player, _, voice = load_player(60)
+
+		Player.open("a.mp3")
+		assert_deep_equal(voice.created_with, { effects = false })
+
+		Player.open("b.mp3", { effects = true })
+		assert_deep_equal(voice.created_with, { effects = true })
+	end)
+
+	it("moves a stream to or from the effects only when its choice changes", function()
+		local Player, _, voice = load_player(60)
+		local stream = Player.open("a.mp3", { effects = true })
+
+		stream:set_effects(true)
+		stream:set_effects(false)
+		stream:set_effects(false)
+		stream:set_effects(true)
+
+		assert_deep_equal(voice.outputs, { false, true })
+		assert_equal(stream:has_effects(), true)
 	end)
 
 	it("reports a fade's level, the level it moves to, and its seconds left, and no target once it is still", function()

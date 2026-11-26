@@ -68,6 +68,16 @@ function Player.engine_failure()
 	return XAudio.failure()
 end
 
+-- Sets the reverb that songs with effects play through, as Reverb.native() gives its parameters.
+function Player.set_reverb(parameters)
+	return XAudio.set_reverb(parameters)
+end
+
+-- Why songs with effects play without them, or nil.
+function Player.effects_error()
+	return XAudio.effects_error()
+end
+
 -- Bytes held by every open stream's pool, for logging.
 function Player.pool_bytes()
 	return pool_bytes
@@ -239,7 +249,7 @@ local function open_stream(path, opts)
 	end
 
 	local voice, refused_voice
-	voice, err, refused_voice = XAudio.create_voice(format)
+	voice, err, refused_voice = XAudio.create_voice(format, { effects = opts.effects == true })
 	if not voice then
 		NativeFfi.free(pool)
 		decoder:close()
@@ -279,6 +289,7 @@ local function open_stream(path, opts)
 		paused = false,
 		gain = opts.gain or 1,
 		fade = opts.fade or 1,
+		effects = opts.effects == true,
 		ramp = nil,
 		underruns = 0,
 		last_samples_played = 0,
@@ -296,12 +307,26 @@ end
 -- Opens `path` and starts it playing.
 -- Returns the stream, or nil, why, and whether XAudio2 refused the voice, which a dead engine also does.
 -- opts.start_position starts partway in, in seconds. opts.loop repeats the file with no gap added between its end and its start.
--- opts.gain and opts.fade set the starting levels, 1 by default.
+-- opts.gain and opts.fade set the starting levels, 1 by default. opts.effects plays it through the effects, such as the reverb.
 function Player.open(path, opts)
 	local started = clock()
 	local stream, err, refused_voice = open_stream(path, opts or {})
 	last_open_ms = (clock() - started) * 1000
 	return stream, err, refused_voice
+end
+
+-- Plays the stream through the effects, or without them, from now on.
+function Stream:set_effects(on)
+	if self.effects == on then
+		return
+	end
+	self.effects = on
+	voice_ok(self, self.voice:set_effects(on))
+end
+
+-- True when the stream plays through the effects.
+function Stream:has_effects()
+	return self.effects
 end
 
 -- Sets the gain at once, for slider changes.
