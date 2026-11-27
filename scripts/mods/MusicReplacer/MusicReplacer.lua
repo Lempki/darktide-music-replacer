@@ -117,30 +117,22 @@ local function source_of(context_name)
 	return source
 end
 
--- The settings that decide the reverb, so a change to any of them sets the reverb again.
-local REVERB_SETTINGS = { use_reverb = true, reverb_room = true, reverb_mix = true, reverb_strength = true }
+-- The settings that decide how the reverb sounds, so a change to any of them sets the reverb again.
+local REVERB_SETTINGS = { reverb_room = true, reverb_mix = true, reverb_strength = true }
 
--- Gives the effects the reverb that Reverb Room, Reverb Mix, and Reverb Strength describe, or none while Use Reverb is off.
+-- Gives the effects the reverb that Reverb Room, Reverb Mix, and Reverb Strength describe.
 local function apply_reverb()
-	if not mod:get("use_reverb") then
-		AudioClient.set_reverb(nil)
-		return
-	end
 	AudioClient.set_reverb(Reverb.native(mod:get("reverb_room"), mod:get("reverb_mix"), mod:get("reverb_strength")))
 end
 
--- The settings that decide the EQ, so a change to any of them sets the EQ again.
-local EQ_SETTINGS = { use_eq = true }
+-- The EQ's band settings, so a change to any of them sets the EQ again.
+local EQ_SETTINGS = {}
 for _, band in ipairs(Equalizer.BANDS) do
 	EQ_SETTINGS[band.id] = true
 end
 
--- Gives the effects the EQ that the band settings describe, or none while Use EQ is off.
+-- Gives the effects the EQ that the band settings describe.
 local function apply_eq()
-	if not mod:get("use_eq") then
-		AudioClient.set_eq(nil)
-		return
-	end
 	local gains = {}
 	for _, band in ipairs(Equalizer.BANDS) do
 		gains[band.id] = mod:get(band.id)
@@ -185,8 +177,9 @@ local function menu_volume(dt)
 	return menu_closed_elapsed < MENU_CLOSED_SECONDS and mod:get("menu_volume") / 100 or 1
 end
 
--- The setting each choice a situation can make for itself follows by default: Playback's Shuffle and Repeat Song, and Use Effects.
-local GROUP_SETTINGS = { shuffle = "shuffle", ["repeat"] = "repeat_song", effects = "effects" }
+-- The setting each choice a situation can make for itself follows by default.
+-- They are Playback's Shuffle and Repeat Song, and the Effects group's Use Reverb and Use EQ.
+local GROUP_SETTINGS = { shuffle = "shuffle", ["repeat"] = "repeat_song", reverb = "use_reverb", eq = "use_eq" }
 
 -- The situation's own choice for `kind`, a key of GROUP_SETTINGS, as its setting says: "on", "off", or nil to follow the group's.
 local function own_choice(kind, context_name)
@@ -220,6 +213,21 @@ end
 -- A song that Let Songs Finish waits for has to end, so the waiting situation can take over, and so does a key's song in its place.
 local function plays_looping(is_only_file, context_name)
 	return loops(is_only_file, context_name) and not context_after_song
+end
+
+-- The name of the effects setup the situation's songs play through, as xaudio.lua names its setups, or nil for none.
+-- Each effect is on by the situation's own choice, or else by the Effects group's Use Reverb and Use EQ.
+local function effects_setup(context_name)
+	local has_eq = is_on_for("eq", context_name)
+	local has_reverb = is_on_for("reverb", context_name)
+	if has_eq and has_reverb then
+		return "eq+reverb"
+	elseif has_eq then
+		return "eq"
+	elseif has_reverb then
+		return "reverb"
+	end
+	return nil
 end
 
 -- Sets the playlist's order by the situation playing now, since Shuffle can differ per situation.
@@ -375,7 +383,7 @@ local function track_opts(context_name, folder, track)
 	return {
 		duration_seconds = not is_looping and duration or nil,
 		share = situation_share(context_name),
-		effects = is_on_for("effects", context_name),
+		effects = effects_setup(context_name),
 		fade_in = track.fade_in,
 		-- A key's own fade wins, and otherwise the situation's own Fade Length, if it has one, sets the crossfade into it.
 		fade_seconds = track.fade_seconds or situation_fade_seconds(context_name),
@@ -1456,10 +1464,11 @@ mod.on_setting_changed = function(setting_id)
 		follow_shuffle(current_context)
 	elseif setting_id == "repeat_song" or setting_id == "repeat_" .. tostring(current_context) then
 		apply_repeat_song()
-	elseif setting_id == "effects" or setting_id == "effects_" .. tostring(current_context) then
+	elseif setting_id == "use_reverb" or setting_id == "use_eq"
+		or setting_id == "reverb_" .. tostring(current_context) or setting_id == "eq_" .. tostring(current_context) then
 		-- The song playing now follows at once, so the player hears what the choice does.
 		if enabled and current_context then
-			AudioClient.set_effects(is_on_for("effects", current_context))
+			AudioClient.set_effects(effects_setup(current_context))
 		end
 	elseif REVERB_SETTINGS[setting_id] then
 		apply_reverb()

@@ -391,7 +391,7 @@ end
 
 -- Plays file_path, crossfading with whatever was playing.
 -- opts: fade_in, fade_seconds, end_fade_seconds, loop, start_position, duration_seconds, share, effects, and on_finished(failed).
--- effects plays the song through the effects, such as the reverb.
+-- effects names the effects setup the song plays through, such as "eq+reverb", or is nil for none.
 -- share is the situation's Volume, as a linear scale, 1 when not given.
 -- end_fade_seconds is how long the song fades out at its end, the Fade Length when not given.
 -- fade_seconds sets this switch's crossfade instead of the Fade Length, as for the playback keys.
@@ -435,7 +435,7 @@ function AudioClient.play(file_path, opts)
 	local measured = is_measured(file_path)
 
 	local loop = opts.loop == true
-	local effects = opts.effects == true
+	local effects = opts.effects
 	local stream, err
 
 	if revived then
@@ -524,30 +524,31 @@ function AudioClient.retarget(file_path, opts)
 	end
 
 	-- The new context's own Effects choice decides too, so the song moves to or from the effects as it plays on.
-	AudioClient.set_effects(opts.effects == true)
+	AudioClient.set_effects(opts.effects)
 	return true
 end
 
--- Plays the current song through the effects, or without them, from now on. A song fading out keeps what it had.
-function AudioClient.set_effects(on)
+-- Plays the current song through the effects setup named `setup`, or without effects with nil, from now on.
+-- A song fading out keeps what it had.
+function AudioClient.set_effects(setup)
 	if not current then
 		return
 	end
-	current.effects = on
+	current.effects = setup
 	if current.stream then
-		current.stream:set_effects(on)
+		current.stream:set_effects(setup)
 	end
-	if on then
+	if setup then
 		log_effects_error()
 	end
 end
 
--- Sets the reverb that songs with effects play through, as Reverb.native() gives its parameters, or turns it off with nil.
+-- Sets the reverb that songs with effects play through, as Reverb.native() gives its parameters.
 function AudioClient.set_reverb(parameters)
 	Player.set_reverb(parameters)
 end
 
--- Sets the EQ that songs with effects play through, as Equalizer.native() gives its parameters, or turns it off with nil.
+-- Sets the EQ that songs with effects play through, as Equalizer.native() gives its parameters.
 function AudioClient.set_eq(parameters)
 	Player.set_eq(parameters)
 end

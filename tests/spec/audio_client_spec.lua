@@ -405,29 +405,32 @@ describe("audio_client.lua", function()
 		assert_equal(streams[2].loop, true)
 	end)
 
-	it("opens a song through the effects when asked, and moves the song playing now to or from them", function()
+	it("opens a song through the effects setup it asks for, and moves the song playing now to another setup or none", function()
 		local AudioClient, _, streams = load_client()
 
-		AudioClient.play("hub/a.mp3", { fade_in = false, effects = true })
-		assert_equal(streams[1].opts.effects, true)
+		AudioClient.play("hub/a.mp3", { fade_in = false, effects = "reverb" })
+		assert_equal(streams[1].opts.effects, "reverb")
 
-		AudioClient.set_effects(false)
-		assert_equal(streams[1].effects, false)
+		AudioClient.set_effects("eq")
+		assert_equal(streams[1].effects, "eq")
+
+		AudioClient.set_effects(nil)
+		assert_equal(streams[1].effects, nil)
 
 		AudioClient.play("hub/b.mp3", { fade_in = true })
-		assert_equal(streams[2].opts.effects, false)
-		assert_equal(streams[1].effects, false)
+		assert_equal(streams[2].opts.effects, nil)
+		assert_equal(streams[1].effects, nil)
 	end)
 
-	it("moves a song kept for another context to or from the effects, as that context's choice says", function()
+	it("moves a song kept for another context to that context's effects setup", function()
 		local AudioClient, _, streams = load_client()
-		AudioClient.play("boss/b.mp3", { fade_in = false, effects = false })
+		AudioClient.play("boss/b.mp3", { fade_in = false })
 
-		AudioClient.retarget("boss/b.mp3", { effects = true })
-		assert_equal(streams[1].effects, true)
+		AudioClient.retarget("boss/b.mp3", { effects = "eq+reverb" })
+		assert_equal(streams[1].effects, "eq+reverb")
 
 		AudioClient.retarget("boss/b.mp3", {})
-		assert_equal(streams[1].effects, false)
+		assert_equal(streams[1].effects, nil)
 	end)
 
 	it("passes the EQ on to the player", function()
@@ -442,8 +445,8 @@ describe("audio_client.lua", function()
 		local AudioClient, player, _, _, lines = load_client()
 		player.effects_unavailable = "creating the reverb failed with 0x80004005"
 
-		AudioClient.play("hub/a.mp3", { fade_in = false, effects = true })
-		AudioClient.play("hub/b.mp3", { fade_in = false, effects = true })
+		AudioClient.play("hub/a.mp3", { fade_in = false, effects = "reverb" })
+		AudioClient.play("hub/b.mp3", { fade_in = false, effects = "reverb" })
 		AudioClient.set_reverb({ WetDryMix = 30 })
 
 		local logged = 0

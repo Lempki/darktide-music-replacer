@@ -470,12 +470,18 @@ local strings = {
 		en = "Whether this situation's song loops, as " .. highlight("Repeat Song") .. " in the Playback group does for all of them.\n\n" ..
 			highlight("Default") .. " follows that setting. " .. highlight("On") .. " and " .. highlight("Off") .. " decide for this situation alone.",
 	},
-	situation_effects = {
-		en = "Effects",
+	situation_reverb = {
+		en = "Reverb",
 	},
-	situation_effects_tooltip = {
-		en = "Whether this situation's songs play through the effects in the Effects group, as " .. highlight("Use Effects") ..
-			" there does for all of them.\n\n" ..
+	situation_reverb_tooltip = {
+		en = "Whether this situation's songs play through the reverb, as " .. highlight("Use Reverb") .. " in the Effects group does for all of them.\n\n" ..
+			highlight("Default") .. " follows that setting. " .. highlight("On") .. " and " .. highlight("Off") .. " decide for this situation alone.",
+	},
+	situation_eq = {
+		en = "EQ",
+	},
+	situation_eq_tooltip = {
+		en = "Whether this situation's songs play through the EQ, as " .. highlight("Use EQ") .. " in the Effects group does for all of them.\n\n" ..
 			highlight("Default") .. " follows that setting. " .. highlight("On") .. " and " .. highlight("Off") .. " decide for this situation alone.",
 	},
 	situation_own_fade = {
@@ -742,25 +748,21 @@ local strings = {
 	audio_effects = {
 		en = "Effects",
 	},
-	effects = {
-		en = "Use Effects",
-	},
-	effects_tooltip = {
-		en = "Plays your songs through the effects turned on below, the reverb and the EQ.\n\n" ..
-			"Each situation's own " .. highlight("Effects") .. " under Music per Situation turns them on or off for that situation alone. " ..
-			"The game's own music always plays without them.",
-	},
 	use_reverb = {
 		en = "Use Reverb",
 	},
 	use_reverb_tooltip = {
-		en = "Plays the songs that have effects through the reverb, which makes them sound as if they played in a place such as a large hall.",
+		en = "Plays your songs through the reverb, which makes them sound as if they played in a place such as a large hall.\n\n" ..
+			"Each situation's own " .. highlight("Reverb") .. " under Music per Situation turns it on or off for that situation alone. " ..
+			"The game's own music always plays without it.",
 	},
 	use_eq = {
 		en = "Use EQ",
 	},
 	use_eq_tooltip = {
-		en = "Plays the songs that have effects through the EQ, which raises or lowers their bass, middle, and treble.",
+		en = "Plays your songs through the EQ, which raises or lowers their bass, middle, and treble.\n\n" ..
+			"Each situation's own " .. highlight("EQ") .. " under Music per Situation turns it on or off for that situation alone. " ..
+			"The game's own music always plays without it.",
 	},
 	reverb_room = {
 		en = "Reverb Room",

@@ -2228,35 +2228,42 @@ describe("MusicReplacer.lua effects", function()
 	it("plays songs without effects by default", function()
 		local harness = in_hub()
 
-		assert_equal(harness:last_play().opts.effects, false)
+		assert_equal(harness:last_play().opts.effects, nil)
 	end)
 
-	it("plays every situation's songs through the effects with Use Effects on, but one whose own Effects is Off", function()
-		local harness = in_mission({ effects = true, effects_combat = "off" })
+	it("plays every situation's songs through the effects Use Reverb and Use EQ turn on, but those a situation turns off itself", function()
+		local harness = in_mission({ use_reverb = true, use_eq = true, eq_combat = "off" })
 		assert_equal(harness:playing(), "explore/x.mp3")
-		assert_equal(harness:last_play().opts.effects, true)
+		assert_equal(harness:last_play().opts.effects, "eq+reverb")
 
 		harness:state("music_combat", "normal")
 		harness:settle()
 
 		assert_equal(harness:playing(), "combat/c.mp3")
-		assert_equal(harness:last_play().opts.effects, false)
+		assert_equal(harness:last_play().opts.effects, "reverb")
 	end)
 
-	it("plays one situation through the effects by its own choice while Use Effects is off", function()
-		local harness = in_hub(nil, { settings = { effects_hub = "on" } })
+	it("plays one situation through an effect by its own choice while the effect is off for the rest", function()
+		local harness = in_hub(nil, { settings = { eq_hub = "on" } })
 
-		assert_equal(harness:last_play().opts.effects, true)
+		assert_equal(harness:last_play().opts.effects, "eq")
 	end)
 
-	it("moves the song playing now to or from the effects as soon as either choice changes", function()
+	it("moves the song playing now to its new effects setup as soon as any of the choices changes", function()
 		local harness = in_hub()
 
-		harness:set_setting("effects", true)
-		assert_equal(harness:last_play().opts.effects, true)
+		harness:set_setting("use_reverb", true)
+		assert_equal(harness:last_play().opts.effects, "reverb")
 
-		harness:set_setting("effects_hub", "off")
-		assert_equal(harness:last_play().opts.effects, false)
+		harness:set_setting("eq_hub", "on")
+		assert_equal(harness:last_play().opts.effects, "eq+reverb")
+
+		harness:set_setting("reverb_hub", "off")
+		assert_equal(harness:last_play().opts.effects, "eq")
+
+		harness:set_setting("use_eq", true)
+		harness:set_setting("eq_hub", "off")
+		assert_equal(harness:last_play().opts.effects, nil)
 	end)
 
 	it("gives the effects the chosen reverb at startup and whenever Reverb Room or Reverb Mix changes", function()
@@ -2280,21 +2287,8 @@ describe("MusicReplacer.lua effects", function()
 		assert_equal(harness.client.reverb.ReverbGain, -4)
 	end)
 
-	it("turns the reverb off while Use Reverb is off, and back on with its settings", function()
+	it("gives the effects a flat EQ at startup", function()
 		local harness = in_hub()
-
-		harness:set_setting("use_reverb", false)
-		assert_equal(harness.client.reverb, nil)
-
-		harness:set_setting("use_reverb", true)
-		assert_equal(harness.client.reverb.WetDryMix, 30)
-	end)
-
-	it("keeps the EQ off by default, and gives it a flat EQ once Use EQ is on", function()
-		local harness = in_hub()
-		assert_equal(harness.client.eq, nil)
-
-		harness:set_setting("use_eq", true)
 
 		for band = 0, 3 do
 			assert_equal(harness.client.eq["Gain" .. band], 1)
@@ -2302,7 +2296,7 @@ describe("MusicReplacer.lua effects", function()
 	end)
 
 	it("gives the EQ a band's new gain as soon as the band changes", function()
-		local harness = in_hub(nil, { settings = { use_eq = true } })
+		local harness = in_hub()
 
 		harness:set_setting("eq_treble", 6)
 

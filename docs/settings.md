@@ -48,16 +48,15 @@ Keys that control the song playing now, and the setting that goes with them. Eve
 
 ## Effects
 
-Effects that your songs play through: a reverb that makes them sound as if they played in a place such as a large hall, and an EQ that raises or lowers their bass, middle, and treble. This group sets how the effects sound, and each situation's own [Effects](#music-per-situation) decides where they play. The game's own music always plays without them.
+Effects that your songs play through: a reverb that makes them sound as if they played in a place such as a large hall, and an EQ that raises or lowers their bass, middle, and treble. This group turns each effect on for every situation and sets how it sounds, and each situation's own [Reverb and EQ](#music-per-situation) can decide for that situation alone. The game's own music always plays without them.
 
 | Setting | Default | What it does |
 |---|---|---|
-| Use Effects | Off | Plays every situation's songs through the effects turned on below. A situation whose own Effects is On or Off decides for itself. A change applies at once to the song playing now. |
-| Use Reverb | On | Plays the songs that have effects through the reverb. Its settings below show while it is on. A change applies at once. |
+| Use Reverb | Off | Plays every situation's songs through the reverb, but a situation whose own Reverb is On or Off decides for itself. A change applies at once to the song playing now. |
 | Reverb Room | Large Hall | The place the reverb makes your songs sound as if they played in: 29 places, from a padded cell and small rooms through halls, an arena, and a hangar, to a cave, a sewer pipe, underwater, and outdoor places such as a forest or mountains. Plate Reverb is the bright reverb of a vibrating metal plate, as studios use. |
 | Reverb Mix | 30% | How much of the reverb you hear in place of the plain song, from 0% to 100%. 0% plays your songs without reverb, and 100% plays only the reverb. A change applies at once. |
 | Reverb Strength | 0 dB | Makes the reverb louder or quieter than the room itself has it, from -20 to +20 dB, while the plain song stays as loud as Reverb Mix sets. 0 dB plays the room as it is. Large rooms, such as Large Hall, have a soft reverb of their own, and small ones, such as Bathroom, a loud one. A change applies at once. |
-| Use EQ | Off | Plays the songs that have effects through the EQ. Its four bands below show while it is on. A change applies at once. |
+| Use EQ | Off | Plays every situation's songs through the EQ, but a situation whose own EQ is On or Off decides for itself. A change applies at once to the song playing now. |
 | EQ Bass | 0 dB | Raises or lowers the bass of your songs, around 100 Hz, from -18 to +18 dB. 0 dB leaves it as it is. A change applies at once. |
 | EQ Low Mids | 0 dB | Raises or lowers the low middle of your songs, around 800 Hz, from -18 to +18 dB. 0 dB leaves it as it is. A change applies at once. |
 | EQ High Mids | 0 dB | Raises or lowers the high middle of your songs, around 2,000 Hz, from -18 to +18 dB. 0 dB leaves it as it is. A change applies at once. |
@@ -103,11 +102,12 @@ The group shows one Situation dropdown, Explore by default, which lists every si
 |---|---|---|
 | Music | Custom, Vanilla for Cutscene | What the situation plays: Custom, Vanilla, or Silence, and Skip for the mission situations that are more urgent than another. Changing a choice to or from Skip applies at once, without the short wait a situation change takes. See [Choosing what plays](../README.md#choosing-what-plays) in the README for what each choice does. |
 | Volume | 100% | How loud the situation's songs play, from 0% to 100% of the Custom Music Volume. A song fading out keeps the volume of the situation it played for. A change applies at once to the song playing now. |
-| Shuffle | Default | Default follows [Shuffle](#playback) in the Playback group. On and Off decide for this situation alone. |
-| Repeat Song | Default | Default follows [Repeat Song](#playback) in the Playback group. On and Off decide for this situation alone. A song keeps looping or stops looping by the setting of the situation it plays for. |
-| Effects | Default | Default follows [Use Effects](#effects) in the Effects group. On and Off decide for this situation alone, such as reverb in the hub only. A song that plays on into another situation, such as from Boss Near into Boss, follows that situation's choice. |
 | Own Fade Length | Off | On shows a Fade Length below it for this situation alone, in place of [Fade Length](#playback) in the Playback group. |
 | Fade Length | 2 seconds | Shown while Own Fade Length is on. How long the music crossfades as the situation takes over, and how long its songs fade out at their end, from 0 to 10 seconds. The playback keys keep their Key Fade Length, and a switch to the game's music or to silence still takes half a second. |
+| Shuffle | Default | Default follows [Shuffle](#playback) in the Playback group. On and Off decide for this situation alone. |
+| Repeat Song | Default | Default follows [Repeat Song](#playback) in the Playback group. On and Off decide for this situation alone. A song keeps looping or stops looping by the setting of the situation it plays for. |
+| Reverb | Default | Default follows [Use Reverb](#effects) in the Effects group. On and Off decide for this situation alone, such as reverb in the hub only. A song that plays on into another situation, such as from Boss Near into Boss, follows that situation's choice. |
+| EQ | Default | Default follows [Use EQ](#effects) in the Effects group. On and Off decide for this situation alone. A song that plays on into another situation follows that situation's choice. |
 | Restore Removed Songs | (button) | Puts the songs that Remove from Rotation took out of this situation's folder and its override folders back into their rotation, and a message says how many came back, such as `Restored 3 songs in Boss`. |
 
 ## Meat Grinder

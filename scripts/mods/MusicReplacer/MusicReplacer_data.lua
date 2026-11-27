@@ -38,7 +38,7 @@ end
 -- One Situation dropdown, whose choice shows only that situation's settings, so the menu does not grow by a row per situation.
 -- Every situation's settings exist all along, hidden while another is chosen, so their saved values stay as they are.
 -- Meat Grinder's situations to choose from come from the same list.
--- A situation's own choice of a Playback setting: Default follows the Playback group, and On and Off decide for it alone.
+-- A situation's own choice of a Playback or Effects setting: Default follows that group's setting, and On and Off decide for it alone.
 local function own_choice_widget(setting_id, title)
 	return {
 		setting_id = setting_id,
@@ -68,9 +68,6 @@ local function situation_settings(context)
 			decimals_number = 0,
 			unit_text = "percent_unit",
 		},
-		own_choice_widget("shuffle_" .. context.id, "situation_shuffle"),
-		own_choice_widget("repeat_" .. context.id, "situation_repeat"),
-		own_choice_widget("effects_" .. context.id, "situation_effects"),
 		{
 			setting_id = "own_fade_" .. context.id,
 			title = "situation_own_fade",
@@ -91,6 +88,10 @@ local function situation_settings(context)
 				},
 			},
 		},
+		own_choice_widget("shuffle_" .. context.id, "situation_shuffle"),
+		own_choice_widget("repeat_" .. context.id, "situation_repeat"),
+		own_choice_widget("reverb_" .. context.id, "situation_reverb"),
+		own_choice_widget("eq_" .. context.id, "situation_eq"),
 		{
 			setting_id = "restore_removed_" .. context.id,
 			title = "situation_restore_removed",
@@ -293,93 +294,83 @@ return {
 				},
 			},
 			{
-				-- How the effects sound is shared, while each situation's own Effects choice decides where they play.
+				-- How the effects sound is shared, while each situation's own Reverb and EQ choices decide where they play.
 				setting_id = "audio_effects",
 				type = "group",
 				sub_widgets = {
 					{
-						setting_id = "effects",
-						type = "checkbox",
-						tooltip = "effects_tooltip",
-						default_value = false,
-					},
-					{
 						setting_id = "use_reverb",
 						type = "checkbox",
 						tooltip = "use_reverb_tooltip",
-						default_value = true,
-						sub_widgets = {
-							{
-								setting_id = "reverb_room",
-								type = "dropdown",
-								tooltip = "reverb_room_tooltip",
-								default_value = Reverb.DEFAULT_ROOM,
-								options = reverb_room_options,
-							},
-							{
-								setting_id = "reverb_mix",
-								type = "numeric",
-								tooltip = "reverb_mix_tooltip",
-								default_value = 30,
-								range = { 0, 100 },
-								decimals_number = 0,
-								unit_text = "percent_unit",
-							},
-							{
-								setting_id = "reverb_strength",
-								type = "numeric",
-								tooltip = "reverb_strength_tooltip",
-								default_value = 0,
-								range = { -20, 20 },
-								decimals_number = 0,
-								unit_text = "decibels_unit",
-							},
-						},
+						default_value = false,
+					},
+					{
+						setting_id = "reverb_room",
+						type = "dropdown",
+						tooltip = "reverb_room_tooltip",
+						default_value = Reverb.DEFAULT_ROOM,
+						options = reverb_room_options,
+					},
+					{
+						setting_id = "reverb_mix",
+						type = "numeric",
+						tooltip = "reverb_mix_tooltip",
+						default_value = 30,
+						range = { 0, 100 },
+						decimals_number = 0,
+						unit_text = "percent_unit",
+					},
+					{
+						setting_id = "reverb_strength",
+						type = "numeric",
+						tooltip = "reverb_strength_tooltip",
+						default_value = 0,
+						range = { -20, 20 },
+						decimals_number = 0,
+						unit_text = "decibels_unit",
 					},
 					{
 						setting_id = "use_eq",
 						type = "checkbox",
 						tooltip = "use_eq_tooltip",
 						default_value = false,
-						-- The EQ's bands, as equalizer.lua lists them, from the lowest frequencies to the highest.
-						sub_widgets = {
-							{
-								setting_id = "eq_bass",
-								type = "numeric",
-								tooltip = "eq_bass_tooltip",
-								default_value = 0,
-								range = { -18, 18 },
-								decimals_number = 0,
-								unit_text = "decibels_unit",
-							},
-							{
-								setting_id = "eq_low_mids",
-								type = "numeric",
-								tooltip = "eq_low_mids_tooltip",
-								default_value = 0,
-								range = { -18, 18 },
-								decimals_number = 0,
-								unit_text = "decibels_unit",
-							},
-							{
-								setting_id = "eq_high_mids",
-								type = "numeric",
-								tooltip = "eq_high_mids_tooltip",
-								default_value = 0,
-								range = { -18, 18 },
-								decimals_number = 0,
-								unit_text = "decibels_unit",
-							},
-							{
-								setting_id = "eq_treble",
-								type = "numeric",
-								tooltip = "eq_treble_tooltip",
-								default_value = 0,
-								range = { -18, 18 },
-								decimals_number = 0,
-								unit_text = "decibels_unit",
-							},
-						},
+					},
+					-- The EQ's bands, as equalizer.lua lists them, from the lowest frequencies to the highest.
+					{
+						setting_id = "eq_bass",
+						type = "numeric",
+						tooltip = "eq_bass_tooltip",
+						default_value = 0,
+						range = { -18, 18 },
+						decimals_number = 0,
+						unit_text = "decibels_unit",
+					},
+					{
+						setting_id = "eq_low_mids",
+						type = "numeric",
+						tooltip = "eq_low_mids_tooltip",
+						default_value = 0,
+						range = { -18, 18 },
+						decimals_number = 0,
+						unit_text = "decibels_unit",
+					},
+					{
+						setting_id = "eq_high_mids",
+						type = "numeric",
+						tooltip = "eq_high_mids_tooltip",
+						default_value = 0,
+						range = { -18, 18 },
+						decimals_number = 0,
+						unit_text = "decibels_unit",
+					},
+					{
+						setting_id = "eq_treble",
+						type = "numeric",
+						tooltip = "eq_treble_tooltip",
+						default_value = 0,
+						range = { -18, 18 },
+						decimals_number = 0,
+						unit_text = "decibels_unit",
 					},
 				},
 			},

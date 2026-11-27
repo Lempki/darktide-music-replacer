@@ -68,12 +68,12 @@ function Player.engine_failure()
 	return XAudio.failure()
 end
 
--- Sets the reverb that songs with effects play through, as Reverb.native() gives its parameters, or turns it off with nil.
+-- Sets the reverb that songs with effects play through, as Reverb.native() gives its parameters.
 function Player.set_reverb(parameters)
 	return XAudio.set_reverb(parameters)
 end
 
--- Sets the EQ that songs with effects play through, as Equalizer.native() gives its parameters, or turns it off with nil.
+-- Sets the EQ that songs with effects play through, as Equalizer.native() gives its parameters.
 function Player.set_eq(parameters)
 	return XAudio.set_eq(parameters)
 end
@@ -254,7 +254,7 @@ local function open_stream(path, opts)
 	end
 
 	local voice, refused_voice
-	voice, err, refused_voice = XAudio.create_voice(format, { effects = opts.effects == true })
+	voice, err, refused_voice = XAudio.create_voice(format, { effects = opts.effects })
 	if not voice then
 		NativeFfi.free(pool)
 		decoder:close()
@@ -294,7 +294,7 @@ local function open_stream(path, opts)
 		paused = false,
 		gain = opts.gain or 1,
 		fade = opts.fade or 1,
-		effects = opts.effects == true,
+		effects = opts.effects,
 		ramp = nil,
 		underruns = 0,
 		last_samples_played = 0,
@@ -312,7 +312,8 @@ end
 -- Opens `path` and starts it playing.
 -- Returns the stream, or nil, why, and whether XAudio2 refused the voice, which a dead engine also does.
 -- opts.start_position starts partway in, in seconds. opts.loop repeats the file with no gap added between its end and its start.
--- opts.gain and opts.fade set the starting levels, 1 by default. opts.effects plays it through the effects, such as the reverb.
+-- opts.gain and opts.fade set the starting levels, 1 by default.
+-- opts.effects names the effects setup it plays through, such as "eq+reverb", or is nil for none.
 function Player.open(path, opts)
 	local started = clock()
 	local stream, err, refused_voice = open_stream(path, opts or {})
@@ -320,17 +321,17 @@ function Player.open(path, opts)
 	return stream, err, refused_voice
 end
 
--- Plays the stream through the effects, or without them, from now on.
-function Stream:set_effects(on)
-	if self.effects == on then
+-- Plays the stream through the effects setup named `setup`, or without effects with nil, from now on.
+function Stream:set_effects(setup)
+	if self.effects == setup then
 		return
 	end
-	self.effects = on
-	voice_ok(self, self.voice:set_effects(on))
+	self.effects = setup
+	voice_ok(self, self.voice:set_effects(setup))
 end
 
--- True when the stream plays through the effects.
-function Stream:has_effects()
+-- The name of the effects setup the stream plays through, or nil.
+function Stream:effects_setup()
 	return self.effects
 end
 

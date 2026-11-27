@@ -64,10 +64,10 @@ local function new_voice()
 		return true
 	end
 	function voice.failure(self) return self.error end
-	-- `outputs` keeps every Effects choice the voice was switched to.
+	-- `outputs` keeps every effects setup the voice was switched to, with false for none.
 	voice.outputs = {}
-	function voice.set_effects(self, on)
-		self.outputs[#self.outputs + 1] = on
+	function voice.set_effects(self, setup)
+		self.outputs[#self.outputs + 1] = setup or false
 		return true
 	end
 	function voice.destroy(self) self.destroyed = true end
@@ -495,27 +495,27 @@ describe("player.lua", function()
 		assert_equal(#voice.submitted > submitted, true)
 	end)
 
-	it("asks for a voice that plays through the effects only when the song should", function()
+	it("asks for a voice that plays through the song's effects setup, or through none", function()
 		local Player, _, voice = load_player(60)
 
 		Player.open("a.mp3")
-		assert_deep_equal(voice.created_with, { effects = false })
+		assert_deep_equal(voice.created_with, {})
 
-		Player.open("b.mp3", { effects = true })
-		assert_deep_equal(voice.created_with, { effects = true })
+		Player.open("b.mp3", { effects = "eq+reverb" })
+		assert_deep_equal(voice.created_with, { effects = "eq+reverb" })
 	end)
 
-	it("moves a stream to or from the effects only when its choice changes", function()
+	it("moves a stream to another effects setup only when its setup changes", function()
 		local Player, _, voice = load_player(60)
-		local stream = Player.open("a.mp3", { effects = true })
+		local stream = Player.open("a.mp3", { effects = "reverb" })
 
-		stream:set_effects(true)
-		stream:set_effects(false)
-		stream:set_effects(false)
-		stream:set_effects(true)
+		stream:set_effects("reverb")
+		stream:set_effects("eq")
+		stream:set_effects("eq")
+		stream:set_effects(nil)
 
-		assert_deep_equal(voice.outputs, { false, true })
-		assert_equal(stream:has_effects(), true)
+		assert_deep_equal(voice.outputs, { "eq", false })
+		assert_equal(stream:effects_setup(), nil)
 	end)
 
 	it("reports a fade's level, the level it moves to, and its seconds left, and no target once it is still", function()
