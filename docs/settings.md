@@ -48,14 +48,22 @@ Keys that control the song playing now, and the setting that goes with them. Eve
 
 ## Effects
 
-Effects that your songs play through, such as a reverb that makes them sound as if they played in a large hall. This group sets how the effects sound, and each situation's own [Effects](#music-per-situation) decides where they play. The game's own music always plays without them.
+Effects that your songs play through: a reverb that makes them sound as if they played in a place such as a large hall, and an EQ that raises or lowers their bass, middle, and treble. This group sets how the effects sound, and each situation's own [Effects](#music-per-situation) decides where they play. The game's own music always plays without them.
 
 | Setting | Default | What it does |
 |---|---|---|
-| Use Effects | Off | Plays every situation's songs through the effects below. A situation whose own Effects is On or Off decides for itself. A change applies at once to the song playing now. |
+| Use Effects | Off | Plays every situation's songs through the effects turned on below. A situation whose own Effects is On or Off decides for itself. A change applies at once to the song playing now. |
+| Use Reverb | On | Plays the songs that have effects through the reverb. Its settings below show while it is on. A change applies at once. |
 | Reverb Room | Large Hall | The place the reverb makes your songs sound as if they played in: 29 places, from a padded cell and small rooms through halls, an arena, and a hangar, to a cave, a sewer pipe, underwater, and outdoor places such as a forest or mountains. Plate Reverb is the bright reverb of a vibrating metal plate, as studios use. |
 | Reverb Mix | 30% | How much of the reverb you hear in place of the plain song, from 0% to 100%. 0% plays your songs without reverb, and 100% plays only the reverb. A change applies at once. |
 | Reverb Strength | 0 dB | Makes the reverb louder or quieter than the room itself has it, from -20 to +20 dB, while the plain song stays as loud as Reverb Mix sets. 0 dB plays the room as it is. Large rooms, such as Large Hall, have a soft reverb of their own, and small ones, such as Bathroom, a loud one. A change applies at once. |
+| Use EQ | Off | Plays the songs that have effects through the EQ. Its four bands below show while it is on. A change applies at once. |
+| EQ Bass | 0 dB | Raises or lowers the bass of your songs, around 100 Hz, from -18 to +18 dB. 0 dB leaves it as it is. A change applies at once. |
+| EQ Low Mids | 0 dB | Raises or lowers the low middle of your songs, around 800 Hz, from -18 to +18 dB. 0 dB leaves it as it is. A change applies at once. |
+| EQ High Mids | 0 dB | Raises or lowers the high middle of your songs, around 2,000 Hz, from -18 to +18 dB. 0 dB leaves it as it is. A change applies at once. |
+| EQ Treble | 0 dB | Raises or lowers the treble of your songs, around 10,000 Hz, from -18 to +18 dB. 0 dB leaves it as it is. A change applies at once. |
+
+The EQ shapes a song before the reverb, so the reverb echoes the song as the EQ shapes it.
 
 When the music crossfades between a situation with effects and one without, each song keeps its own effects as it fades, so the reverb fades out with the song that had it.
 

@@ -542,9 +542,14 @@ function AudioClient.set_effects(on)
 	end
 end
 
--- Sets the reverb that songs with effects play through, as Reverb.native() gives its parameters.
+-- Sets the reverb that songs with effects play through, as Reverb.native() gives its parameters, or turns it off with nil.
 function AudioClient.set_reverb(parameters)
 	Player.set_reverb(parameters)
+end
+
+-- Sets the EQ that songs with effects play through, as Equalizer.native() gives its parameters, or turns it off with nil.
+function AudioClient.set_eq(parameters)
+	Player.set_eq(parameters)
 end
 
 -- Makes the current song loop, or play to its end and fade out over its last stretch, with `duration_seconds` as the library's length.

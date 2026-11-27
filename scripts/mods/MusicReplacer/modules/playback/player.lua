@@ -68,9 +68,14 @@ function Player.engine_failure()
 	return XAudio.failure()
 end
 
--- Sets the reverb that songs with effects play through, as Reverb.native() gives its parameters.
+-- Sets the reverb that songs with effects play through, as Reverb.native() gives its parameters, or turns it off with nil.
 function Player.set_reverb(parameters)
 	return XAudio.set_reverb(parameters)
+end
+
+-- Sets the EQ that songs with effects play through, as Equalizer.native() gives its parameters, or turns it off with nil.
+function Player.set_eq(parameters)
+	return XAudio.set_eq(parameters)
 end
 
 -- Why songs with effects play without them, or nil.

@@ -746,9 +746,21 @@ local strings = {
 		en = "Use Effects",
 	},
 	effects_tooltip = {
-		en = "Plays your songs through the effects below, such as the reverb.\n\n" ..
+		en = "Plays your songs through the effects turned on below, the reverb and the EQ.\n\n" ..
 			"Each situation's own " .. highlight("Effects") .. " under Music per Situation turns them on or off for that situation alone. " ..
 			"The game's own music always plays without them.",
+	},
+	use_reverb = {
+		en = "Use Reverb",
+	},
+	use_reverb_tooltip = {
+		en = "Plays the songs that have effects through the reverb, which makes them sound as if they played in a place such as a large hall.",
+	},
+	use_eq = {
+		en = "Use EQ",
+	},
+	use_eq_tooltip = {
+		en = "Plays the songs that have effects through the EQ, which raises or lowers their bass, middle, and treble.",
 	},
 	reverb_room = {
 		en = "Reverb Room",
@@ -770,7 +782,32 @@ local strings = {
 		en = "Makes the reverb louder or quieter than the room itself has it, in decibels, while the plain song stays as loud as Reverb Mix sets.\n\n" ..
 			highlight("0") .. " plays the room as it is. Large rooms, such as Large Hall, have a soft reverb of their own.",
 	},
-	-- The unit of Reverb Strength.
+	-- The EQ's four bands, each named by the part of the music it raises or lowers.
+	eq_bass = {
+		en = "EQ Bass",
+	},
+	eq_bass_tooltip = {
+		en = "Raises or lowers the bass of your songs, around 100 Hz, in decibels.\n\n" .. highlight("0") .. " leaves it as it is.",
+	},
+	eq_low_mids = {
+		en = "EQ Low Mids",
+	},
+	eq_low_mids_tooltip = {
+		en = "Raises or lowers the low middle of your songs, around 800 Hz, in decibels.\n\n" .. highlight("0") .. " leaves it as it is.",
+	},
+	eq_high_mids = {
+		en = "EQ High Mids",
+	},
+	eq_high_mids_tooltip = {
+		en = "Raises or lowers the high middle of your songs, around 2,000 Hz, in decibels.\n\n" .. highlight("0") .. " leaves it as it is.",
+	},
+	eq_treble = {
+		en = "EQ Treble",
+	},
+	eq_treble_tooltip = {
+		en = "Raises or lowers the treble of your songs, around 10,000 Hz, in decibels.\n\n" .. highlight("0") .. " leaves it as it is.",
+	},
+	-- The unit of Reverb Strength and the EQ's bands.
 	decibels_unit = {
 		en = "dB",
 	},

@@ -22,6 +22,7 @@ local XAudio = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/w
 local Player = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/playback/player")
 local AudioClient = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/playback/audio_client")
 local Reverb = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/playback/reverb")
+local Equalizer = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/playback/equalizer")
 local LoudnessMeter = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/songs/loudness_meter")
 local Loudness = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/songs/loudness")
 local DiagnosticLog = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/diagnostics/diagnostic_log")
@@ -116,9 +117,35 @@ local function source_of(context_name)
 	return source
 end
 
--- Gives the effects the reverb that Reverb Room, Reverb Mix, and Reverb Strength describe.
+-- The settings that decide the reverb, so a change to any of them sets the reverb again.
+local REVERB_SETTINGS = { use_reverb = true, reverb_room = true, reverb_mix = true, reverb_strength = true }
+
+-- Gives the effects the reverb that Reverb Room, Reverb Mix, and Reverb Strength describe, or none while Use Reverb is off.
 local function apply_reverb()
+	if not mod:get("use_reverb") then
+		AudioClient.set_reverb(nil)
+		return
+	end
 	AudioClient.set_reverb(Reverb.native(mod:get("reverb_room"), mod:get("reverb_mix"), mod:get("reverb_strength")))
+end
+
+-- The settings that decide the EQ, so a change to any of them sets the EQ again.
+local EQ_SETTINGS = { use_eq = true }
+for _, band in ipairs(Equalizer.BANDS) do
+	EQ_SETTINGS[band.id] = true
+end
+
+-- Gives the effects the EQ that the band settings describe, or none while Use EQ is off.
+local function apply_eq()
+	if not mod:get("use_eq") then
+		AudioClient.set_eq(nil)
+		return
+	end
+	local gains = {}
+	for _, band in ipairs(Equalizer.BANDS) do
+		gains[band.id] = mod:get(band.id)
+	end
+	AudioClient.set_eq(Equalizer.native(gains))
 end
 
 -- The volume settings are percentages of the music's normal level.
@@ -1317,6 +1344,7 @@ mod.on_all_mods_loaded = function()
 	AudioClient.set_volume(custom_volume())
 	AudioClient.set_fade_seconds(mod:get("fade_seconds"))
 	apply_reverb()
+	apply_eq()
 	DebugOverlay.init(log, { snapshot = overlay_snapshot, meter = AudioClient.meter, create_element = create_overlay_element })
 	apply_overlay_settings()
 	OnScreenMessage.init(log, { create_element = create_on_screen_message_element })
@@ -1433,8 +1461,10 @@ mod.on_setting_changed = function(setting_id)
 		if enabled and current_context then
 			AudioClient.set_effects(is_on_for("effects", current_context))
 		end
-	elseif setting_id == "reverb_room" or setting_id == "reverb_mix" or setting_id == "reverb_strength" then
+	elseif REVERB_SETTINGS[setting_id] then
 		apply_reverb()
+	elseif EQ_SETTINGS[setting_id] then
+		apply_eq()
 	elseif setting_id == "let_songs_finish" and not mod:get("let_songs_finish") and context_after_song then
 		-- Nothing waits for a song with the setting off, so the situation that waited takes over at once.
 		log(string.format("[playback] %s: let songs finish turned off, so %s takes over now", current_context, context_after_song))

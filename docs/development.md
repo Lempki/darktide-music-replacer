@@ -148,7 +148,8 @@ darktide-music-replacer/
 │       ├── playback/
 │       │   ├── audio_client.lua         # Plays the music: crossfades, end fades, volumes, parked songs, and recovery.
 │       │   ├── player.lua               # Streams one song through media_decoder.lua and xaudio.lua from a fixed buffer pool.
-│       │   └── reverb.lua               # The Reverb Room presets, and their conversion to XAudio2's reverb parameters.
+│       │   ├── reverb.lua               # The Reverb Room presets, and their conversion to XAudio2's reverb parameters.
+│       │   └── equalizer.lua            # The EQ's bands, and their gains as the parameters XAPOFX's EQ takes.
 │       ├── windows/
 │       │   ├── native_ffi.lua           # Shared ffi plumbing for Windows APIs: GUIDs, COM calls and setup, UTF-16 strings, heap memory, files.
 │       │   ├── audio_folders.lua        # Lists, checks, and creates the audio folders through Windows, and measures durations.
@@ -158,6 +159,7 @@ darktide-music-replacer/
 │       │   ├── constant_element_slot.lua # Adds one of the mod's elements to the game's always-visible UI, and removes it.
 │       │   ├── on_screen_message.lua    # Times the on-screen message, such as a playback key's, and keeps its element on screen.
 │       │   ├── on_screen_message_element.lua # The on-screen message's element.
+│       │   ├── messages.lua             # Builds each on-screen message from its localized text, and finds the song name it holds.
 │       │   ├── fonts.lua                # Gives the mod's texts fonts for every alphabet, loading the game's own as names need them.
 │       │   ├── debug_overlay.lua        # Builds the debug overlay's text and keeps its element on screen.
 │       │   └── debug_overlay_element.lua # The debug overlay's on-screen element.

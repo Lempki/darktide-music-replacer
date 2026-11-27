@@ -77,17 +77,41 @@ typedef struct {
 	float RoomSize;
 	int32_t DisableLateField;
 } MusicReplacer_XAUDIO2FX_REVERB_PARAMETERS;
+
+typedef struct {
+	float FrequencyCenter0;
+	float Gain0;
+	float Bandwidth0;
+	float FrequencyCenter1;
+	float Gain1;
+	float Bandwidth1;
+	float FrequencyCenter2;
+	float Gain2;
+	float Bandwidth2;
+	float FrequencyCenter3;
+	float Gain3;
+	float Bandwidth3;
+} MusicReplacer_FXEQ_PARAMETERS;
 #pragma pack(pop)
 
 int32_t MusicReplacer_XAudio2Create(void **engine, uint32_t flags, uint32_t processor) __asm__("XAudio2Create");
 int32_t MusicReplacer_CreateAudioReverb(void **effect) __asm__("CreateAudioReverb");
+int32_t MusicReplacer_CreateFX(const MusicReplacer_GUID *clsid, void **effect, const void *init_data, uint32_t init_size) __asm__("CreateFX");
 ]]
 
--- The effects voice's format. XAudio2's reverb takes 20,000 to 48,000 Hz, and stereo in and out.
+-- The effects voice's format. XAudio2's reverb takes 20,000 to 48,000 Hz, XAPOFX's EQ 22,000 to 48,000 Hz, and both stereo.
 -- Every song with effects on plays through this one voice, which converts its rate and channels.
 local EFFECTS_CHANNELS = 2
 local EFFECTS_SAMPLE_RATE = 48000
-local REVERB_EFFECT = 0 -- The reverb's place in the effects voice's chain.
+
+-- The effects' places in the effects voice's chain.
+-- The EQ comes first, so the reverb echoes the song as the EQ shapes it.
+local EQ_EFFECT = 0
+local REVERB_EFFECT = 1
+local EFFECT_COUNT = 2
+
+-- CLSID_FXEQ in xapofx.h, the class CreateFX makes XAPOFX's EQ from.
+local CLSID_FXEQ = { 0xF5E01117, 0xD6C4, 0x485A, { 0xA3, 0xF5, 0x69, 0x51, 0x96, 0xF3, 0xDB, 0xFA } }
 
 -- XAudio2's default processor, processor 1. Microsoft advises it over choosing processors, which can get in the scheduler's way.
 -- Setting more than one processor bit would also start a worker thread for each.
@@ -127,7 +151,10 @@ local CREATE_SUBMIX_VOICE = { 6, "int32_t (*)(void *, void **, uint32_t, uint32_
 	"const MusicReplacer_XAUDIO2_EFFECT_CHAIN *)" }
 local CREATE_MASTERING_VOICE = { 7, "int32_t (*)(void *, void **, uint32_t, uint32_t, uint32_t, const uint16_t *, void *, int32_t)" }
 local DESTROY_VOICE = { 18, "void (*)(void *)" } -- IXAudio2Voice's slot, also used on the mastering voice.
-local SET_EFFECT_PARAMETERS = { 6, "int32_t (*)(void *, uint32_t, const void *, uint32_t, uint32_t)" } -- IXAudio2Voice's slot.
+-- IXAudio2Voice's slots for one effect in a voice's chain.
+local ENABLE_EFFECT = { 3, "int32_t (*)(void *, uint32_t, uint32_t)" }
+local DISABLE_EFFECT = { 4, "int32_t (*)(void *, uint32_t, uint32_t)" }
+local SET_EFFECT_PARAMETERS = { 6, "int32_t (*)(void *, uint32_t, const void *, uint32_t, uint32_t)" }
 
 -- Slots 0 to 18 are IXAudio2Voice's, and 19 onward are IXAudio2SourceVoice's.
 local VOICE_METHODS = {
@@ -155,8 +182,10 @@ local effects_voice = nil
 -- The descriptor is kept here, since the garbage collector would free it while the send list still points to it.
 local effects_route = nil
 local effects_error = nil -- Why the effects voice could not be made, or nil. Songs then play without effects.
--- The reverb's parameters as Reverb.native() gives them, kept so a rebuilt engine's effects voice gets them again.
+-- The effects' parameters, as Reverb.native() and Equalizer.native() give them, kept so a rebuilt engine's effects voice gets them again.
+-- Nil turns that effect off, so the songs pass through it unchanged.
 local reverb_parameters = nil
+local eq_parameters = nil
 
 local function call(object, method, ...)
 	return NativeFfi.call(object, method[1], method[2], ...)
@@ -248,25 +277,43 @@ function XAudio.format_error(format)
 	return nil
 end
 
--- Copies the kept reverb parameters into the effects voice's reverb. Returns false when XAudio2 refuses them.
-local function apply_reverb()
-	if effects_voice == nil or not reverb_parameters then
+-- Copies `parameters` into the effect at `index` in the effects voice's chain, as the C structure `type_name`, and turns it on.
+-- Nil `parameters` turn the effect off instead, which XAudio2 then skips.
+-- `what` names the effect in the failure. Returns false when XAudio2 refuses the change.
+local function apply_effect(index, type_name, parameters, what)
+	if effects_voice == nil then
 		return true
 	end
 
-	local native = ffi.new("MusicReplacer_XAUDIO2FX_REVERB_PARAMETERS")
-	for field, value in pairs(reverb_parameters) do
-		native[field] = value
+	local hresult
+	if parameters then
+		local native = ffi.new(type_name)
+		for field, value in pairs(parameters) do
+			native[field] = value
+		end
+		hresult = call(effects_voice, SET_EFFECT_PARAMETERS, index, native, ffi.sizeof(native), 0)
+		if NativeFfi.succeeded(hresult) then
+			hresult = call(effects_voice, ENABLE_EFFECT, index, 0)
+		end
+	else
+		hresult = call(effects_voice, DISABLE_EFFECT, index, 0)
 	end
 
-	local hresult = call(effects_voice, SET_EFFECT_PARAMETERS, REVERB_EFFECT, native, ffi.sizeof(native), 0)
 	if NativeFfi.succeeded(hresult) then
 		return true
 	end
 	if is_engine_error(hresult) then
-		failure = failure or ("setting the reverb failed with " .. NativeFfi.hex(hresult))
+		failure = failure or string.format("changing the %s failed with %s", what, NativeFfi.hex(hresult))
 	end
 	return false
+end
+
+local function apply_reverb()
+	return apply_effect(REVERB_EFFECT, "MusicReplacer_XAUDIO2FX_REVERB_PARAMETERS", reverb_parameters, "reverb")
+end
+
+local function apply_eq()
+	return apply_effect(EQ_EFFECT, "MusicReplacer_FXEQ_PARAMETERS", eq_parameters, "EQ")
 end
 
 -- Makes the effects voice the first time a song asks for effects. Returns false, with XAudio.effects_error() saying why, when it cannot.
@@ -279,25 +326,36 @@ local function ensure_effects_voice()
 		return false
 	end
 
-	local effect_out = ffi.new("void *[1]")
-	local hresult = library.MusicReplacer_CreateAudioReverb(effect_out)
+	local effects_out = ffi.new("void *[?]", EFFECT_COUNT)
+	local clsid = NativeFfi.guid(CLSID_FXEQ[1], CLSID_FXEQ[2], CLSID_FXEQ[3], CLSID_FXEQ[4])
+	local hresult = library.MusicReplacer_CreateFX(clsid, effects_out + EQ_EFFECT, nil, 0)
 	if not NativeFfi.succeeded(hresult) then
+		effects_error = "creating the EQ failed with " .. NativeFfi.hex(hresult)
+		return false
+	end
+	hresult = library.MusicReplacer_CreateAudioReverb(effects_out + REVERB_EFFECT)
+	if not NativeFfi.succeeded(hresult) then
+		NativeFfi.release(effects_out[EQ_EFFECT])
 		effects_error = "creating the reverb failed with " .. NativeFfi.hex(hresult)
 		return false
 	end
 
-	local descriptor = ffi.new("MusicReplacer_XAUDIO2_EFFECT_DESCRIPTOR[1]")
-	descriptor[0].pEffect = effect_out[0]
-	descriptor[0].InitialState = 1
-	descriptor[0].OutputChannels = EFFECTS_CHANNELS
+	local descriptors = ffi.new("MusicReplacer_XAUDIO2_EFFECT_DESCRIPTOR[?]", EFFECT_COUNT)
+	for index = 0, EFFECT_COUNT - 1 do
+		descriptors[index].pEffect = effects_out[index]
+		descriptors[index].InitialState = 1
+		descriptors[index].OutputChannels = EFFECTS_CHANNELS
+	end
 	local chain = ffi.new("MusicReplacer_XAUDIO2_EFFECT_CHAIN")
-	chain.EffectCount = 1
-	chain.pEffectDescriptors = descriptor
+	chain.EffectCount = EFFECT_COUNT
+	chain.pEffectDescriptors = descriptors
 
 	local out = ffi.new("void *[1]")
 	hresult = call(engine, CREATE_SUBMIX_VOICE, out, EFFECTS_CHANNELS, EFFECTS_SAMPLE_RATE, 0, 0, nil, chain)
-	-- The voice holds its own reference to the effect, so this one is let go either way.
-	NativeFfi.release(effect_out[0])
+	-- The voice holds its own reference to each effect, so these are let go either way.
+	for index = 0, EFFECT_COUNT - 1 do
+		NativeFfi.release(effects_out[index])
+	end
 	if not NativeFfi.succeeded(hresult) then
 		effects_error = "creating the effects voice failed with " .. NativeFfi.hex(hresult)
 		if is_engine_error(hresult) then
@@ -316,21 +374,29 @@ local function ensure_effects_voice()
 	sends.pSends = descriptor_out
 	effects_route = { sends = sends, descriptor = descriptor_out }
 
+	apply_eq()
 	apply_reverb()
 	return true
 end
 
--- Why the effects could not be made, such as on a Windows whose XAudio2 has no reverb, or nil.
+-- Why the effects could not be made, such as on a Windows whose XAudio2 has no reverb or EQ, or nil.
 -- Songs still play then, only without effects.
 function XAudio.effects_error()
 	return effects_error
 end
 
--- Sets the reverb to `parameters`, the fields of XAUDIO2FX_REVERB_PARAMETERS as Reverb.native() gives them.
+-- Sets the reverb to `parameters`, the fields of XAUDIO2FX_REVERB_PARAMETERS as Reverb.native() gives them, or turns it off with nil.
 -- The effects voice gets them at once if it exists, and when it is made otherwise.
 function XAudio.set_reverb(parameters)
 	reverb_parameters = parameters
 	return apply_reverb()
+end
+
+-- Sets the EQ to `parameters`, the fields of FXEQ_PARAMETERS as Equalizer.native() gives them, or turns it off with nil.
+-- The effects voice gets them at once if it exists, and when it is made otherwise.
+function XAudio.set_eq(parameters)
+	eq_parameters = parameters
+	return apply_eq()
 end
 
 local Voice = {}
@@ -479,7 +545,7 @@ end
 -- Frees the output and the engine. Destroy every voice first, since XAudio2 cannot destroy the output while a voice exists.
 -- The effects voice goes first, since every song that sent to it is gone by then.
 -- Its failure to be made is forgotten too, so a rebuilt engine tries again.
--- The reverb's parameters are kept for the next effects voice.
+-- The effects' parameters are kept for the next effects voice.
 function XAudio.shutdown()
 	if effects_voice ~= nil then
 		call(effects_voice, DESTROY_VOICE)

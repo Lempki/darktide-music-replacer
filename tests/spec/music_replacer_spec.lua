@@ -2279,6 +2279,36 @@ describe("MusicReplacer.lua effects", function()
 
 		assert_equal(harness.client.reverb.ReverbGain, -4)
 	end)
+
+	it("turns the reverb off while Use Reverb is off, and back on with its settings", function()
+		local harness = in_hub()
+
+		harness:set_setting("use_reverb", false)
+		assert_equal(harness.client.reverb, nil)
+
+		harness:set_setting("use_reverb", true)
+		assert_equal(harness.client.reverb.WetDryMix, 30)
+	end)
+
+	it("keeps the EQ off by default, and gives it a flat EQ once Use EQ is on", function()
+		local harness = in_hub()
+		assert_equal(harness.client.eq, nil)
+
+		harness:set_setting("use_eq", true)
+
+		for band = 0, 3 do
+			assert_equal(harness.client.eq["Gain" .. band], 1)
+		end
+	end)
+
+	it("gives the EQ a band's new gain as soon as the band changes", function()
+		local harness = in_hub(nil, { settings = { use_eq = true } })
+
+		harness:set_setting("eq_treble", 6)
+
+		assert_equal(math.abs(harness.client.eq.Gain3 - 10 ^ (6 / 20)) < 1e-9, true)
+		assert_equal(harness.client.eq.Gain0, 1)
+	end)
 end)
 
 describe("MusicReplacer.lua Repeat Song", function()
