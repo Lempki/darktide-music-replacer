@@ -784,6 +784,28 @@ local strings = {
 		en = "Makes the reverb louder or quieter than the room itself has it, in decibels, while the plain song stays as loud as Reverb Mix sets.\n\n" ..
 			highlight("0") .. " plays the room as it is. Large rooms, such as Large Hall, have a soft reverb of their own.",
 	},
+	reverb_decay = {
+		en = "Reverb Decay",
+	},
+	reverb_decay_tooltip = {
+		en = "How long the reverb takes to fade out, as a share of the room's own.\n\n" ..
+			highlight("100%%") .. " plays the room as it is. " .. highlight("200%%") .. " makes its reverb last twice as long.",
+	},
+	reverb_pre_delay = {
+		en = "Reverb Pre-Delay",
+	},
+	reverb_pre_delay_tooltip = {
+		en = "How much longer the first echo of the reverb waits after the song, in milliseconds, on top of the room's own wait.\n\n" ..
+			highlight("0") .. " plays the room as it is. A longer wait keeps the song clearer in front of its reverb.",
+	},
+	reverb_damping = {
+		en = "Reverb Damping",
+	},
+	reverb_damping_tooltip = {
+		en = "Makes the high notes in the reverb fade faster than the room has them, in decibels, so the reverb sounds softer and darker. " ..
+			"A negative value makes them fade more slowly, as far as the rest of the reverb.\n\n" ..
+			highlight("0") .. " plays the room as it is.",
+	},
 	-- The EQ's four bands, each named by the part of the music it raises or lowers.
 	eq_bass = {
 		en = "EQ Bass",
@@ -809,7 +831,7 @@ local strings = {
 	eq_treble_tooltip = {
 		en = "Raises or lowers the treble of your songs, around 10,000 Hz, in decibels.\n\n" .. highlight("0") .. " leaves it as it is.",
 	},
-	-- The unit of Reverb Strength and the EQ's bands.
+	-- The unit of Reverb Strength, Reverb Damping, and the EQ's bands.
 	decibels_unit = {
 		en = "dB",
 	},
@@ -896,6 +918,10 @@ local strings = {
 	},
 	seconds_unit = {
 		en = "s",
+	},
+	-- The unit of Reverb Pre-Delay.
+	milliseconds_unit = {
+		en = "ms",
 	},
 	combat_hold_seconds = {
 		en = "Combat Music Hold",

@@ -31,7 +31,7 @@ Everything below is optional detail.
 | …keep the game's music in one situation. | Leave its folder empty, or set it to Vanilla under Music per Situation in the mod options. |
 | …hear the game's music now and then among my songs. | Put an empty file named `vanilla` into the folder, a [Vanilla marker](#the-vanilla-marker). |
 | …keep the game's music for one mission or one boss, and my songs everywhere else. | Make the override folder for that mission or boss, such as `event\spillway\`, and put only an empty file named `vanilla` into it. |
-| …hear my music with reverb, as if it played in a large hall. | Pick the situation under Music per Situation and set its Reverb to On, or turn on Use Reverb in the Effects group for every situation. Reverb Room, Reverb Mix, and Reverb Strength in the Effects group set how it sounds. |
+| …hear my music with reverb, as if it played in a large hall. | Pick the situation under Music per Situation and set its Reverb to On, or turn on Use Reverb in the Effects group for every situation. Reverb Room and the reverb settings below it in the Effects group set how it sounds. |
 | …have no music at all in one situation. | Set it to Silence under Music per Situation. |
 | …hear boss music only once the fight starts. | Set Boss Near to Skip under Music per Situation. Your `boss` songs then start with the boss's HP bar. |
 | …hear boss music sooner or later as a boss comes near. | Change Boss Distance in the Boss Music group, 80 m by default. |

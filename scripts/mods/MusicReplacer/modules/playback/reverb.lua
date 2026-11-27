@@ -1,6 +1,7 @@
 -- The rooms the Reverb Room setting offers, and the parameters XAudio2's reverb takes for each.
 -- The rooms are the I3DL2 presets in Microsoft's xaudio2fx.h, all but its silent default.
 -- Reverb.native() ports that header's ReverbConvertI3DL2ToNative, which turns a preset into the reverb's own parameters.
+-- It leaves out the presets' room level, and adds the settings that adjust a room: strength, decay, and pre-delay.
 
 local Reverb = {}
 
@@ -83,15 +84,36 @@ local function truncate(number)
 	return number < 0 and math.ceil(number) or math.floor(number)
 end
 
+-- The shortest decay the reverb takes, in seconds.
+local MIN_DECAY_TIME = 0.1
+
+-- The steps HighEQGain takes, each 1 dB, from 0, where the highs fade fastest, to 8, where they fade as fast as the rest at 1 kHz.
+local MIN_HIGH_EQ_GAIN = 0
+local MAX_HIGH_EQ_GAIN = 8
+
+-- Every preset sets its Room, the level of its whole reverb, to -10 dB.
+-- That is the level I3DL2 gives a game's reverb under each sound's direct path.
+-- Reverb Mix already sets how much reverb is heard against the plain song, so the room's level stays at 0 dB, the most the reverb takes.
+-- So unlike xaudio2fx.h's conversion, no room turns its reverb down by that 10 dB as well.
+local ROOM_FILTER_MAIN = 0
+
 local function clamp_gain(decibels)
 	return math.max(MIN_GAIN, math.min(MAX_GAIN, decibels))
 end
 
--- The parameters for XAudio2's reverb in room `room_id`, with `mix` percent of the reverb heard in place of the dry music.
--- `strength` raises or lowers the room's reflections and tail by that many decibels, within the range the reverb takes.
+-- The parameters for XAudio2's reverb in room `room_id`, as `adjustments` changes the room.
+-- * `mix` is the percent of the reverb heard in place of the plain song.
+-- * `strength` raises or lowers the room's reflections and tail by that many decibels, within the range the reverb takes, 0 by default.
+-- * `decay` is the tail's length as a percent of the room's own, 100 by default.
+-- * `pre_delay` adds that many milliseconds before the first reflection, on top of the room's own delay, 0 by default.
+-- * `damping` makes the tail's highs fade that many steps faster than the room has them, or slower with a negative one, 0 by default.
 -- An unknown room plays as Reverb.DEFAULT_ROOM, so a stored value the dropdown no longer offers still plays a room.
 -- The fields are XAUDIO2FX_REVERB_PARAMETERS', for xaudio.lua to copy.
-function Reverb.native(room_id, mix, strength)
+function Reverb.native(room_id, adjustments)
+	local strength = adjustments.strength or 0
+	local decay = (adjustments.decay or 100) / 100
+	local pre_delay = adjustments.pre_delay or 0
+	local damping = adjustments.damping or 0
 	local i3dl2 = rooms_by_id[room_id] or rooms_by_id[Reverb.DEFAULT_ROOM]
 	local native = {
 		RearDelay = REAR_DELAY,
@@ -103,7 +125,7 @@ function Reverb.native(room_id, mix, strength)
 		RoomSize = ROOM_SIZE,
 		LowEQCutoff = LOW_EQ_CUTOFF,
 		HighEQCutoff = HIGH_EQ_CUTOFF,
-		RoomFilterMain = i3dl2.room / 100,
+		RoomFilterMain = ROOM_FILTER_MAIN,
 		RoomFilterHF = i3dl2.room_hf / 100,
 	}
 
@@ -118,8 +140,10 @@ function Reverb.native(room_id, mix, strength)
 		native.HighEQGain = index < 0 and index + 8 or 8
 		native.DecayTime = i3dl2.decay_time
 	end
+	native.DecayTime = math.max(MIN_DECAY_TIME, native.DecayTime * decay)
+	native.HighEQGain = math.max(MIN_HIGH_EQ_GAIN, math.min(MAX_HIGH_EQ_GAIN, native.HighEQGain - damping))
 
-	local reflections_delay = i3dl2.reflections_delay * 1000
+	local reflections_delay = i3dl2.reflections_delay * 1000 + pre_delay
 	if reflections_delay >= MAX_REFLECTIONS_DELAY then
 		reflections_delay = MAX_REFLECTIONS_DELAY - 1
 	elseif reflections_delay <= 1 then
@@ -139,7 +163,7 @@ function Reverb.native(room_id, mix, strength)
 	native.LateDiffusion = native.EarlyDiffusion
 	native.Density = i3dl2.density
 	native.RoomFilterFreq = i3dl2.hf_reference
-	native.WetDryMix = math.max(0, math.min(100, mix))
+	native.WetDryMix = math.max(0, math.min(100, adjustments.mix))
 	native.DisableLateField = 0
 
 	return native

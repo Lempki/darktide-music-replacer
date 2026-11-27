@@ -118,11 +118,20 @@ local function source_of(context_name)
 end
 
 -- The settings that decide how the reverb sounds, so a change to any of them sets the reverb again.
-local REVERB_SETTINGS = { reverb_room = true, reverb_mix = true, reverb_strength = true }
+local REVERB_SETTINGS = {
+	reverb_room = true, reverb_mix = true, reverb_strength = true, reverb_decay = true, reverb_pre_delay = true,
+	reverb_damping = true,
+}
 
--- Gives the effects the reverb that Reverb Room, Reverb Mix, and Reverb Strength describe.
+-- Gives the effects the reverb that Reverb Room and the reverb settings below it describe.
 local function apply_reverb()
-	AudioClient.set_reverb(Reverb.native(mod:get("reverb_room"), mod:get("reverb_mix"), mod:get("reverb_strength")))
+	AudioClient.set_reverb(Reverb.native(mod:get("reverb_room"), {
+		mix = mod:get("reverb_mix"),
+		strength = mod:get("reverb_strength"),
+		decay = mod:get("reverb_decay"),
+		pre_delay = mod:get("reverb_pre_delay"),
+		damping = mod:get("reverb_damping"),
+	}))
 end
 
 -- The EQ's band settings, so a change to any of them sets the EQ again.
