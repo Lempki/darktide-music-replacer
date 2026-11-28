@@ -2295,6 +2295,34 @@ describe("MusicReplacer.lua effects", function()
 		end
 	end)
 
+	it("names the effects setup by the effects on, in the order the chain plays them", function()
+		local harness = in_hub(nil, { settings = { use_echo = true } })
+		assert_equal(harness:last_play().opts.effects, "echo")
+
+		harness:set_setting("use_reverb", true)
+		assert_equal(harness:last_play().opts.effects, "echo+reverb")
+
+		harness:set_setting("eq_hub", "on")
+		assert_equal(harness:last_play().opts.effects, "eq+echo+reverb")
+
+		harness:set_setting("echo_hub", "off")
+		assert_equal(harness:last_play().opts.effects, "eq+reverb")
+	end)
+
+	it("gives the effects the echo at startup and as soon as Echo Mix, Echo Feedback, or Echo Delay changes", function()
+		local harness = in_hub()
+		assert_deep_equal(harness.client.echo, { WetDryMix = 0.3, Feedback = 0.3, Delay = 500 })
+
+		harness:set_setting("echo_delay", 250)
+		assert_equal(harness.client.echo.Delay, 250)
+
+		harness:set_setting("echo_feedback", 60)
+		assert_equal(harness.client.echo.Feedback, 0.6)
+
+		harness:set_setting("echo_mix", 50)
+		assert_equal(harness.client.echo.WetDryMix, 0.5)
+	end)
+
 	it("gives the EQ a band's new gain as soon as the band changes", function()
 		local harness = in_hub()
 

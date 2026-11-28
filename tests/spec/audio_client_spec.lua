@@ -102,10 +102,11 @@ local function load_client(levels)
 		player.engine_failure_reason = nil
 	end
 	function player.pool_bytes() return 0 end
-	-- `effects_unavailable` is why the effects could not be made, and `reverb` and `eq` keep the last reverb and EQ set.
+	-- `effects_unavailable` is why the effects could not be made, and `reverb`, `eq`, and `echo` keep the last of each set.
 	function player.effects_error() return player.effects_unavailable end
 	function player.set_reverb(parameters) player.reverb = parameters end
 	function player.set_eq(parameters) player.eq = parameters end
+	function player.set_echo(parameters) player.echo = parameters end
 	function player.last_open_ms() return player.open_ms or 0 end
 	function player.slowest_fill_ms() return 0 end
 
@@ -433,12 +434,14 @@ describe("audio_client.lua", function()
 		assert_equal(streams[1].effects, nil)
 	end)
 
-	it("passes the EQ on to the player", function()
+	it("passes the EQ and the echo on to the player", function()
 		local AudioClient, player = load_client()
 
 		AudioClient.set_eq({ Gain0 = 2 })
+		AudioClient.set_echo({ Delay = 300 })
 
 		assert_deep_equal(player.eq, { Gain0 = 2 })
+		assert_deep_equal(player.echo, { Delay = 300 })
 	end)
 
 	it("logs once why songs play without effects, and passes the reverb on", function()

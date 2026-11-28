@@ -15,10 +15,11 @@ local function load_unloaded_xaudio()
 end
 
 describe("xaudio.lua before XAudio2 is loaded", function()
-	it("keeps the reverb and EQ it is given without touching the ffi, as the mod's startup does", function()
+	it("keeps the reverb, EQ, and echo it is given without touching the ffi, as the mod's startup does", function()
 		local XAudio = load_unloaded_xaudio()
 
 		assert_equal(XAudio.set_reverb({ WetDryMix = 30 }), true)
 		assert_equal(XAudio.set_eq({ Gain0 = 1 }), true)
+		assert_equal(XAudio.set_echo({ Delay = 500 }), true)
 	end)
 end)

@@ -64,7 +64,7 @@ Everything below is optional detail.
 * Has optional keys to skip to the next or previous song, restart or pause the song playing now, or remove it from rotation.
 * Names each new song and what each key did, and says when something went wrong, in short messages in a corner of the screen, on every screen, loading screens included.
 * Evens out the loudness of your songs, without changing your files.
-* Can play your songs through a reverb and an EQ, in all situations or only the ones you choose.
+* Can play your songs through a reverb, an EQ, and an echo, in all situations or only the ones you choose.
 * Lowers your music while a menu is open.
 * Has a debug overlay that shows which situation the mod sees and what it plays.
 * Picks up added, removed, and replaced files while the game runs.

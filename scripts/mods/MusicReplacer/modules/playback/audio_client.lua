@@ -553,6 +553,11 @@ function AudioClient.set_eq(parameters)
 	Player.set_eq(parameters)
 end
 
+-- Sets the echo that songs with effects play through, as Echo.native() gives its parameters.
+function AudioClient.set_echo(parameters)
+	Player.set_echo(parameters)
+end
+
 -- Makes the current song loop, or play to its end and fade out over its last stretch, with `duration_seconds` as the library's length.
 -- A looping song never ends, so its on_finished only runs when its file fails.
 -- Returns false when nothing plays, or the song is too close to its end to loop.

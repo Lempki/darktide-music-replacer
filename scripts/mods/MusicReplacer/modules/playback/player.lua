@@ -78,6 +78,11 @@ function Player.set_eq(parameters)
 	return XAudio.set_eq(parameters)
 end
 
+-- Sets the echo that songs with effects play through, as Echo.native() gives its parameters.
+function Player.set_echo(parameters)
+	return XAudio.set_echo(parameters)
+end
+
 -- Why songs with effects play without them, or nil.
 function Player.effects_error()
 	return XAudio.effects_error()

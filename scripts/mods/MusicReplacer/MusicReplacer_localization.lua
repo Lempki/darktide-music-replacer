@@ -484,6 +484,13 @@ local strings = {
 		en = "Whether this situation's songs play through the EQ, as " .. highlight("Use EQ") .. " in the Effects group does for all of them.\n\n" ..
 			highlight("Default") .. " follows that setting. " .. highlight("On") .. " and " .. highlight("Off") .. " decide for this situation alone.",
 	},
+	situation_echo = {
+		en = "Echo",
+	},
+	situation_echo_tooltip = {
+		en = "Whether this situation's songs play through the echo, as " .. highlight("Use Echo") .. " in the Effects group does for all of them.\n\n" ..
+			highlight("Default") .. " follows that setting. " .. highlight("On") .. " and " .. highlight("Off") .. " decide for this situation alone.",
+	},
 	situation_own_fade = {
 		en = "Own Fade Length",
 	},
@@ -831,6 +838,34 @@ local strings = {
 	eq_treble_tooltip = {
 		en = "Raises or lowers the treble of your songs, around 10,000 Hz, in decibels.\n\n" .. highlight("0") .. " leaves it as it is.",
 	},
+	use_echo = {
+		en = "Use Echo",
+	},
+	use_echo_tooltip = {
+		en = "Plays your songs through the echo, which repeats them a moment later, each repeat quieter than the last.\n\n" ..
+			"Each situation's own " .. highlight("Echo") .. " under Music per Situation turns it on or off for that situation alone. " ..
+			"The game's own music always plays without it.",
+	},
+	echo_mix = {
+		en = "Echo Mix",
+	},
+	echo_mix_tooltip = {
+		en = "How much of the echo you hear in place of the plain song.\n\n" ..
+			highlight("0%%") .. " plays your songs without echo, and " .. highlight("100%%") .. " plays only the echo.",
+	},
+	echo_feedback = {
+		en = "Echo Feedback",
+	},
+	echo_feedback_tooltip = {
+		en = "How much of each repeat comes back as the next one, so a higher value repeats the song for longer.\n\n" ..
+			highlight("0%%") .. " plays a single repeat.",
+	},
+	echo_delay = {
+		en = "Echo Delay",
+	},
+	echo_delay_tooltip = {
+		en = "How long the echo waits between repeats, in milliseconds, from 1 to 2,000.",
+	},
 	-- The unit of Reverb Strength, Reverb Damping, and the EQ's bands.
 	decibels_unit = {
 		en = "dB",
@@ -919,7 +954,7 @@ local strings = {
 	seconds_unit = {
 		en = "s",
 	},
-	-- The unit of Reverb Pre-Delay.
+	-- The unit of Reverb Pre-Delay and Echo Delay.
 	milliseconds_unit = {
 		en = "ms",
 	},

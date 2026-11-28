@@ -167,7 +167,7 @@ local function new_audio_client()
 
 	-- `refuse_loop` stands for a song too close to its end to loop.
 	function module.set_share(share) client.share = share end
-	-- `effects` is the last effects setup the song playing now was given, and `reverb` and `eq` the last reverb and EQ set.
+	-- `effects` is the last effects setup the song playing now was given, and `reverb`, `eq`, and `echo` the last of each set.
 	function module.set_effects(setup)
 		if client.current then
 			client.current.opts.effects = setup
@@ -176,6 +176,7 @@ local function new_audio_client()
 	end
 	function module.set_reverb(parameters) client.reverb = parameters end
 	function module.set_eq(parameters) client.eq = parameters end
+	function module.set_echo(parameters) client.echo = parameters end
 
 	function module.set_end_fade_seconds(seconds)
 		if client.current then

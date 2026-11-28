@@ -23,6 +23,7 @@ local Player = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/p
 local AudioClient = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/playback/audio_client")
 local Reverb = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/playback/reverb")
 local Equalizer = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/playback/equalizer")
+local Echo = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/playback/echo")
 local LoudnessMeter = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/songs/loudness_meter")
 local Loudness = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/songs/loudness")
 local DiagnosticLog = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/diagnostics/diagnostic_log")
@@ -149,6 +150,18 @@ local function apply_eq()
 	AudioClient.set_eq(Equalizer.native(gains))
 end
 
+-- The settings that decide how the echo sounds, so a change to any of them sets the echo again.
+local ECHO_SETTINGS = { echo_mix = true, echo_feedback = true, echo_delay = true }
+
+-- Gives the effects the echo that Echo Mix, Echo Feedback, and Echo Delay describe.
+local function apply_echo()
+	AudioClient.set_echo(Echo.native({
+		mix = mod:get("echo_mix"),
+		feedback = mod:get("echo_feedback"),
+		delay = mod:get("echo_delay"),
+	}))
+end
+
 -- The volume settings are percentages of the music's normal level.
 -- DMF writes every setting's default from MusicReplacer_data.lua before this script runs, so a setting never reads as nil.
 local function custom_volume()
@@ -187,8 +200,8 @@ local function menu_volume(dt)
 end
 
 -- The setting each choice a situation can make for itself follows by default.
--- They are Playback's Shuffle and Repeat Song, and the Effects group's Use Reverb and Use EQ.
-local GROUP_SETTINGS = { shuffle = "shuffle", ["repeat"] = "repeat_song", reverb = "use_reverb", eq = "use_eq" }
+-- They are Playback's Shuffle and Repeat Song, and the Effects group's Use Reverb, Use EQ, and Use Echo.
+local GROUP_SETTINGS = { shuffle = "shuffle", ["repeat"] = "repeat_song", reverb = "use_reverb", eq = "use_eq", echo = "use_echo" }
 
 -- The situation's own choice for `kind`, a key of GROUP_SETTINGS, as its setting says: "on", "off", or nil to follow the group's.
 local function own_choice(kind, context_name)
@@ -224,19 +237,32 @@ local function plays_looping(is_only_file, context_name)
 	return loops(is_only_file, context_name) and not context_after_song
 end
 
--- The name of the effects setup the situation's songs play through, as xaudio.lua names its setups, or nil for none.
--- Each effect is on by the situation's own choice, or else by the Effects group's Use Reverb and Use EQ.
+-- The effects, keys of GROUP_SETTINGS, in the order xaudio.lua chains them, which is the order a setup's name lists them in.
+local EFFECT_ORDER = { "eq", "echo", "reverb" }
+
+-- The name of the effects setup the situation's songs play through, as xaudio.lua names its setups, such as "eq+reverb", or nil for none.
+-- Each effect is on by the situation's own choice, or else by the Effects group's Use setting for it.
 local function effects_setup(context_name)
-	local has_eq = is_on_for("eq", context_name)
-	local has_reverb = is_on_for("reverb", context_name)
-	if has_eq and has_reverb then
-		return "eq+reverb"
-	elseif has_eq then
-		return "eq"
-	elseif has_reverb then
-		return "reverb"
+	local names = {}
+	for _, kind in ipairs(EFFECT_ORDER) do
+		if is_on_for(kind, context_name) then
+			names[#names + 1] = kind
+		end
 	end
-	return nil
+	if #names == 0 then
+		return nil
+	end
+	return table.concat(names, "+")
+end
+
+-- True when `setting_id` turns an effect on or off for the situation playing now: a Use setting, or the situation's own choice.
+local function is_effect_choice(setting_id)
+	for _, kind in ipairs(EFFECT_ORDER) do
+		if setting_id == GROUP_SETTINGS[kind] or setting_id == kind .. "_" .. tostring(current_context) then
+			return true
+		end
+	end
+	return false
 end
 
 -- Sets the playlist's order by the situation playing now, since Shuffle can differ per situation.
@@ -1362,6 +1388,7 @@ mod.on_all_mods_loaded = function()
 	AudioClient.set_fade_seconds(mod:get("fade_seconds"))
 	apply_reverb()
 	apply_eq()
+	apply_echo()
 	DebugOverlay.init(log, { snapshot = overlay_snapshot, meter = AudioClient.meter, create_element = create_overlay_element })
 	apply_overlay_settings()
 	OnScreenMessage.init(log, { create_element = create_on_screen_message_element })
@@ -1473,8 +1500,7 @@ mod.on_setting_changed = function(setting_id)
 		follow_shuffle(current_context)
 	elseif setting_id == "repeat_song" or setting_id == "repeat_" .. tostring(current_context) then
 		apply_repeat_song()
-	elseif setting_id == "use_reverb" or setting_id == "use_eq"
-		or setting_id == "reverb_" .. tostring(current_context) or setting_id == "eq_" .. tostring(current_context) then
+	elseif is_effect_choice(setting_id) then
 		-- The song playing now follows at once, so the player hears what the choice does.
 		if enabled and current_context then
 			AudioClient.set_effects(effects_setup(current_context))
@@ -1483,6 +1509,8 @@ mod.on_setting_changed = function(setting_id)
 		apply_reverb()
 	elseif EQ_SETTINGS[setting_id] then
 		apply_eq()
+	elseif ECHO_SETTINGS[setting_id] then
+		apply_echo()
 	elseif setting_id == "let_songs_finish" and not mod:get("let_songs_finish") and context_after_song then
 		-- Nothing waits for a song with the setting off, so the situation that waited takes over at once.
 		log(string.format("[playback] %s: let songs finish turned off, so %s takes over now", current_context, context_after_song))

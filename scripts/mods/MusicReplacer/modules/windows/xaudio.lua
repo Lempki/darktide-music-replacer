@@ -92,6 +92,16 @@ typedef struct {
 	float Gain3;
 	float Bandwidth3;
 } MusicReplacer_FXEQ_PARAMETERS;
+
+typedef struct {
+	float MaxDelay;
+} MusicReplacer_FXECHO_INITDATA;
+
+typedef struct {
+	float WetDryMix;
+	float Feedback;
+	float Delay;
+} MusicReplacer_FXECHO_PARAMETERS;
 #pragma pack(pop)
 
 int32_t MusicReplacer_XAudio2Create(void **engine, uint32_t flags, uint32_t processor) __asm__("XAudio2Create");
@@ -99,27 +109,48 @@ int32_t MusicReplacer_CreateAudioReverb(void **effect) __asm__("CreateAudioRever
 int32_t MusicReplacer_CreateFX(const MusicReplacer_GUID *clsid, void **effect, const void *init_data, uint32_t init_size) __asm__("CreateFX");
 ]]
 
--- The effects voices' format. XAudio2's reverb takes 20,000 to 48,000 Hz, XAPOFX's EQ 22,000 to 48,000 Hz, and both stereo.
+-- The effects voices' format. XAudio2's reverb takes 20,000 to 48,000 Hz, XAPOFX's EQ 22,000 to 48,000 Hz, and all of them stereo.
 -- Every song with effects plays through the effects voice of its setup, which converts its rate and channels.
 local EFFECTS_CHANNELS = 2
 local EFFECTS_SAMPLE_RATE = 48000
 
--- The effects' places in every effects voice's chain.
--- The EQ comes first, so the reverb echoes the song as the EQ shapes it.
-local EQ_EFFECT = 0
-local REVERB_EFFECT = 1
-local EFFECT_COUNT = 2
-
--- The effects setups a song can play through, by name, with the effects each one turns on.
--- Every setup's voice has the whole chain, with the effects it leaves out turned off, so each effect keeps its place in the chain.
-local EFFECT_SETUPS = {
-	eq = { [EQ_EFFECT] = true },
-	reverb = { [REVERB_EFFECT] = true },
-	["eq+reverb"] = { [EQ_EFFECT] = true, [REVERB_EFFECT] = true },
-}
-
--- CLSID_FXEQ in xapofx.h, the class CreateFX makes XAPOFX's EQ from.
+-- The classes CreateFX makes XAPOFX's effects from, CLSID_FXEQ and CLSID_FXEcho in xapofx.h.
 local CLSID_FXEQ = { 0xF5E01117, 0xD6C4, 0x485A, { 0xA3, 0xF5, 0x69, 0x51, 0x96, 0xF3, 0xDB, 0xFA } }
+local CLSID_FXECHO = { 0x5039D740, 0xF736, 0x449A, { 0x84, 0xD3, 0xA5, 0x62, 0x02, 0x55, 0x7B, 0x87 } }
+
+-- The longest delay the echo is made for, xapofx.h's FXECHO_MAX_DELAY, so the Echo Delay setting can move all the way up.
+-- The echo keeps a buffer this long, about 0.8 MB at 48,000 Hz in stereo.
+local ECHO_MAX_DELAY_MS = 2000
+
+-- Every effects voice's chain, in order: the EQ, then the echo, then the reverb.
+-- So the echo repeats the song as the EQ shapes it, and the reverb places the song and its echoes in the room.
+-- `name` is the effect's part of a setup's name, `parameters` the C structure of its parameters, and `what` its name in failures.
+-- Each effect's index in the chain is its place here, counted from 0.
+local CHAIN = {
+	{ name = "eq", parameters = "MusicReplacer_FXEQ_PARAMETERS", what = "EQ" },
+	{ name = "echo", parameters = "MusicReplacer_FXECHO_PARAMETERS", what = "echo" },
+	{ name = "reverb", parameters = "MusicReplacer_XAUDIO2FX_REVERB_PARAMETERS", what = "reverb" },
+}
+local EFFECT_INDEX = {}
+for position, effect in ipairs(CHAIN) do
+	EFFECT_INDEX[effect.name] = position - 1
+end
+
+-- The effects setups a song can play through, by name, with the indexes of the effects each one turns on.
+-- A setup's name joins the names of its effects with "+" in the chain's order, such as "eq+reverb".
+-- There is a setup for every choice of one or more effects, seven for three effects.
+-- Every setup's voice has the whole chain, with the effects it leaves out turned off, so each effect keeps its place in the chain.
+local EFFECT_SETUPS = {}
+for combination = 1, 2 ^ #CHAIN - 1 do
+	local names, turned_on = {}, {}
+	for position, effect in ipairs(CHAIN) do
+		if math.floor(combination / 2 ^ (position - 1)) % 2 == 1 then
+			names[#names + 1] = effect.name
+			turned_on[position - 1] = true
+		end
+	end
+	EFFECT_SETUPS[table.concat(names, "+")] = turned_on
+end
 
 -- XAudio2's default processor, processor 1. Microsoft advises it over choosing processors, which can get in the scheduler's way.
 -- Setting more than one processor bit would also start a worker thread for each.
@@ -187,10 +218,10 @@ local failure = nil -- Why the engine stopped working, or nil.
 -- There are at most as many voices as EFFECT_SETUPS has setups, so none is freed before the engine is.
 local effects_voices = {}
 local effects_error = nil -- Why an effects voice could not be made, or nil. Songs then play without effects.
--- The effects' parameters, as Reverb.native() and Equalizer.native() give them, shared by every setup.
+-- Each effect's parameters by its name in CHAIN, as Reverb.native(), Equalizer.native(), and Echo.native() give them.
+-- Every setup shares them.
 -- They are kept so a voice made later, or a rebuilt engine's voices, get them too.
-local reverb_parameters = nil
-local eq_parameters = nil
+local effect_parameters = {}
 
 local function call(object, method, ...)
 	return NativeFfi.call(object, method[1], method[2], ...)
@@ -282,15 +313,18 @@ function XAudio.format_error(format)
 	return nil
 end
 
--- Copies `parameters` into the effect at `index` in every effects voice's chain, as the C structure `type_name`.
--- `what` names the effect in the failure. Returns false when XAudio2 refuses them.
+-- Copies the kept parameters of the effect named `name` into it in every effects voice's chain.
+-- Returns false when XAudio2 refuses them.
 -- With no effects voice yet, nothing is copied, which matters at startup: XAudio2 and its C structures are not loaded until a song plays.
-local function apply_effect(index, type_name, parameters, what)
+local function apply_effect(name)
+	local parameters = effect_parameters[name]
 	if not parameters or next(effects_voices) == nil then
 		return true
 	end
 
-	local native = ffi.new(type_name)
+	local index = EFFECT_INDEX[name]
+	local effect = CHAIN[index + 1]
+	local native = ffi.new(effect.parameters)
 	for field, value in pairs(parameters) do
 		native[field] = value
 	end
@@ -301,19 +335,27 @@ local function apply_effect(index, type_name, parameters, what)
 		if not NativeFfi.succeeded(hresult) then
 			applied = false
 			if is_engine_error(hresult) then
-				failure = failure or string.format("setting the %s failed with %s", what, NativeFfi.hex(hresult))
+				failure = failure or string.format("setting the %s failed with %s", effect.what, NativeFfi.hex(hresult))
 			end
 		end
 	end
 	return applied
 end
 
-local function apply_reverb()
-	return apply_effect(REVERB_EFFECT, "MusicReplacer_XAUDIO2FX_REVERB_PARAMETERS", reverb_parameters, "reverb")
+local function xapofx_class(clsid)
+	return NativeFfi.guid(clsid[1], clsid[2], clsid[3], clsid[4])
 end
 
-local function apply_eq()
-	return apply_effect(EQ_EFFECT, "MusicReplacer_FXEQ_PARAMETERS", eq_parameters, "EQ")
+-- Makes the effect named `name` into `out`, a void * slot. Returns the HRESULT.
+local function create_effect(name, out)
+	if name == "eq" then
+		return library.MusicReplacer_CreateFX(xapofx_class(CLSID_FXEQ), out, nil, 0)
+	elseif name == "echo" then
+		local init = ffi.new("MusicReplacer_FXECHO_INITDATA")
+		init.MaxDelay = ECHO_MAX_DELAY_MS
+		return library.MusicReplacer_CreateFX(xapofx_class(CLSID_FXECHO), out, init, ffi.sizeof(init))
+	end
+	return library.MusicReplacer_CreateAudioReverb(out)
 end
 
 -- The send list to the voice of the effects setup named `setup`, made the first time a song asks for that setup.
@@ -331,34 +373,32 @@ local function effects_sends(setup)
 		return nil
 	end
 
-	local effects_out = ffi.new("void *[?]", EFFECT_COUNT)
-	local clsid = NativeFfi.guid(CLSID_FXEQ[1], CLSID_FXEQ[2], CLSID_FXEQ[3], CLSID_FXEQ[4])
-	local hresult = library.MusicReplacer_CreateFX(clsid, effects_out + EQ_EFFECT, nil, 0)
-	if not NativeFfi.succeeded(hresult) then
-		effects_error = "creating the EQ failed with " .. NativeFfi.hex(hresult)
-		return nil
-	end
-	hresult = library.MusicReplacer_CreateAudioReverb(effects_out + REVERB_EFFECT)
-	if not NativeFfi.succeeded(hresult) then
-		NativeFfi.release(effects_out[EQ_EFFECT])
-		effects_error = "creating the reverb failed with " .. NativeFfi.hex(hresult)
-		return nil
+	local effects_out = ffi.new("void *[?]", #CHAIN)
+	for position, effect in ipairs(CHAIN) do
+		local hresult = create_effect(effect.name, effects_out + (position - 1))
+		if not NativeFfi.succeeded(hresult) then
+			for made = 0, position - 2 do
+				NativeFfi.release(effects_out[made])
+			end
+			effects_error = string.format("creating the %s failed with %s", effect.what, NativeFfi.hex(hresult))
+			return nil
+		end
 	end
 
-	local descriptors = ffi.new("MusicReplacer_XAUDIO2_EFFECT_DESCRIPTOR[?]", EFFECT_COUNT)
-	for index = 0, EFFECT_COUNT - 1 do
+	local descriptors = ffi.new("MusicReplacer_XAUDIO2_EFFECT_DESCRIPTOR[?]", #CHAIN)
+	for index = 0, #CHAIN - 1 do
 		descriptors[index].pEffect = effects_out[index]
 		descriptors[index].InitialState = turned_on[index] and 1 or 0
 		descriptors[index].OutputChannels = EFFECTS_CHANNELS
 	end
 	local chain = ffi.new("MusicReplacer_XAUDIO2_EFFECT_CHAIN")
-	chain.EffectCount = EFFECT_COUNT
+	chain.EffectCount = #CHAIN
 	chain.pEffectDescriptors = descriptors
 
 	local out = ffi.new("void *[1]")
-	hresult = call(engine, CREATE_SUBMIX_VOICE, out, EFFECTS_CHANNELS, EFFECTS_SAMPLE_RATE, 0, 0, nil, chain)
+	local hresult = call(engine, CREATE_SUBMIX_VOICE, out, EFFECTS_CHANNELS, EFFECTS_SAMPLE_RATE, 0, 0, nil, chain)
 	-- The voice holds its own reference to each effect, so these are let go either way.
-	for index = 0, EFFECT_COUNT - 1 do
+	for index = 0, #CHAIN - 1 do
 		NativeFfi.release(effects_out[index])
 	end
 	if not NativeFfi.succeeded(hresult) then
@@ -378,12 +418,13 @@ local function effects_sends(setup)
 	sends.pSends = descriptor
 	effects_voices[setup] = { voice = out[0], sends = sends, descriptor = descriptor }
 
-	apply_eq()
-	apply_reverb()
+	for _, effect in ipairs(CHAIN) do
+		apply_effect(effect.name)
+	end
 	return sends
 end
 
--- Why the effects could not be made, such as on a Windows whose XAudio2 has no reverb or EQ, or nil.
+-- Why the effects could not be made, such as on a Windows whose XAudio2 has no reverb, EQ, or echo, or nil.
 -- Songs still play then, only without effects.
 function XAudio.effects_error()
 	return effects_error
@@ -392,15 +433,22 @@ end
 -- Sets the reverb to `parameters`, the fields of XAUDIO2FX_REVERB_PARAMETERS as Reverb.native() gives them.
 -- Every effects voice gets them at once, and a voice made later gets them when it is made.
 function XAudio.set_reverb(parameters)
-	reverb_parameters = parameters
-	return apply_reverb()
+	effect_parameters.reverb = parameters
+	return apply_effect("reverb")
 end
 
 -- Sets the EQ to `parameters`, the fields of FXEQ_PARAMETERS as Equalizer.native() gives them.
 -- Every effects voice gets them at once, and a voice made later gets them when it is made.
 function XAudio.set_eq(parameters)
-	eq_parameters = parameters
-	return apply_eq()
+	effect_parameters.eq = parameters
+	return apply_effect("eq")
+end
+
+-- Sets the echo to `parameters`, the fields of FXECHO_PARAMETERS as Echo.native() gives them.
+-- Every effects voice gets them at once, and a voice made later gets them when it is made.
+function XAudio.set_echo(parameters)
+	effect_parameters.echo = parameters
+	return apply_effect("echo")
 end
 
 local Voice = {}

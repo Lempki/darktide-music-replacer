@@ -48,7 +48,7 @@ Keys that control the song playing now, and the setting that goes with them. Eve
 
 ## Effects
 
-Effects that your songs play through: a reverb that makes them sound as if they played in a place such as a large hall, and an EQ that raises or lowers their bass, middle, and treble. This group turns each effect on for every situation and sets how it sounds, and each situation's own [Reverb and EQ](#music-per-situation) can decide for that situation alone. The game's own music always plays without them.
+Effects that your songs play through: a reverb that makes them sound as if they played in a place such as a large hall, an EQ that raises or lowers their bass, middle, and treble, and an echo that repeats them. This group turns each effect on for every situation and sets how it sounds, and each situation's own [Reverb, EQ, and Echo](#music-per-situation) can decide for that situation alone. The game's own music always plays without them.
 
 | Setting | Default | What it does |
 |---|---|---|
@@ -64,8 +64,12 @@ Effects that your songs play through: a reverb that makes them sound as if they 
 | EQ Low Mids | 0 dB | Raises or lowers the low middle of your songs, around 800 Hz, from -18 to +18 dB. 0 dB leaves it as it is. A change applies at once. |
 | EQ High Mids | 0 dB | Raises or lowers the high middle of your songs, around 2,000 Hz, from -18 to +18 dB. 0 dB leaves it as it is. A change applies at once. |
 | EQ Treble | 0 dB | Raises or lowers the treble of your songs, around 10,000 Hz, from -18 to +18 dB. 0 dB leaves it as it is. A change applies at once. |
+| Use Echo | Off | Plays every situation's songs through the echo, but a situation whose own Echo is On or Off decides for itself. A change applies at once to the song playing now. |
+| Echo Mix | 30% | How much of the echo you hear in place of the plain song, from 0% to 100%. 0% plays your songs without echo, and 100% plays only the echo. A change applies at once. |
+| Echo Feedback | 30% | How much of each repeat comes back as the next one, from 0% to 90%, so a higher value repeats the song for longer. 0% plays a single repeat. A change applies at once. |
+| Echo Delay | 500 ms | How long the echo waits between repeats, from 1 to 2,000 ms. A change applies at once. |
 
-The EQ shapes a song before the reverb, so the reverb echoes the song as the EQ shapes it.
+The effects play in this order: the EQ, then the echo, then the reverb. So the echo repeats the song as the EQ shapes it, and the reverb places the song and its echoes in the room.
 
 When the music crossfades between a situation with effects and one without, each song keeps its own effects as it fades, so the reverb fades out with the song that had it.
 
@@ -111,6 +115,7 @@ The group shows one Situation dropdown, Explore by default, which lists every si
 | Repeat Song | Default | Default follows [Repeat Song](#playback) in the Playback group. On and Off decide for this situation alone. A song keeps looping or stops looping by the setting of the situation it plays for. |
 | Reverb | Default | Default follows [Use Reverb](#effects) in the Effects group. On and Off decide for this situation alone, such as reverb in the hub only. A song that plays on into another situation, such as from Boss Near into Boss, follows that situation's choice. |
 | EQ | Default | Default follows [Use EQ](#effects) in the Effects group. On and Off decide for this situation alone. A song that plays on into another situation follows that situation's choice. |
+| Echo | Default | Default follows [Use Echo](#effects) in the Effects group. On and Off decide for this situation alone. A song that plays on into another situation follows that situation's choice. |
 | Restore Removed Songs | (button) | Puts the songs that Remove from Rotation took out of this situation's folder and its override folders back into their rotation, and a message says how many came back, such as `Restored 3 songs in Boss`. |
 
 ## Meat Grinder
