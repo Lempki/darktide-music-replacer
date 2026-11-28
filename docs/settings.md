@@ -67,7 +67,7 @@ Effects that your songs play through: a reverb that makes them sound as if they 
 | Use Echo | Off | Plays every situation's songs through the echo, but a situation whose own Echo is On or Off decides for itself. A change applies at once to the song playing now. |
 | Echo Mix | 30% | How much of the echo you hear in place of the plain song, from 0% to 100%. 0% plays your songs without echo, and 100% plays only the echo. A change applies at once. |
 | Echo Feedback | 30% | How much of each repeat comes back as the next one, from 0% to 90%, so a higher value repeats the song for longer. 0% plays a single repeat. A change applies at once. |
-| Echo Delay | 500 ms | How long the echo waits between repeats, from 1 to 2,000 ms. A change applies at once. |
+| Echo Delay | 500 ms | How long the echo waits between repeats, from 1 to 2,000 ms. A change applies at once. Moving it while a song plays can crackle for a moment, since the echo jumps straight to its new delay. |
 
 The effects play in this order: the EQ, then the echo, then the reverb. So the echo repeats the song as the EQ shapes it, and the reverb places the song and its echoes in the room.
 
