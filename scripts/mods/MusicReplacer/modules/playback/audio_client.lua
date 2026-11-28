@@ -394,7 +394,7 @@ end
 
 -- Plays file_path, crossfading with whatever was playing.
 -- opts: fade_in, fade_seconds, end_fade_seconds, loop, start_position, duration_seconds, share, effects, and on_finished(failed).
--- effects names the effects setup the song plays through, such as "eq+reverb", or is nil for none.
+-- effects names the effects the song plays through, a profile and a setup such as "2/eq+reverb", or is nil for none.
 -- speed plays the song that many times faster, 1 by default, which raises or lowers its pitch with it.
 -- share is the situation's Volume, as a linear scale, 1 when not given.
 -- end_fade_seconds is how long the song fades out at its end, the Fade Length when not given.
@@ -548,7 +548,7 @@ function AudioClient.set_speed(speed)
 	end
 end
 
--- Plays the current song through the effects setup named `setup`, or without effects with nil, from now on.
+-- Plays the current song through the effects named `setup`, such as "2/eq+reverb", or without effects with nil, from now on.
 -- A song fading out keeps what it had.
 function AudioClient.set_effects(setup)
 	if not current then
@@ -563,19 +563,19 @@ function AudioClient.set_effects(setup)
 	end
 end
 
--- Sets the reverb that songs with effects play through, as Reverb.native() gives its parameters.
-function AudioClient.set_reverb(parameters)
-	Player.set_reverb(parameters)
+-- Sets effect profile `profile`'s reverb, as Reverb.native() gives its parameters.
+function AudioClient.set_reverb(profile, parameters)
+	Player.set_reverb(profile, parameters)
 end
 
--- Sets the EQ that songs with effects play through, as Equalizer.native() gives its parameters.
-function AudioClient.set_eq(parameters)
-	Player.set_eq(parameters)
+-- Sets effect profile `profile`'s EQ, as Equalizer.native() gives its parameters.
+function AudioClient.set_eq(profile, parameters)
+	Player.set_eq(profile, parameters)
 end
 
--- Sets the echo that songs with effects play through, as Echo.native() gives its parameters.
-function AudioClient.set_echo(parameters)
-	Player.set_echo(parameters)
+-- Sets effect profile `profile`'s echo, as Echo.native() gives its parameters.
+function AudioClient.set_echo(profile, parameters)
+	Player.set_echo(profile, parameters)
 end
 
 -- Makes the current song loop, or play to its end and fade out over its last stretch, with `duration_seconds` as the library's length.

@@ -68,19 +68,19 @@ function Player.engine_failure()
 	return XAudio.failure()
 end
 
--- Sets the reverb that songs with effects play through, as Reverb.native() gives its parameters.
-function Player.set_reverb(parameters)
-	return XAudio.set_reverb(parameters)
+-- Sets effect profile `profile`'s reverb, as Reverb.native() gives its parameters.
+function Player.set_reverb(profile, parameters)
+	return XAudio.set_reverb(profile, parameters)
 end
 
--- Sets the EQ that songs with effects play through, as Equalizer.native() gives its parameters.
-function Player.set_eq(parameters)
-	return XAudio.set_eq(parameters)
+-- Sets effect profile `profile`'s EQ, as Equalizer.native() gives its parameters.
+function Player.set_eq(profile, parameters)
+	return XAudio.set_eq(profile, parameters)
 end
 
--- Sets the echo that songs with effects play through, as Echo.native() gives its parameters.
-function Player.set_echo(parameters)
-	return XAudio.set_echo(parameters)
+-- Sets effect profile `profile`'s echo, as Echo.native() gives its parameters.
+function Player.set_echo(profile, parameters)
+	return XAudio.set_echo(profile, parameters)
 end
 
 -- Why songs with effects play without them, or nil.
@@ -323,7 +323,7 @@ end
 -- Returns the stream, or nil, why, and whether XAudio2 refused the voice, which a dead engine also does.
 -- opts.start_position starts partway in, in seconds. opts.loop repeats the file with no gap added between its end and its start.
 -- opts.gain and opts.fade set the starting levels, 1 by default.
--- opts.effects names the effects setup it plays through, such as "eq+reverb", or is nil for none.
+-- opts.effects names the effects it plays through, a profile and a setup such as "2/eq+reverb", or is nil for none.
 -- opts.speed plays it that many times faster, 1 by default, which raises or lowers its pitch with it.
 function Player.open(path, opts)
 	local started = clock()
@@ -332,7 +332,7 @@ function Player.open(path, opts)
 	return stream, err, refused_voice
 end
 
--- Plays the stream through the effects setup named `setup`, or without effects with nil, from now on.
+-- Plays the stream through the effects named `setup`, such as "2/eq+reverb", or without effects with nil, from now on.
 function Stream:set_effects(setup)
 	if self.effects == setup then
 		return
@@ -341,7 +341,7 @@ function Stream:set_effects(setup)
 	voice_ok(self, self.voice:set_effects(setup))
 end
 
--- The name of the effects setup the stream plays through, or nil.
+-- The name of the effects the stream plays through, such as "2/eq+reverb", or nil.
 function Stream:effects_setup()
 	return self.effects
 end

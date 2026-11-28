@@ -105,11 +105,12 @@ local function load_client(levels)
 		player.engine_failure_reason = nil
 	end
 	function player.pool_bytes() return 0 end
-	-- `effects_unavailable` is why the effects could not be made, and `reverb`, `eq`, and `echo` keep the last of each set.
+	-- `effects_unavailable` is why the effects could not be made.
+	-- `reverb`, `eq`, and `echo` keep the last profile and parameters of each set.
 	function player.effects_error() return player.effects_unavailable end
-	function player.set_reverb(parameters) player.reverb = parameters end
-	function player.set_eq(parameters) player.eq = parameters end
-	function player.set_echo(parameters) player.echo = parameters end
+	function player.set_reverb(profile, parameters) player.reverb = { profile, parameters } end
+	function player.set_eq(profile, parameters) player.eq = { profile, parameters } end
+	function player.set_echo(profile, parameters) player.echo = { profile, parameters } end
 	function player.last_open_ms() return player.open_ms or 0 end
 	function player.slowest_fill_ms() return 0 end
 
@@ -468,20 +469,20 @@ describe("audio_client.lua", function()
 	it("passes the EQ and the echo on to the player", function()
 		local AudioClient, player = load_client()
 
-		AudioClient.set_eq({ Gain0 = 2 })
-		AudioClient.set_echo({ Delay = 300 })
+		AudioClient.set_eq(2, { Gain0 = 2 })
+		AudioClient.set_echo(3, { Delay = 300 })
 
-		assert_deep_equal(player.eq, { Gain0 = 2 })
-		assert_deep_equal(player.echo, { Delay = 300 })
+		assert_deep_equal(player.eq, { 2, { Gain0 = 2 } })
+		assert_deep_equal(player.echo, { 3, { Delay = 300 } })
 	end)
 
 	it("logs once why songs play without effects, and passes the reverb on", function()
 		local AudioClient, player, _, _, lines = load_client()
 		player.effects_unavailable = "creating the reverb failed with 0x80004005"
 
-		AudioClient.play("hub/a.mp3", { fade_in = false, effects = "reverb" })
-		AudioClient.play("hub/b.mp3", { fade_in = false, effects = "reverb" })
-		AudioClient.set_reverb({ WetDryMix = 30 })
+		AudioClient.play("hub/a.mp3", { fade_in = false, effects = "1/reverb" })
+		AudioClient.play("hub/b.mp3", { fade_in = false, effects = "1/reverb" })
+		AudioClient.set_reverb(1, { WetDryMix = 30 })
 
 		local logged = 0
 		for _, line in ipairs(lines) do
@@ -490,7 +491,7 @@ describe("audio_client.lua", function()
 			end
 		end
 		assert_equal(logged, 1)
-		assert_deep_equal(player.reverb, { WetDryMix = 30 })
+		assert_deep_equal(player.reverb, { 1, { WetDryMix = 30 } })
 	end)
 
 	it("cannot make a song loop once its last buffer is queued, or while nothing plays", function()

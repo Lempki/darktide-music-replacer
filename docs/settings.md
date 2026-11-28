@@ -48,32 +48,40 @@ Keys that control the song playing now, and the setting that goes with them. Eve
 
 ## Effects
 
-Effects that your songs play through: a reverb that makes them sound as if they played in a place such as a large hall, an EQ that raises or lowers their bass, middle, and treble, an echo that repeats them, and a speed that plays them faster or slower. This group turns each effect on for every situation and sets how it sounds, and each situation's own [Reverb, EQ, Echo, and Speed](#music-per-situation) can decide for that situation alone. The game's own music always plays without them.
+Effects that your songs play through: a reverb that makes them sound as if they played in a place such as a large hall, an EQ that raises or lowers their bass, middle, and treble, an echo that repeats them, and a speed that plays them faster or slower. The group holds four effect profiles. Global plays for every situation, so an effect turned on there plays on all your songs. A situation that should sound different picks Profile 1, 2, or 3, or None, with its own [Effects](#music-per-situation), so the hub can play through a hall while boss fights play faster and with an echo, or only the hub plays with reverb. The game's own music always plays without effects.
 
 | Setting | Default | What it does |
 |---|---|---|
-| Use Reverb | Off | Plays every situation's songs through the reverb, but a situation whose own Reverb is On or Off decides for itself. A change applies at once to the song playing now. |
+| Profile | Global | The profile whose settings show below it: Global, Profile 1, Profile 2, or Profile 3. Every profile has each of the settings below, and keeps its own values whichever profile is shown. A situation plays Global unless its own Effects picks another. |
+| Reset Profile | (button) | Puts every setting of the profile shown back to that profile's own default, and a message says so. |
+| Use Reverb | Off | Plays the songs of the situations on this profile through the reverb. A change applies at once to the song playing now. |
 | Reverb Room | Large Hall | The place the reverb makes your songs sound as if they played in: 29 places, from a padded cell and small rooms through halls, an arena, and a hangar, to a cave, a sewer pipe, underwater, and outdoor places such as a forest or mountains. Plate Reverb is the bright reverb of a vibrating metal plate, as studios use. |
 | Reverb Mix | 30% | How much of the reverb you hear in place of the plain song, from 0% to 100%. 0% plays your songs without reverb, and 100% plays only the reverb. A change applies at once. |
 | Reverb Strength | 0 dB | Makes the reverb louder or quieter than the room itself has it, from -20 to +20 dB, while the plain song stays as loud as Reverb Mix sets. 0 dB plays the room as it is. Large rooms, such as Large Hall, have a soft reverb of their own, and small ones, such as Bathroom, a loud one. A change applies at once. |
 | Reverb Decay | 100% | How long the reverb takes to fade out, from 25% to 400% of the room's own. 100% plays the room as it is, and 200% makes its reverb last twice as long. A change applies at once. |
 | Reverb Pre-Delay | 0 ms | How much longer the reverb's first echo waits after the song, from 0 to 200 ms, on top of the room's own wait, up to 300 ms in all. 0 ms plays the room as it is. A longer wait keeps the song clearer in front of its reverb. A change applies at once. |
 | Reverb Damping | 0 dB | Makes the high notes in the reverb fade faster than the room has them, from 0 to 8 dB more, so the reverb sounds softer and darker. Down to -8 dB, it makes them fade more slowly, as far as the rest of the reverb. 0 dB plays the room as it is. A change applies at once. |
-| Use EQ | Off | Plays every situation's songs through the EQ, but a situation whose own EQ is On or Off decides for itself. A change applies at once to the song playing now. |
+| Use EQ | Off | Plays the songs of the situations on this profile through the EQ. A change applies at once to the song playing now. |
 | EQ Bass | 0 dB | Raises or lowers the bass of your songs, around 100 Hz, from -18 to +18 dB. 0 dB leaves it as it is. A change applies at once. |
 | EQ Low Mids | 0 dB | Raises or lowers the low middle of your songs, around 800 Hz, from -18 to +18 dB. 0 dB leaves it as it is. A change applies at once. |
 | EQ High Mids | 0 dB | Raises or lowers the high middle of your songs, around 2,000 Hz, from -18 to +18 dB. 0 dB leaves it as it is. A change applies at once. |
 | EQ Treble | 0 dB | Raises or lowers the treble of your songs, around 10,000 Hz, from -18 to +18 dB. 0 dB leaves it as it is. A change applies at once. |
-| Use Echo | Off | Plays every situation's songs through the echo, but a situation whose own Echo is On or Off decides for itself. A change applies at once to the song playing now. |
+| Use Echo | Off | Plays the songs of the situations on this profile through the echo. A change applies at once to the song playing now. |
 | Echo Mix | 30% | How much of the echo you hear in place of the plain song, from 0% to 100%. 0% plays your songs without echo, and 100% plays only the echo. A change applies at once. |
 | Echo Feedback | 30% | How much of each repeat comes back as the next one, from 0% to 90%, so a higher value repeats the song for longer. 0% plays a single repeat. A change applies at once. |
 | Echo Delay | 500 ms | How long the echo waits between repeats, from 1 to 2,000 ms. A change applies at once. Moving it while a song plays can crackle for a moment, since the echo jumps straight to its new delay. |
-| Use Playback Speed | Off | Plays every situation's songs at Playback Speed, but a situation whose own Speed is On or Off decides for itself. A change applies at once to the song playing now. |
+| Use Playback Speed | Off | Plays the songs of the situations on this profile at Playback Speed. A change applies at once to the song playing now. |
 | Playback Speed | 100% | How fast your songs play, from 50% to 200% of their own speed. The pitch moves with it, as on a tape: 200% plays a song twice as fast and an octave higher, and 50% half as fast and an octave lower. A song still ends and continues where its file says, and its fades take as long as they always do. A change applies at once. |
+
+The Default column gives Global's defaults, which start with every effect off. Each numbered profile starts from its own, so a situation that picks one sounds different at once:
+
+* Profile 1 is a hall: Use Reverb is on, with Concert Hall as its Reverb Room.
+* Profile 2 is a cave with an echo: Use Reverb is on, with Cave as its Reverb Room, and Use Echo is on, with an Echo Mix of 25%, an Echo Feedback of 35%, and an Echo Delay of 350 ms.
+* Profile 3 plays faster: Use Playback Speed is on, with a Playback Speed of 150%.
 
 The effects play in this order: the EQ, then the echo, then the reverb. So the echo repeats the song as the EQ shapes it, and the reverb places the song and its echoes in the room.
 
-When the music crossfades between a situation with effects and one without, each song keeps its own effects as it fades, so the reverb fades out with the song that had it.
+When the music crossfades between two situations with different effects, each song keeps its own effects as it fades, so the reverb fades out with the song that had it.
 
 ## On-Screen Messages
 
@@ -113,12 +121,9 @@ The group shows one Situation dropdown, Explore by default, which lists every si
 | Volume | 100% | How loud the situation's songs play, from 0% to 100% of the Custom Music Volume. A song fading out keeps the volume of the situation it played for. A change applies at once to the song playing now. |
 | Own Fade Length | Off | On shows a Fade Length below it for this situation alone, in place of [Fade Length](#playback) in the Playback group. |
 | Fade Length | 2 seconds | Shown while Own Fade Length is on. How long the music crossfades as the situation takes over, and how long its songs fade out at their end, from 0 to 10 seconds. The playback keys keep their Key Fade Length, and a switch to the game's music or to silence still takes half a second. |
-| Shuffle | Default | Default follows [Shuffle](#playback) in the Playback group. On and Off decide for this situation alone. |
-| Repeat Song | Default | Default follows [Repeat Song](#playback) in the Playback group. On and Off decide for this situation alone. A song keeps looping or stops looping by the setting of the situation it plays for. |
-| Reverb | Default | Default follows [Use Reverb](#effects) in the Effects group. On and Off decide for this situation alone, such as reverb in the hub only. A song that plays on into another situation, such as from Boss Near into Boss, follows that situation's choice. |
-| EQ | Default | Default follows [Use EQ](#effects) in the Effects group. On and Off decide for this situation alone. A song that plays on into another situation follows that situation's choice. |
-| Echo | Default | Default follows [Use Echo](#effects) in the Effects group. On and Off decide for this situation alone. A song that plays on into another situation follows that situation's choice. |
-| Speed | Default | Default follows [Use Playback Speed](#effects) in the Effects group. On and Off decide for this situation alone, such as faster songs in boss fights only. A song that plays on into another situation follows that situation's choice. |
+| Shuffle | Global | Global follows [Shuffle](#playback) in the Playback group. On and Off decide for this situation alone. |
+| Repeat Song | Global | Global follows [Repeat Song](#playback) in the Playback group. On and Off decide for this situation alone. A song keeps looping or stops looping by the setting of the situation it plays for. |
+| Effects | Global | The [effect profile](#effects) this situation's songs play through. Global plays the profile every situation shares, Profile 1, 2, and 3 play those, and None plays the songs without effects. A song that plays on into another situation, such as from Boss Near into Boss, takes that situation's effects. |
 | Restore Removed Songs | (button) | Puts the songs that Remove from Rotation took out of this situation's folder and its override folders back into their rotation, and a message says how many came back, such as `Restored 3 songs in Boss`. |
 
 ## Meat Grinder

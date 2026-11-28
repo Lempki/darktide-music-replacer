@@ -150,7 +150,8 @@ darktide-music-replacer/
 │       │   ├── player.lua               # Streams one song through media_decoder.lua and xaudio.lua from a fixed buffer pool.
 │       │   ├── reverb.lua               # The Reverb Room presets, and their conversion to XAudio2's reverb parameters.
 │       │   ├── equalizer.lua            # The EQ's bands, and their gains as the parameters XAPOFX's EQ takes.
-│       │   └── echo.lua                 # The Echo settings as the parameters XAPOFX's echo takes.
+│       │   ├── echo.lua                 # The Echo settings as the parameters XAPOFX's echo takes.
+│       │   └── effect_profiles.lua      # The effect profiles, and each one's default settings, which Reset Profile goes back to.
 │       ├── windows/
 │       │   ├── native_ffi.lua           # Shared ffi plumbing for Windows APIs: GUIDs, COM calls and setup, UTF-16 strings, heap memory, files.
 │       │   ├── audio_folders.lua        # Lists, checks, and creates the audio folders through Windows, and measures durations.

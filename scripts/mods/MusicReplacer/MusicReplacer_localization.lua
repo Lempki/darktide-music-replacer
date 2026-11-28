@@ -415,6 +415,9 @@ local strings = {
 	control_restored_songs_in = {
 		en = "Restored %s songs in %s",
 	},
+	control_profile_reset = {
+		en = "Reset %s",
+	},
 	control_nothing_removed_in = {
 		en = "No songs are removed in %s",
 	},
@@ -461,42 +464,24 @@ local strings = {
 	},
 	situation_shuffle_tooltip = {
 		en = "Whether this situation's songs play in a random order, as " .. highlight("Shuffle") .. " in the Playback group does for all of them.\n\n" ..
-			highlight("Default") .. " follows that setting. " .. highlight("On") .. " and " .. highlight("Off") .. " decide for this situation alone.",
+			highlight("Global") .. " follows that setting. " .. highlight("On") .. " and " .. highlight("Off") .. " decide for this situation alone.",
 	},
 	situation_repeat = {
 		en = "Repeat Song",
 	},
 	situation_repeat_tooltip = {
 		en = "Whether this situation's song loops, as " .. highlight("Repeat Song") .. " in the Playback group does for all of them.\n\n" ..
-			highlight("Default") .. " follows that setting. " .. highlight("On") .. " and " .. highlight("Off") .. " decide for this situation alone.",
+			highlight("Global") .. " follows that setting. " .. highlight("On") .. " and " .. highlight("Off") .. " decide for this situation alone.",
 	},
-	situation_reverb = {
-		en = "Reverb",
+	situation_effects = {
+		en = "Effects",
 	},
-	situation_reverb_tooltip = {
-		en = "Whether this situation's songs play through the reverb, as " .. highlight("Use Reverb") .. " in the Effects group does for all of them.\n\n" ..
-			highlight("Default") .. " follows that setting. " .. highlight("On") .. " and " .. highlight("Off") .. " decide for this situation alone.",
+	situation_effects_tooltip = {
+		en = "The effect profile in the Effects group that this situation's songs play through.\n\n" ..
+			highlight("Global") .. " plays the profile every situation shares, and " .. highlight("None") .. " plays them without effects.",
 	},
-	situation_eq = {
-		en = "EQ",
-	},
-	situation_eq_tooltip = {
-		en = "Whether this situation's songs play through the EQ, as " .. highlight("Use EQ") .. " in the Effects group does for all of them.\n\n" ..
-			highlight("Default") .. " follows that setting. " .. highlight("On") .. " and " .. highlight("Off") .. " decide for this situation alone.",
-	},
-	situation_echo = {
-		en = "Echo",
-	},
-	situation_echo_tooltip = {
-		en = "Whether this situation's songs play through the echo, as " .. highlight("Use Echo") .. " in the Effects group does for all of them.\n\n" ..
-			highlight("Default") .. " follows that setting. " .. highlight("On") .. " and " .. highlight("Off") .. " decide for this situation alone.",
-	},
-	situation_speed = {
-		en = "Speed",
-	},
-	situation_speed_tooltip = {
-		en = "Whether this situation's songs play at Playback Speed, as " .. highlight("Use Playback Speed") .. " in the Effects group does for all of them.\n\n" ..
-			highlight("Default") .. " follows that setting. " .. highlight("On") .. " and " .. highlight("Off") .. " decide for this situation alone.",
+	situation_effects_none = {
+		en = "None",
 	},
 	situation_own_fade = {
 		en = "Own Fade Length",
@@ -519,8 +504,8 @@ local strings = {
 		en = "Puts the songs that Remove from Rotation took out of this situation's folder and its override folders back into their rotation, " ..
 			"and a message says how many came back.",
 	},
-	situation_default = {
-		en = "Default",
+	situation_global = {
+		en = "Global",
 	},
 	situation_on = {
 		en = "On",
@@ -762,21 +747,50 @@ local strings = {
 	audio_effects = {
 		en = "Effects",
 	},
+	profile_title = {
+		en = "Profile",
+	},
+	shown_profile_tooltip = {
+		en = "The effect profile whose settings show below.\n\n" ..
+			highlight("Global") .. " plays for every situation, so turning on one of its effects puts it on all your songs. " ..
+			"A situation that should sound different picks another profile, or None, with its own " .. highlight("Effects") ..
+			" under Music per Situation.\n\n" ..
+			"The game's own music always plays without effects.",
+	},
+	profile_global = {
+		en = "Global",
+	},
+	reset_profile = {
+		en = "Reset Profile",
+	},
+	reset_profile_tooltip = {
+		en = "Puts every setting of the profile shown back to that profile's own default, and a message says so.\n\n" ..
+			highlight("Global") .. " goes back to every effect off, " .. highlight("Profile 1") .. " to a hall, " ..
+			highlight("Profile 2") .. " to a cave with an echo, and " .. highlight("Profile 3") .. " to playing half again as fast.",
+	},
+	reset_profile_button = {
+		en = "Reset",
+	},
+	profile_1 = {
+		en = "Profile 1",
+	},
+	profile_2 = {
+		en = "Profile 2",
+	},
+	profile_3 = {
+		en = "Profile 3",
+	},
 	use_reverb = {
 		en = "Use Reverb",
 	},
 	use_reverb_tooltip = {
-		en = "Plays your songs through the reverb, which makes them sound as if they played in a place such as a large hall.\n\n" ..
-			"Each situation's own " .. highlight("Reverb") .. " under Music per Situation turns it on or off for that situation alone. " ..
-			"The game's own music always plays without it.",
+		en = "Plays the songs of the situations on this profile through the reverb, which makes them sound as if they played in a place such as a large hall.",
 	},
 	use_eq = {
 		en = "Use EQ",
 	},
 	use_eq_tooltip = {
-		en = "Plays your songs through the EQ, which raises or lowers their bass, middle, and treble.\n\n" ..
-			"Each situation's own " .. highlight("EQ") .. " under Music per Situation turns it on or off for that situation alone. " ..
-			"The game's own music always plays without it.",
+		en = "Plays the songs of the situations on this profile through the EQ, which raises or lowers their bass, middle, and treble.",
 	},
 	reverb_room = {
 		en = "Reverb Room",
@@ -849,9 +863,7 @@ local strings = {
 		en = "Use Echo",
 	},
 	use_echo_tooltip = {
-		en = "Plays your songs through the echo, which repeats them a moment later, each repeat quieter than the last.\n\n" ..
-			"Each situation's own " .. highlight("Echo") .. " under Music per Situation turns it on or off for that situation alone. " ..
-			"The game's own music always plays without it.",
+		en = "Plays the songs of the situations on this profile through the echo, which repeats them a moment later, each repeat quieter than the last.",
 	},
 	echo_mix = {
 		en = "Echo Mix",
@@ -877,9 +889,7 @@ local strings = {
 		en = "Use Playback Speed",
 	},
 	use_speed_tooltip = {
-		en = "Plays your songs at Playback Speed below.\n\n" ..
-			"Each situation's own " .. highlight("Speed") .. " under Music per Situation turns it on or off for that situation alone. " ..
-			"The game's own music always plays at its own speed.",
+		en = "Plays the songs of the situations on this profile at Playback Speed below.",
 	},
 	playback_speed = {
 		en = "Playback Speed",

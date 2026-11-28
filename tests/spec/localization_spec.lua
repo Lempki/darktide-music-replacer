@@ -41,6 +41,7 @@ local MESSAGE_ARGUMENTS = {
 	control_restored_song_in = 1,
 	control_restored_songs_in = 2,
 	control_nothing_removed_in = 1,
+	control_profile_reset = 1,
 	control_shuffle_on = 0,
 	control_shuffle_off = 0,
 	control_repeat_song_on = 0,
@@ -178,5 +179,25 @@ describe("MusicReplacer_localization.lua", function()
 		table.sort(unused)
 
 		assert_deep_equal(unused, {})
+	end)
+
+	it("gives every dropdown an options table of its own, since DMF translates each option's text in place", function()
+		local _, data = load_strings()
+		local seen = {}
+		local shared = {}
+		local function check(widgets)
+			for _, widget in ipairs(widgets) do
+				if widget.options then
+					if seen[widget.options] then
+						shared[#shared + 1] = widget.setting_id .. " shares with " .. seen[widget.options]
+					end
+					seen[widget.options] = widget.setting_id
+				end
+				check(widget.sub_widgets or {})
+			end
+		end
+		check(data.options.widgets)
+
+		assert_deep_equal(shared, {})
 	end)
 end)

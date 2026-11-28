@@ -212,14 +212,19 @@ local init_error = nil
 local init_can_retry = false -- True when init_error came from creating the engine or its output, which an audio device coming back can fix.
 local failure = nil -- Why the engine stopped working, or nil.
 
--- Each effects setup's voice by the setup's name, made the first time a song asks for that setup.
--- Each holds `voice`, and `sends`, the send list that points source voices at it, with the descriptor it points to as `descriptor`.
+-- A song's effects are named by its effect profile's number and its setup's name, such as "2/eq+reverb".
+-- Each profile has its own effect parameters, so the songs of two profiles sound different with the same effects on.
+local EFFECTS_PATTERN = "^(%d+)/(.+)$"
+
+-- Each effects voice by its effects' name, such as "2/eq+reverb", made the first time a song asks for those effects.
+-- Each holds `voice`, `profile`, and `sends`, the send list that points source voices at it.
+-- `descriptor` is the send list's descriptor.
 -- The descriptor is kept here, since the garbage collector would free it while the send list still points to it.
--- There are at most as many voices as EFFECT_SETUPS has setups, so none is freed before the engine is.
+-- There are at most as many voices as the profiles' setups, about 0.8 MB each for the echo's buffer, so none is freed before the engine is.
 local effects_voices = {}
 local effects_error = nil -- Why an effects voice could not be made, or nil. Songs then play without effects.
--- Each effect's parameters by its name in CHAIN, as Reverb.native(), Equalizer.native(), and Echo.native() give them.
--- Every setup shares them.
+-- Each profile's effect parameters, by profile number and then by the effect's name in CHAIN.
+-- They are as Reverb.native(), Equalizer.native(), and Echo.native() give them.
 -- They are kept so a voice made later, or a rebuilt engine's voices, get them too.
 local effect_parameters = {}
 
@@ -313,11 +318,11 @@ function XAudio.format_error(format)
 	return nil
 end
 
--- Copies the kept parameters of the effect named `name` into it in every effects voice's chain.
+-- Copies profile `profile`'s kept parameters of the effect named `name` into it in the chain of every effects voice of that profile.
 -- Returns false when XAudio2 refuses them.
 -- With no effects voice yet, nothing is copied, which matters at startup: XAudio2 and its C structures are not loaded until a song plays.
-local function apply_effect(name)
-	local parameters = effect_parameters[name]
+local function apply_effect(profile, name)
+	local parameters = effect_parameters[profile] and effect_parameters[profile][name]
 	if not parameters or next(effects_voices) == nil then
 		return true
 	end
@@ -331,11 +336,13 @@ local function apply_effect(name)
 
 	local applied = true
 	for _, effects in pairs(effects_voices) do
-		local hresult = call(effects.voice, SET_EFFECT_PARAMETERS, index, native, ffi.sizeof(native), 0)
-		if not NativeFfi.succeeded(hresult) then
-			applied = false
-			if is_engine_error(hresult) then
-				failure = failure or string.format("setting the %s failed with %s", effect.what, NativeFfi.hex(hresult))
+		if effects.profile == profile then
+			local hresult = call(effects.voice, SET_EFFECT_PARAMETERS, index, native, ffi.sizeof(native), 0)
+			if not NativeFfi.succeeded(hresult) then
+				applied = false
+				if is_engine_error(hresult) then
+					failure = failure or string.format("setting the %s failed with %s", effect.what, NativeFfi.hex(hresult))
+				end
 			end
 		end
 	end
@@ -358,16 +365,18 @@ local function create_effect(name, out)
 	return library.MusicReplacer_CreateAudioReverb(out)
 end
 
--- The send list to the voice of the effects setup named `setup`, made the first time a song asks for that setup.
+-- The send list to the voice of the effects named `effects`, such as "2/eq+reverb", made the first time a song asks for them.
 -- Returns nil, with XAudio.effects_error() saying why, when the voice cannot be made.
 -- The voice sends to the output, so a song sent to it plays with its effects.
-local function effects_sends(setup)
-	local turned_on = EFFECT_SETUPS[setup]
+local function effects_sends(effects)
+	local profile, setup = effects:match(EFFECTS_PATTERN)
+	local turned_on = setup and EFFECT_SETUPS[setup]
 	if not turned_on then
 		return nil
 	end
-	if effects_voices[setup] then
-		return effects_voices[setup].sends
+	profile = tonumber(profile)
+	if effects_voices[effects] then
+		return effects_voices[effects].sends
 	end
 	if effects_error then
 		return nil
@@ -416,10 +425,10 @@ local function effects_sends(setup)
 	local sends = ffi.new("MusicReplacer_XAUDIO2_VOICE_SENDS")
 	sends.SendCount = 1
 	sends.pSends = descriptor
-	effects_voices[setup] = { voice = out[0], sends = sends, descriptor = descriptor }
+	effects_voices[effects] = { voice = out[0], profile = profile, sends = sends, descriptor = descriptor }
 
 	for _, effect in ipairs(CHAIN) do
-		apply_effect(effect.name)
+		apply_effect(profile, effect.name)
 	end
 	return sends
 end
@@ -430,32 +439,35 @@ function XAudio.effects_error()
 	return effects_error
 end
 
--- Sets the reverb to `parameters`, the fields of XAUDIO2FX_REVERB_PARAMETERS as Reverb.native() gives them.
--- Every effects voice gets them at once, and a voice made later gets them when it is made.
-function XAudio.set_reverb(parameters)
-	effect_parameters.reverb = parameters
-	return apply_effect("reverb")
+-- Sets effect profile `profile`'s reverb to `parameters`, the fields of XAUDIO2FX_REVERB_PARAMETERS as Reverb.native() gives them.
+-- Every effects voice of that profile gets them at once, and one made later gets them when it is made.
+function XAudio.set_reverb(profile, parameters)
+	effect_parameters[profile] = effect_parameters[profile] or {}
+	effect_parameters[profile].reverb = parameters
+	return apply_effect(profile, "reverb")
 end
 
--- Sets the EQ to `parameters`, the fields of FXEQ_PARAMETERS as Equalizer.native() gives them.
--- Every effects voice gets them at once, and a voice made later gets them when it is made.
-function XAudio.set_eq(parameters)
-	effect_parameters.eq = parameters
-	return apply_effect("eq")
+-- Sets effect profile `profile`'s EQ to `parameters`, the fields of FXEQ_PARAMETERS as Equalizer.native() gives them.
+-- Every effects voice of that profile gets them at once, and one made later gets them when it is made.
+function XAudio.set_eq(profile, parameters)
+	effect_parameters[profile] = effect_parameters[profile] or {}
+	effect_parameters[profile].eq = parameters
+	return apply_effect(profile, "eq")
 end
 
--- Sets the echo to `parameters`, the fields of FXECHO_PARAMETERS as Echo.native() gives them.
--- Every effects voice gets them at once, and a voice made later gets them when it is made.
-function XAudio.set_echo(parameters)
-	effect_parameters.echo = parameters
-	return apply_effect("echo")
+-- Sets effect profile `profile`'s echo to `parameters`, the fields of FXECHO_PARAMETERS as Echo.native() gives them.
+-- Every effects voice of that profile gets them at once, and one made later gets them when it is made.
+function XAudio.set_echo(profile, parameters)
+	effect_parameters[profile] = effect_parameters[profile] or {}
+	effect_parameters[profile].echo = parameters
+	return apply_effect(profile, "echo")
 end
 
 local Voice = {}
 Voice.__index = Voice
 
 -- Creates a stopped voice for PCM in `format`, a MusicReplacer_WAVEFORMATEX.
--- With `opts.effects`, the name of an effects setup such as "eq+reverb", it plays through that setup's voice.
+-- With `opts.effects`, the name of a profile's effects such as "2/eq+reverb", it plays through their voice.
 -- It plays straight to the output with no setup, or when the effects could not be made.
 -- Returns the voice, or nil, why, and true when XAudio2 itself refused the voice, which a failed engine also does.
 -- A refusal counts as an engine failure only for an error in XAudio2's own facility or the audio client's, which no file's format causes.
@@ -563,10 +575,11 @@ function Voice:set_volume(volume)
 	return checked_voice(self, "setting a volume", "set_volume", safe, 0)
 end
 
--- Sends the voice through the voice of the effects setup named `setup`, or straight to the output with nil, from its next processing pass.
+-- Sends the voice through the voice of the effects named `effects`, such as "2/eq+reverb", or straight to the output with nil.
+-- The change takes effect from the voice's next processing pass.
 -- Effects that could not be made leave it playing straight to the output. Returns false when XAudio2 refuses the change.
-function Voice:set_effects(setup)
-	local sends = setup and effects_sends(setup) or nil
+function Voice:set_effects(effects)
+	local sends = effects and effects_sends(effects) or nil
 	return checked_voice(self, "changing a voice's output", "set_output_voices", sends)
 end
 

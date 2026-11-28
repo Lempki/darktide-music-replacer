@@ -5,10 +5,17 @@
 
 local Contexts = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/situations/contexts")
 local Reverb = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/playback/reverb")
+local EffectProfiles = get_mod("MusicReplacer"):io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/playback/effect_profiles")
 
-local reverb_room_options = {}
-for _, room in ipairs(Reverb.ROOMS) do
-	reverb_room_options[#reverb_room_options + 1] = { text = "reverb_room_" .. room.id, value = room.id }
+-- The Reverb Room dropdown's options, made anew for every dropdown.
+-- DMF keeps a dropdown's options table and replaces each option's text with its translation in place.
+-- So a table that two dropdowns share is translated twice, and shows the translation's translation, which DMF wraps in angle brackets.
+local function reverb_room_options()
+	local options = {}
+	for _, room in ipairs(Reverb.ROOMS) do
+		options[#options + 1] = { text = "reverb_room_" .. room.id, value = room.id }
+	end
+	return options
 end
 
 -- What a context plays. Custom keeps the mod's plain behavior: custom songs where there are files, the game's music elsewhere.
@@ -38,7 +45,8 @@ end
 -- One Situation dropdown, whose choice shows only that situation's settings, so the menu does not grow by a row per situation.
 -- Every situation's settings exist all along, hidden while another is chosen, so their saved values stay as they are.
 -- Meat Grinder's situations to choose from come from the same list.
--- A situation's own choice of a Playback or Effects setting: Default follows that group's setting, and On and Off decide for it alone.
+-- A situation's own choice of a Playback setting: Global follows the Playback group, and On and Off decide for it alone.
+-- Its value stays "default", as 1.3.0 saved it, so the choices players made then still hold.
 local function own_choice_widget(setting_id, title)
 	return {
 		setting_id = setting_id,
@@ -47,7 +55,7 @@ local function own_choice_widget(setting_id, title)
 		tooltip = title .. "_tooltip",
 		default_value = "default",
 		options = {
-			{ text = "situation_default", value = "default" },
+			{ text = "situation_global", value = "default" },
 			{ text = "situation_on", value = "on" },
 			{ text = "situation_off", value = "off" },
 		},
@@ -90,10 +98,20 @@ local function situation_settings(context)
 		},
 		own_choice_widget("shuffle_" .. context.id, "situation_shuffle"),
 		own_choice_widget("repeat_" .. context.id, "situation_repeat"),
-		own_choice_widget("reverb_" .. context.id, "situation_reverb"),
-		own_choice_widget("eq_" .. context.id, "situation_eq"),
-		own_choice_widget("echo_" .. context.id, "situation_echo"),
-		own_choice_widget("speed_" .. context.id, "situation_speed"),
+		{
+			setting_id = "effects_" .. context.id,
+			title = "situation_effects",
+			type = "dropdown",
+			tooltip = "situation_effects_tooltip",
+			default_value = "global",
+			options = {
+				{ text = "profile_global", value = "global" },
+				{ text = "profile_1", value = "profile_1" },
+				{ text = "profile_2", value = "profile_2" },
+				{ text = "profile_3", value = "profile_3" },
+				{ text = "situation_effects_none", value = "none" },
+			},
+		},
 		{
 			setting_id = "restore_removed_" .. context.id,
 			title = "situation_restore_removed",
@@ -103,6 +121,206 @@ local function situation_settings(context)
 			function_name = "restore_removed_" .. context.id,
 		},
 	}
+end
+
+-- One effect profile's settings, whose ids end in the profile's number, such as reverb_room_2, or reverb_room_0 for Global.
+-- Every profile shares its titles and tooltips, so the texts exist once, and effect_profiles.lua gives each profile its defaults.
+-- The Reset button comes first, so it is in reach without scrolling past the profile's settings.
+local function profile_settings(profile)
+	return {
+		{
+			setting_id = "reset_profile_" .. profile,
+			title = "reset_profile",
+			type = "button",
+			tooltip = "reset_profile_tooltip",
+			button_text = "reset_profile_button",
+			function_name = "reset_profile_" .. profile,
+		},
+		{
+			setting_id = "use_reverb_" .. profile,
+			title = "use_reverb",
+			type = "checkbox",
+			tooltip = "use_reverb_tooltip",
+			default_value = EffectProfiles.default("use_reverb", profile),
+		},
+		{
+			setting_id = "reverb_room_" .. profile,
+			title = "reverb_room",
+			type = "dropdown",
+			tooltip = "reverb_room_tooltip",
+			default_value = EffectProfiles.default("reverb_room", profile),
+			options = reverb_room_options(),
+		},
+		{
+			setting_id = "reverb_mix_" .. profile,
+			title = "reverb_mix",
+			type = "numeric",
+			tooltip = "reverb_mix_tooltip",
+			default_value = EffectProfiles.default("reverb_mix", profile),
+			range = { 0, 100 },
+			decimals_number = 0,
+			unit_text = "percent_unit",
+		},
+		{
+			setting_id = "reverb_strength_" .. profile,
+			title = "reverb_strength",
+			type = "numeric",
+			tooltip = "reverb_strength_tooltip",
+			default_value = EffectProfiles.default("reverb_strength", profile),
+			range = { -20, 20 },
+			decimals_number = 0,
+			unit_text = "decibels_unit",
+		},
+		{
+			setting_id = "reverb_decay_" .. profile,
+			title = "reverb_decay",
+			type = "numeric",
+			tooltip = "reverb_decay_tooltip",
+			default_value = EffectProfiles.default("reverb_decay", profile),
+			range = { 25, 400 },
+			decimals_number = 0,
+			unit_text = "percent_unit",
+		},
+		{
+			setting_id = "reverb_pre_delay_" .. profile,
+			title = "reverb_pre_delay",
+			type = "numeric",
+			tooltip = "reverb_pre_delay_tooltip",
+			default_value = EffectProfiles.default("reverb_pre_delay", profile),
+			range = { 0, 200 },
+			decimals_number = 0,
+			unit_text = "milliseconds_unit",
+		},
+		{
+			setting_id = "reverb_damping_" .. profile,
+			title = "reverb_damping",
+			type = "numeric",
+			tooltip = "reverb_damping_tooltip",
+			default_value = EffectProfiles.default("reverb_damping", profile),
+			range = { -8, 8 },
+			decimals_number = 0,
+			unit_text = "decibels_unit",
+		},
+		{
+			setting_id = "use_eq_" .. profile,
+			title = "use_eq",
+			type = "checkbox",
+			tooltip = "use_eq_tooltip",
+			default_value = EffectProfiles.default("use_eq", profile),
+		},
+		-- The EQ's bands, as equalizer.lua lists them, from the lowest frequencies to the highest.
+		{
+			setting_id = "eq_bass_" .. profile,
+			title = "eq_bass",
+			type = "numeric",
+			tooltip = "eq_bass_tooltip",
+			default_value = EffectProfiles.default("eq_bass", profile),
+			range = { -18, 18 },
+			decimals_number = 0,
+			unit_text = "decibels_unit",
+		},
+		{
+			setting_id = "eq_low_mids_" .. profile,
+			title = "eq_low_mids",
+			type = "numeric",
+			tooltip = "eq_low_mids_tooltip",
+			default_value = EffectProfiles.default("eq_low_mids", profile),
+			range = { -18, 18 },
+			decimals_number = 0,
+			unit_text = "decibels_unit",
+		},
+		{
+			setting_id = "eq_high_mids_" .. profile,
+			title = "eq_high_mids",
+			type = "numeric",
+			tooltip = "eq_high_mids_tooltip",
+			default_value = EffectProfiles.default("eq_high_mids", profile),
+			range = { -18, 18 },
+			decimals_number = 0,
+			unit_text = "decibels_unit",
+		},
+		{
+			setting_id = "eq_treble_" .. profile,
+			title = "eq_treble",
+			type = "numeric",
+			tooltip = "eq_treble_tooltip",
+			default_value = EffectProfiles.default("eq_treble", profile),
+			range = { -18, 18 },
+			decimals_number = 0,
+			unit_text = "decibels_unit",
+		},
+		{
+			setting_id = "use_echo_" .. profile,
+			title = "use_echo",
+			type = "checkbox",
+			tooltip = "use_echo_tooltip",
+			default_value = EffectProfiles.default("use_echo", profile),
+		},
+		{
+			setting_id = "echo_mix_" .. profile,
+			title = "echo_mix",
+			type = "numeric",
+			tooltip = "echo_mix_tooltip",
+			default_value = EffectProfiles.default("echo_mix", profile),
+			range = { 0, 100 },
+			decimals_number = 0,
+			unit_text = "percent_unit",
+		},
+		-- A feedback of 100% would repeat every echo at full level forever, so the setting stops short of it.
+		{
+			setting_id = "echo_feedback_" .. profile,
+			title = "echo_feedback",
+			type = "numeric",
+			tooltip = "echo_feedback_tooltip",
+			default_value = EffectProfiles.default("echo_feedback", profile),
+			range = { 0, 90 },
+			decimals_number = 0,
+			unit_text = "percent_unit",
+		},
+		{
+			setting_id = "echo_delay_" .. profile,
+			title = "echo_delay",
+			type = "numeric",
+			tooltip = "echo_delay_tooltip",
+			default_value = EffectProfiles.default("echo_delay", profile),
+			range = { 1, 2000 },
+			decimals_number = 0,
+			unit_text = "milliseconds_unit",
+		},
+		{
+			setting_id = "use_speed_" .. profile,
+			title = "use_speed",
+			type = "checkbox",
+			tooltip = "use_speed_tooltip",
+			default_value = EffectProfiles.default("use_speed", profile),
+		},
+		-- XAudio2 makes every voice for at most twice its speed, so the setting stops at 200%, and its lowest is as far down.
+		{
+			setting_id = "playback_speed_" .. profile,
+			title = "playback_speed",
+			type = "numeric",
+			tooltip = "playback_speed_tooltip",
+			default_value = EffectProfiles.default("playback_speed", profile),
+			range = { 50, 200 },
+			decimals_number = 0,
+			unit_text = "percent_unit",
+		},
+	}
+end
+
+-- One Profile dropdown, whose choice shows only that profile's settings, as the Situation dropdown does.
+-- Every profile's settings exist all along, hidden while another is chosen, so their saved values stay as they are.
+-- Global comes first, then the numbered profiles.
+local profile_widgets = {}
+local profile_options = {}
+for profile = EffectProfiles.GLOBAL, EffectProfiles.COUNT do
+	local shown = {}
+	for _, widget in ipairs(profile_settings(profile)) do
+		profile_widgets[#profile_widgets + 1] = widget
+		shown[#shown + 1] = #profile_widgets
+	end
+	local text = profile == EffectProfiles.GLOBAL and "profile_global" or "profile_" .. profile
+	profile_options[#profile_options + 1] = { text = text, value = profile, show_widgets = shown }
 end
 
 local situation_widgets = {}
@@ -296,160 +514,18 @@ return {
 				},
 			},
 			{
-				-- How the effects sound is shared, while each situation's own Reverb and EQ choices decide where they play.
+				-- The effect profiles, while each situation's own Effects choice picks the profile its songs play through.
 				setting_id = "audio_effects",
 				type = "group",
 				sub_widgets = {
 					{
-						setting_id = "use_reverb",
-						type = "checkbox",
-						tooltip = "use_reverb_tooltip",
-						default_value = false,
-					},
-					{
-						setting_id = "reverb_room",
+						setting_id = "shown_profile",
+						title = "profile_title",
 						type = "dropdown",
-						tooltip = "reverb_room_tooltip",
-						default_value = Reverb.DEFAULT_ROOM,
-						options = reverb_room_options,
-					},
-					{
-						setting_id = "reverb_mix",
-						type = "numeric",
-						tooltip = "reverb_mix_tooltip",
-						default_value = 30,
-						range = { 0, 100 },
-						decimals_number = 0,
-						unit_text = "percent_unit",
-					},
-					{
-						setting_id = "reverb_strength",
-						type = "numeric",
-						tooltip = "reverb_strength_tooltip",
-						default_value = 0,
-						range = { -20, 20 },
-						decimals_number = 0,
-						unit_text = "decibels_unit",
-					},
-					{
-						setting_id = "reverb_decay",
-						type = "numeric",
-						tooltip = "reverb_decay_tooltip",
-						default_value = 100,
-						range = { 25, 400 },
-						decimals_number = 0,
-						unit_text = "percent_unit",
-					},
-					{
-						setting_id = "reverb_pre_delay",
-						type = "numeric",
-						tooltip = "reverb_pre_delay_tooltip",
-						default_value = 0,
-						range = { 0, 200 },
-						decimals_number = 0,
-						unit_text = "milliseconds_unit",
-					},
-					{
-						setting_id = "reverb_damping",
-						type = "numeric",
-						tooltip = "reverb_damping_tooltip",
-						default_value = 0,
-						range = { -8, 8 },
-						decimals_number = 0,
-						unit_text = "decibels_unit",
-					},
-					{
-						setting_id = "use_eq",
-						type = "checkbox",
-						tooltip = "use_eq_tooltip",
-						default_value = false,
-					},
-					-- The EQ's bands, as equalizer.lua lists them, from the lowest frequencies to the highest.
-					{
-						setting_id = "eq_bass",
-						type = "numeric",
-						tooltip = "eq_bass_tooltip",
-						default_value = 0,
-						range = { -18, 18 },
-						decimals_number = 0,
-						unit_text = "decibels_unit",
-					},
-					{
-						setting_id = "eq_low_mids",
-						type = "numeric",
-						tooltip = "eq_low_mids_tooltip",
-						default_value = 0,
-						range = { -18, 18 },
-						decimals_number = 0,
-						unit_text = "decibels_unit",
-					},
-					{
-						setting_id = "eq_high_mids",
-						type = "numeric",
-						tooltip = "eq_high_mids_tooltip",
-						default_value = 0,
-						range = { -18, 18 },
-						decimals_number = 0,
-						unit_text = "decibels_unit",
-					},
-					{
-						setting_id = "eq_treble",
-						type = "numeric",
-						tooltip = "eq_treble_tooltip",
-						default_value = 0,
-						range = { -18, 18 },
-						decimals_number = 0,
-						unit_text = "decibels_unit",
-					},
-					{
-						setting_id = "use_echo",
-						type = "checkbox",
-						tooltip = "use_echo_tooltip",
-						default_value = false,
-					},
-					{
-						setting_id = "echo_mix",
-						type = "numeric",
-						tooltip = "echo_mix_tooltip",
-						default_value = 30,
-						range = { 0, 100 },
-						decimals_number = 0,
-						unit_text = "percent_unit",
-					},
-					-- A feedback of 100% would repeat every echo at full level forever, so the setting stops short of it.
-					{
-						setting_id = "echo_feedback",
-						type = "numeric",
-						tooltip = "echo_feedback_tooltip",
-						default_value = 30,
-						range = { 0, 90 },
-						decimals_number = 0,
-						unit_text = "percent_unit",
-					},
-					{
-						setting_id = "echo_delay",
-						type = "numeric",
-						tooltip = "echo_delay_tooltip",
-						default_value = 500,
-						range = { 1, 2000 },
-						decimals_number = 0,
-						unit_text = "milliseconds_unit",
-					},
-					{
-						setting_id = "use_speed",
-						type = "checkbox",
-						tooltip = "use_speed_tooltip",
-						default_value = false,
-					},
-					-- XAudio2 makes every voice for at most twice its speed, so the setting stops at 200%, and its lowest is as far down.
-					{
-						setting_id = "playback_speed",
-						type = "numeric",
-						tooltip = "playback_speed_tooltip",
-						default_value = 100,
-						range = { 50, 200 },
-						decimals_number = 0,
-						unit_text = "percent_unit",
+						tooltip = "shown_profile_tooltip",
+						default_value = EffectProfiles.GLOBAL,
+						options = profile_options,
+						sub_widgets = profile_widgets,
 					},
 				},
 			},

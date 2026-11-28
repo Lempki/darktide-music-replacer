@@ -24,6 +24,7 @@ local AudioClient = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modu
 local Reverb = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/playback/reverb")
 local Equalizer = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/playback/equalizer")
 local Echo = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/playback/echo")
+local EffectProfiles = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/playback/effect_profiles")
 local LoudnessMeter = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/songs/loudness_meter")
 local Loudness = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/songs/loudness")
 local DiagnosticLog = mod:io_dofile("MusicReplacer/scripts/mods/MusicReplacer/modules/diagnostics/diagnostic_log")
@@ -118,48 +119,65 @@ local function source_of(context_name)
 	return source
 end
 
--- The settings that decide how the reverb sounds, so a change to any of them sets the reverb again.
+-- The effect profiles, as effect_profiles.lua numbers them: Global, numbered 0, then Profiles 1 to 3.
+local GLOBAL_PROFILE = EffectProfiles.GLOBAL
+local PROFILE_COUNT = EffectProfiles.COUNT
+
+-- Profile `profile`'s value of the setting `base`, whose id ends in the profile's number.
+-- An example is reverb_room_2, or reverb_room_0 for Global.
+local function profile_setting(base, profile)
+	return mod:get(EffectProfiles.setting_id(base, profile))
+end
+
+-- The settings that decide how each effect sounds, without a profile's number, so a change to one sets that effect of its profile again.
 local REVERB_SETTINGS = {
 	reverb_room = true, reverb_mix = true, reverb_strength = true, reverb_decay = true, reverb_pre_delay = true,
 	reverb_damping = true,
 }
-
--- Gives the effects the reverb that Reverb Room and the reverb settings below it describe.
-local function apply_reverb()
-	AudioClient.set_reverb(Reverb.native(mod:get("reverb_room"), {
-		mix = mod:get("reverb_mix"),
-		strength = mod:get("reverb_strength"),
-		decay = mod:get("reverb_decay"),
-		pre_delay = mod:get("reverb_pre_delay"),
-		damping = mod:get("reverb_damping"),
-	}))
-end
-
--- The EQ's band settings, so a change to any of them sets the EQ again.
 local EQ_SETTINGS = {}
 for _, band in ipairs(Equalizer.BANDS) do
 	EQ_SETTINGS[band.id] = true
 end
-
--- Gives the effects the EQ that the band settings describe.
-local function apply_eq()
-	local gains = {}
-	for _, band in ipairs(Equalizer.BANDS) do
-		gains[band.id] = mod:get(band.id)
-	end
-	AudioClient.set_eq(Equalizer.native(gains))
-end
-
--- The settings that decide how the echo sounds, so a change to any of them sets the echo again.
 local ECHO_SETTINGS = { echo_mix = true, echo_feedback = true, echo_delay = true }
 
--- Gives the effects the echo that Echo Mix, Echo Feedback, and Echo Delay describe.
-local function apply_echo()
-	AudioClient.set_echo(Echo.native({
-		mix = mod:get("echo_mix"),
-		feedback = mod:get("echo_feedback"),
-		delay = mod:get("echo_delay"),
+-- Gives profile `profile`'s effects the reverb that its Reverb Room and the reverb settings below it describe.
+local function apply_reverb(profile)
+	AudioClient.set_reverb(profile, Reverb.native(profile_setting("reverb_room", profile), {
+		mix = profile_setting("reverb_mix", profile),
+		strength = profile_setting("reverb_strength", profile),
+		decay = profile_setting("reverb_decay", profile),
+		pre_delay = profile_setting("reverb_pre_delay", profile),
+		damping = profile_setting("reverb_damping", profile),
 	}))
+end
+
+-- Gives profile `profile`'s effects the EQ that its band settings describe.
+local function apply_eq(profile)
+	local gains = {}
+	for _, band in ipairs(Equalizer.BANDS) do
+		gains[band.id] = profile_setting(band.id, profile)
+	end
+	AudioClient.set_eq(profile, Equalizer.native(gains))
+end
+
+-- Gives profile `profile`'s effects the echo that its Echo Mix, Echo Feedback, and Echo Delay describe.
+local function apply_echo(profile)
+	AudioClient.set_echo(profile, Echo.native({
+		mix = profile_setting("echo_mix", profile),
+		feedback = profile_setting("echo_feedback", profile),
+		delay = profile_setting("echo_delay", profile),
+	}))
+end
+
+-- The profile number and the setting without it, for the id of one of a profile's settings, such as 2 and "reverb_room".
+-- Returns nil for any other setting.
+local function split_profile_setting(setting_id)
+	local base, number = setting_id:match("^(.+)_(%d+)$")
+	local profile = tonumber(number)
+	if not profile or profile < GLOBAL_PROFILE or profile > PROFILE_COUNT then
+		return nil
+	end
+	return base, profile
 end
 
 -- The volume settings are percentages of the music's normal level.
@@ -199,16 +217,8 @@ local function menu_volume(dt)
 	return menu_closed_elapsed < MENU_CLOSED_SECONDS and mod:get("menu_volume") / 100 or 1
 end
 
--- The setting each choice a situation can make for itself follows by default.
--- They are Playback's Shuffle and Repeat Song, and the Effects group's Use Reverb, Use EQ, Use Echo, and Use Playback Speed.
-local GROUP_SETTINGS = {
-	shuffle = "shuffle",
-	["repeat"] = "repeat_song",
-	reverb = "use_reverb",
-	eq = "use_eq",
-	echo = "use_echo",
-	speed = "use_speed",
-}
+-- The setting each choice a situation can make for itself follows by default: Playback's Shuffle and Repeat Song.
+local GROUP_SETTINGS = { shuffle = "shuffle", ["repeat"] = "repeat_song" }
 
 -- The situation's own choice for `kind`, a key of GROUP_SETTINGS, as its setting says: "on", "off", or nil to follow the group's.
 local function own_choice(kind, context_name)
@@ -244,45 +254,56 @@ local function plays_looping(is_only_file, context_name)
 	return loops(is_only_file, context_name) and not context_after_song
 end
 
--- The effects, keys of GROUP_SETTINGS, in the order xaudio.lua chains them, which is the order a setup's name lists them in.
-local EFFECT_ORDER = { "eq", "echo", "reverb" }
+-- The effect profile each value of a situation's own Effects choice plays, where None plays none.
+-- A stored value the dropdown no longer offers plays Global, as does a situation with no Effects choice.
+local PROFILE_CHOICES = { global = GLOBAL_PROFILE, profile_1 = 1, profile_2 = 2, profile_3 = 3 }
 
--- The name of the effects setup the situation's songs play through, as xaudio.lua names its setups, such as "eq+reverb", or nil for none.
--- Each effect is on by the situation's own choice, or else by the Effects group's Use setting for it.
+-- The effect profile the situation's songs play through, or nil while its Effects choice is None.
+local function profile_for(context_name)
+	local choice = context_name and mod:get("effects_" .. context_name)
+	if choice == "none" then
+		return nil
+	end
+	return PROFILE_CHOICES[choice] or GLOBAL_PROFILE
+end
+
+-- The effects in the order xaudio.lua chains them, which is the order a setup's name lists them in, with the setting that turns each on.
+local EFFECT_ORDER = {
+	{ name = "eq", use = "use_eq" },
+	{ name = "echo", use = "use_echo" },
+	{ name = "reverb", use = "use_reverb" },
+}
+
+-- The settings of a profile, without its number, that decide which effects and speed its songs play with.
+local PROFILE_ROUTING_SETTINGS = { use_eq = true, use_echo = true, use_reverb = true, use_speed = true, playback_speed = true }
+
+-- The name of the effects the situation's songs play through, as xaudio.lua names them, or nil for none.
+-- It is its profile's number and the effects its profile turns on, such as "2/eq+reverb".
 local function effects_setup(context_name)
+	local profile = profile_for(context_name)
+	if not profile then
+		return nil
+	end
+
 	local names = {}
-	for _, kind in ipairs(EFFECT_ORDER) do
-		if is_on_for(kind, context_name) then
-			names[#names + 1] = kind
+	for _, effect in ipairs(EFFECT_ORDER) do
+		if profile_setting(effect.use, profile) == true then
+			names[#names + 1] = effect.name
 		end
 	end
 	if #names == 0 then
 		return nil
 	end
-	return table.concat(names, "+")
+	return profile .. "/" .. table.concat(names, "+")
 end
 
--- How many times faster than recorded the situation's songs play: Playback Speed while the speed is on for it, else 1.
+-- How many times faster than recorded the situation's songs play: its profile's Playback Speed while that profile uses it, else 1.
 local function speed_for(context_name)
-	if not is_on_for("speed", context_name) then
+	local profile = profile_for(context_name)
+	if not profile or profile_setting("use_speed", profile) ~= true then
 		return 1
 	end
-	return mod:get("playback_speed") / 100
-end
-
--- True when `setting_id` changes the speed of the situation playing now: Playback Speed, Use Playback Speed, or the situation's own choice.
-local function is_speed_choice(setting_id)
-	return setting_id == "playback_speed" or setting_id == GROUP_SETTINGS.speed or setting_id == "speed_" .. tostring(current_context)
-end
-
--- True when `setting_id` turns an effect on or off for the situation playing now: a Use setting, or the situation's own choice.
-local function is_effect_choice(setting_id)
-	for _, kind in ipairs(EFFECT_ORDER) do
-		if setting_id == GROUP_SETTINGS[kind] or setting_id == kind .. "_" .. tostring(current_context) then
-			return true
-		end
-	end
-	return false
+	return profile_setting("playback_speed", profile) / 100
 end
 
 -- Sets the playlist's order by the situation playing now, since Shuffle can differ per situation.
@@ -1196,6 +1217,27 @@ for _, context in ipairs(Contexts.list) do
 	end
 end
 
+-- The name a message gives effect profile `profile`, such as Global or Profile 2.
+local function profile_label(profile)
+	if profile == GLOBAL_PROFILE then
+		return mod:localize("profile_global")
+	end
+	return mod:localize("profile_" .. profile)
+end
+
+-- Each effect profile's Reset button, which puts every setting of that profile back to the profile's own default.
+-- Each setting changes as if the player had changed it, so the song playing now and the mod options follow at once.
+-- DMF calls a button's function by its name, so every profile gets a function of its own.
+for profile = GLOBAL_PROFILE, PROFILE_COUNT do
+	mod["reset_profile_" .. profile] = function()
+		for _, setting in ipairs(EffectProfiles.SETTINGS) do
+			mod:set(EffectProfiles.setting_id(setting.name, profile), EffectProfiles.default(setting.name, profile), true)
+		end
+		log(string.format("[control] reset effect profile %d", profile))
+		notify_control("control_profile_reset", profile_label(profile))
+	end
+end
+
 -- ###########################################################################
 -- Wiring
 -- ###########################################################################
@@ -1407,9 +1449,11 @@ mod.on_all_mods_loaded = function()
 	AudioClient.init(log, { player = Player, disk_path = Library.disk_path, level_of = Loudness.level, is_measured = Loudness.is_measured })
 	AudioClient.set_volume(custom_volume())
 	AudioClient.set_fade_seconds(mod:get("fade_seconds"))
-	apply_reverb()
-	apply_eq()
-	apply_echo()
+	for profile = GLOBAL_PROFILE, PROFILE_COUNT do
+		apply_reverb(profile)
+		apply_eq(profile)
+		apply_echo(profile)
+	end
 	DebugOverlay.init(log, { snapshot = overlay_snapshot, meter = AudioClient.meter, create_element = create_overlay_element })
 	apply_overlay_settings()
 	OnScreenMessage.init(log, { create_element = create_on_screen_message_element })
@@ -1505,6 +1549,7 @@ mod.on_setting_changed = function(setting_id)
 		end
 	end
 
+	local profile_base, profile = split_profile_setting(setting_id)
 	if setting_id == "debug_overlay" or setting_id == "debug_overlay_scale" or setting_id == "debug_overlay_opacity" then
 		apply_overlay_settings()
 	elseif ON_SCREEN_MESSAGE_SETTINGS[setting_id] then
@@ -1521,22 +1566,18 @@ mod.on_setting_changed = function(setting_id)
 		follow_shuffle(current_context)
 	elseif setting_id == "repeat_song" or setting_id == "repeat_" .. tostring(current_context) then
 		apply_repeat_song()
-	elseif is_speed_choice(setting_id) then
-		-- The song playing now follows at once, so the player hears what the choice does.
-		if enabled and current_context then
-			AudioClient.set_speed(speed_for(current_context))
-		end
-	elseif is_effect_choice(setting_id) then
+	elseif setting_id == "effects_" .. tostring(current_context) or (profile_base and PROFILE_ROUTING_SETTINGS[profile_base]) then
 		-- The song playing now follows at once, so the player hears what the choice does.
 		if enabled and current_context then
 			AudioClient.set_effects(effects_setup(current_context))
+			AudioClient.set_speed(speed_for(current_context))
 		end
-	elseif REVERB_SETTINGS[setting_id] then
-		apply_reverb()
-	elseif EQ_SETTINGS[setting_id] then
-		apply_eq()
-	elseif ECHO_SETTINGS[setting_id] then
-		apply_echo()
+	elseif profile_base and REVERB_SETTINGS[profile_base] then
+		apply_reverb(profile)
+	elseif profile_base and EQ_SETTINGS[profile_base] then
+		apply_eq(profile)
+	elseif profile_base and ECHO_SETTINGS[profile_base] then
+		apply_echo(profile)
 	elseif setting_id == "let_songs_finish" and not mod:get("let_songs_finish") and context_after_song then
 		-- Nothing waits for a song with the setting off, so the situation that waited takes over at once.
 		log(string.format("[playback] %s: let songs finish turned off, so %s takes over now", current_context, context_after_song))

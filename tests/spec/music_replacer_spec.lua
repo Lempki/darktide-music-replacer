@@ -2225,134 +2225,178 @@ describe("MusicReplacer.lua Skip", function()
 end)
 
 describe("MusicReplacer.lua effects", function()
-	it("plays songs without effects by default", function()
+	it("plays songs without effects and at their own speed by default", function()
 		local harness = in_hub()
 
 		assert_equal(harness:last_play().opts.effects, nil)
+		assert_equal(harness:last_play().opts.speed, 1)
 	end)
 
-	it("plays every situation's songs through the effects Use Reverb and Use EQ turn on, but those a situation turns off itself", function()
-		local harness = in_mission({ use_reverb = true, use_eq = true, eq_combat = "off" })
+	it("plays every situation through the Global profile by default, with the effects Global turns on", function()
+		local harness = in_mission({ use_reverb_0 = true, use_eq_0 = true })
 		assert_equal(harness:playing(), "explore/x.mp3")
-		assert_equal(harness:last_play().opts.effects, "eq+reverb")
+		assert_equal(harness:last_play().opts.effects, "0/eq+reverb")
 
 		harness:state("music_combat", "normal")
 		harness:settle()
 
 		assert_equal(harness:playing(), "combat/c.mp3")
-		assert_equal(harness:last_play().opts.effects, "reverb")
+		assert_equal(harness:last_play().opts.effects, "0/eq+reverb")
 	end)
 
-	it("plays one situation through an effect by its own choice while the effect is off for the rest", function()
-		local harness = in_hub(nil, { settings = { eq_hub = "on" } })
+	it("plays a situation that picks Profile 1, 2, or 3 with reverb at once, while the rest stay without effects", function()
+		local harness = in_mission({ effects_combat = "profile_1" })
+		assert_equal(harness:last_play().opts.effects, nil)
 
-		assert_equal(harness:last_play().opts.effects, "eq")
+		harness:state("music_combat", "normal")
+		harness:settle()
+
+		assert_equal(harness:playing(), "combat/c.mp3")
+		assert_equal(harness:last_play().opts.effects, "1/reverb")
 	end)
 
-	it("moves the song playing now to its new effects setup as soon as any of the choices changes", function()
+	it("starts each numbered profile with a sound of its own: a hall, a cave with an echo, and a faster speed", function()
 		local harness = in_hub()
 
-		harness:set_setting("use_reverb", true)
-		assert_equal(harness:last_play().opts.effects, "reverb")
+		harness:set_setting("effects_hub", "profile_1")
+		assert_equal(harness:last_play().opts.effects, "1/reverb")
+		assert_equal(harness:last_play().opts.speed, 1)
 
-		harness:set_setting("eq_hub", "on")
-		assert_equal(harness:last_play().opts.effects, "eq+reverb")
+		harness:set_setting("effects_hub", "profile_2")
+		assert_equal(harness:last_play().opts.effects, "2/echo+reverb")
 
-		harness:set_setting("reverb_hub", "off")
-		assert_equal(harness:last_play().opts.effects, "eq")
+		harness:set_setting("effects_hub", "profile_3")
+		assert_equal(harness:last_play().opts.effects, nil)
+		assert_equal(harness:last_play().opts.speed, 1.5)
+	end)
 
-		harness:set_setting("use_eq", true)
-		harness:set_setting("eq_hub", "off")
+	it("puts every setting of a profile back to that profile's own default with its Reset button, and says so", function()
+		local harness = in_hub(nil, { settings = { effects_hub = "profile_2", reverb_mix_2 = 70, use_echo_2 = false, use_eq_2 = true } })
+		assert_equal(harness:last_play().opts.effects, "2/eq+reverb")
+
+		harness.mod.reset_profile_2()
+
+		assert_equal(harness:last_play().opts.effects, "2/echo+reverb")
+		assert_equal(harness.client.reverb[2].WetDryMix, 30)
+		assert_equal(harness:last_on_screen_message(), "<control_profile_reset: <profile_2>>")
+	end)
+
+	it("resets only the profile whose button was pressed", function()
+		local harness = in_hub(nil, { settings = { use_reverb_0 = true, reverb_mix_1 = 70 } })
+
+		harness.mod.reset_profile_0()
+
+		assert_equal(harness:last_play().opts.effects, nil)
+		assert_equal(harness.client.reverb[1].WetDryMix, 70)
+		assert_equal(harness:last_on_screen_message(), "<control_profile_reset: <profile_global>>")
+	end)
+
+	it("plays a situation through the profile its own Effects choice picks, or without effects for None", function()
+		local harness = in_mission({ use_reverb_0 = true, use_reverb_2 = false, use_echo_2 = true, effects_combat = "profile_2" })
+		assert_equal(harness:last_play().opts.effects, "0/reverb")
+
+		harness:state("music_combat", "normal")
+		harness:settle()
+		assert_equal(harness:playing(), "combat/c.mp3")
+		assert_equal(harness:last_play().opts.effects, "2/echo")
+	end)
+
+	it("plays a situation on None without effects even while its profile would turn them on", function()
+		local harness = in_hub(nil, { settings = { use_reverb_0 = true, effects_hub = "none" } })
+
 		assert_equal(harness:last_play().opts.effects, nil)
 	end)
 
-	it("gives the effects the chosen reverb at startup and whenever Reverb Room or Reverb Mix changes", function()
-		local harness = in_hub()
-		assert_equal(harness.client.reverb.WetDryMix, 30)
-		assert_equal(harness.client.reverb.DecayTime, 1.8)
+	it("names a profile's effects by the effects on, in the order the chain plays them", function()
+		local harness = in_hub(nil, { settings = { effects_hub = "profile_3", use_reverb_3 = false, use_echo_3 = true } })
+		assert_equal(harness:last_play().opts.effects, "3/echo")
 
-		harness:set_setting("reverb_mix", 70)
-		assert_equal(harness.client.reverb.WetDryMix, 70)
+		harness:set_setting("use_reverb_3", true)
+		assert_equal(harness:last_play().opts.effects, "3/echo+reverb")
 
-		harness:set_setting("reverb_room", "cave")
-		assert_equal(math.abs(harness.client.reverb.DecayTime - 2.91 * 1.3) < 1e-9, true)
+		harness:set_setting("use_eq_3", true)
+		assert_equal(harness:last_play().opts.effects, "3/eq+echo+reverb")
+
+		harness:set_setting("use_echo_3", false)
+		assert_equal(harness:last_play().opts.effects, "3/eq+reverb")
 	end)
 
-	it("makes the reverb louder or quieter as soon as Reverb Strength changes", function()
-		local harness = in_hub()
-		assert_equal(harness.client.reverb.ReverbGain, -14)
+	it("moves the song playing now to its new effects as soon as its profile or its profile's choices change", function()
+		local harness = in_hub(nil, { settings = { use_echo_2 = false } })
+		assert_equal(harness:last_play().opts.effects, nil)
 
-		harness:set_setting("reverb_strength", 10)
+		harness:set_setting("effects_hub", "profile_2")
+		assert_equal(harness:last_play().opts.effects, "2/reverb")
 
-		assert_equal(harness.client.reverb.ReverbGain, -4)
+		harness:set_setting("use_reverb_2", false)
+		assert_equal(harness:last_play().opts.effects, nil)
 	end)
 
-	it("gives the effects a flat EQ at startup", function()
-		local harness = in_hub()
+	it("leaves the song playing now as it is when another profile changes", function()
+		local harness = in_hub(nil, { settings = { use_reverb_0 = true } })
 
-		for band = 0, 3 do
-			assert_equal(harness.client.eq["Gain" .. band], 1)
+		harness:set_setting("use_eq_2", true)
+
+		assert_equal(harness:last_play().opts.effects, "0/reverb")
+	end)
+
+	it("gives every profile its reverb at startup, and a profile its new reverb as soon as one of its reverb settings changes", function()
+		local harness = in_hub()
+		for profile = 0, 3 do
+			assert_equal(harness.client.reverb[profile].WetDryMix, 30)
 		end
+		assert_equal(harness.client.reverb[0].DecayTime, 1.8)
+		assert_equal(harness.client.reverb[1].DecayTime, 3.92)
+
+		harness:set_setting("reverb_mix_2", 70)
+		assert_equal(harness.client.reverb[2].WetDryMix, 70)
+		assert_equal(harness.client.reverb[1].WetDryMix, 30)
+
+		harness:set_setting("reverb_room_3", "cave")
+		assert_equal(math.abs(harness.client.reverb[3].DecayTime - 2.91 * 1.3) < 1e-9, true)
+
+		harness:set_setting("reverb_strength_0", 10)
+		assert_equal(harness.client.reverb[0].ReverbGain, -4)
 	end)
 
-	it("names the effects setup by the effects on, in the order the chain plays them", function()
-		local harness = in_hub(nil, { settings = { use_echo = true } })
-		assert_equal(harness:last_play().opts.effects, "echo")
-
-		harness:set_setting("use_reverb", true)
-		assert_equal(harness:last_play().opts.effects, "echo+reverb")
-
-		harness:set_setting("eq_hub", "on")
-		assert_equal(harness:last_play().opts.effects, "eq+echo+reverb")
-
-		harness:set_setting("echo_hub", "off")
-		assert_equal(harness:last_play().opts.effects, "eq+reverb")
-	end)
-
-	it("gives the effects the echo at startup and as soon as Echo Mix, Echo Feedback, or Echo Delay changes", function()
+	it("gives every profile a flat EQ at startup, and a profile a band's new gain as soon as the band changes", function()
 		local harness = in_hub()
-		assert_deep_equal(harness.client.echo, { WetDryMix = 0.3, Feedback = 0.3, Delay = 500 })
+		for profile = 0, 3 do
+			for band = 0, 3 do
+				assert_equal(harness.client.eq[profile]["Gain" .. band], 1)
+			end
+		end
 
-		harness:set_setting("echo_delay", 250)
-		assert_equal(harness.client.echo.Delay, 250)
+		harness:set_setting("eq_treble_2", 6)
 
-		harness:set_setting("echo_feedback", 60)
-		assert_equal(harness.client.echo.Feedback, 0.6)
-
-		harness:set_setting("echo_mix", 50)
-		assert_equal(harness.client.echo.WetDryMix, 0.5)
+		assert_equal(math.abs(harness.client.eq[2].Gain3 - 10 ^ (6 / 20)) < 1e-9, true)
+		assert_equal(harness.client.eq[1].Gain3, 1)
 	end)
 
-	it("plays songs at their own speed by default, and at Playback Speed in the situations it is on for", function()
+	it("gives every profile its echo at startup, and a profile its new echo as soon as one of its echo settings changes", function()
 		local harness = in_hub()
+		assert_deep_equal(harness.client.echo[1], { WetDryMix = 0.3, Feedback = 0.3, Delay = 500 })
+
+		harness:set_setting("echo_delay_3", 250)
+		harness:set_setting("echo_feedback_3", 60)
+		harness:set_setting("echo_mix_3", 50)
+
+		assert_deep_equal(harness.client.echo[3], { WetDryMix = 0.5, Feedback = 0.6, Delay = 250 })
+		assert_equal(harness.client.echo[1].Delay, 500)
+	end)
+
+	it("plays a situation at its profile's Playback Speed while that profile uses it", function()
+		local harness = in_hub(nil, { settings = { playback_speed_0 = 125 } })
 		assert_equal(harness:last_play().opts.speed, 1)
 
-		harness:set_setting("playback_speed", 125)
-		assert_equal(harness:last_play().opts.speed, 1)
-
-		harness:set_setting("use_speed", true)
+		harness:set_setting("use_speed_0", true)
 		assert_equal(harness:last_play().opts.speed, 1.25)
 
-		harness:set_setting("speed_hub", "off")
-		assert_equal(harness:last_play().opts.speed, 1)
-	end)
-
-	it("changes the speed of the song playing now as soon as Playback Speed changes", function()
-		local harness = in_hub(nil, { settings = { speed_hub = "on" } })
-		assert_equal(harness:last_play().opts.speed, 1)
-
-		harness:set_setting("playback_speed", 80)
-
+		harness:set_setting("playback_speed_0", 80)
 		assert_equal(harness:last_play().opts.speed, 0.8)
-	end)
 
-	it("gives the EQ a band's new gain as soon as the band changes", function()
-		local harness = in_hub()
-
-		harness:set_setting("eq_treble", 6)
-
-		assert_equal(math.abs(harness.client.eq.Gain3 - 10 ^ (6 / 20)) < 1e-9, true)
-		assert_equal(harness.client.eq.Gain0, 1)
+		harness:set_setting("effects_hub", "none")
+		assert_equal(harness:last_play().opts.speed, 1)
 	end)
 end)
 
