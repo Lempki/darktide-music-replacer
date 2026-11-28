@@ -104,6 +104,7 @@ local context_status = "Vanilla"
 local SOURCE_NAMES = { custom = "Custom", game = "Vanilla", silence = "Silence" }
 local NO_OUTPUT_STATUS = "Vanilla, no audio output"
 local VANILLA_PICK_STATUS = "Vanilla, marker"
+local SILENCE_PICK_STATUS = "Silence, marker"
 
 local borrows_folders -- Set below, once the folder lookup it needs exists.
 
@@ -320,9 +321,10 @@ local function follow_shuffle(context_name)
 	Playlist.set_shuffle(is_on_for("shuffle", context_name))
 end
 
--- True while a Vanilla marker is the pick of the folder playing now, so the game's music plays until the situation changes.
-local function is_vanilla_pick()
-	return current_folder ~= nil and playing_track ~= nil and playing_track.is_vanilla == true
+-- "vanilla" or "silence" while a marker is the pick of the folder playing now, and nil otherwise.
+-- The pick lasts until the situation changes, with the game's music for a Vanilla marker and silence for a Silence marker.
+local function marker_pick()
+	return current_folder ~= nil and playing_track ~= nil and playing_track.marker or nil
 end
 
 local function remember_playing_track(next_context_name)
@@ -336,7 +338,7 @@ local function remember_playing_track(next_context_name)
 		stopped_at = playing_track.position
 	elseif AudioClient.is_playing() then
 		stopped_at = AudioClient.position()
-	elseif is_vanilla_pick() then
+	elseif marker_pick() then
 		-- The game's music has no position the mod knows, so only the pick is kept, and the situation plays the game's music again.
 		stopped_at = 0
 	else
@@ -355,7 +357,7 @@ end
 -- So a situation that moves back and forth between folders, as Rolling Steel's stages do, continues each folder's song.
 local function remember_folder_song()
 	local stopped_at
-	if is_vanilla_pick() then
+	if marker_pick() then
 		stopped_at = 0
 	elseif playing_track and AudioClient.is_playing() then
 		stopped_at = AudioClient.position()
@@ -428,11 +430,19 @@ local function hand_back(status)
 	Suppression.release()
 end
 
--- Plays the game's music as the pick `file_path`, a Vanilla marker, for `context_name`.
--- A marker that is its folder's only file keeps the game's music there for good.
-local function play_vanilla_pick(context_name, file_path, is_only_file)
+-- Plays the game's music or silence as the pick `file_path`, a marker, for `context_name`.
+-- A marker that is its folder's only file keeps the game's music or silence there for good.
+local function play_marker_pick(context_name, file_path, is_only_file)
+	local marker = Library.marker(file_path)
+	playing_track = { context_name = context_name, file_path = file_path, is_only_file = is_only_file, marker = marker }
+	if marker == "silence" then
+		log(string.format("[playback] %s: %s is the pick, playing silence", context_name, file_path))
+		AudioClient.stop()
+		Suppression.engage(context_name)
+		context_status = SILENCE_PICK_STATUS
+		return
+	end
 	log(string.format("[playback] %s: %s is the pick, playing the game's music", context_name, file_path))
-	playing_track = { context_name = context_name, file_path = file_path, is_only_file = is_only_file, is_vanilla = true }
 	hand_back(VANILLA_PICK_STATUS)
 end
 
@@ -440,10 +450,11 @@ local function song_name(file_path)
 	return file_path:match("[^/]+$")
 end
 
--- The name a message gives a pick: its file name, or the game's music for a Vanilla marker.
+-- The name a message gives a pick: its file name, the game's music for a Vanilla marker, or silence for a Silence marker.
 local function pick_name(file_path)
-	if Library.is_vanilla_marker(file_path) then
-		return mod:localize("vanilla_pick_name")
+	local marker = Library.marker(file_path)
+	if marker then
+		return mod:localize(marker .. "_pick_name")
 	end
 	return song_name(file_path)
 end
@@ -677,12 +688,12 @@ play_context = function(context_name, is_new_context)
 		return
 	end
 
-	-- A lone marker keeps the folder on the game's music, as a situation set to Vanilla does, so no message names it.
-	if Library.is_vanilla_marker(file_path) then
+	-- A lone marker keeps the folder on the game's music or silence, as a situation set to Vanilla or Silence does, so no message names it.
+	if Library.marker(file_path) then
 		if mod:get("song_change_messages") and not is_only_file then
 			Messages.show("song_now_playing", pick_name(file_path))
 		end
-		play_vanilla_pick(context_name, file_path, is_only_file)
+		play_marker_pick(context_name, file_path, is_only_file)
 		return
 	end
 
@@ -849,13 +860,13 @@ local function notify_control(text_id, ...)
 end
 
 -- True while one of the player's songs plays for the current situation, or is paused, the only music the keys act on.
--- A Vanilla marker's pick among songs counts too, so the keys move on from it.
+-- A marker's pick among songs counts too, so the keys move on from it.
 -- A lone marker does not, since there is nothing to move on to.
 local function has_song_to_control()
 	if not enabled or current_folder == nil or playing_track == nil or not AudioClient.available() then
 		return false
 	end
-	if is_vanilla_pick() then
+	if marker_pick() then
 		return not playing_track.is_only_file
 	end
 	return paused or AudioClient.is_playing()
@@ -886,7 +897,7 @@ end
 -- `control` names the key in the log.
 -- While a Vanilla marker is the pick, the message says the game's music plays, so the key's silence has a reason.
 local function say_no_song(control)
-	if is_vanilla_pick() then
+	if marker_pick() == "vanilla" then
 		log(string.format("[control] %s: the game's music plays for %s, which the key cannot act on", control, playing_track.file_path))
 		notify_control("control_game_music_playing")
 		return
@@ -909,11 +920,11 @@ local function play_manual_pick(file_path, duration, is_only_file, start_positio
 	end
 
 	paused = false
-	if Library.is_vanilla_marker(file_path) then
-		play_vanilla_pick(current_context, file_path, is_only_file)
+	if Library.marker(file_path) then
+		play_marker_pick(current_context, file_path, is_only_file)
 	else
-		-- The game's music played for a marker, so it is silenced again for the song.
-		if is_vanilla_pick() then
+		-- The game's music played for a Vanilla marker, so it is silenced again for the song.
+		if marker_pick() == "vanilla" then
 			Suppression.engage(current_context)
 		end
 		context_status = SOURCE_NAMES.custom
@@ -999,7 +1010,7 @@ end
 
 -- The game's music for a Vanilla marker is not the mod's to start over or pause, so those keys say no song plays.
 mod.restart_song = function()
-	if not has_song_to_control() or is_vanilla_pick() then
+	if not has_song_to_control() or marker_pick() then
 		say_no_song("restart song")
 		return
 	end
@@ -1025,8 +1036,8 @@ mod.previous_song = function()
 	end
 
 	if not file_path then
-		-- Nothing played before the game's music, which cannot be started over.
-		if is_vanilla_pick() then
+		-- Nothing played before the marker's pick, which cannot be started over.
+		if marker_pick() then
 			say_no_song("previous song")
 			return
 		end
@@ -1046,7 +1057,7 @@ local PAUSED_STATUS = "Custom, paused"
 -- The Pause / Resume key: stops the song playing now while the game's music stays silent, and the next press resumes it where it stopped.
 -- A context change ends the pause, and the paused song keeps its resume point like any song that was playing.
 mod.pause_song = function()
-	if not has_song_to_control() or is_vanilla_pick() then
+	if not has_song_to_control() or marker_pick() then
 		say_no_song("pause")
 		return
 	end
@@ -1138,7 +1149,7 @@ end
 -- Makes the song playing now follow Repeat Song, so the setting takes effect without waiting for the next song.
 -- A paused song follows it once it resumes, since resuming starts it again.
 local function apply_repeat_song()
-	if not has_song_to_control() or paused or is_vanilla_pick() then
+	if not has_song_to_control() or paused or marker_pick() then
 		return
 	end
 
@@ -1660,7 +1671,7 @@ mod.update = function(dt)
 		-- A context that played the game's music for lack of files starts its new track now, not at its next change.
 		-- A custom track that is playing or paused keeps playing or paused, and the next pick uses the new list.
 		-- A marker's pick lasts until the situation changes, so it stays too.
-		if enabled and not AudioClient.is_playing() and not paused and not is_vanilla_pick() then
+		if enabled and not AudioClient.is_playing() and not paused and not marker_pick() then
 			replay_current_context()
 		end
 	end
@@ -1693,9 +1704,13 @@ mod.update = function(dt)
 			-- A paused situation stays quiet until the song resumes, so the game's music is silenced again.
 			Suppression.engage(current_context)
 			context_status = PAUSED_STATUS
-		elseif is_vanilla_pick() then
+		elseif marker_pick() == "vanilla" then
 			-- The game's music went on playing for the marker's pick, so only the tag changes back.
 			context_status = VANILLA_PICK_STATUS
+		elseif marker_pick() == "silence" then
+			-- The game's music played while there was no audio output, so it is silenced again for the marker's pick.
+			Suppression.engage(current_context)
+			context_status = SILENCE_PICK_STATUS
 		elseif enabled then
 			replay_current_context()
 		end

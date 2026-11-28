@@ -52,6 +52,7 @@ local MESSAGE_ARGUMENTS = {
 	control_repeat_song_off_for = 1,
 	override_folder_label = 2,
 	vanilla_pick_name = 0,
+	silence_pick_name = 0,
 	control_game_music_playing = 0,
 	error_audio_unavailable = 0,
 	error_game_change = 0,

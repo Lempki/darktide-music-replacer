@@ -110,7 +110,7 @@ When several apply, the most specific one that has songs wins:
 2. Between folders with as many names, the one with the more specific name wins. From the most specific, the names rank: the moment's name, the event's intensity, the mission's code, the circumstance, and the game mode. So `chaos_spawn` wins over `spillway`, and `spillway` wins over `havoc`.
 3. Between two combined folders with as many names, their most specific names are compared first, then the next ones. So `chaos_spawn+spillway` wins over `chaos_spawn+havoc`.
 
-An override folder with no songs is skipped, so its parent folder, or the game's music, plays as before. A [Vanilla marker](../README.md#the-vanilla-marker) counts as a song here, so an override folder that holds only the marker keeps the game's music for its moment.
+An override folder with no songs is skipped, so its parent folder, or the game's music, plays as before. A [Vanilla marker](../README.md#the-vanilla-marker) or a [Silence marker](../README.md#the-silence-marker) counts as a song here, so an override folder that holds only a marker keeps the game's music, or silence, for its moment.
 
 Both Operations end with an `escape_event`, the same kind every mission's escape has. So `event\escape_event\` plays at the end of Rolling Steel and No Man's Land too, ahead of `event\op_train\` and `event\op_no_mans_land\`.
 

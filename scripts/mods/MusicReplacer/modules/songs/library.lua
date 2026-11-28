@@ -45,9 +45,9 @@ local full_rescan_requested = false -- Set by the Rescan Audio Folders button, w
 -- A file still being copied would be measured half-written and skipped as unplayable, so a change waits for this much quiet.
 local QUIET_SECONDS = 3
 
--- The Vanilla marker's file names, in lowercase.
+-- The markers' file names, in lowercase, each with the kind of marker it is.
 -- File Explorer hides extensions, so a new text document named vanilla is vanilla.txt, which counts too.
-local VANILLA_MARKERS = { vanilla = true, ["vanilla.txt"] = true }
+local MARKERS = { vanilla = "vanilla", ["vanilla.txt"] = "vanilla", silence = "silence", ["silence.txt"] = "silence" }
 
 local watcher = nil
 local quiet_seconds = nil -- Seconds since the last change Windows reported, or nil while none waits for a listing.
@@ -78,16 +78,16 @@ local function clock()
 	return _os and _os.clock and _os.clock() or 0
 end
 
--- True when `file_path`, or a bare file name, is a Vanilla marker.
-function Library.is_vanilla_marker(file_path)
+-- "vanilla" when `file_path`, or a bare file name, is a Vanilla marker, "silence" for a Silence marker, and nil for any other file.
+function Library.marker(file_path)
 	local name = file_path:match("[^/]+$") or file_path
-	return VANILLA_MARKERS[name:lower()] == true
+	return MARKERS[name:lower()]
 end
 
 local function list_folder(folder_key)
 	local file_paths = {}
 
-	local names, name_stamps, other_names = AudioFolders.list(AUDIO_ROOT .. "/" .. folder_key, VANILLA_MARKERS)
+	local names, name_stamps, other_names = AudioFolders.list(AUDIO_ROOT .. "/" .. folder_key, MARKERS)
 
 	for _, name in ipairs(other_names or {}) do
 		other_formats[#other_formats + 1] = folder_key .. "/" .. name
@@ -105,7 +105,7 @@ local function list_folder(folder_key)
 				unplayable[file_path] = nil
 			end
 
-			if durations[file_path] == nil and not Library.is_vanilla_marker(file_path) then
+			if durations[file_path] == nil and not Library.marker(file_path) then
 				measure_queue[#measure_queue + 1] = file_path
 			end
 		end
@@ -202,7 +202,7 @@ local function scan_folders(what, quiet_if_unchanged)
 	local entries = {}
 	for _, key in ipairs(each_folder_key()) do
 		for _, file_path in ipairs(lists[key]) do
-			if not Library.is_vanilla_marker(file_path) then
+			if not Library.marker(file_path) then
 				entries[#entries + 1] = { file_path = file_path, stamp = stamps[file_path] }
 			end
 		end
@@ -217,7 +217,7 @@ local function scan_folders(what, quiet_if_unchanged)
 end
 
 -- Tells the Library.on_checked listeners how many listed songs Windows can play, the folders that hold them, and the files skipped.
--- A Vanilla marker is no song, so a folder that holds only one is not counted either.
+-- A marker is no song, so a folder that holds only markers is not counted either.
 local function report_checked()
 	local counts = { songs = 0, folders = 0, other_formats = #other_formats, unopenable = 0, after_restore = is_restore_listing or nil }
 	for _, key in ipairs(each_folder_key()) do
@@ -225,7 +225,7 @@ local function report_checked()
 		for _, file_path in ipairs(lists[key]) do
 			if unplayable[file_path] then
 				counts.unopenable = counts.unopenable + 1
-			elseif not Library.is_vanilla_marker(file_path) then
+			elseif not Library.marker(file_path) then
 				playable = playable + 1
 			end
 		end

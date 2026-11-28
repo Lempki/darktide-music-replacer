@@ -33,6 +33,7 @@ Everything below is optional detail.
 | …keep the game's music for one mission or one boss, and my songs everywhere else. | Make the override folder for that mission or boss, such as `event\spillway\`, and put only an empty file named `vanilla` into it. |
 | …hear my music with reverb, as if it played in a large hall. | For one situation, pick it under Music per Situation and set its Effects to Profile 1, which plays with reverb from the start. For every situation, show Global under Profile in the Effects group and turn on its Use Reverb. Reverb Room and the reverb settings below it set how it sounds. |
 | …have no music at all in one situation. | Set it to Silence under Music per Situation. |
+| …have no music for one mission or one boss, and my songs everywhere else. | Make the override folder for that mission or boss, such as `boss\chaos_spawn\`, and put only an empty file named `silence` into it, a [Silence marker](#the-silence-marker). |
 | …hear boss music only once the fight starts. | Set Boss Near to Skip under Music per Situation. Your `boss` songs then start with the boss's HP bar. |
 | …hear boss music sooner or later as a boss comes near. | Change Boss Distance in the Boss Music group, 80 m by default. |
 | …hear no boss music, only what plays around it. | Set Boss to Skip under Music per Situation. Skip works for the other mission situations too, as [Choosing what plays](#choosing-what-plays) lists. |
@@ -58,7 +59,7 @@ Everything below is optional detail.
 * Can let a song play to its end before a less urgent situation takes over.
 * Follows the game's master and music volume sliders at once, without restarting the song.
 * Lets you choose Custom, Vanilla, or Silence for each situation, or Skip one, such as Boss, so the next less urgent situation plays on.
-* Mixes the game's music into a folder's songs, or keeps it in one folder, with a Vanilla marker file.
+* Mixes the game's music into a folder's songs, or keeps it in one folder, with a Vanilla marker file, and does the same with silence through a Silence marker file.
 * Lets you give each situation its own volume, shuffle, repeat, and fade length.
 * Lets you try out any situation's songs in Meat Grinder, or play a folder of its own there.
 * Has optional keys to skip to the next or previous song, restart or pause the song playing now, or remove it from rotation.
@@ -150,6 +151,15 @@ A Vanilla marker is an empty file named `vanilla` in a folder. A new text docume
 * Alone in a folder, it keeps the game's music there. In an override folder, that keeps the game's music for one moment while the rest of the situation plays your songs. For example, `event\spillway\vanilla` keeps Spillway's own event music while other missions' events play your `event` songs.
 
 While the game's music plays as the pick among songs, Next Song and Previous Song move on to a song, and Remove from Rotation takes the marker out of the folder's rotation. Restart Song and Pause / Resume say `The game's music is playing` and do nothing else, since the game's music is not the mod's to start over or pause. With Resume Songs on, a situation that comes back plays the game's music again if the marker was its pick, the way a song continues, such as Explore after a fight. The notice of how many songs the mod found does not count markers.
+
+### The Silence marker
+
+A Silence marker is an empty file named `silence` in a folder. A new text document named `silence` works too, which Windows saves as `silence.txt`. It works as a Vanilla marker does, with silence in place of the game's music:
+
+* Among songs, silence is one more pick in the folder's rotation. Once it is picked, nothing plays until the situation changes, and the message says `Now playing: silence`.
+* Alone in a folder, it keeps that folder silent. In an override folder, that silences one moment while the rest of the situation plays your songs. For example, `boss\chaos_spawn\silence` plays nothing while a Chaos Spawn is the boss, and other bosses play your `boss` songs.
+
+While silence plays as the pick among songs, Next Song and Previous Song move on to a song, and Remove from Rotation takes the marker out of the folder's rotation. Restart Song and Pause / Resume say `No song of yours is playing` and do nothing else. With Resume Songs on, a situation that comes back is silent again if the marker was its pick. The debug overlay's tag says `Silence, marker`.
 
 ## Meat Grinder
 

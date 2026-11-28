@@ -215,6 +215,9 @@ local strings = {
 	vanilla_pick_name = {
 		en = "the game's music",
 	},
+	silence_pick_name = {
+		en = "silence",
+	},
 	-- The error messages stay short, since a message shows for a few seconds, and the details go to diagnostic.log.
 	error_audio_unavailable = {
 		en = "Windows audio playback could not start, so the game's music plays. Details in diagnostic.log.",

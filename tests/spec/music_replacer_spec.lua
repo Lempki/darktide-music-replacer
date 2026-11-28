@@ -1708,6 +1708,110 @@ describe("MusicReplacer.lua the Vanilla marker", function()
 	end)
 end)
 
+describe("MusicReplacer.lua the Silence marker", function()
+	-- The harness's playlist draws the first entry left, so the marker named first is the first pick.
+	local MARKER_FIRST = { hub = { { name = "silence" }, { name = "a.mp3", duration = 200 }, { name = "b.mp3", duration = 180 } } }
+
+	local function press(harness, control)
+		harness.mod[control]()
+		harness:tick(0.1)
+	end
+
+	it("plays silence when the marker is the pick, silences the game's music, and says so", function()
+		local harness = in_hub(MARKER_FIRST)
+
+		assert_equal(harness:playing(), nil)
+		assert_equal(harness.overlay.options.snapshot().status, "Silence, marker")
+		assert_equal(harness:last_on_screen_message(), "<song_now_playing: <silence_pick_name>>")
+		assert_equal(harness:logged("[playback] hub: hub/silence is the pick, playing silence"), true)
+		assert_equal(harness:logged("[suppress] forcing music_zone hub -> None"), true)
+	end)
+
+	it("keeps an override folder that holds only the marker silent, and names nothing", function()
+		local harness = MainHarness.new({ files = {
+			explore = { { name = "x.mp3", duration = 300 } },
+			["explore/lm_cooling"] = { { name = "silence" } },
+		} })
+		harness:cold_start_to_hub()
+		local shown = #harness.on_screen_message.shown
+		harness:leave_hub()
+		harness:enter_mission("lm_cooling", "zone_3")
+		harness:settle()
+
+		assert_equal(harness:playing(), nil)
+		assert_equal(harness.overlay.options.snapshot().status, "Silence, marker")
+		assert_equal(harness.overlay.options.snapshot().folder, "explore/lm_cooling")
+		for index = shown + 1, #harness.on_screen_message.shown do
+			assert_equal(harness.on_screen_message.shown[index]:find("silence_pick_name", 1, true), nil)
+		end
+	end)
+
+	it("moves on to a song with Next Song", function()
+		local harness = in_hub(MARKER_FIRST)
+
+		press(harness, "next_song")
+
+		assert_equal(harness:playing(), "hub/a.mp3")
+		assert_equal(harness.overlay.options.snapshot().status, "Custom")
+	end)
+
+	it("says none of your songs plays for Restart Song and Pause / Resume while the marker's pick plays", function()
+		local harness = in_hub(MARKER_FIRST)
+
+		for _, control in ipairs({ "restart_song", "pause_song" }) do
+			press(harness, control)
+			assert_equal(harness:last_on_screen_message(), "<control_no_song>")
+			assert_equal(harness:playing(), nil)
+		end
+	end)
+
+	it("is silent again once Explore comes back after a fight, as a song would continue", function()
+		local harness = MainHarness.new({ files = {
+			explore = { { name = "silence" }, { name = "x.mp3", duration = 300 } },
+			combat = { { name = "c.mp3", duration = 200 } },
+		} })
+		harness:cold_start_to_hub()
+		harness:leave_hub()
+		harness:enter_mission("lm_cooling", "zone_3")
+		harness:settle()
+		assert_equal(harness:playing(), nil)
+
+		harness:state("music_combat", "normal")
+		harness:settle()
+		assert_equal(harness:playing(), "combat/c.mp3")
+
+		harness:state("music_combat", "None")
+		harness:wait(8)
+		harness:settle()
+
+		assert_equal(harness:playing(), nil)
+		assert_equal(harness.overlay.options.snapshot().status, "Silence, marker")
+		assert_equal(harness:logged("[resume] explore: remembering explore/silence at 0.0s"), true)
+	end)
+
+	it("takes the marker out of rotation with Remove from Rotation, and plays a song", function()
+		local harness = in_hub(MARKER_FIRST)
+
+		press(harness, "remove_song")
+		press(harness, "remove_song")
+
+		assert_deep_equal(harness.library.removed_files, { "hub/silence" })
+		assert_equal(harness:playing(), "hub/a.mp3")
+	end)
+
+	it("silences the game's music again once the audio output comes back", function()
+		local harness = in_hub(MARKER_FIRST)
+
+		harness.client.available = false
+		harness:tick(0.1)
+		harness.client.available = true
+		harness:tick(0.1)
+
+		assert_equal(harness:playing(), nil)
+		assert_equal(harness.overlay.options.snapshot().status, "Silence, marker")
+	end)
+end)
+
 describe("MusicReplacer.lua switching back and forth between override folders", function()
 	local EVENT_FOLDERS = {
 		event = { { name = "e.mp3", duration = 300 } },

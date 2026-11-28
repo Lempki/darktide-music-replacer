@@ -55,8 +55,11 @@ local function new_library(files)
 		return names
 	end
 	function library.disk_path(file_path) return file_path end
-	-- An entry named vanilla stands in for a Vanilla marker.
-	function library.is_vanilla_marker(file_path) return file_path:match("[^/]+$") == "vanilla" end
+	-- An entry named vanilla stands in for a Vanilla marker, and one named silence for a Silence marker.
+	function library.marker(file_path)
+		local name = file_path:match("[^/]+$")
+		return (name == "vanilla" or name == "silence") and name or nil
+	end
 	function library.folder() return "./../mods/MusicReplacer/audio" end
 
 	function library.update()
