@@ -83,6 +83,11 @@ function Player.set_echo(profile, parameters)
 	return XAudio.set_echo(profile, parameters)
 end
 
+-- Frees the effects voices that no song has used for a while. Call on every update.
+function Player.free_idle_effects(dt)
+	XAudio.free_idle_effects(dt)
+end
+
 -- Why songs with effects play without them, or nil.
 function Player.effects_error()
 	return XAudio.effects_error()

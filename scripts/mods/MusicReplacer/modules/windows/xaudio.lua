@@ -220,8 +220,13 @@ local EFFECTS_PATTERN = "^(%d+)/(.+)$"
 -- Each holds `voice`, `profile`, and `sends`, the send list that points source voices at it.
 -- `descriptor` is the send list's descriptor.
 -- The descriptor is kept here, since the garbage collector would free it while the send list still points to it.
--- There are at most as many voices as the profiles' setups, about 0.8 MB each for the echo's buffer, so none is freed before the engine is.
+-- `senders` counts the source voices sending to it, and `idle_seconds` how long it has had none.
 local effects_voices = {}
+
+-- How long an effects voice stays once no song sends to it, so a song that comes back soon finds it ready, and the reverb's tail rings out.
+-- XAudio2 runs every effects voice on every pass, even with nothing sent to it, measured at about 0.3% of its audio thread each.
+-- So a voice no song has used for this long is freed, and is made again if a song asks for those effects later.
+local EFFECTS_IDLE_SECONDS = 30
 local effects_error = nil -- Why an effects voice could not be made, or nil. Songs then play without effects.
 -- Each profile's effect parameters, by profile number and then by the effect's name in CHAIN.
 -- They are as Reverb.native(), Equalizer.native(), and Echo.native() give them.
@@ -425,12 +430,37 @@ local function effects_sends(effects)
 	local sends = ffi.new("MusicReplacer_XAUDIO2_VOICE_SENDS")
 	sends.SendCount = 1
 	sends.pSends = descriptor
-	effects_voices[effects] = { voice = out[0], profile = profile, sends = sends, descriptor = descriptor }
+	effects_voices[effects] = { voice = out[0], profile = profile, sends = sends, descriptor = descriptor, senders = 0, idle_seconds = 0 }
 
 	for _, effect in ipairs(CHAIN) do
 		apply_effect(profile, effect.name)
 	end
 	return sends
+end
+
+-- Counts a source voice in or out of the senders of the effects voice named `effects`, which nil leaves alone.
+local function count_sender(effects, change)
+	local effects_voice = effects and effects_voices[effects]
+	if effects_voice then
+		effects_voice.senders = effects_voice.senders + change
+		effects_voice.idle_seconds = 0
+	end
+end
+
+-- Frees the effects voices that no song has sent to for EFFECTS_IDLE_SECONDS. Call on every update.
+-- XAudio2 cannot free a voice that another voice sends to, so a voice with senders always stays.
+function XAudio.free_idle_effects(dt)
+	for effects, effects_voice in pairs(effects_voices) do
+		if effects_voice.senders > 0 then
+			effects_voice.idle_seconds = 0
+		else
+			effects_voice.idle_seconds = effects_voice.idle_seconds + dt
+			if effects_voice.idle_seconds >= EFFECTS_IDLE_SECONDS then
+				call(effects_voice.voice, DESTROY_VOICE)
+				effects_voices[effects] = nil
+			end
+		end
+	end
 end
 
 -- Why the effects could not be made, such as on a Windows whose XAudio2 has no reverb, EQ, or echo, or nil.
@@ -489,6 +519,8 @@ function XAudio.create_voice(format, opts)
 	end
 
 	local pointer = out[0]
+	local effects = sends and opts.effects or nil
+	count_sender(effects, 1)
 
 	-- The voice's methods run every frame, so they are bound once instead of cast on every call, which keeps the Lua heap quiet.
 	local vtable = ffi.cast("MusicReplacer_ComObject *", pointer).lpVtbl
@@ -500,6 +532,7 @@ function XAudio.create_voice(format, opts)
 	return setmetatable({
 		pointer = pointer,
 		methods = methods,
+		effects = effects, -- The name of the effects voice it sends to, or nil.
 		-- Both are made once, so submitting and polling allocate nothing on the Lua heap.
 		-- XAudio2 lets the buffer descriptor be reused as soon as SubmitSourceBuffer returns. Only the audio it points to must stay alive.
 		buffer = ffi.new("MusicReplacer_XAUDIO2_BUFFER"),
@@ -580,7 +613,13 @@ end
 -- Effects that could not be made leave it playing straight to the output. Returns false when XAudio2 refuses the change.
 function Voice:set_effects(effects)
 	local sends = effects and effects_sends(effects) or nil
-	return checked_voice(self, "changing a voice's output", "set_output_voices", sends)
+	if not checked_voice(self, "changing a voice's output", "set_output_voices", sends) then
+		return false
+	end
+	count_sender(self.effects, -1)
+	self.effects = sends and effects or nil
+	count_sender(self.effects, 1)
+	return true
 end
 
 -- Plays the voice at `speed` times its rate, which raises or lowers its pitch with it, like a tape, from its next processing pass.
@@ -606,6 +645,8 @@ function Voice:destroy()
 	if self.pointer ~= nil then
 		self.methods.destroy_voice(self.pointer)
 		self.pointer = nil
+		count_sender(self.effects, -1)
+		self.effects = nil
 	end
 end
 

@@ -306,6 +306,15 @@ local function speed_for(context_name)
 	return profile_setting("playback_speed", profile) / 100
 end
 
+-- The effects and the speed a song plays with, for the log, such as ", effects 2/echo+reverb, speed 150%", or "" for neither.
+local function describe_effects(effects, speed)
+	local text = effects and (", effects " .. effects) or ""
+	if speed ~= 1 then
+		text = text .. string.format(", speed %d%%", math.floor(speed * 100 + 0.5))
+	end
+	return text
+end
+
 -- Sets the playlist's order by the situation playing now, since Shuffle can differ per situation.
 local function follow_shuffle(context_name)
 	Playlist.set_shuffle(is_on_for("shuffle", context_name))
@@ -454,13 +463,14 @@ end
 local function track_opts(context_name, folder, track)
 	local duration = track.duration
 	local is_looping = plays_looping(track.is_only_file, context_name)
+	local speed = speed_for(context_name)
 
 	-- A looping song loops from its first play, with no seam, so it needs no end fade.
 	return {
 		duration_seconds = not is_looping and duration or nil,
 		share = situation_share(context_name),
 		effects = effects_setup(context_name),
-		speed = speed_for(context_name),
+		speed = speed,
 		fade_in = track.fade_in,
 		-- A key's own fade wins, and otherwise the situation's own Fade Length, if it has one, sets the crossfade into it.
 		fade_seconds = track.fade_seconds or situation_fade_seconds(context_name),
@@ -485,9 +495,11 @@ local function track_opts(context_name, folder, track)
 			-- Any other track counts when it ended within QUICK_END_SECONDS and before half its length, so a short song that plays through does not.
 			-- An unmeasured file has its decoder's length instead, and without either, ending within QUICK_END_SECONDS is enough.
 			-- So a file that ends at once cannot reopen every frame.
+			-- The time elapsed is real time, so the length is too: a song at twice its speed plays in half its length.
 			local elapsed = AudioClient.elapsed()
 			local length = duration or AudioClient.duration()
-			local quick = failed or (elapsed < QUICK_END_SECONDS and (not length or elapsed < length / 2))
+			local real_length = length and length / speed
+			local quick = failed or (elapsed < QUICK_END_SECONDS and (not real_length or elapsed < real_length / 2))
 			if quick then
 				quick_ends[folder] = (quick_ends[folder] or 0) + 1
 
@@ -533,16 +545,18 @@ end
 -- Starts `track` from `folder` for `context_name`, as track_opts() describes it.
 play_track = function(context_name, folder, track)
 	local file_path, start_position = track.file_path, track.start_position
+	local opts = track_opts(context_name, folder, track)
 
 	local loudness = Loudness.describe(file_path)
-	log(string.format("[playback] %s: %s %s%s (duration=%s%s%s)",
+	log(string.format("[playback] %s: %s %s%s (duration=%s%s%s%s)",
 		context_name, start_position and "resuming" or "playing", file_path,
 		start_position and string.format(" at %.1fs", start_position) or "",
-		tostring(track.duration), plays_looping(track.is_only_file, context_name) and ", looping" or "", loudness and (", " .. loudness) or ""))
+		tostring(track.duration), plays_looping(track.is_only_file, context_name) and ", looping" or "", loudness and (", " .. loudness) or "",
+		describe_effects(opts.effects, opts.speed)))
 
 	playing_track = { context_name = context_name, file_path = file_path, duration = track.duration, is_only_file = track.is_only_file }
 
-	AudioClient.play(file_path, track_opts(context_name, folder, track))
+	AudioClient.play(file_path, opts)
 end
 
 -- is_new_context separates a real context change from advancing within the same context.
@@ -995,6 +1009,7 @@ mod.restart_song = function()
 end
 
 -- Previous Song goes back only within this many seconds into a song, and later starts the song over, as most music players do.
+-- They are real seconds, so a song at another speed gives the player as long to press the key again.
 local PREVIOUS_SONG_SECONDS = 3
 
 -- The Previous Song key: goes back to the song that played before in this situation, or starts the song playing now over.
@@ -1005,7 +1020,7 @@ mod.previous_song = function()
 	end
 
 	local file_path, duration, is_only_file = nil, nil, nil
-	if song_position() < PREVIOUS_SONG_SECONDS then
+	if song_position() / speed_for(current_context) < PREVIOUS_SONG_SECONDS then
 		file_path, duration, is_only_file = Playlist.previous(current_folder, playing_track.file_path)
 	end
 
@@ -1569,8 +1584,15 @@ mod.on_setting_changed = function(setting_id)
 	elseif setting_id == "effects_" .. tostring(current_context) or (profile_base and PROFILE_ROUTING_SETTINGS[profile_base]) then
 		-- The song playing now follows at once, so the player hears what the choice does.
 		if enabled and current_context then
-			AudioClient.set_effects(effects_setup(current_context))
-			AudioClient.set_speed(speed_for(current_context))
+			local effects, speed = effects_setup(current_context), speed_for(current_context)
+			AudioClient.set_effects(effects)
+			AudioClient.set_speed(speed)
+			local described = describe_effects(effects, speed)
+			if described == "" then
+				described = ", no effects"
+			end
+			-- The description starts with ", " to follow a song's other details, which this line has none of.
+			log(string.format("[playback] %s: the song playing now plays with %s", current_context, described:sub(3)))
 		end
 	elseif profile_base and REVERB_SETTINGS[profile_base] then
 		apply_reverb(profile)

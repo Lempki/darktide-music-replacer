@@ -111,6 +111,9 @@ local function load_client(levels)
 	function player.set_reverb(profile, parameters) player.reverb = { profile, parameters } end
 	function player.set_eq(profile, parameters) player.eq = { profile, parameters } end
 	function player.set_echo(profile, parameters) player.echo = { profile, parameters } end
+	-- `idle_time` adds up the time the client passed on for freeing idle effects voices.
+	player.idle_time = 0
+	function player.free_idle_effects(dt) player.idle_time = player.idle_time + dt end
 	function player.last_open_ms() return player.open_ms or 0 end
 	function player.slowest_fill_ms() return 0 end
 
@@ -464,6 +467,15 @@ describe("audio_client.lua", function()
 
 		AudioClient.retarget("boss/b.mp3", {})
 		assert_equal(streams[1].effects, nil)
+	end)
+
+	it("lets the player free idle effects voices on every update", function()
+		local AudioClient, player = load_client()
+
+		AudioClient.update(0.25)
+		AudioClient.update(0.5)
+
+		assert_equal(player.idle_time, 0.75)
 	end)
 
 	it("passes the EQ and the echo on to the player", function()

@@ -728,6 +728,7 @@ function AudioClient.update(dt)
 	end
 
 	log_stats(dt)
+	Player.free_idle_effects(dt)
 
 	local master, music = read_sliders()
 	if move_menu_level(dt) or master ~= current_master_slider or music ~= current_music_slider then

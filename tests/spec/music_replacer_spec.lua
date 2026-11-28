@@ -171,6 +171,19 @@ describe("MusicReplacer.lua songs that end", function()
 		assert_equal(#harness.client.plays, 3)
 	end)
 
+	it("does not count a short song that played through at twice its speed, by the real time it took", function()
+		local songs = { hub = { { name = "a.mp3", duration = 4 }, { name = "b.mp3", duration = 4 } } }
+		local harness = in_hub(songs, { settings = { use_speed_0 = true, playback_speed_0 = 200 } })
+
+		-- A 4-second song at 200% plays for 2 real seconds, and its first update comes a frame after it started.
+		for _ = 1, 5 do
+			harness:finish_song(1.98, false)
+		end
+
+		assert_equal(#harness.client.plays, 6)
+		assert_equal(harness:playing() ~= nil, true)
+	end)
+
 	it("does not count short songs that play through", function()
 		local harness = in_hub({ hub = { { name = "a.mp3", duration = 2 }, { name = "b.mp3", duration = 2 } } })
 
@@ -2255,6 +2268,17 @@ describe("MusicReplacer.lua effects", function()
 		assert_equal(harness:last_play().opts.effects, "1/reverb")
 	end)
 
+	it("logs the effects and the speed each song plays with, and the new ones when a setting changes them", function()
+		local harness = in_hub(nil, { settings = { effects_hub = "profile_2" } })
+		assert_equal(harness:logged(", effects 2/echo+reverb)"), true)
+
+		harness:set_setting("effects_hub", "profile_3")
+		assert_equal(harness:logged("[playback] hub: the song playing now plays with speed 150%"), true)
+
+		harness:set_setting("effects_hub", "none")
+		assert_equal(harness:logged("[playback] hub: the song playing now plays with no effects"), true)
+	end)
+
 	it("starts each numbered profile with a sound of its own: a hall, a cave with an echo, and a faster speed", function()
 		local harness = in_hub()
 
@@ -2627,6 +2651,20 @@ describe("MusicReplacer.lua the Previous Song key", function()
 
 		harness.client.position = 0
 		press(harness, "previous_song")
+		assert_equal(harness:playing(), "hub/a.mp3")
+	end)
+
+	it("goes back on Previous Song within 3 real seconds of a song at another speed", function()
+		local harness = in_hub(nil, { settings = { use_speed_0 = true, playback_speed_0 = 200 } })
+		harness.mod.next_song()
+		harness:tick(0.1)
+		assert_equal(harness:playing(), "hub/b.mp3")
+
+		-- 5 seconds into the song at 200% is 2.5 real seconds in.
+		harness.client.position = 5
+		harness.mod.previous_song()
+		harness:tick(0.1)
+
 		assert_equal(harness:playing(), "hub/a.mp3")
 	end)
 
