@@ -93,6 +93,7 @@ local function situation_settings(context)
 		own_choice_widget("reverb_" .. context.id, "situation_reverb"),
 		own_choice_widget("eq_" .. context.id, "situation_eq"),
 		own_choice_widget("echo_" .. context.id, "situation_echo"),
+		own_choice_widget("speed_" .. context.id, "situation_speed"),
 		{
 			setting_id = "restore_removed_" .. context.id,
 			title = "situation_restore_removed",
@@ -433,6 +434,22 @@ return {
 						range = { 1, 2000 },
 						decimals_number = 0,
 						unit_text = "milliseconds_unit",
+					},
+					{
+						setting_id = "use_speed",
+						type = "checkbox",
+						tooltip = "use_speed_tooltip",
+						default_value = false,
+					},
+					-- XAudio2 makes every voice for at most twice its speed, so the setting stops at 200%, and its lowest is as far down.
+					{
+						setting_id = "playback_speed",
+						type = "numeric",
+						tooltip = "playback_speed_tooltip",
+						default_value = 100,
+						range = { 50, 200 },
+						decimals_number = 0,
+						unit_text = "percent_unit",
 					},
 				},
 			},

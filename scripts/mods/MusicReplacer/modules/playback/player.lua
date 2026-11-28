@@ -300,6 +300,7 @@ local function open_stream(path, opts)
 		gain = opts.gain or 1,
 		fade = opts.fade or 1,
 		effects = opts.effects,
+		speed_ratio = opts.speed or 1,
 		ramp = nil,
 		underruns = 0,
 		last_samples_played = 0,
@@ -307,7 +308,11 @@ local function open_stream(path, opts)
 	}, Stream)
 
 	-- The volume is set before the voice starts, since a new XAudio2 voice plays at volume 1 until told otherwise.
+	-- The speed is too, so a song never starts at its normal speed for a moment.
 	apply_volume(self)
+	if self.speed_ratio ~= 1 then
+		voice_ok(self, voice:set_speed(self.speed_ratio))
+	end
 	fill(self, START_SLOTS)
 	voice_ok(self, voice:start())
 
@@ -319,6 +324,7 @@ end
 -- opts.start_position starts partway in, in seconds. opts.loop repeats the file with no gap added between its end and its start.
 -- opts.gain and opts.fade set the starting levels, 1 by default.
 -- opts.effects names the effects setup it plays through, such as "eq+reverb", or is nil for none.
+-- opts.speed plays it that many times faster, 1 by default, which raises or lowers its pitch with it.
 function Player.open(path, opts)
 	local started = clock()
 	local stream, err, refused_voice = open_stream(path, opts or {})
@@ -338,6 +344,21 @@ end
 -- The name of the effects setup the stream plays through, or nil.
 function Stream:effects_setup()
 	return self.effects
+end
+
+-- Plays the stream `speed` times faster from now on, which raises or lowers its pitch with it.
+-- Its position stays in the song's own time, so a song still ends and resumes where its file says.
+function Stream:set_speed(speed)
+	if self.speed_ratio == speed then
+		return
+	end
+	self.speed_ratio = speed
+	voice_ok(self, self.voice:set_speed(speed))
+end
+
+-- How many times faster than recorded the stream plays.
+function Stream:speed()
+	return self.speed_ratio
 end
 
 -- Sets the gain at once, for slider changes.

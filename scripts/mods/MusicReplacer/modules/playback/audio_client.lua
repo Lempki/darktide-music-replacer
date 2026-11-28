@@ -359,14 +359,17 @@ local function take_outgoing(file_path, loop)
 	return nil
 end
 
--- The length a song's fades go by, or nil for a looping song, which never fades out, or one whose length is not known.
+-- How long a song plays in real seconds, which its fades go by.
+-- It is nil for a looping song, which never fades out, or one whose length is not known.
 -- The decoder's duration matches its positions, while the library's can be off by a second or more.
 -- It is also there before the library has measured the file.
-local function song_duration(stream, loop, library_duration)
+-- A song at another speed plays its length in that much less or more time, while its fades take real seconds.
+local function song_seconds(stream, loop, library_duration)
 	if loop then
 		return nil
 	end
-	return stream.duration or library_duration
+	local length = stream.duration or library_duration
+	return length and length / stream:speed()
 end
 
 -- How long a song fades in, and out at its end: `seconds`, the Fade Length by default, or half the song when it is shorter than two fades.
@@ -392,6 +395,7 @@ end
 -- Plays file_path, crossfading with whatever was playing.
 -- opts: fade_in, fade_seconds, end_fade_seconds, loop, start_position, duration_seconds, share, effects, and on_finished(failed).
 -- effects names the effects setup the song plays through, such as "eq+reverb", or is nil for none.
+-- speed plays the song that many times faster, 1 by default, which raises or lowers its pitch with it.
 -- share is the situation's Volume, as a linear scale, 1 when not given.
 -- end_fade_seconds is how long the song fades out at its end, the Fade Length when not given.
 -- fade_seconds sets this switch's crossfade instead of the Fade Length, as for the playback keys.
@@ -436,14 +440,16 @@ function AudioClient.play(file_path, opts)
 
 	local loop = opts.loop == true
 	local effects = opts.effects
+	local speed = opts.speed or 1
 	local stream, err
 
 	if revived then
 		stream = revived
 		stream:resume()
 		stream:set_effects(effects)
+		stream:set_speed(speed)
 		stream:set_gain(gain * level * share)
-		stream:fade_to(1, opts.fade_in and song_fade_seconds(song_duration(stream, loop, opts.duration_seconds), switch_seconds) or 0)
+		stream:fade_to(1, opts.fade_in and song_fade_seconds(song_seconds(stream, loop, opts.duration_seconds), switch_seconds) or 0)
 		log(string.format("[player] continuing %s from %.1fs, where it faded out", file_path, stream:position()))
 	else
 		local open_opts = {
@@ -452,6 +458,7 @@ function AudioClient.play(file_path, opts)
 			gain = gain * level * share,
 			fade = opts.fade_in and 0 or 1,
 			effects = effects,
+			speed = speed,
 		}
 		local refused_voice
 		stream, err, refused_voice = Player.open(disk_path(file_path), open_opts)
@@ -475,7 +482,7 @@ function AudioClient.play(file_path, opts)
 
 		if stream then
 			if opts.fade_in then
-				stream:fade_to(1, song_fade_seconds(song_duration(stream, loop, opts.duration_seconds), switch_seconds))
+				stream:fade_to(1, song_fade_seconds(song_seconds(stream, loop, opts.duration_seconds), switch_seconds))
 			end
 		else
 			log(string.format("[player] %s could not be played: %s", file_path, tostring(err)))
@@ -491,6 +498,7 @@ function AudioClient.play(file_path, opts)
 		file_path = file_path,
 		loop = loop,
 		effects = effects,
+		speed = speed,
 		level = level,
 		share = share,
 		end_fade_seconds = opts.end_fade_seconds,
@@ -523,9 +531,21 @@ function AudioClient.retarget(file_path, opts)
 		AudioClient.set_loop(loop, opts.duration_seconds)
 	end
 
-	-- The new context's own Effects choice decides too, so the song moves to or from the effects as it plays on.
+	-- The new context's own effects and speed decide too, so the song moves to its effects and speed as it plays on.
 	AudioClient.set_effects(opts.effects)
+	AudioClient.set_speed(opts.speed or 1)
 	return true
+end
+
+-- Plays the current song `speed` times faster from now on. A song fading out keeps the speed it had.
+function AudioClient.set_speed(speed)
+	if not current then
+		return
+	end
+	current.speed = speed
+	if current.stream then
+		current.stream:set_speed(speed)
+	end
 end
 
 -- Plays the current song through the effects setup named `setup`, or without effects with nil, from now on.
@@ -624,6 +644,7 @@ local function recover(reason)
 			share = resume.share,
 			end_fade_seconds = resume.end_fade_seconds,
 			effects = resume.effects,
+			speed = resume.speed,
 			fade_in = true,
 		})
 
@@ -660,10 +681,13 @@ local function update_current(dt)
 		return
 	end
 
-	local duration = song_duration(stream, current.loop, current.duration)
-	if duration and not current.end_fading and stream:position() >= duration - song_fade_seconds(duration, current.end_fade_seconds) then
-		current.end_fading = true
-		stream:fade_to(0, math.max(0.1, duration - stream:position()))
+	local seconds = song_seconds(stream, current.loop, current.duration)
+	if seconds and not current.end_fading then
+		local seconds_left = seconds - stream:position() / stream:speed()
+		if seconds_left <= song_fade_seconds(seconds, current.end_fade_seconds) then
+			current.end_fading = true
+			stream:fade_to(0, math.max(0.1, seconds_left))
+		end
 	end
 end
 

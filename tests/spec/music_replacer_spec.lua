@@ -2323,6 +2323,29 @@ describe("MusicReplacer.lua effects", function()
 		assert_equal(harness.client.echo.WetDryMix, 0.5)
 	end)
 
+	it("plays songs at their own speed by default, and at Playback Speed in the situations it is on for", function()
+		local harness = in_hub()
+		assert_equal(harness:last_play().opts.speed, 1)
+
+		harness:set_setting("playback_speed", 125)
+		assert_equal(harness:last_play().opts.speed, 1)
+
+		harness:set_setting("use_speed", true)
+		assert_equal(harness:last_play().opts.speed, 1.25)
+
+		harness:set_setting("speed_hub", "off")
+		assert_equal(harness:last_play().opts.speed, 1)
+	end)
+
+	it("changes the speed of the song playing now as soon as Playback Speed changes", function()
+		local harness = in_hub(nil, { settings = { speed_hub = "on" } })
+		assert_equal(harness:last_play().opts.speed, 1)
+
+		harness:set_setting("playback_speed", 80)
+
+		assert_equal(harness:last_play().opts.speed, 0.8)
+	end)
+
 	it("gives the EQ a band's new gain as soon as the band changes", function()
 		local harness = in_hub()
 

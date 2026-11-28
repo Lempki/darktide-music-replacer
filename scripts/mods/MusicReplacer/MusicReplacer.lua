@@ -200,8 +200,15 @@ local function menu_volume(dt)
 end
 
 -- The setting each choice a situation can make for itself follows by default.
--- They are Playback's Shuffle and Repeat Song, and the Effects group's Use Reverb, Use EQ, and Use Echo.
-local GROUP_SETTINGS = { shuffle = "shuffle", ["repeat"] = "repeat_song", reverb = "use_reverb", eq = "use_eq", echo = "use_echo" }
+-- They are Playback's Shuffle and Repeat Song, and the Effects group's Use Reverb, Use EQ, Use Echo, and Use Playback Speed.
+local GROUP_SETTINGS = {
+	shuffle = "shuffle",
+	["repeat"] = "repeat_song",
+	reverb = "use_reverb",
+	eq = "use_eq",
+	echo = "use_echo",
+	speed = "use_speed",
+}
 
 -- The situation's own choice for `kind`, a key of GROUP_SETTINGS, as its setting says: "on", "off", or nil to follow the group's.
 local function own_choice(kind, context_name)
@@ -253,6 +260,19 @@ local function effects_setup(context_name)
 		return nil
 	end
 	return table.concat(names, "+")
+end
+
+-- How many times faster than recorded the situation's songs play: Playback Speed while the speed is on for it, else 1.
+local function speed_for(context_name)
+	if not is_on_for("speed", context_name) then
+		return 1
+	end
+	return mod:get("playback_speed") / 100
+end
+
+-- True when `setting_id` changes the speed of the situation playing now: Playback Speed, Use Playback Speed, or the situation's own choice.
+local function is_speed_choice(setting_id)
+	return setting_id == "playback_speed" or setting_id == GROUP_SETTINGS.speed or setting_id == "speed_" .. tostring(current_context)
 end
 
 -- True when `setting_id` turns an effect on or off for the situation playing now: a Use setting, or the situation's own choice.
@@ -419,6 +439,7 @@ local function track_opts(context_name, folder, track)
 		duration_seconds = not is_looping and duration or nil,
 		share = situation_share(context_name),
 		effects = effects_setup(context_name),
+		speed = speed_for(context_name),
 		fade_in = track.fade_in,
 		-- A key's own fade wins, and otherwise the situation's own Fade Length, if it has one, sets the crossfade into it.
 		fade_seconds = track.fade_seconds or situation_fade_seconds(context_name),
@@ -1500,6 +1521,11 @@ mod.on_setting_changed = function(setting_id)
 		follow_shuffle(current_context)
 	elseif setting_id == "repeat_song" or setting_id == "repeat_" .. tostring(current_context) then
 		apply_repeat_song()
+	elseif is_speed_choice(setting_id) then
+		-- The song playing now follows at once, so the player hears what the choice does.
+		if enabled and current_context then
+			AudioClient.set_speed(speed_for(current_context))
+		end
 	elseif is_effect_choice(setting_id) then
 		-- The song playing now follows at once, so the player hears what the choice does.
 		if enabled and current_context then

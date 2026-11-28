@@ -491,6 +491,13 @@ local strings = {
 		en = "Whether this situation's songs play through the echo, as " .. highlight("Use Echo") .. " in the Effects group does for all of them.\n\n" ..
 			highlight("Default") .. " follows that setting. " .. highlight("On") .. " and " .. highlight("Off") .. " decide for this situation alone.",
 	},
+	situation_speed = {
+		en = "Speed",
+	},
+	situation_speed_tooltip = {
+		en = "Whether this situation's songs play at Playback Speed, as " .. highlight("Use Playback Speed") .. " in the Effects group does for all of them.\n\n" ..
+			highlight("Default") .. " follows that setting. " .. highlight("On") .. " and " .. highlight("Off") .. " decide for this situation alone.",
+	},
 	situation_own_fade = {
 		en = "Own Fade Length",
 	},
@@ -865,6 +872,22 @@ local strings = {
 	},
 	echo_delay_tooltip = {
 		en = "How long the echo waits between repeats, in milliseconds, from 1 to 2,000.",
+	},
+	use_speed = {
+		en = "Use Playback Speed",
+	},
+	use_speed_tooltip = {
+		en = "Plays your songs at Playback Speed below.\n\n" ..
+			"Each situation's own " .. highlight("Speed") .. " under Music per Situation turns it on or off for that situation alone. " ..
+			"The game's own music always plays at its own speed.",
+	},
+	playback_speed = {
+		en = "Playback Speed",
+	},
+	playback_speed_tooltip = {
+		en = "How fast your songs play, as a share of their own speed. The pitch moves with it, as on a tape, so a faster song also sounds higher.\n\n" ..
+			highlight("100%%") .. " plays them as recorded, " .. highlight("200%%") .. " twice as fast and an octave higher, and " ..
+			highlight("50%%") .. " half as fast and an octave lower.",
 	},
 	-- The unit of Reverb Strength, Reverb Damping, and the EQ's bands.
 	decibels_unit = {

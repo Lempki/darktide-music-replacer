@@ -48,7 +48,7 @@ Keys that control the song playing now, and the setting that goes with them. Eve
 
 ## Effects
 
-Effects that your songs play through: a reverb that makes them sound as if they played in a place such as a large hall, an EQ that raises or lowers their bass, middle, and treble, and an echo that repeats them. This group turns each effect on for every situation and sets how it sounds, and each situation's own [Reverb, EQ, and Echo](#music-per-situation) can decide for that situation alone. The game's own music always plays without them.
+Effects that your songs play through: a reverb that makes them sound as if they played in a place such as a large hall, an EQ that raises or lowers their bass, middle, and treble, an echo that repeats them, and a speed that plays them faster or slower. This group turns each effect on for every situation and sets how it sounds, and each situation's own [Reverb, EQ, Echo, and Speed](#music-per-situation) can decide for that situation alone. The game's own music always plays without them.
 
 | Setting | Default | What it does |
 |---|---|---|
@@ -68,6 +68,8 @@ Effects that your songs play through: a reverb that makes them sound as if they 
 | Echo Mix | 30% | How much of the echo you hear in place of the plain song, from 0% to 100%. 0% plays your songs without echo, and 100% plays only the echo. A change applies at once. |
 | Echo Feedback | 30% | How much of each repeat comes back as the next one, from 0% to 90%, so a higher value repeats the song for longer. 0% plays a single repeat. A change applies at once. |
 | Echo Delay | 500 ms | How long the echo waits between repeats, from 1 to 2,000 ms. A change applies at once. Moving it while a song plays can crackle for a moment, since the echo jumps straight to its new delay. |
+| Use Playback Speed | Off | Plays every situation's songs at Playback Speed, but a situation whose own Speed is On or Off decides for itself. A change applies at once to the song playing now. |
+| Playback Speed | 100% | How fast your songs play, from 50% to 200% of their own speed. The pitch moves with it, as on a tape: 200% plays a song twice as fast and an octave higher, and 50% half as fast and an octave lower. A song still ends and continues where its file says, and its fades take as long as they always do. A change applies at once. |
 
 The effects play in this order: the EQ, then the echo, then the reverb. So the echo repeats the song as the EQ shapes it, and the reverb places the song and its echoes in the room.
 
@@ -116,6 +118,7 @@ The group shows one Situation dropdown, Explore by default, which lists every si
 | Reverb | Default | Default follows [Use Reverb](#effects) in the Effects group. On and Off decide for this situation alone, such as reverb in the hub only. A song that plays on into another situation, such as from Boss Near into Boss, follows that situation's choice. |
 | EQ | Default | Default follows [Use EQ](#effects) in the Effects group. On and Off decide for this situation alone. A song that plays on into another situation follows that situation's choice. |
 | Echo | Default | Default follows [Use Echo](#effects) in the Effects group. On and Off decide for this situation alone. A song that plays on into another situation follows that situation's choice. |
+| Speed | Default | Default follows [Use Playback Speed](#effects) in the Effects group. On and Off decide for this situation alone, such as faster songs in boss fights only. A song that plays on into another situation follows that situation's choice. |
 | Restore Removed Songs | (button) | Puts the songs that Remove from Rotation took out of this situation's folder and its override folders back into their rotation, and a message says how many came back, such as `Restored 3 songs in Boss`. |
 
 ## Meat Grinder

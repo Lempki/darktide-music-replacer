@@ -174,6 +174,13 @@ local function new_audio_client()
 		end
 		client.effects = setup
 	end
+	-- `speed` is the last speed the song playing now was given.
+	function module.set_speed(speed)
+		if client.current then
+			client.current.opts.speed = speed
+		end
+		client.speed = speed
+	end
 	function module.set_reverb(parameters) client.reverb = parameters end
 	function module.set_eq(parameters) client.eq = parameters end
 	function module.set_echo(parameters) client.echo = parameters end

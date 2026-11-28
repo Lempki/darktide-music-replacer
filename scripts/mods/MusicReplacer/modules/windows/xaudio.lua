@@ -156,8 +156,7 @@ end
 -- Setting more than one processor bit would also start a worker thread for each.
 local XAUDIO2_DEFAULT_PROCESSOR = 1
 
--- XAudio2's own default for the highest frequency ratio a voice allows.
--- The mod never changes a voice's pitch, so this only caps what SetFrequencyRatio could set.
+-- XAudio2's own default for the highest frequency ratio a voice allows, which caps Playback Speed at 200%.
 local XAUDIO2_DEFAULT_FREQ_RATIO = 2
 
 local XAUDIO2_END_OF_STREAM = 0x40
@@ -201,6 +200,7 @@ local VOICE_METHODS = {
 	stop = { 20, "int32_t (*)(void *, uint32_t, uint32_t)" },
 	submit_source_buffer = { 21, "int32_t (*)(void *, const MusicReplacer_XAUDIO2_BUFFER *, void *)" },
 	get_state = { 25, "void (*)(void *, MusicReplacer_XAUDIO2_VOICE_STATE *, uint32_t)" },
+	set_frequency_ratio = { 26, "int32_t (*)(void *, float, uint32_t)" },
 }
 
 local NativeFfi = nil
@@ -568,6 +568,13 @@ end
 function Voice:set_effects(setup)
 	local sends = setup and effects_sends(setup) or nil
 	return checked_voice(self, "changing a voice's output", "set_output_voices", sends)
+end
+
+-- Plays the voice at `speed` times its rate, which raises or lowers its pitch with it, like a tape, from its next processing pass.
+-- Its samples played still count the song's own samples, so positions read from them stay in the song's time.
+-- Returns false when XAudio2 refuses it.
+function Voice:set_speed(speed)
+	return checked_voice(self, "setting a voice's speed", "set_frequency_ratio", speed, 0)
 end
 
 -- Returns false when XAudio2 refuses it.

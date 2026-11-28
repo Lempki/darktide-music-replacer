@@ -17,10 +17,13 @@ local function new_stream(path, opts)
 		destroyed = false,
 		paused = false,
 		duration = 200,
-		effects = opts.effects == true,
+		effects = opts.effects,
+		current_speed = opts.speed or 1,
 	}
 
-	function stream.set_effects(self, on) self.effects = on end
+	function stream.set_effects(self, setup) self.effects = setup end
+	function stream.set_speed(self, speed) self.current_speed = speed end
+	function stream.speed(self) return self.current_speed end
 	function stream.pause(self) self.paused = true end
 	function stream.resume(self) self.paused = false end
 
@@ -351,6 +354,34 @@ describe("audio_client.lua", function()
 		local fade = streams[1].fades[1]
 		assert_equal(fade[1], 0)
 		assert_equal(math.abs(fade[2] - 1.8) < 1e-9, true, tostring(fade[2]))
+	end)
+
+	it("starts the end fade by the real seconds left, so a faster song still fades out over the whole Fade Length", function()
+		local AudioClient, _, streams = load_client()
+		AudioClient.play("hub/a.mp3", { fade_in = false, duration_seconds = 199, speed = 2 })
+
+		streams[1].current_position = 195.5
+		AudioClient.update(0.1)
+		assert_deep_equal(streams[1].fades, {})
+
+		streams[1].current_position = 196.4
+		AudioClient.update(0.1)
+		local fade = streams[1].fades[1]
+		assert_equal(fade[1], 0)
+		assert_equal(math.abs(fade[2] - 1.8) < 1e-9, true, tostring(fade[2]))
+	end)
+
+	it("opens a song at the speed it asks for, and changes the speed of the song playing now and of one kept for another context", function()
+		local AudioClient, _, streams = load_client()
+
+		AudioClient.play("hub/a.mp3", { fade_in = false, speed = 1.5 })
+		assert_equal(streams[1].opts.speed, 1.5)
+
+		AudioClient.set_speed(0.8)
+		assert_equal(streams[1].current_speed, 0.8)
+
+		AudioClient.retarget("hub/a.mp3", {})
+		assert_equal(streams[1].current_speed, 1)
 	end)
 
 	it("does not fade out while looping", function()

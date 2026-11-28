@@ -70,6 +70,15 @@ local function new_voice()
 		self.outputs[#self.outputs + 1] = setup or false
 		return true
 	end
+	-- `speeds` keeps every speed the voice was set to, and `started_at_speed` the last one set before it started.
+	voice.speeds = {}
+	function voice.set_speed(self, speed)
+		self.speeds[#self.speeds + 1] = speed
+		if not self.started then
+			self.started_at_speed = speed
+		end
+		return true
+	end
 	function voice.destroy(self) self.destroyed = true end
 	function voice.play(self, buffers)
 		self.queue = math.max(0, self.queue - buffers)
@@ -503,6 +512,28 @@ describe("player.lua", function()
 
 		Player.open("b.mp3", { effects = "eq+reverb" })
 		assert_deep_equal(voice.created_with, { effects = "eq+reverb" })
+	end)
+
+	it("sets a voice's speed before it starts, and leaves a song at its own speed untouched", function()
+		local Player, _, voice = load_player(60)
+		Player.open("a.mp3")
+		assert_deep_equal(voice.speeds, {})
+
+		local FasterPlayer, _, faster_voice = load_player(60)
+		local stream = FasterPlayer.open("b.mp3", { speed = 1.25 })
+		assert_equal(faster_voice.started_at_speed, 1.25)
+		assert_equal(stream:speed(), 1.25)
+	end)
+
+	it("changes a stream's speed only when it differs", function()
+		local Player, _, voice = load_player(60)
+		local stream = Player.open("a.mp3")
+
+		stream:set_speed(1)
+		stream:set_speed(1.5)
+		stream:set_speed(1.5)
+
+		assert_deep_equal(voice.speeds, { 1.5 })
 	end)
 
 	it("moves a stream to another effects setup only when its setup changes", function()
